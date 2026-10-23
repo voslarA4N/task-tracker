@@ -143,7 +143,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [ ] **NFR-04**: Peniaze `numeric(12,2)`, hodiny `numeric(7,2)`, žiadny float. Jedna trieda na výpočet súm. Súčty na obrazovkách, vo výkaze, na faktúre a v exportoch sa vždy zhodujú (automatické testy).
 - [ ] **NFR-05**: Denný šifrovaný `pg_dump` a PDF dokladov mimo servera, rotácia 14 denných / 8 týždenných / 12 mesačných, zdokumentovaná a otestovaná obnova.
 - [ ] **NFR-06**: PHPUnit testy pre výpočty súm, číslovanie (vrátane súbehu), zamykanie častí, kópiu údajov, kurzy a limity.
-- [ ] **NFR-07**: Rovnaké Docker obrazy pre vývoj (WSL2) aj produkciu, vo vývoji Mailpit.
+- [x] **NFR-07**: Rovnaké Docker obrazy pre vývoj (WSL2) aj produkciu, vo vývoji Mailpit.
 - [ ] **NFR-08**: Staging na HTTPS je k dispozícii skoro (spolu s prihlásením), aby sa PWA a cookies dali otestovať na reálnom iPhone.
 - [ ] **NFR-09** [nové, M12]: Doklady sa nedajú zmazať (ani DB oprávneniami) a raz ročne vzniká archív dokladov, ktorý pokryje zákonnú dobu uchovávania (SK 10 rokov, PL podľa účtovníčky).
 
@@ -191,7 +191,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | NFR-04 | Phase 1 | Pending |
-| NFR-07 | Phase 1 | Pending |
+| NFR-07 | Phase 1 | Complete |
 | UI-01 | Phase 1 | Pending |
 | AUTH-01 | Phase 2 | Pending |
 | AUTH-02 | Phase 2 | Pending |
@@ -282,6 +282,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NFR-09 | Phase 12 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 90 total
 - Mapped to phases: 90
 - Unmapped: 0 ✓

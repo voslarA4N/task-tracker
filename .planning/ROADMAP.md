@@ -41,7 +41,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 Plans:
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — Predpoklady prostredia, schválenie balíkov, Dockerfile dev/prod, compose a CI4 4.7.5 kostra (vlna 1)
+- [x] 01-01-PLAN.md — Predpoklady prostredia, schválenie balíkov, Dockerfile dev/prod, compose a CI4 4.7.5 kostra (vlna 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -265,7 +265,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Základ a infraštruktúra | 0/10 | Planned | - |
+| 1. Základ a infraštruktúra | 1/10 | In Progress|  |
 | 2. Identita a skoré nasadenie | 0/0 | Not started | - |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
