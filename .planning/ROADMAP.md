@@ -50,7 +50,7 @@ Plans:
 - [x] 01-04-PLAN.md — Responzívny layout podľa makety, lokálne knižnice, lang() sk/en, CSP-bezpečné views (vlna 2)
 - [x] 01-05-PLAN.md — DB roly app_owner/app_rw, provisioning, testovacia DB, make reset, testy oprávnení (vlna 2)
 - [x] 01-06-PLAN.md — Spike mPDF pod PHP 8.5 (CLI aj FPM, diakritika, čas, pamäť) (vlna 2)
-- [ ] 01-07-PLAN.md — PHPStan level 6 s pravidlom proti float a času mimo Clock/Money, php-cs-fixer (vlna 2)
+- [x] 01-07-PLAN.md — PHPStan level 6 s pravidlom proti float a času mimo Clock/Money, php-cs-fixer (vlna 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -265,7 +265,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Základ a infraštruktúra | 6/10 | In Progress|  |
+| 1. Základ a infraštruktúra | 7/10 | In Progress|  |
 | 2. Identita a skoré nasadenie | 0/0 | Not started | - |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
