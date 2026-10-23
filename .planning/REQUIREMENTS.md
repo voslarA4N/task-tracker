@@ -127,7 +127,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 
 ### Rozhranie, PWA a import (E12)
 
-- [ ] **UI-01**: Responzívne rozhranie na Bootstrap 5.3 pre iPhone aj PC (dotykové ciele aspoň 44 px, bez horizontálneho posúvania).
+- [x] **UI-01**: Responzívne rozhranie na Bootstrap 5.3 pre iPhone aj PC (dotykové ciele aspoň 44 px, bez horizontálneho posúvania).
 - [ ] **UI-02**: Jazyky rozhrania SK, PL, CZ a EN, voľba používateľa. Formát čísel, dátumov a mien podľa jazyka.
 - [ ] **UI-03**: Na PC sú tabuľkové zoznamy úloh a faktúr, obrazovka „Fakturácia mesiaca“ a nastavenia (subjekty, klienti, číslovanie, limity, šablóny, zákonné texty, používatelia, 2FA, zariadenia).
 - [ ] **PWA-01**: Manifest (ikony vrátane `apple-touch-icon`, `display: standalone`) a service worker s cache statických súborov a offline stránkou. Inštalácia na iPhone cez „Pridať na plochu“. Používateľ sa na dôveryhodnom zariadení neprihlasuje častejšie ako raz za 30 dní.
@@ -192,7 +192,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | NFR-04 | Phase 1 | Complete |
 | NFR-07 | Phase 1 | Complete |
-| UI-01 | Phase 1 | Pending |
+| UI-01 | Phase 1 | Complete |
 | AUTH-01 | Phase 2 | Pending |
 | AUTH-02 | Phase 2 | Pending |
 | AUTH-03 | Phase 2 | Pending |
