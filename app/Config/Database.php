@@ -20,170 +20,107 @@ class Database extends Config
     public string $defaultGroup = 'default';
 
     /**
-     * The default database connection.
+     * Aplikacia: app_rw (SELECT/INSERT, UPDATE/DELETE iba cez grantMutable). Hesla z .env.
      *
      * @var array<string, mixed>
      */
     public array $default = [
-        'DSN'          => '',
-        'hostname'     => 'localhost',
-        'username'     => '',
-        'password'     => '',
-        'database'     => '',
-        'DBDriver'     => 'MySQLi',
-        'DBPrefix'     => '',
-        'pConnect'     => false,
-        'DBDebug'      => true,
-        'charset'      => 'utf8mb4',
-        'DBCollat'     => 'utf8mb4_general_ci',
-        'swapPre'      => '',
-        'encrypt'      => false,
-        'compress'     => false,
-        'strictOn'     => false,
-        'failover'     => [],
-        'port'         => 3306,
-        'numberNative' => false,
-        'foundRows'    => false,
-        'dateFormat'   => [
+        'DSN'        => '',
+        'hostname'   => 'db',
+        'username'   => 'app_rw',
+        'password'   => '',
+        'database'   => 'task_tracker',
+        'schema'     => 'public',
+        'DBDriver'   => 'Postgre',
+        'DBPrefix'   => '',
+        'pConnect'   => false,
+        'DBDebug'    => true,
+        'charset'    => 'utf8',
+        'swapPre'    => '',
+        'failover'   => [],
+        'port'       => 5432,
+        'dateFormat' => [
             'date'     => 'Y-m-d',
             'datetime' => 'Y-m-d H:i:s',
             'time'     => 'H:i:s',
         ],
     ];
 
-    //    /**
-    //     * Sample database connection for SQLite3.
-    //     *
-    //     * @var array<string, mixed>
-    //     */
-    //    public array $default = [
-    //        'database'    => 'database.db',
-    //        'DBDriver'    => 'SQLite3',
-    //        'DBPrefix'    => '',
-    //        'DBDebug'     => true,
-    //        'swapPre'     => '',
-    //        'failover'    => [],
-    //        'foreignKeys' => true,
-    //        'busyTimeout' => 1000,
-    //        'synchronous' => null,
-    //        'dateFormat'  => [
-    //            'date'     => 'Y-m-d',
-    //            'datetime' => 'Y-m-d H:i:s',
-    //            'time'     => 'H:i:s',
-    //        ],
-    //    ];
-
-    //    /**
-    //     * Sample database connection for Postgre.
-    //     *
-    //     * @var array<string, mixed>
-    //     */
-    //    public array $default = [
-    //        'DSN'        => '',
-    //        'hostname'   => 'localhost',
-    //        'username'   => 'root',
-    //        'password'   => 'root',
-    //        'database'   => 'ci4',
-    //        'schema'     => 'public',
-    //        'DBDriver'   => 'Postgre',
-    //        'DBPrefix'   => '',
-    //        'pConnect'   => false,
-    //        'DBDebug'    => true,
-    //        'charset'    => 'utf8',
-    //        'swapPre'    => '',
-    //        'failover'   => [],
-    //        'port'       => 5432,
-    //        'dateFormat' => [
-    //            'date'     => 'Y-m-d',
-    //            'datetime' => 'Y-m-d H:i:s',
-    //            'time'     => 'H:i:s',
-    //        ],
-    //    ];
-
-    //    /**
-    //     * Sample database connection for SQLSRV.
-    //     *
-    //     * @var array<string, mixed>
-    //     */
-    //    public array $default = [
-    //        'DSN'        => '',
-    //        'hostname'   => 'localhost',
-    //        'username'   => 'root',
-    //        'password'   => 'root',
-    //        'database'   => 'ci4',
-    //        'schema'     => 'dbo',
-    //        'DBDriver'   => 'SQLSRV',
-    //        'DBPrefix'   => '',
-    //        'pConnect'   => false,
-    //        'DBDebug'    => true,
-    //        'charset'    => 'utf8',
-    //        'swapPre'    => '',
-    //        'encrypt'    => false,
-    //        'failover'   => [],
-    //        'port'       => 1433,
-    //        'dateFormat' => [
-    //            'date'     => 'Y-m-d',
-    //            'datetime' => 'Y-m-d H:i:s',
-    //            'time'     => 'H:i:s',
-    //        ],
-    //    ];
-
-    //    /**
-    //     * Sample database connection for OCI8.
-    //     *
-    //     * You may need the following environment variables:
-    //     *   NLS_LANG                = 'AMERICAN_AMERICA.UTF8'
-    //     *   NLS_DATE_FORMAT         = 'YYYY-MM-DD HH24:MI:SS'
-    //     *   NLS_TIMESTAMP_FORMAT    = 'YYYY-MM-DD HH24:MI:SS'
-    //     *   NLS_TIMESTAMP_TZ_FORMAT = 'YYYY-MM-DD HH24:MI:SS'
-    //     *
-    //     * @var array<string, mixed>
-    //     */
-    //    public array $default = [
-    //        'DSN'        => 'localhost:1521/FREEPDB1',
-    //        'username'   => 'root',
-    //        'password'   => 'root',
-    //        'DBDriver'   => 'OCI8',
-    //        'DBPrefix'   => '',
-    //        'pConnect'   => false,
-    //        'DBDebug'    => true,
-    //        'charset'    => 'AL32UTF8',
-    //        'swapPre'    => '',
-    //        'failover'   => [],
-    //        'dateFormat' => [
-    //            'date'     => 'Y-m-d',
-    //            'datetime' => 'Y-m-d H:i:s',
-    //            'time'     => 'H:i:s',
-    //        ],
-    //    ];
+    /**
+     * Migracie a seedery: app_owner (spark migrate -g owner).
+     *
+     * @var array<string, mixed>
+     */
+    public array $owner = [
+        'DSN'        => '',
+        'hostname'   => 'db',
+        'username'   => 'app_owner',
+        'password'   => '',
+        'database'   => 'task_tracker',
+        'schema'     => 'public',
+        'DBDriver'   => 'Postgre',
+        'DBPrefix'   => '',
+        'pConnect'   => false,
+        'DBDebug'    => true,
+        'charset'    => 'utf8',
+        'swapPre'    => '',
+        'failover'   => [],
+        'port'       => 5432,
+        'dateFormat' => [
+            'date'     => 'Y-m-d',
+            'datetime' => 'Y-m-d H:i:s',
+            'time'     => 'H:i:s',
+        ],
+    ];
 
     /**
-     * This database connection is used when running PHPUnit database tests.
+     * PHPUnit ako aplikacia (app_rw); defaultGroup v prostredi testing.
      *
      * @var array<string, mixed>
      */
     public array $tests = [
-        'DSN'         => '',
-        'hostname'    => '127.0.0.1',
-        'username'    => '',
-        'password'    => '',
-        'database'    => ':memory:',
-        'DBDriver'    => 'SQLite3',
-        'DBPrefix'    => 'db_',  // Needed to ensure we're working correctly with prefixes live. DO NOT REMOVE FOR CI DEVS
-        'pConnect'    => false,
-        'DBDebug'     => true,
-        'charset'     => 'utf8',
-        'DBCollat'    => '',
-        'swapPre'     => '',
-        'encrypt'     => false,
-        'compress'    => false,
-        'strictOn'    => true,
-        'failover'    => [],
-        'port'        => 3306,
-        'foreignKeys' => true,
-        'busyTimeout' => 1000,
-        'synchronous' => null,
-        'dateFormat'  => [
+        'DSN'        => '',
+        'hostname'   => 'db',
+        'username'   => 'app_rw',
+        'password'   => '',
+        'database'   => 'task_tracker_test',
+        'schema'     => 'public',
+        'DBDriver'   => 'Postgre',
+        'DBPrefix'   => '',
+        'pConnect'   => false,
+        'DBDebug'    => true,
+        'charset'    => 'utf8',
+        'swapPre'    => '',
+        'failover'   => [],
+        'port'       => 5432,
+        'dateFormat' => [
+            'date'     => 'Y-m-d',
+            'datetime' => 'Y-m-d H:i:s',
+            'time'     => 'H:i:s',
+        ],
+    ];
+
+    /**
+     * Migracie testovacej DB (spark migrate -g tests_owner).
+     *
+     * @var array<string, mixed>
+     */
+    public array $tests_owner = [
+        'DSN'        => '',
+        'hostname'   => 'db',
+        'username'   => 'app_owner',
+        'password'   => '',
+        'database'   => 'task_tracker_test',
+        'schema'     => 'public',
+        'DBDriver'   => 'Postgre',
+        'DBPrefix'   => '',
+        'pConnect'   => false,
+        'DBDebug'    => true,
+        'charset'    => 'utf8',
+        'swapPre'    => '',
+        'failover'   => [],
+        'port'       => 5432,
+        'dateFormat' => [
             'date'     => 'Y-m-d',
             'datetime' => 'Y-m-d H:i:s',
             'time'     => 'H:i:s',
@@ -199,6 +136,18 @@ class Database extends Config
         // we don't overwrite live data on accident.
         if (ENVIRONMENT === 'testing') {
             $this->defaultGroup = 'tests';
+        }
+
+        // MigrationRunner vytvara tabulku `migrations` na default spojeni a `-g` iba filtruje
+        // migracie. Aby aj ona patrila app_owner, pri `spark migrate* -g <owner skupina>` prepneme
+        // defaultGroup na tuto skupinu (migracie bezia len ako app_owner).
+        $argv = $_SERVER['argv'] ?? [];
+        if (PHP_SAPI === 'cli' && str_starts_with((string) ($argv[1] ?? ''), 'migrate')) {
+            $i = array_search('-g', $argv, true);
+            $g = $i === false ? null : ($argv[$i + 1] ?? null);
+            if (in_array($g, ['owner', 'tests_owner'], true)) {
+                $this->defaultGroup = $g;
+            }
         }
     }
 }

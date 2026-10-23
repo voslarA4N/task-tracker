@@ -11,7 +11,7 @@ use Config\Database;
 
 /**
  * Baza integracnych testov: owner() = app_owner (DDL), rw() = app_rw (ako aplikacia).
- * Zamerne bez DatabaseTestTrait ($migrate/$refresh by bezali pod app_rw a zakryli opravnenia).
+ * Zamerne bez CI4 DB test traitu ($migrate/$refresh by bezali pod app_rw a zakryli opravnenia).
  */
 abstract class PgTestCase extends CIUnitTestCase
 {

@@ -47,7 +47,6 @@
         "test": "phpunit",
         "test:unit": "phpunit --testsuite unit",
         "test:migrate": [
-            "@putenv CI_ENVIRONMENT=testing",
             "@php spark migrate -g tests_owner --all"
         ]
     },
