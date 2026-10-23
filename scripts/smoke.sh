@@ -100,7 +100,7 @@ if echo "$PH" | head -n1 | grep -q ' 403' && echo "$PH" | grep -i '^hx-retarget:
 
 # 10. app.js: CSRF fragment v #app-alert je viditelny a neprepisany (CR-01)
 if command -v node >/dev/null 2>&1; then
-  if node --test tests/js/ >/dev/null 2>&1; then pass "js app-alert"; else fail "js app-alert (node --test tests/js/)"; fi
+  if node --test tests/js/*.test.js >/dev/null 2>&1; then pass "js app-alert"; else fail "js app-alert (node --test tests/js/*.test.js)"; fi
 else
   skip "SKIP js app-alert (chyba node)"
 fi

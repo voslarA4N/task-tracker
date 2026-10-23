@@ -37,8 +37,12 @@ jobs:
             exit 1
           fi
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: JS testy (app.js, CR-01)
-        run: node --test tests/js/
+        run: node --test tests/js/*.test.js
 
       - name: Build dev a prod target
         run: |
