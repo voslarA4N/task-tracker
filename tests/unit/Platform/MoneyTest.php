@@ -143,7 +143,7 @@ final class MoneyTest extends CIUnitTestCase
     public function testFloatInputIsTypeError(): void
     {
         $this->expectException(TypeError::class);
-        Money::of(1.5); // @phpstan-ignore argument.type
+        Money::of(1.5); // @phpstan-ignore argument.type, app.forbiddenFloat (zamerny float: overuje TypeError)
     }
 
     public function testResultAlwaysHasTwoDecimals(): void

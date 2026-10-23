@@ -51,6 +51,7 @@
         ],
         "stan": [
             "phpstan analyse --no-progress --memory-limit=1G",
+            "phpstan analyse -c phpstan.views.neon --no-progress --memory-limit=1G",
             "@php tests/_support/PhpStan/selftest.php"
         ],
         "cs": "php-cs-fixer fix --dry-run --diff --ansi",

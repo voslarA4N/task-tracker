@@ -1,0 +1,21 @@
+# WR-07: pohlady (app/Views) cez ForbiddenCallsRule (cas len cez Clock, ziadny float).
+# Level 0 a len toto pravidlo: pohlady nemaju typy ($this, premenne z kontrolera).
+parameters:
+    level: 0
+    paths:
+        - app/Views
+    excludePaths:
+        - app/Views/errors/cli
+        - app/Views/errors/html/error_exception.php
+    tmpDir: build/phpstan-views
+    bootstrapFiles:
+        - vendor/codeigniter4/framework/system/Test/bootstrap.php
+    scanDirectories:
+        - vendor/codeigniter4/framework/system/Helpers
+        - app/Helpers
+
+services:
+    -
+        class: Tests\Support\PhpStan\ForbiddenCallsRule
+        tags:
+            - phpstan.rules.rule

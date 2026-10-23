@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /** Self-test pravidla ForbiddenCallsRule: fixture musí vyprodukovať presný počet chýb. */
 $root     = dirname(__DIR__, 3);
-$expected = ['app.forbiddenTime' => 10, 'app.forbiddenFloat' => 4, 'app.forbiddenBcmath' => 2];
+$expected = ['app.forbiddenTime' => 18, 'app.forbiddenFloat' => 20, 'app.forbiddenBcmath' => 2];
 
 $cmd  = [PHP_BINARY, $root . '/vendor/bin/phpstan', 'analyse', '-c', 'phpstan.selftest.neon', '--error-format=json', '--no-progress'];
 $proc = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $root);
