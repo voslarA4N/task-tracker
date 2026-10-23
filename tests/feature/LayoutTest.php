@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\CIUnitTestCase;
 use CodeIgniter\Test\FeatureTestTrait;
 use DOMDocument;
@@ -93,9 +94,15 @@ final class LayoutTest extends CIUnitTestCase
 
     public function testNotFoundHasNoInlineCode(): void
     {
-        $result = $this->get('/neexistuje-xyz');
-        $result->assertStatus(404);
-        $html = (string) $result->getBody();
+        // V testovacom prostredi FeatureTestTrait prepusta PageNotFoundException; 404 stranku renderuje handler vyhnimok.
+        try {
+            $this->get('/neexistuje-xyz');
+            $this->fail('Ocakavana PageNotFoundException (404)');
+        } catch (PageNotFoundException $e) {
+            $this->assertSame(404, $e->getCode());
+        }
+
+        $html = view('errors/html/error_404', ['message' => 'x', 'code' => 404]);
 
         $this->assertStringNotContainsStringIgnoringCase('<style', $html);
         $this->assertSame(0, preg_match('/<script\b(?![^>]*\bsrc=)[^>]*>/i', $html));
