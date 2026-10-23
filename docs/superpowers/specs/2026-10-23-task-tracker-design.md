@@ -157,7 +157,10 @@ Nastavenia vlastného právneho subjektu, ktoré sa dajú meniť:
   - položky,
   - podklad oslobodenia (art. 113 ust. 1 alebo ust. 9 ustawy o VAT),
   - platobné údaje.
-- Ešte treba overiť: pri poľskom subjekte a slovenskom B2B klientovi je miesto poskytnutia služby u klienta (art. 28b) a môže to znamenať inú poznámku na faktúre a povinnosti voči VAT-UE. **Toto overí používateľ s účtovníčkou.** Aplikácia má mať v právnom profile konfigurovateľný text poznámky.
+- **Cezhraničná fakturácia** (napr. poľský subjekt → slovenský firemný klient): miesto poskytnutia služby je pravdepodobne u klienta (art. 28b ustawy o VAT), čo môže znamenať inú zákonnú poznámku (napr. „odwrotne obciążenie / reverse charge“ namiesto oslobodenia podľa art. 113), registráciu VAT-UE a to, že sa takéto tržby nezapočítavajú do limitu 240 000 zł. **Presnú odpoveď dá účtovníčka.** Aplikácia preto musí byť v tomto ohľade nastaviteľná, nie natvrdo [dohodnuté]:
+  - pre každého klienta voľba **režimu fakturácie** (tuzemský / EÚ B2B / mimo EÚ), ktorá určí text zákonnej poznámky na faktúre (texty editovateľné v nastaveniach pre každý jazyk),
+  - na klientovi príznak, či sa jeho faktúry **započítavajú do limitu obratu** (predvolene áno),
+  - na klientovi pole pre jeho IČ DPH / VAT ID, ktoré sa pri režime EÚ B2B tlačí na faktúru.
 - Presné znenie náležitostí implementátor overí voči aktuálnym predpisom pri implementácii.
 
 ### 6.6 Výkaz práce [dohodnuté]
@@ -178,7 +181,11 @@ Nastavenia vlastného právneho subjektu, ktoré sa dajú meniť:
 ### 6.8 Prehľady a limity [dohodnuté]
 
 - **Mesačný a ročný prehľad príjmov**: vyfakturované a uhradené, podľa klienta, v mene subjektu. Export do **CSV a XLSX**.
-- **Sledovanie obratu voči limitom** s upozornením na dashboarde (napríklad pri 80 % a 100 %). Limity sú **nastaviteľné hodnoty** pre každú krajinu, nie konštanty v kóde.
+- **Sledovanie obratu voči limitom** s upozornením na dashboarde (napríklad pri 80 % a 100 %).
+- Limity sú **nastaviteľné v aplikácii** (obrazovka Nastavenia → Limity), nie v kóde ani v `.env` [dohodnuté]. Ich zmena nesmie vyžadovať úpravu programu.
+  - Tabuľka limitov: krajina, **rok platnosti**, názov, suma, mena, spôsob výpočtu, prahy upozornenia. Každý rok sa zadá nový riadok a staré roky ostávajú platné pre staré roky.
+  - Ak pre aktuálny rok chýba riadok, použije sa posledný známy a dashboard upozorní, že limit treba skontrolovať.
+  - Počiatočné hodnoty (seed):
   - **SK:** registrácia k DPH pri 50 000 € za kalendárny rok, okamžite pri 62 500 €. Stav k 10/2026, treba overiť.
   - **PL:** 240 000 zł ročne pri zwolnieniu podmiotowom (od 1. 1. 2026). V prvom roku podnikania sa limit počíta pomerne podľa počtu dní (art. 113 ust. 9).
   - Obrat sa počíta za subjekt, nie za celé obdobie používania aplikácie.
