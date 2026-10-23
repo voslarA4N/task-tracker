@@ -1,5 +1,7 @@
 .superpowers/
 .env
+.env.*
+!.env.example
 /vendor/
 /writable/
 *.xlsx

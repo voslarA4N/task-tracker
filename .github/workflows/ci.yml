@@ -32,8 +32,8 @@ jobs:
 
       - name: Tajomstva nesmu byt v gite
         run: |
-          if git ls-files | grep -E '(^|/)\.env$|\.pem$|^docker/certs/'; then
-            echo "V gite su tajomstva (.env, *.pem, docker/certs/)" >&2
+          if git ls-files | grep -E '(^|/)\.env(\.[^/]+)?$|\.pem$|^docker/certs/' | grep -vE '(^|/)\.env\.example$'; then
+            echo "V gite su tajomstva (.env, .env.*, *.pem, docker/certs/)" >&2
             exit 1
           fi
 

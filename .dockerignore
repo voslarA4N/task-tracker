@@ -8,6 +8,7 @@ writable
 build
 _tmp
 .env
+.env.*
 docker/certs
 *.xlsx
 node_modules
