@@ -539,17 +539,21 @@ jobs:
 | A10 | `HX-Retarget` + `HX-Reswap` sa uplatní aj pri 403 s `swap:true` | Pattern 5 / Filter | Fragment pristane v `#content`; dá sa vyriešiť `hx-target-403` alebo JS handlerom |
 | A11 | Všetky Composer balíky v audit tabuľke sú legitímne (slopcheck nebehol) | Package Legitimacy Audit | Kompenzované jedným `checkpoint:human-verify` |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **ICU kolácia pre zoradenie slovenčiny/poľštiny**
    - Čo vieme: DB sa zakladá vo Phase 1; zmena predvolenej kolácie neskôr znamená dump/reindex. Alpine obraz používa musl (libc kolácie sú v praxi bajtové).
    - Čo nie je jasné: či `postgres:18-alpine` je zostavený s ICU (A7) a aké parametre `initdb`/`CREATE DATABASE` budú fungovať.
    - Odporúčanie: Wave 0 mini-spike v kontajneri: `CREATE DATABASE … LOCALE_PROVIDER icu ICU_LOCALE 'sk-SK' LOCALE 'C.UTF-8' TEMPLATE template0` a `SELECT 'Č' > 'C', 'Č' < 'D'`. Ak prejde, použiť pre obe DB; inak zdokumentovať a používať `COLLATE "sk-x-icu"` v dotazoch.
+   - **RESOLVED:** plán 01-05 Task 1 spustí ICU mini-spike v izolovanom compose projekte `tt-probe` a podľa výsledku zvolí lokalizáciu v `provision.sql`; plán 01-10 Task 3 zapíše výsledok do PROJECT.md.
 2. **Session handler vo Phase 1**
    - Odporúčanie: `FileHandler` na `writable/session` (volume), zhodnotiť v Phase 2 so Shield.
+   - **RESOLVED:** plán 01-08 Task 2 ponecháva `FileHandler` na `writable/session` (volume); prechod na `DatabaseHandler` rozhodne Phase 2 so Shield.
 3. **Spike mPDF pod PHP 8.5**
    - Nedalo sa spustiť (host PHP 8.3, Docker nebeží). Orientačný beh na 8.3: cold 209 ms, peak 22 MB, 0 deprecations. Výsledok na 8.5 zapísať do PROJECT.md.
+   - **RESOLVED:** plán 01-06 (Task 1 CLI, Task 2 FPM + `MpdfSpikeTest`) spike vykoná a zmeria pod PHP 8.5; plán 01-10 Task 3 prenesie čísla do PROJECT.md.
 4. **`composer create-project` do neprázdneho repa** — použiť dočasný adresár a kopírovať bez `.git`; Wave 0 rozhodne, či zachovať `preload.php`, `spark`, `public/`, `app/`, `tests/`.
+   - **RESOLVED:** plán 01-01 Task 4: `create-project` do `_tmp/starter`, do repa sa kopírujú iba `app/`, `public/`, `tests/`, `spark`, `preload.php`, `phpunit.dist.xml`, `composer.json`, potom `rm -rf _tmp`.
 
 ## Environment Availability
 
