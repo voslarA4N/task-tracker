@@ -25,7 +25,7 @@ final class ClockTest extends CIUnitTestCase
     public function testServiceReturnsSharedClock(): void
     {
         $a = service('clock');
-        $this->assertInstanceOf(Clock::class, $a);
+        $this->assertSame(Clock::class, $a::class);
         $this->assertSame($a, service('clock'));
     }
 

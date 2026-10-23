@@ -76,6 +76,8 @@ final class LangKeysTest extends CIUnitTestCase
     }
 
     /**
+     * @param array<array-key, mixed> $a
+     *
      * @return list<string>
      */
     private function flatten(array $a, string $prefix = ''): array

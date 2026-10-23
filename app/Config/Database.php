@@ -141,7 +141,7 @@ class Database extends Config
         // MigrationRunner vytvara tabulku `migrations` na default spojeni a `-g` iba filtruje
         // migracie. Aby aj ona patrila app_owner, pri `spark migrate* -g <owner skupina>` prepneme
         // defaultGroup na tuto skupinu (migracie bezia len ako app_owner).
-        $argv = $_SERVER['argv'] ?? [];
+        $argv = service('superglobals')->server('argv') ?? [];
         if (PHP_SAPI === 'cli' && str_starts_with((string) ($argv[1] ?? ''), 'migrate')) {
             $i = array_search('-g', $argv, true);
             $g = $i === false ? null : ($argv[$i + 1] ?? null);

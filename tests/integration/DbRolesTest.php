@@ -29,7 +29,7 @@ final class DbRolesTest extends PgTestCase
         $migration = new class ($db) {
             use GrantsPrivileges;
 
-            public function __construct(protected $db)
+            public function __construct(protected object $db)
             {
             }
 

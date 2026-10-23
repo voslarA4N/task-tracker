@@ -15,24 +15,31 @@ use Config\Database;
  */
 abstract class PgTestCase extends CIUnitTestCase
 {
+    /** @var BaseConnection<mixed, mixed>|null */
     private static ?BaseConnection $owner = null;
-    private static ?BaseConnection $rw    = null;
 
+    /** @var BaseConnection<mixed, mixed>|null */
+    private static ?BaseConnection $rw = null;
+
+    /** @return BaseConnection<mixed, mixed> */
     protected static function ownerConn(): BaseConnection
     {
         return self::$owner ??= Database::connect('tests_owner', false);
     }
 
+    /** @return BaseConnection<mixed, mixed> */
     protected static function rwConn(): BaseConnection
     {
         return self::$rw ??= Database::connect('tests', false);
     }
 
+    /** @return BaseConnection<mixed, mixed> */
     protected function owner(): BaseConnection
     {
         return self::ownerConn();
     }
 
+    /** @return BaseConnection<mixed, mixed> */
     protected function rw(): BaseConnection
     {
         return self::rwConn();

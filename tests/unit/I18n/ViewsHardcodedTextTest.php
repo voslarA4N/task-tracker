@@ -20,7 +20,8 @@ final class ViewsHardcodedTextTest extends CIUnitTestCase
      *
      * @var list<string>
      */
-    private const ALLOWLIST = [];
+    /** @var list<string> */
+    private static array $allowlist = [];
 
     private const ATTRS = ['title', 'alt', 'placeholder', 'aria-label', 'aria-description', 'label'];
 
@@ -47,7 +48,7 @@ final class ViewsHardcodedTextTest extends CIUnitTestCase
             if (preg_match_all('/>([^<]+)(?=<)/', $clean, $m, PREG_OFFSET_CAPTURE) > 0) {
                 foreach ($m[1] as [$text, $offset]) {
                     $decoded = html_entity_decode($text);
-                    if (preg_match('/\p{L}{2,}/u', $decoded) === 1 && ! in_array(trim($decoded), self::ALLOWLIST, true)) {
+                    if (preg_match('/\p{L}{2,}/u', $decoded) === 1 && ! in_array(trim($decoded), self::$allowlist, true)) {
                         $problems[] = "{$path}:" . (substr_count($clean, "\n", 0, $offset) + 1) . ' text "' . trim($decoded) . '"';
                     }
                 }
@@ -64,7 +65,7 @@ final class ViewsHardcodedTextTest extends CIUnitTestCase
             $re = '/\s(' . implode('|', self::ATTRS) . ')\s*=\s*(["\'])(.*?)\2/s';
             if (preg_match_all($re, $clean, $am, PREG_OFFSET_CAPTURE) > 0) {
                 foreach ($am[3] as $i => [$val, $offset]) {
-                    if (preg_match('/\p{L}{2,}/u', html_entity_decode($val)) === 1 && ! in_array(trim($val), self::ALLOWLIST, true)) {
+                    if (preg_match('/\p{L}{2,}/u', html_entity_decode($val)) === 1 && ! in_array(trim($val), self::$allowlist, true)) {
                         $problems[] = "{$path}:" . (substr_count($clean, "\n", 0, $offset) + 1) . " atribut {$am[1][$i][0]}=\"{$val}\"";
                     }
                 }

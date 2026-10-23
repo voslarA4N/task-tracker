@@ -8,6 +8,7 @@ use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\CIUnitTestCase;
 use CodeIgniter\Test\FeatureTestTrait;
 use DOMDocument;
+use DOMElement;
 use DOMXPath;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -22,7 +23,7 @@ final class LayoutTest extends CIUnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $_SERVER['HTTPS'] = 'on';
+        service('superglobals')->setServer('HTTPS', 'on');
     }
 
     private function homeHtml(): string
@@ -63,7 +64,7 @@ final class LayoutTest extends CIUnitTestCase
     {
         $xp   = $this->xpath($this->homeHtml());
         $node = $xp->query('//meta[@name="htmx-config"]')->item(0);
-        $this->assertNotNull($node);
+        $this->assertInstanceOf(DOMElement::class, $node);
 
         $cfg = json_decode($node->getAttribute('content'), true, flags: JSON_THROW_ON_ERROR);
         $this->assertFalse($cfg['allowEval']);
@@ -85,7 +86,7 @@ final class LayoutTest extends CIUnitTestCase
     {
         $xp   = $this->xpath($this->homeHtml());
         $body = $xp->query('//body')->item(0);
-        $this->assertNotNull($body);
+        $this->assertInstanceOf(DOMElement::class, $body);
 
         $headers = json_decode($body->getAttribute('hx-headers'), true, flags: JSON_THROW_ON_ERROR);
         $this->assertArrayHasKey(csrf_header(), $headers);

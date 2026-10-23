@@ -1,0 +1,11 @@
+parameters:
+    level: 0
+    paths:
+        - tests/_support/PhpStan/Fixtures
+    tmpDir: build/phpstan-selftest
+
+services:
+    -
+        class: Tests\Support\PhpStan\ForbiddenCallsRule
+        tags:
+            - phpstan.rules.rule

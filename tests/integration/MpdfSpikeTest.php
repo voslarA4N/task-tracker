@@ -64,7 +64,7 @@ final class MpdfSpikeTest extends CIUnitTestCase
             if ($data['elapsed_ms'] >= self::LIMIT_MS) {
                 fwrite(STDERR, "[mpdf-spike] WARNING: over 2000 ms on CI runner (not enforced)\n");
             }
-            $this->assertTrue(true);
+            $this->addToAssertionCount(1);
 
             return;
         }
