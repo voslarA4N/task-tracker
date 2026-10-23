@@ -45,7 +45,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-02-PLAN.md — nginx HTTPS na work-tracker.loc s bezpečnostnými hlavičkami, Makefile, make smoke, Mailpit (vlna 2)
+- [x] 01-02-PLAN.md — nginx HTTPS na work-tracker.loc s bezpečnostnými hlavičkami, Makefile, make smoke, Mailpit (vlna 2)
 - [ ] 01-03-PLAN.md — Money (bcmath, half-up) a Clock cez TDD (vlna 2)
 - [ ] 01-04-PLAN.md — Responzívny layout podľa makety, lokálne knižnice, lang() sk/en, CSP-bezpečné views (vlna 2)
 - [ ] 01-05-PLAN.md — DB roly app_owner/app_rw, provisioning, testovacia DB, make reset, testy oprávnení (vlna 2)
@@ -265,7 +265,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Základ a infraštruktúra | 1/10 | In Progress|  |
+| 1. Základ a infraštruktúra | 2/10 | In Progress|  |
 | 2. Identita a skoré nasadenie | 0/0 | Not started | - |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
