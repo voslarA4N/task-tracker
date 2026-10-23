@@ -1,7 +1,8 @@
 <?php
 $fields = ['hours' => lang('Demo.hours'), 'rate' => lang('Demo.rate')];
 ?>
-<form id="demo-calculator" method="post" action="/demo/calculate" hx-post="/demo/calculate" hx-target="this" hx-swap="outerHTML" novalidate>
+<div id="demo-panel">
+<form id="demo-calculator" method="post" action="/demo/calculate" hx-post="/demo/calculate" hx-target="#demo-panel" hx-swap="outerHTML" novalidate>
     <?= csrf_field() ?>
     <?php foreach ($fields as $name => $label): ?>
         <?php $error = $errors[$name] ?? null; ?>
@@ -20,6 +21,9 @@ $fields = ['hours' => lang('Demo.hours'), 'rate' => lang('Demo.rate')];
         <?= esc(lang('Demo.submit')) ?>
         <span class="spinner-border spinner-border-sm htmx-indicator" aria-hidden="true"></span>
     </button>
+    <button class="btn btn-success w-100 mt-2" type="submit" formaction="/demo/calculations" hx-post="/demo/calculations">
+        <?= esc(lang('Demo.save')) ?>
+    </button>
     <?php if (($result ?? null) !== null): ?>
         <div class="app-card mt-3">
             <div class="small text-body-secondary"><?= esc(lang('Demo.result')) ?></div>
@@ -27,3 +31,5 @@ $fields = ['hours' => lang('Demo.hours'), 'rate' => lang('Demo.rate')];
         </div>
     <?php endif; ?>
 </form>
+<?= $this->include('demo/_list') ?>
+</div>

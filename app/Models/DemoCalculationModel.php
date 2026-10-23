@@ -31,7 +31,7 @@ final class DemoCalculationModel extends Model
     }
 
     /**
-     * @return list<array<string, string>>
+     * @return list<array<string, mixed>>
      */
     public function latest(int $limit = 20): array
     {

@@ -25,7 +25,7 @@ final class DemoPersistTest extends CIUnitTestCase
         Database::connect('tests_owner', false)->query('TRUNCATE demo_calculations RESTART IDENTITY');
     }
 
-    private function count(): int
+    private function rowCount(): int
     {
         return (int) Database::connect('tests_owner', false)->query('SELECT count(*) AS c FROM demo_calculations')->getRow()->c;
     }
@@ -53,16 +53,16 @@ final class DemoPersistTest extends CIUnitTestCase
         $this->assertStringContainsString('21.00', $body);
         $this->assertStringContainsString('54.75', $body);
 
-        $page = (string) $this->get('/demo')->response()->getBody();
+        $page = (string) $this->withHeaders(['HX-Request' => 'true', 'HX-Boosted' => 'true'])->get('/demo')->response()->getBody();
         $this->assertStringContainsString('<html', $page);
         $this->assertStringContainsString('33.75', $page);
         $this->assertStringContainsString('21.00', $page);
-        $this->assertSame(2, $this->count());
+        $this->assertSame(2, $this->rowCount());
     }
 
     public function testInvalidInputGives422AndStoresNothing(): void
     {
         $this->store(['hours' => 'abc', 'rate' => '27'])->assertStatus(422);
-        $this->assertSame(0, $this->count());
+        $this->assertSame(0, $this->rowCount());
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\Platform\Money;
+use App\Models\DemoCalculationModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use InvalidArgumentException;
 use OverflowException;
@@ -18,11 +19,56 @@ final class Demo extends BaseController
 
     public function calculate(): ResponseInterface|string
     {
-        $values = [
+        $values = $this->postedValues();
+
+        if (! $this->validates($values)) {
+            return $this->invalid($values, $this->validator->getErrors());
+        }
+
+        try {
+            $result = Money::of($values['rate'])->timesHours($values['hours'])->toDecimalString();
+        } catch (InvalidArgumentException|OverflowException) {
+            return $this->invalid($values, ['hours' => lang('Demo.errorRange')]);
+        }
+
+        return htmx_view('demo/_calculator', $this->data($values, [], $result), 'demo/index');
+    }
+
+    public function store(): ResponseInterface|string
+    {
+        $values = $this->postedValues();
+
+        if (! $this->validates($values)) {
+            return $this->invalid($values, $this->validator->getErrors());
+        }
+
+        try {
+            $amount = Money::of($values['rate'])->timesHours($values['hours']);
+        } catch (InvalidArgumentException|OverflowException) {
+            return $this->invalid($values, ['hours' => lang('Demo.errorRange')]);
+        }
+
+        (new DemoCalculationModel())->record($values['hours'], $values['rate'], $amount, service('clock')->now());
+
+        return htmx_view('demo/_calculator', $this->data(['hours' => '', 'rate' => ''], [], null), 'demo/index');
+    }
+
+    /**
+     * @return array{hours: string, rate: string}
+     */
+    private function postedValues(): array
+    {
+        return [
             'hours' => $this->normalize($this->request->getPost('hours')),
             'rate'  => $this->normalize($this->request->getPost('rate')),
         ];
+    }
 
+    /**
+     * @param array{hours: string, rate: string} $values
+     */
+    private function validates(array $values): bool
+    {
         $rules = [
             'hours' => [
                 'label'  => lang('Demo.hours'),
@@ -36,17 +82,7 @@ final class Demo extends BaseController
             ],
         ];
 
-        if (! $this->validateData($values, $rules)) {
-            return $this->invalid($values, $this->validator->getErrors());
-        }
-
-        try {
-            $result = Money::of($values['rate'])->timesHours($values['hours'])->toDecimalString();
-        } catch (InvalidArgumentException|OverflowException) {
-            return $this->invalid($values, ['hours' => lang('Demo.errorRange')]);
-        }
-
-        return htmx_view('demo/_calculator', $this->data($values, [], $result), 'demo/index');
+        return $this->validateData($values, $rules);
     }
 
     private function normalize(mixed $value): string
@@ -73,11 +109,15 @@ final class Demo extends BaseController
      */
     private function data(array $values, array $errors, ?string $result): array
     {
+        $model = new DemoCalculationModel();
+
         return [
             'title'  => lang('Demo.title'),
             'values' => $values,
             'errors' => $errors,
             'result' => $result,
+            'rows'   => $model->latest(),
+            'total'  => $model->totalAmount()->toDecimalString(),
         ];
     }
 }

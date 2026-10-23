@@ -22,8 +22,8 @@ final class MoneyDbParityTest extends PgTestCase
         $pairs = [];
 
         for ($i = 0; $i < 2000; $i++) {
-            $hours = sprintf('%d.%02d', mt_rand(0, 99999), mt_rand(0, 99));
-            $rate  = sprintf('%s%d.%02d', mt_rand(0, 9) === 0 ? '-' : '', mt_rand(0, 9999), mt_rand(0, 99));
+            $hours   = sprintf('%d.%02d', mt_rand(0, 99999), mt_rand(0, 99));
+            $rate    = sprintf('%s%d.%02d', mt_rand(0, 9) === 0 ? '-' : '', mt_rand(0, 9999), mt_rand(0, 99));
             $pairs[] = [$hours, $rate];
         }
 
@@ -45,7 +45,7 @@ final class MoneyDbParityTest extends PgTestCase
             $this->assertCount(count($chunk), $rows);
 
             foreach ($rows as $row) {
-                [$h, $r] = $pairs[(int) $row->ord];
+                [$h, $r]  = $pairs[(int) $row->ord];
                 $expected = (string) $row->v;
 
                 if ($expected === '-0.00') {

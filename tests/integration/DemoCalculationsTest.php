@@ -8,6 +8,7 @@ use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Platform\Money;
 use App\Models\DemoCalculationModel;
 use CodeIgniter\Database\Exceptions\DatabaseException;
+use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\PgTestCase;
 
@@ -28,7 +29,7 @@ final class DemoCalculationsTest extends PgTestCase
         return new DemoCalculationModel($this->rw());
     }
 
-    private function now(): \DateTimeImmutable
+    private function now(): DateTimeImmutable
     {
         return (new FrozenClock('2026-10-23T10:00:00+02:00'))->now();
     }

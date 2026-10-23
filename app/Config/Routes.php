@@ -6,3 +6,4 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('/', 'Home::index');
 $routes->get('demo', 'Demo::index');
 $routes->post('demo/calculate', 'Demo::calculate');
+$routes->post('demo/calculations', 'Demo::store');

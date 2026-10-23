@@ -12,4 +12,9 @@ return [
     'result'       => 'Amount',
     'errorDecimal' => '{0} must be a number with at most 2 decimal places.',
     'errorRange'   => 'The value is out of the allowed range.',
+    'save'         => 'Save',
+    'listHeading'  => 'Saved calculations',
+    'emptyList'    => 'Nothing saved yet.',
+    'total'        => 'Total',
+    'savedAt'      => 'Saved at',
 ];
