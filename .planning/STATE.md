@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-06-PLAN.md
-last_updated: "2026-10-23T21:06:07.362Z"
+stopped_at: Completed 01-09-PLAN.md
+last_updated: "2026-10-23T21:10:58.960Z"
 last_activity: 2026-10-23
 progress:
   total_phases: 12
   completed_phases: 0
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 01 (Základ a infraštruktúra) — EXECUTING
-Plan: 9 of 10
+Plan: 10 of 10
 Status: Ready to execute
 Last activity: 2026-10-23
 
@@ -70,6 +70,7 @@ Recent decisions affecting current work:
 - [Roadmap]: Skorý HTTPS staging a test na reálnom iPhone už vo Phase 2
 - [Phase 01]: mPDF: DejaVu pinned, substitutions off, 256M memory ample (peak 28MB, 0 deprecations, ~0.3s)
 - [Phase 01]: 01-08: feature tests read bodies via response()->getBody(); TestResponse::getBody is DOM-normalised
+- [Phase 01]: demo_calculations is insert-only with CHECK amount=round(hours*rate,2); demo controller shares validation between calculate/store
 
 ### Pending Todos
 
@@ -93,6 +94,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-23T21:05:49.188Z
-Stopped at: Completed 01-06-PLAN.md
+Last session: 2026-10-23T21:10:58.939Z
+Stopped at: Completed 01-09-PLAN.md
 Resume file: None

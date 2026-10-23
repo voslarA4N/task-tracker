@@ -58,7 +58,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-09-PLAN.md — Uloženie výpočtov do insert-only tabuľky ako app_rw, zoznam so súčtom, parita s PG (vlna 4)
+- [x] 01-09-PLAN.md — Uloženie výpočtov do insert-only tabuľky ako app_rw, zoznam so súčtom, parita s PG (vlna 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -265,7 +265,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Základ a infraštruktúra | 8/10 | In Progress|  |
+| 1. Základ a infraštruktúra | 9/10 | In Progress|  |
 | 2. Identita a skoré nasadenie | 0/0 | Not started | - |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
