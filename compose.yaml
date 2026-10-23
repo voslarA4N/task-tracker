@@ -1,3 +1,9 @@
+# ZAKLAD, nie samostatne spustitelna produkcia (WR-03 z review fazy 1).
+# Vyvoj: compose.yaml + compose.override.yaml (nacita sa automaticky).
+# Samotny tento subor NEPOUZIVAT na nasadenie: php nema .env ani tajomstva,
+# writable/ nie je na volume (sessions, logy, PDF by sa stratili pri rebuild-e),
+# nginx nema porty, certifikaty ani public/. Produkcny compose.prod.yaml
+# (secrets, volume writable, porty, certs, public/) pribudne vo faze 12.
 name: task-tracker
 
 services:
