@@ -1,0 +1,66 @@
+server_tokens off;
+
+server {
+    listen 80 default_server;
+    server_name ${APP_DOMAIN};
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl default_server;
+    http2 on;
+    server_name ${APP_DOMAIN};
+
+    ssl_certificate /etc/nginx/certs/work-tracker.loc.pem;
+    ssl_certificate_key /etc/nginx/certs/work-tracker.loc-key.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:1m;
+
+    root /var/www/html/public;
+    index index.php;
+    charset utf-8;
+    client_max_body_size 5m;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 256;
+    gzip_types text/css application/javascript image/svg+xml application/json text/plain;
+
+    include /etc/nginx/conf.d/snippets/security-headers.conf;
+
+    location ^~ /assets/ {
+        include /etc/nginx/conf.d/snippets/security-headers.conf;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+        access_log off;
+    }
+
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+
+    location / {
+        try_files $uri /index.php$is_args$args;
+    }
+
+    location = /index.php {
+        include /etc/nginx/conf.d/snippets/security-headers.conf;
+        fastcgi_hide_header Cache-Control;
+        fastcgi_hide_header X-Powered-By;
+        add_header Cache-Control "no-store" always;
+        fastcgi_pass php:9000;
+        fastcgi_read_timeout 30s;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /var/www/html/public/index.php;
+        fastcgi_param HTTPS on;
+    }
+
+    location ~ \.php$ {
+        return 404;
+    }
+}
