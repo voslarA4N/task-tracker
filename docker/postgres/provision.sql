@@ -1,6 +1,11 @@
 -- Idempotentny provisioning roly a databazy (beh ako superuser postgres).
--- Pouzitie: psql -v ON_ERROR_STOP=1 -d postgres -v owner_pw=... -v rw_pw=... -v dbname=... -f provision.sql
--- Hesla prichadzaju iba z premennych (.env), nie su v tomto subore.
+-- Pouzitie: DB_OWNER_PASSWORD=... DB_RW_PASSWORD=... psql -v ON_ERROR_STOP=1 -d postgres -v dbname=... -f provision.sql
+-- Hesla prichadzaju iba z prostredia (\getenv), nie su v tomto subore ani v argv
+-- psql (/proc/*/cmdline je citatelny pre vsetky procesy v kontajneri, WR-04).
+-- Chybajuca premenna = nenahradene :'owner_pw' = chyba SQL (fail closed).
+
+\getenv owner_pw DB_OWNER_PASSWORD
+\getenv rw_pw DB_RW_PASSWORD
 
 SELECT format('CREATE ROLE app_owner LOGIN')
 WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_owner') \gexec

@@ -49,9 +49,10 @@ jobs:
         run: |
           for db in task_tracker task_tracker_test; do
             docker run --rm --network host -v "$PWD/docker/postgres:/p:ro" \
-              -e PGPASSWORD=ci-superuser postgres:18-alpine \
+              -e PGPASSWORD=ci-superuser -e DB_OWNER_PASSWORD=ci-owner -e DB_RW_PASSWORD=ci-rw \
+              postgres:18-alpine \
               psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 \
-              -v owner_pw=ci-owner -v rw_pw=ci-rw -v dbname="$db" \
+              -v dbname="$db" \
               -f /p/provision.sql
           done
 

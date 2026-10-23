@@ -14,6 +14,6 @@ if [ "$PHP_ENV" != "__unset__" ]; then
   require_dev_env_value "$(env_guard_normalize "$PHP_ENV")" "kontajner php" || exit 1
 fi
 docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS task_tracker WITH (FORCE)'
-docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U postgres -d postgres -v owner_pw="$DB_OWNER_PASSWORD" -v rw_pw="$DB_RW_PASSWORD" -v dbname=task_tracker -f /opt/provision/provision.sql'
+docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U postgres -d postgres -v dbname=task_tracker -f /opt/provision/provision.sql'
 docker compose exec -T -u www-data php php spark migrate -g owner --all
 docker compose exec -T -u www-data php php spark db:seed 'App\Database\Seeds\DevSeeder'
