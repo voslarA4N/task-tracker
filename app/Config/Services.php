@@ -2,6 +2,7 @@
 
 namespace Config;
 
+use App\Libraries\Platform\Clock;
 use CodeIgniter\Config\BaseService;
 
 /**
@@ -19,6 +20,15 @@ use CodeIgniter\Config\BaseService;
  */
 class Services extends BaseService
 {
+    public static function clock(bool $getShared = true): Clock
+    {
+        if ($getShared) {
+            return static::getSharedInstance('clock');
+        }
+
+        return new Clock();
+    }
+
     /*
      * public static function example($getShared = true)
      * {
