@@ -1,0 +1,55 @@
+name: task-tracker
+
+services:
+  php:
+    build:
+      context: .
+      target: prod
+    image: task-tracker-php:prod
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:1.30-alpine
+    depends_on: [php]
+    volumes:
+      - ./docker/nginx/templates:/etc/nginx/templates:ro
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-work-tracker.loc}
+      NGINX_HSTS_VALUE: ${NGINX_HSTS_VALUE:-max-age=31536000}
+
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_PASSWORD: ${DB_SUPERUSER_PASSWORD:?}
+      DB_OWNER_PASSWORD: ${DB_OWNER_PASSWORD:?}
+      DB_RW_PASSWORD: ${DB_RW_PASSWORD:?}
+      TZ: Europe/Bratislava
+      PGTZ: Europe/Bratislava
+    command: >
+      postgres
+      -c shared_buffers=64MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
+      -c effective_cache_size=192MB
+      -c max_connections=20
+      -c timezone=Europe/Bratislava
+      -c log_timezone=Europe/Bratislava
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./docker/postgres:/opt/provision:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

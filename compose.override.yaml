@@ -1,0 +1,37 @@
+services:
+  php:
+    build:
+      target: dev
+    image: task-tracker-php:dev
+    volumes:
+      - .:/var/www/html
+      - vendor:/var/www/html/vendor
+      - writable:/var/www/html/writable
+    environment:
+      TZ: Europe/Bratislava
+
+  nginx:
+    ports:
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
+    volumes:
+      - ./public:/var/www/html/public:ro
+      - ./docker/certs:/etc/nginx/certs:ro
+    environment:
+      NGINX_HSTS_VALUE: ${NGINX_HSTS_VALUE:-max-age=300}
+
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  mailpit:
+    image: axllent/mailpit:v1.32
+    ports:
+      - "127.0.0.1:8025:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+volumes:
+  vendor:
+  writable:

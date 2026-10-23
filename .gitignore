@@ -3,3 +3,10 @@
 /vendor/
 /writable/
 *.xlsx
+/docker/certs/
+*.pem
+*-key.pem
+/build/
+/_tmp/
+.phpunit.cache/
+.php-cs-fixer.cache

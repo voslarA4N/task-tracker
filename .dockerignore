@@ -1,0 +1,13 @@
+.git
+.planning
+.claude
+.superpowers
+docs
+vendor
+writable
+build
+_tmp
+.env
+docker/certs
+*.xlsx
+node_modules
