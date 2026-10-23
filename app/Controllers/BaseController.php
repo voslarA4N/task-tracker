@@ -30,7 +30,7 @@ abstract class BaseController extends Controller
     /**
      * @var list<string>
      */
-    protected $helpers = ['asset', 'security'];
+    protected $helpers = ['asset', 'security', 'htmx'];
 
     // protected $session;
 
