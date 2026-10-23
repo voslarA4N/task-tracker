@@ -54,7 +54,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-08-PLAN.md — Ukážková kalkulačka /demo s htmx vzormi: CSRF filter, 422, Vary, bezpečné cookies (vlna 3)
+- [x] 01-08-PLAN.md — Ukážková kalkulačka /demo s htmx vzormi: CSRF filter, 422, Vary, bezpečné cookies (vlna 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -265,7 +265,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Základ a infraštruktúra | 7/10 | In Progress|  |
+| 1. Základ a infraštruktúra | 8/10 | In Progress|  |
 | 2. Identita a skoré nasadenie | 0/0 | Not started | - |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
