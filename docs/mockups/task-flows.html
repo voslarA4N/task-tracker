@@ -1,0 +1,100 @@
+<style>
+  .phones{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}
+  .phone{width:300px;border:10px solid #1f2328;border-radius:36px;background:#f5f6f8;overflow:hidden;font-family:-apple-system,system-ui,sans-serif;color:#1f2328;font-size:13px;position:relative;height:600px;display:flex;flex-direction:column}
+  .ph-top{background:#fff;padding:14px 14px 10px;border-bottom:1px solid #e3e5e8}
+  .ph-top h4{margin:0;font-size:18px}
+  .ph-top .sub{color:#6b7280;font-size:12px;margin-top:2px}
+  .ph-body{flex:1;overflow:hidden;padding:12px}
+  .fld{margin-bottom:10px}
+  .fld label{display:block;font-size:11px;color:#6b7280;margin-bottom:3px}
+  .fld .in{background:#fff;border:1px solid #d0d4d9;border-radius:8px;padding:8px;font-size:13px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn{background:#0d6efd;color:#fff;text-align:center;border-radius:8px;padding:10px;font-weight:600;margin-top:6px}
+  .btn2{background:#fff;color:#0d6efd;border:1px solid #0d6efd;text-align:center;border-radius:8px;padding:9px;font-weight:600;margin-top:6px}
+  .hint{font-size:11px;color:#6b7280}
+  .dim{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;padding:14px}
+  .sheet h5{margin:0 0 4px;font-size:15px}
+  .grab{width:36px;height:4px;background:#d0d4d9;border-radius:2px;margin:0 auto 10px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+  .chip{border:1px solid #d0d4d9;border-radius:999px;padding:5px 10px;font-size:12px}
+  .chip.on{background:#0d6efd;color:#fff;border-color:#0d6efd}
+  .alloc{border:1px solid #e3e5e8;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;font-size:12px}
+  .alloc .lock{color:#6b7280}
+  .bar{height:6px;background:#e9ecef;border-radius:3px;margin:8px 0}
+  .bar i{display:block;height:6px;border-radius:3px}
+  .bg-card{background:#fff;border-radius:10px;padding:10px;margin-bottom:8px;opacity:.6}
+</style>
+
+<h2>Dva kľúčové úkony na mobile</h2>
+<p class="subtitle">1) Pridanie úlohy, 2) označenie ako zapracovanej s výberom mesiaca, 3) detail veľkej úlohy fakturovanej po častiach. Napíš, čo nesedí alebo čo chýba.</p>
+
+<div class="phones" style="margin-top:16px">
+
+<!-- 1 add -->
+<div>
+<div class="label" style="text-align:center;margin-bottom:6px">1 · Nová úloha</div>
+<div class="phone">
+  <div class="ph-top"><h4>Nová úloha</h4><div class="sub">Zrušiť</div></div>
+  <div class="ph-body">
+    <div class="fld"><label>Klient</label><div class="in">All4Net ▾</div></div>
+    <div class="fld"><label>Odkaz na úlohu (Taskman)</label><div class="in" style="color:#6b7280">https://taskman.all4net.sk/?…todo=81466</div></div>
+    <div class="fld"><label>Názov</label><div class="in">Extranet: MS: Grafy – hodnota a udržanie zákazníkov</div></div>
+    <div class="row2">
+      <div class="fld"><label>Odhad hodín</label><div class="in">9</div></div>
+      <div class="fld"><label>Sadzba</label><div class="in" style="color:#6b7280">27 €/h</div></div>
+    </div>
+    <div class="hint" style="margin-bottom:8px">Nacenenie: <b>243 €</b> (bez DPH)</div>
+    <div class="fld"><label>Poznámka (nepovinné)</label><div class="in" style="height:40px"></div></div>
+    <div class="btn">Uložiť</div>
+  </div>
+</div>
+</div>
+
+<!-- 2 mark done -->
+<div>
+<div class="label" style="text-align:center;margin-bottom:6px">2 · Zapracované → kedy fakturovať?</div>
+<div class="phone">
+  <div class="ph-top"><h4>Október 2026</h4><div class="sub">All4Net</div></div>
+  <div class="ph-body">
+    <div class="bg-card">Second brain + dokumentácia</div>
+    <div class="bg-card">Sentry – komplexné hlásenia</div>
+  </div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <h5>Označiť ako zapracovanú</h5>
+    <div class="hint">Second brain + dokumentácia a inventár · 20 h</div>
+    <div class="fld" style="margin-top:10px"><label>Fakturovať v mesiaci</label>
+      <div class="chips"><span class="chip on">Október 2026</span><span class="chip">November 2026</span><span class="chip">Iný…</span></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Hodín na fakturáciu</label><div class="in">20</div></div>
+      <div class="fld"><label>Suma</label><div class="in" style="color:#6b7280">540 €</div></div>
+    </div>
+    <div class="hint" style="margin-bottom:6px">Ak sa reálne odpracovalo viac/menej, uprav hodiny. Zostatok: 0 h</div>
+    <div class="btn">Potvrdiť</div>
+  </div>
+</div>
+</div>
+
+<!-- 3 partial -->
+<div>
+<div class="label" style="text-align:center;margin-bottom:6px">3 · Veľká úloha po častiach</div>
+<div class="phone">
+  <div class="ph-top"><h4>Sentry – hlásenia chýb</h4><div class="sub">All4Net · Taskman ↗ · V práci</div></div>
+  <div class="ph-body">
+    <div style="display:flex;justify-content:space-between;font-size:12px"><span>Nacenené <b>40 h</b> · 1 080 €</span><span>zostáva <b>16 h</b></span></div>
+    <div class="bar" style="display:flex"><i style="width:40%;background:#6c757d;border-radius:3px 0 0 3px"></i><i style="width:20%;background:#0d6efd;border-radius:0"></i></div>
+    <div class="hint" style="margin-bottom:10px">■ vyfakturované ■ naplánované</div>
+    <div class="label" style="margin-bottom:6px">Fakturačné časti</div>
+    <div class="alloc"><span>Október 2026 · 16 h · 432 €</span><span class="lock">🔒 FA 2026/011</span></div>
+    <div class="alloc"><span>November 2026 · 8 h · 216 €</span><span style="color:#0d6efd">upraviť</span></div>
+    <div class="btn2">+ Pridať časť do mesiaca</div>
+    <div class="btn">Označiť ako zapracovanú</div>
+    <div class="hint" style="margin-top:10px">Zamknuté časti (na vystavenej faktúre) sa nedajú meniť ani presúvať.</div>
+  </div>
+</div>
+</div>
+
+</div>

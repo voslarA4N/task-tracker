@@ -1,0 +1,106 @@
+<style>
+  .phones{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}
+  .phone{width:300px;border:10px solid #1f2328;border-radius:36px;background:#f5f6f8;overflow:hidden;font-family:-apple-system,system-ui,sans-serif;color:#1f2328;font-size:13px;position:relative;height:600px;display:flex;flex-direction:column}
+  .ph-top{background:#fff;padding:14px 14px 10px;border-bottom:1px solid #e3e5e8}
+  .ph-top h4{margin:0;font-size:18px}
+  .ph-top .sub{color:#6b7280;font-size:12px;margin-top:2px}
+  .ph-body{flex:1;overflow:hidden;padding:10px}
+  .tabbar{display:flex;justify-content:space-around;background:#fff;border-top:1px solid #e3e5e8;padding:8px 0 14px;font-size:10px;color:#6b7280}
+  .tabbar .on{color:#0d6efd;font-weight:600}
+  .tcard{background:#fff;border-radius:10px;padding:10px;margin-bottom:8px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+  .tcard .t{font-weight:600;font-size:13px;line-height:1.3}
+  .tcard .m{display:flex;justify-content:space-between;color:#6b7280;font-size:11px;margin-top:6px;align-items:center}
+  .badge{display:inline-block;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:600}
+  .b-wip{background:#fff3cd;color:#8a6d00}.b-done{background:#d1f2dd;color:#146c43}.b-inv{background:#e2e3e5;color:#41464b}.b-part{background:#cfe2ff;color:#084298}
+  .fab{position:absolute;right:18px;bottom:70px;width:50px;height:50px;border-radius:50%;background:#0d6efd;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(13,110,253,.4)}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .kpi{background:#fff;border-radius:10px;padding:10px}
+  .kpi .v{font-size:18px;font-weight:700}.kpi .l{font-size:10px;color:#6b7280;text-transform:uppercase}
+  .grp{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin:10px 2px 6px;display:flex;justify-content:space-between}
+  .seg{display:flex;background:#e9ecef;border-radius:8px;padding:2px;margin-bottom:10px}
+  .seg div{flex:1;text-align:center;padding:5px;font-size:11px;border-radius:6px}
+  .seg .on{background:#fff;font-weight:600}
+  .swipe{background:#198754;color:#fff;border-radius:10px;margin-bottom:8px;display:flex;align-items:center;overflow:hidden}
+  .swipe .tcard{margin:0;flex:1;border-radius:0 10px 10px 0;transform:translateX(0)}
+  .swipe .act{padding:0 12px;font-size:11px;font-weight:600}
+  .prog{height:4px;background:#e9ecef;border-radius:2px;margin-top:6px}
+  .prog i{display:block;height:4px;background:#0d6efd;border-radius:2px}
+</style>
+
+<h2>Hlavná obrazovka na iPhone: „Aktuálne úlohy“</h2>
+<p class="subtitle">Tri prístupy k tomu istému. Čo ti najviac sedí na rýchle pridanie úlohy, označenie ako zapracovanej a kontrolu stavu? Klikni na variant alebo píš do terminálu, čo sa ti páči/nepáči (aj kombinácie).</p>
+
+<div class="options">
+<div class="option" data-choice="a" onclick="toggleSelect(this)">
+  <div class="letter">A</div>
+  <div class="content"><h3>Jednoduchý zoznam kariet</h3><p>Všetky otvorené úlohy pod sebou, stav ako farebný štítok. Tlačidlo „+“ na pridanie. Ťuk na kartu → detail s akciami.</p></div>
+</div>
+<div class="option" data-choice="b" onclick="toggleSelect(this)">
+  <div class="letter">B</div>
+  <div class="content"><h3>Prehľad mesiaca + zoskupenie</h3><p>Hore súčty za aktuálny fakturačný mesiac, pod tým úlohy zoskupené podľa stavu. Vidíš hneď, koľko tento mesiac vyfakturuješ.</p></div>
+</div>
+<div class="option" data-choice="c" onclick="toggleSelect(this)">
+  <div class="letter">C</div>
+  <div class="content"><h3>Prepínač + potiahnutie prstom</h3><p>Filter hore (V práci / Hotové / Všetko). Potiahnutím karty doprava ju označíš ako zapracovanú, bez otvárania detailu.</p></div>
+</div>
+</div>
+
+<div class="phones" style="margin-top:24px">
+
+<!-- A -->
+<div>
+<div class="label" style="text-align:center;margin-bottom:6px">A</div>
+<div class="phone">
+  <div class="ph-top"><h4>Aktuálne úlohy</h4><div class="sub">All4Net · 7 otvorených</div></div>
+  <div class="ph-body">
+    <div class="tcard"><div class="t">Sentry – komplexné hlásenia chýb pre všetky systémy</div><div class="m"><span>40 h · 1 080 €</span><span class="badge b-wip">V práci</span></div></div>
+    <div class="tcard"><div class="t">Second brain + dokumentácia a inventár</div><div class="m"><span>20 h · 540 €</span><span class="badge b-wip">V práci</span></div></div>
+    <div class="tcard"><div class="t">Extranet: MS: Grafy – hodnota a udržanie zákazníkov</div><div class="m"><span>9 h · 243 €</span><span class="badge b-wip">V práci</span></div></div>
+    <div class="tcard"><div class="t">MS app: Záznamy udalostí – vyladenie</div><div class="m"><span>12 h · 324 €</span><span class="badge b-wip">V práci</span></div></div>
+    <div class="tcard"><div class="t">Listobox: chyba „@fs“ v Ladesku</div><div class="m"><span>1 h · 27 €</span><span class="badge b-done">Zapracované · okt</span></div></div>
+  </div>
+  <div class="fab">+</div>
+  <div class="tabbar"><span class="on">Úlohy</span><span>Fakturácia</span><span>Klienti</span><span>Viac</span></div>
+</div>
+</div>
+
+<!-- B -->
+<div>
+<div class="label" style="text-align:center;margin-bottom:6px">B</div>
+<div class="phone">
+  <div class="ph-top"><h4>Október 2026</h4><div class="sub">All4Net · sadzba 27 €/h</div></div>
+  <div class="ph-body">
+    <div class="kpis">
+      <div class="kpi"><div class="l">Na fakturáciu</div><div class="v">27 €</div><div style="font-size:10px;color:#6b7280">1 h zapracovaná</div></div>
+      <div class="kpi"><div class="l">V práci</div><div class="v">2 214 €</div><div style="font-size:10px;color:#6b7280">82 h nacenených</div></div>
+    </div>
+    <div class="grp"><span>Zapracované · do faktúry</span><span>1</span></div>
+    <div class="tcard"><div class="t">Listobox: chyba „@fs“ v Ladesku</div><div class="m"><span>1 h · 27 €</span><span class="badge b-done">Okt</span></div></div>
+    <div class="grp"><span>V práci</span><span>4</span></div>
+    <div class="tcard"><div class="t">Sentry – komplexné hlásenia chýb</div><div class="m"><span>40 h · 16 h vyfakt.</span><span class="badge b-part">Čiastočne</span></div><div class="prog"><i style="width:40%"></i></div></div>
+    <div class="tcard"><div class="t">Second brain + dokumentácia</div><div class="m"><span>20 h · 540 €</span><span class="badge b-wip">V práci</span></div></div>
+  </div>
+  <div class="fab">+</div>
+  <div class="tabbar"><span class="on">Prehľad</span><span>Úlohy</span><span>Faktúry</span><span>Viac</span></div>
+</div>
+</div>
+
+<!-- C -->
+<div>
+<div class="label" style="text-align:center;margin-bottom:6px">C</div>
+<div class="phone">
+  <div class="ph-top"><h4>Úlohy</h4><div class="sub">All4Net ▾</div></div>
+  <div class="ph-body">
+    <div class="seg"><div class="on">V práci (4)</div><div>Hotové (1)</div><div>Všetko</div></div>
+    <div class="swipe"><div class="act">✓ Zapracované</div><div class="tcard" style="transform:translateX(30px)"><div class="t">Second brain + dokumentácia</div><div class="m"><span>20 h · 540 €</span></div></div></div>
+    <div class="tcard"><div class="t">Sentry – komplexné hlásenia chýb</div><div class="m"><span>40 h · 1 080 €</span><span class="badge b-part">16/40 h vyfakt.</span></div></div>
+    <div class="tcard"><div class="t">Extranet: MS: Grafy – hodnota zákazníkov</div><div class="m"><span>9 h · 243 €</span></div></div>
+    <div class="tcard"><div class="t">MS app: Záznamy udalostí – vyladenie</div><div class="m"><span>12 h · 324 €</span></div></div>
+    <p style="font-size:10px;color:#6b7280;text-align:center">← potiahni kartu doprava pre „zapracované“</p>
+  </div>
+  <div class="fab">+</div>
+  <div class="tabbar"><span class="on">Úlohy</span><span>Fakturácia</span><span>Faktúry</span><span>Viac</span></div>
+</div>
+</div>
+
+</div>

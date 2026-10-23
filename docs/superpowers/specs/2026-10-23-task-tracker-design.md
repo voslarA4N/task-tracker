@@ -1,8 +1,8 @@
-# Task Tracker: evidencia úloh a fakturácia (návrh)
+# Task Tracker: evidencia úloh a fakturácia (špecifikácia)
 
-Dátum: 2026-10-23 · Stav: návrh na schválenie
+Dátum: 2026-10-23 · Stav: **schválená používateľom (finálna verzia 1.0)** · Odvodený dokument: [`docs/PRD.md`](../../PRD.md)
 
-Legenda: **[dohodnuté]** = rozhodol používateľ, **[návrh]** = rozhodnutie Clauda, ktoré používateľ ešte nepotvrdil výslovne, **[builder]** = necháva sa na implementátora.
+Legenda: **[dohodnuté]** = rozhodol používateľ, **[návrh]** = rozhodnutie Clauda, schválené používateľom spolu s celou špecifikáciou, **[builder]** = necháva sa na implementátora.
 
 ---
 
@@ -186,8 +186,8 @@ Nastavenia vlastného právneho subjektu, ktoré sa dajú meniť:
   - Tabuľka limitov: krajina, **rok platnosti**, názov, suma, mena, spôsob výpočtu, prahy upozornenia. Každý rok sa zadá nový riadok a staré roky ostávajú platné pre staré roky.
   - Ak pre aktuálny rok chýba riadok, použije sa posledný známy a dashboard upozorní, že limit treba skontrolovať.
   - Počiatočné hodnoty (seed):
-  - **SK:** registrácia k DPH pri 50 000 € za kalendárny rok, okamžite pri 62 500 €. Stav k 10/2026, treba overiť.
-  - **PL:** 240 000 zł ročne pri zwolnieniu podmiotowom (od 1. 1. 2026). V prvom roku podnikania sa limit počíta pomerne podľa počtu dní (art. 113 ust. 9).
+    - **SK:** registrácia k DPH pri 50 000 € za kalendárny rok, okamžite pri 62 500 €. Stav k 10/2026, treba overiť.
+    - **PL:** 240 000 zł ročne pri zwolnieniu podmiotowom (od 1. 1. 2026). V prvom roku podnikania sa limit počíta pomerne podľa počtu dní (art. 113 ust. 9).
   - Obrat sa počíta za subjekt, nie za celé obdobie používania aplikácie.
   - Predvolene sa počíta z **vystavených faktúr podľa dátumu dodania** (mínus dobropisy), nie z úhrad. Spôsob výpočtu je nastaviteľný pre každú krajinu [návrh].
   - Pre každý subjekt a rok sa dá zadať **počiatočný obrat** (príjmy mimo aplikácie, napr. pred jej nasadením) [návrh].
@@ -239,7 +239,7 @@ Hlavné činnosti na mobile: pridať úlohu, označiť ju ako zapracovanú, skon
   - tlačidlá „+ Pridať časť do mesiaca“ a „Označiť ako zapracovanú“,
   - odkaz na portál.
 
-Makety sú v `.superpowers/brainstorm/` (mobile-home.html, task-flows.html).
+Makety sú v [`docs/mockups/`](../../mockups/) (`mobile-home.html`, `task-flows.html`).
 
 ### PC
 
