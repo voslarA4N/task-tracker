@@ -96,6 +96,37 @@ final class HtmxCsrfTest extends CIUnitTestCase
         $body = (string) $result->response()->getBody();
         $this->assertStringContainsString(esc(lang('App.csrfFailed')), $body);
         $this->assertStringNotContainsString('<html', $body);
+        $this->assertSame(view('fragments/alert', ['message' => lang('App.csrfFailed')]), $body);
+    }
+
+    /**
+     * CR-01: 403 sa musi swapnut (do #app-alert cez HX-Retarget) a app.js ho
+     * nesmie prepisat vseobecnou chybou. Spravanie JS overuje tests/js/app-alert.test.js
+     * (node --test, v CI a v make smoke). Tu sa strazi kontrakt layout <-> app.js.
+     */
+    public function testLayoutSwaps403IntoVisibleAlert(): void
+    {
+        $body = (string) $this->get('/demo')->response()->getBody();
+
+        $this->assertMatchesRegularExpression('/<div id="app-alert"[^>]*\shidden>/', $body);
+        $this->assertSame(1, preg_match('/<meta name="htmx-config" content="([^"]+)">/', $body, $m));
+        $config = json_decode(html_entity_decode($m[1], ENT_QUOTES), true, 16, JSON_THROW_ON_ERROR);
+
+        $rule = null;
+
+        foreach ($config['responseHandling'] as $r) {
+            if (preg_match('/^' . $r['code'] . '$/', '403') === 1) {
+                $rule = $r;
+                break;
+            }
+        }
+        $this->assertIsArray($rule);
+        $this->assertTrue($rule['swap']);
+
+        $js = (string) file_get_contents(FCPATH . 'assets/js/app.js');
+        $this->assertStringContainsString("'htmx:afterSwap'", $js);
+        $this->assertMatchesRegularExpression("/'htmx:responseError', function \\(e\\) \\{\\s*if \\(targetsAlert\\(e\\)\\) \\{ return; \\}/", $js);
+        $this->assertFileExists(ROOTPATH . 'tests/js/app-alert.test.js');
     }
 
     public function testMissingTokenWithoutHtmxGivesFullPage403NotRedirect(): void

@@ -22,9 +22,23 @@
     box.setAttribute('hidden', '');
   }
 
+  /* True, ak htmx vkladal odpoved priamo do #app-alert (napr. HX-Retarget pri CSRF 403). */
+  function targetsAlert(e) {
+    var box = alertBox();
+    return !!box && !!e && !!e.detail && e.detail.target === box;
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     var body = document.body;
-    body.addEventListener('htmx:responseError', function () { show(body.dataset.msgServer); });
+    /* Fragment zo servera (vlastna sprava) zviditelnit, #app-alert je v layoute hidden. */
+    body.addEventListener('htmx:afterSwap', function (e) {
+      if (targetsAlert(e)) { e.detail.target.removeAttribute('hidden'); }
+    });
+    /* htmx 2 vola responseError az po swape: serverovy fragment v #app-alert neprepisovat. */
+    body.addEventListener('htmx:responseError', function (e) {
+      if (targetsAlert(e)) { return; }
+      show(body.dataset.msgServer);
+    });
     body.addEventListener('htmx:sendError', function () { show(body.dataset.msgNetwork); });
     body.addEventListener('htmx:beforeRequest', hide);
   });

@@ -95,6 +95,13 @@ PH=$(curl -sS -o /dev/null -D - -X POST "https://$DOMAIN/demo/calculate" -H 'HX-
 if echo "$PH" | head -n1 | grep -q ' 403' && echo "$PH" | grep -i '^hx-retarget: *#app-alert' >/dev/null; then
   pass "csrf 403 without token"; else fail "csrf 403 without token"; fi
 
+# 10. app.js: CSRF fragment v #app-alert je viditelny a neprepisany (CR-01)
+if command -v node >/dev/null 2>&1; then
+  if node --test tests/js/ >/dev/null 2>&1; then pass "js app-alert"; else fail "js app-alert (node --test tests/js/)"; fi
+else
+  skip "SKIP js app-alert (chyba node)"
+fi
+
 if [ "$FAILS" -eq 0 ]; then echo "SMOKE OK"; exit 0; fi
 echo "SMOKE FAILED ($FAILS)"
 exit 1

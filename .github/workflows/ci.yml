@@ -37,6 +37,9 @@ jobs:
             exit 1
           fi
 
+      - name: JS testy (app.js, CR-01)
+        run: node --test tests/js/
+
       - name: Build dev a prod target
         run: |
           docker build --target dev -t task-tracker-php:ci .
