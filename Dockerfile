@@ -28,4 +28,4 @@ RUN composer dump-autoload --no-dev --classmap-authoritative
 FROM base AS prod
 RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY docker/php/conf.d/opcache-prod.ini $PHP_INI_DIR/conf.d/zz-opcache.ini
-COPY --from=vendor --chown=www-data:www-data /var/www/html /var/www/html
+COPY --from=vendor /var/www/html /var/www/html
