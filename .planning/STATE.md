@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Completed 01-06-PLAN.md
-last_updated: "2026-10-23T21:05:49.208Z"
+last_updated: "2026-10-23T21:06:07.362Z"
 last_activity: 2026-10-23
 progress:
   total_phases: 12
@@ -69,6 +69,7 @@ Recent decisions affecting current work:
 - [Roadmap]: Fakturačné jadro (Phase 5) je izolované bez kurzov, kurzy až Phase 8, limity až po dobropisoch (Phase 10)
 - [Roadmap]: Skorý HTTPS staging a test na reálnom iPhone už vo Phase 2
 - [Phase 01]: mPDF: DejaVu pinned, substitutions off, 256M memory ample (peak 28MB, 0 deprecations, ~0.3s)
+- [Phase 01]: 01-08: feature tests read bodies via response()->getBody(); TestResponse::getBody is DOM-normalised
 
 ### Pending Todos
 
