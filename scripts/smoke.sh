@@ -67,6 +67,9 @@ if [ -n "$VF" ]; then
 else
   skip "SKIP vendor-cache"
 fi
+NH=$(curl -sSI "https://$DOMAIN/assets/vendor/smoke-missing-xyz.js" | tr -d '\r' || true)
+if echo "$NH" | head -n1 | grep -q ' 404' && ! echo "$NH" | grep -i '^cache-control:.*immutable' >/dev/null; then
+  pass "asset 404 not immutable"; else fail "asset 404 not immutable"; fi
 
 # 8. Mailpit
 SUBJ="smoke-$(cat /proc/sys/kernel/random/uuid)"
