@@ -82,6 +82,17 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 | Shield + vlastná akcia TOTP. Ak Shield prekáža, vlastné prihlasovanie nad sessions CI4 | Shield nemá natívnu TOTP (riziko R4) | — Pending |
 | Bootstrap 5.3 + htmx 2 + Alpine.js, bez SPA a build pipeline | Výkon, malý JS, jednoduchá PWA | — Pending |
 | Plánovacie dokumenty v slovenčine. V1 = P0 + P1 + P2 (všetky epiky E1–E12) | Rozhodnutie používateľa pri inicializácii | — Pending |
+| Peniaze cez bcmath (`bcmul` scale 4 + `bcround` HalfAwayFromZero), nie `brick/math` | MoneyTest (32 testov, kladné aj záporné hodnoty, bez `-0.00`) a paritný test s PostgreSQL `round(numeric, 2)` na 2000 kombináciách sú zelené, `brick/math` netreba | ✓ Phase 1 (2026-10-23) |
+| mPDF 8.3.1 pod PHP 8.5: DejaVu Sans pripnutý v `resources/fonts/`, bez substitúcií (`useSubstitutions`, `autoLangToFont`, `autoScriptToLang` vypnuté), `tempDir` `writable/mpdf` | Vzorová faktúra 40 riadkov so SK/PL/CZ diakritikou: CLI cold 299 ms, CLI warm 264 ms (peak 22 MB), FPM cold 218 ms, FPM warm 185 ms, 0 deprecations pri `E_ALL`; `memory_limit` 256M stačí aj pre PDF požiadavky, limit 2 s s veľkou rezervou | ✓ Phase 1 (2026-10-23) |
+| Kolácia DB: databáza vytvorená s `LOCALE_PROVIDER icu ICU_LOCALE 'sk-SK' LOCALE 'C.UTF-8'` | Spike na PG 18 prešiel (`'Č'` medzi `C` a `D`, `'ch'` za `'h'`), usporiadanie diakritiky funguje bez `COLLATE` v dotazoch, `COLLATE "sk-x-icu"` netreba | ✓ Phase 1 (2026-10-23) |
+| CSRF pre htmx: vlastný filter `HtmxCsrf`, `csrfProtection=session`, `regenerate=false`, `redirect=false`, token v `hx-headers` | htmx 2.0.11 neposiela `X-Requested-With`, token sa preto posiela hlavičkou z `hx-headers` v layoute, stabilný počas session, chyba vracia 403 bez presmerovania | ✓ Phase 1 (2026-10-23) |
+| CSP a bezpečnostné hlavičky iba v nginx, CI4 CSP a Debug Toolbar vypnuté | Jedno miesto pravdy, žiadne inline skripty ani štýly vo views (strážené testami `ViewsCspTest`), Alpine CSP build bez `unsafe-eval` | ✓ Phase 1 (2026-10-23) |
+| PHPUnit 11.5 namiesto pinu 10.5 z appstarter-a | Beží 11.5.57 na PHP 8.5 s `CIUnitTestCase` bez problémov, 92 testov zelených | ✓ Phase 1 (2026-10-23) |
+| DB roly: default privileges `app_rw` = SELECT, INSERT, UPDATE/DELETE len cez `grantMutable()` | Vystavené doklady sú nemenné aj na úrovni DB, ochranu dokazujú testy rolí pod pripojením `app_rw`. Migrácie vždy `spark migrate -g owner|tests_owner` (`Config\Database` prepne `defaultGroup`, inak by tabuľku `migrations` vytvoril `app_rw`) | ✓ Phase 1 (2026-10-23) |
+| Preklady: `codeigniter4/translations` s auto-discovery, bez zásahu do `Autoload` | Predpoklad potvrdený v 01-04, texty vo views iba cez `lang()` (test `ViewsHardcodedTextTest`) | ✓ Phase 1 (2026-10-23) |
+| Vývoj na Windows: `mkcert.exe` sa hľadá cez env `MKCERT`, `PATH`, potom WinGet Packages (`scripts/lib-mkcert.sh`); CI na mkcert ani `hosts` nezávisí | Certifikát dôveryhodný v prehliadači vo Windows bez ručných krokov, CI beží s `--network host` a vlastnou efemérnou DB | ✓ Phase 1 (2026-10-23) |
+| PHPStan `phpstan-codeigniter` schema cache v `build/phpstan` (nie `tmp/` v koreni) | Konfigurovateľné cez `parameters.codeigniter.schemaCacheDirectory`, `build/` je v `.gitignore` | ✓ Phase 1 (2026-10-23) |
+
 
 ## Evolution
 
@@ -101,4 +112,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-23 after initialization*
+*Last updated: 2026-10-23 after Phase 1 (Základ a infraštruktúra)*
