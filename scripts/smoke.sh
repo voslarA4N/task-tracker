@@ -78,6 +78,23 @@ else
   fail "spark mail:test"
 fi
 
+# 9. /demo: 200, cookies Secure/HttpOnly/SameSite=Lax (D-04), POST bez tokenu = 403
+DH=$(curl -sS -D - -o /dev/null "https://$DOMAIN/demo" 2>&1 | tr -d '\r' || true)
+if echo "$DH" | head -n1 | grep -q ' 200'; then pass "demo 200"; else fail "demo 200"; fi
+CK=$(echo "$DH" | grep -i '^set-cookie:' || true)
+COK=1
+if [ -n "$CK" ]; then
+  echo "$CK" | while read -r line; do
+    for a in 'Secure' 'HttpOnly' 'SameSite=Lax'; do
+      echo "$line" | grep -qi "$a" || exit 1
+    done
+  done || COK=0
+fi
+if [ "$COK" = 1 ]; then pass "cookie flags"; else fail "cookie flags"; fi
+PH=$(curl -sS -o /dev/null -D - -X POST "https://$DOMAIN/demo/calculate" -H 'HX-Request: true' -d 'hours=1&rate=1' | tr -d '\r' || true)
+if echo "$PH" | head -n1 | grep -q ' 403' && echo "$PH" | grep -i '^hx-retarget: *#app-alert' >/dev/null; then
+  pass "csrf 403 without token"; else fail "csrf 403 without token"; fi
+
 if [ "$FAILS" -eq 0 ]; then echo "SMOKE OK"; exit 0; fi
 echo "SMOKE FAILED ($FAILS)"
 exit 1

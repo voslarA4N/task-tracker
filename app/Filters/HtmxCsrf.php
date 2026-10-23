@@ -18,7 +18,7 @@ final class HtmxCsrf implements FilterInterface
     /**
      * @param list<string>|null $arguments
      */
-    public function before(RequestInterface $request, $arguments = null)
+    public function before(RequestInterface $request, $arguments = null): ?ResponseInterface
     {
         try {
             service('security')->verify($request);
@@ -41,7 +41,7 @@ final class HtmxCsrf implements FilterInterface
     /**
      * @param list<string>|null $arguments
      */
-    public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
+    public function after(RequestInterface $request, ResponseInterface $response, $arguments = null): ?ResponseInterface
     {
         return null;
     }

@@ -2,6 +2,8 @@
 
 namespace Config;
 
+use App\Filters\HtmxCsrf;
+use App\Filters\HtmxVary;
 use CodeIgniter\Config\Filters as BaseFilters;
 use CodeIgniter\Filters\Cors;
 use CodeIgniter\Filters\DebugToolbar;
@@ -11,8 +13,6 @@ use CodeIgniter\Filters\InvalidChars;
 use CodeIgniter\Filters\PageCache;
 use CodeIgniter\Filters\PerformanceMetrics;
 use CodeIgniter\Filters\SecureHeaders;
-use App\Filters\HtmxCsrf;
-use App\Filters\HtmxVary;
 
 class Filters extends BaseFilters
 {

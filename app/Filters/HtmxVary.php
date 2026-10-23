@@ -16,7 +16,7 @@ final class HtmxVary implements FilterInterface
     /**
      * @param list<string>|null $arguments
      */
-    public function before(RequestInterface $request, $arguments = null)
+    public function before(RequestInterface $request, $arguments = null): ?ResponseInterface
     {
         return null;
     }
@@ -24,7 +24,7 @@ final class HtmxVary implements FilterInterface
     /**
      * @param list<string>|null $arguments
      */
-    public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
+    public function after(RequestInterface $request, ResponseInterface $response, $arguments = null): ResponseInterface
     {
         return $response->appendHeader('Vary', 'HX-Request');
     }
