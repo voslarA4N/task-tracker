@@ -8,7 +8,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 
 ## Fázy
 
-- [ ] **Phase 1: Základ a infraštruktúra** - Docker/WSL2, CI4, PostgreSQL roly, Money, Clock, htmx/CSP/CSRF vzory, spike mPDF
+- [x] **Phase 1: Základ a infraštruktúra** - Docker/WSL2, CI4, PostgreSQL roly, Money, Clock, htmx/CSP/CSRF vzory, spike mPDF (completed 2026-10-23)
 - [ ] **Phase 2: Identita a skoré nasadenie** - Prihlásenie s povinnou TOTP, PWA kostra a HTTPS staging otestovaný na reálnom iPhone
 - [ ] **Phase 3: Master dáta (subjekty a klienti)** - Verziované subjekty, klienti, právny dôvod oslobodenia, audit zmien
 - [ ] **Phase 4: Úlohy, fakturačné časti a dashboard** - Evidencia úloh, rozdelenie na časti po mesiacoch, dashboard, import z Excelu
@@ -62,7 +62,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 01-10-PLAN.md — GitHub Actions CI, plošný make check, zápis rozhodnutí do PROJECT.md, koncová kontrola (vlna 5)
+- [x] 01-10-PLAN.md — GitHub Actions CI, plošný make check, zápis rozhodnutí do PROJECT.md, koncová kontrola (vlna 5)
 
 **UI hint**: yes
 **Poznámky**: Štandardné vzory, research-phase netreba, okrem mPDF spiku. Rozhodnúť bcmath vs `brick/math` (odporúčanie bcmath) a výsledok mPDF spiku zapísať do PROJECT.md. Vo WSL2 dať `vendor/` a `writable/` do named volumes, `.gitattributes` s LF.
@@ -265,7 +265,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Základ a infraštruktúra | 9/10 | In Progress|  |
+| 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 0/0 | Not started | - |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
