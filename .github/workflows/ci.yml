@@ -1,0 +1,73 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: ci-superuser
+        ports:
+          - '5432:5432'
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tajomstva nesmu byt v gite
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$|\.pem$|^docker/certs/'; then
+            echo "V gite su tajomstva (.env, *.pem, docker/certs/)" >&2
+            exit 1
+          fi
+
+      - name: Build dev a prod target
+        run: |
+          docker build --target dev -t task-tracker-php:ci .
+          docker build --target prod -t task-tracker-php:prod .
+
+      - name: Provisioning DB (task_tracker a task_tracker_test)
+        run: |
+          for db in task_tracker task_tracker_test; do
+            docker run --rm --network host -v "$PWD/docker/postgres:/p:ro" \
+              -e PGPASSWORD=ci-superuser postgres:18-alpine \
+              psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+              -v owner_pw=ci-owner -v rw_pw=ci-rw -v dbname="$db" \
+              -f /p/provision.sql
+          done
+
+      - name: .env pre CI (efemerna DB, nie skutocne tajomstva)
+        run: |
+          cp .env.example .env
+          sed -i \
+            -e 's/^database\.\([a-z_]*\)\.hostname = .*/database.\1.hostname = 127.0.0.1/' \
+            -e '/^database\.\(default\|tests\)\.password/ s/= .*/= ci-rw/' \
+            -e '/^database\.\(owner\|tests_owner\)\.password/ s/= .*/= ci-owner/' \
+            .env
+
+      - name: composer install, migracie testovacej DB, composer check
+        run: |
+          docker run --rm --network host -e CI=true \
+            -v "$PWD:/var/www/html" -w /var/www/html task-tracker-php:ci \
+            sh -c 'composer install --no-interaction --prefer-dist && composer test:migrate && composer check'
+
+      - name: Preload nezhodi PHP
+        run: |
+          out=$(docker run --rm task-tracker-php:prod php -d opcache.enable_cli=1 -d opcache.preload=/var/www/html/preload.php -d opcache.preload_user=www-data -r 'echo 1;')
+          test "$out" = "1"
