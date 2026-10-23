@@ -108,4 +108,20 @@ final class LayoutTest extends CIUnitTestCase
         $this->assertStringNotContainsStringIgnoringCase('<style', $html);
         $this->assertSame(0, preg_match('/<script\b(?![^>]*\bsrc=)[^>]*>/i', $html));
     }
+
+    /**
+     * WR-06: chybove stranky nacitaju app.css s verziou (inak ostane navzdy
+     * v immutable cache) a lang podla poziadavky, nie natvrdo.
+     */
+    public function testErrorPagesUseVersionedCssAndRequestLocale(): void
+    {
+        service('request')->setLocale('en');
+
+        foreach (['error_400', 'error_404', 'production'] as $page) {
+            $html = view('errors/html/' . $page, ['message' => 'x', 'code' => 500]);
+
+            $this->assertStringContainsString('<html lang="en">', $html, $page);
+            $this->assertMatchesRegularExpression('#href="/assets/css/app\.css\?v=\d+"#', html_entity_decode($html, ENT_QUOTES | ENT_HTML5), $page);
+        }
+    }
 }
