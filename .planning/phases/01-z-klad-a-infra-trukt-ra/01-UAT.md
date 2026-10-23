@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: complete
 phase: 01-z-klad-a-infra-trukt-ra
 source: [01-01-SUMMARY.md, 01-02-SUMMARY.md, 01-03-SUMMARY.md, 01-04-SUMMARY.md, 01-05-SUMMARY.md, 01-06-SUMMARY.md, 01-07-SUMMARY.md, 01-08-SUMMARY.md, 01-09-SUMMARY.md, 01-10-SUMMARY.md, 01-REVIEW-FIX.md]
 started: 2026-10-24T00:00:00Z
-updated: 2026-10-24T01:00:00Z
+updated: 2026-10-24T01:30:00Z
 ---
 
 ## Current Test
@@ -59,22 +59,21 @@ result: pass
 
 ### 12. GitHub CI green
 expected: After you push `main`, `gh run list --workflow ci.yml --limit 1` shows `completed  success` for the latest commit.
-result: issue
-reported: "gh run list: X (failure) for 'docs(01): add code review fix report', run 40035937482, 23s"
-severity: blocker
+result: pass
+note: "First run 40035937482 failed (node --test dir arg on Node 22); fixed in ee0a5d5, re-run 40036341002 completed success."
 
 ## Summary
 
 total: 12
-passed: 11
-issues: 1
+passed: 12
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
 
 ## Gaps
 - truth: "After you push `main`, `gh run list --workflow ci.yml --limit 1` shows `completed  success` for the latest commit."
-  status: failed
+  status: resolved
   reason: "User reported: gh run list: X (failure) for 'docs(01): add code review fix report', run 40035937482, 23s"
   severity: blocker
   test: 12
