@@ -43,7 +43,7 @@ class preload
             'exclude' => [
                 // Not needed if you don't use them.
                 '/system/Database/OCI8/',
-                '/system/Database/Postgre/',
+                '/system/Database/MySQLi/',
                 '/system/Database/SQLite3/',
                 '/system/Database/SQLSRV/',
                 // Not needed for web apps.
