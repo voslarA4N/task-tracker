@@ -1,0 +1,92 @@
+/* Vzhlad podla docs/mockups/mobile-home.html. Ziadne inline styly vo views (prisna CSP). */
+:root {
+  --app-bg: #f5f6f8;
+  --app-border: #e3e5e8;
+  --app-muted: #6b7280;
+  --app-primary: #0d6efd;
+  --app-tabbar-h: 64px;
+}
+
+body {
+  background: var(--app-bg);
+  font-family: -apple-system, system-ui, sans-serif;
+  color: #1f2328;
+  min-height: 100dvh;
+}
+
+.app-header {
+  background: #fff;
+  border-bottom: 1px solid var(--app-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: calc(env(safe-area-inset-top) + 12px) 14px 10px;
+}
+
+.app-header .app-sub { color: var(--app-muted); font-size: 12px; }
+
+.app-main {
+  padding: 10px 10px calc(var(--app-tabbar-h) + env(safe-area-inset-bottom) + 16px);
+}
+
+.app-tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid var(--app-border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding-bottom: env(safe-area-inset-bottom);
+  font-size: 11px;
+}
+
+.app-tabbar a,
+.app-tabbar span {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--app-muted);
+}
+
+.app-tabbar [aria-current="page"] { color: var(--app-primary); font-weight: 600; }
+
+.app-topnav { display: none; gap: 8px; align-items: center; }
+.app-topnav a,
+.app-topnav span {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  text-decoration: none;
+  color: var(--app-muted);
+}
+.app-topnav [aria-current="page"] { color: var(--app-primary); font-weight: 600; }
+
+.app-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+}
+
+.btn, .form-control, .form-select, .nav-link { min-height: 44px; }
+
+input, select, textarea { font-size: 16px; }
+
+img, table { max-width: 100%; }
+
+.htmx-indicator { opacity: 0; }
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator { opacity: 1; transition: opacity 200ms ease-in; }
+
+@media (min-width: 992px) {
+  .app-tabbar { display: none; }
+  .app-topnav { display: flex; }
+  .app-header { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; }
+  .app-main { max-width: 960px; margin: 0 auto; padding-bottom: 24px; }
+}

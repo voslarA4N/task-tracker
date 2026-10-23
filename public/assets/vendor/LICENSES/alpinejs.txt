@@ -1,0 +1,3 @@
+Alpine.js (@alpinejs/csp 3.17.5)
+License: MIT (podla package.json balika)
+Copyright (c) Caleb Porzio and contributors
