@@ -141,13 +141,74 @@ class Database extends Config
         // MigrationRunner vytvara tabulku `migrations` na default spojeni a `-g` iba filtruje
         // migracie. Aby aj ona patrila app_owner, pri `spark migrate* -g <owner skupina>` prepneme
         // defaultGroup na tuto skupinu (migracie bezia len ako app_owner).
-        $argv = service('superglobals')->server('argv') ?? [];
-        if (PHP_SAPI === 'cli' && str_starts_with((string) ($argv[1] ?? ''), 'migrate')) {
-            $i = array_search('-g', $argv, true);
-            $g = $i === false ? null : ($argv[$i + 1] ?? null);
-            if (in_array($g, ['owner', 'tests_owner'], true)) {
-                $this->defaultGroup = $g;
+        if (PHP_SAPI === 'cli') {
+            $argv  = service('superglobals')->server('argv');
+            $group = self::migrationOwnerGroup(ENVIRONMENT, is_array($argv) ? $argv : []);
+            if ($group !== null) {
+                $this->defaultGroup = $group;
             }
         }
+    }
+
+    /**
+     * Skupiny app_owner, na ktore sa smie prepnut defaultGroup pri `spark migrate* -g`.
+     * V testing len tests_owner: `CI_ENVIRONMENT=testing spark migrate -g owner` nesmie
+     * prepnut default zo skupiny `tests` na zivu DB (WR-09).
+     *
+     * @return list<string>
+     */
+    public static function migrationOwnerGroups(string $environment): array
+    {
+        return $environment === 'testing' ? ['tests_owner'] : ['owner', 'tests_owner'];
+    }
+
+    /**
+     * Owner skupina z argv pre `spark migrate* -g <skupina>`, inak null. Argv cita rovnako
+     * ako CodeIgniter\CLI\CLI::parseCommandLine() a Console::run() (hodnota volby = nasledujuci
+     * argument bez `-`), takze napr. `spark --no-header migrate -g owner` funguje ako v CI4.
+     *
+     * @param array<array-key, mixed> $argv
+     */
+    public static function migrationOwnerGroup(string $environment, array $argv): ?string
+    {
+        $args = [];
+
+        foreach (array_slice(array_values($argv), 1) as $arg) {
+            $args[] = is_scalar($arg) ? (string) $arg : '';
+        }
+
+        $segments    = [];
+        $options     = [];
+        $optionValue = false;
+
+        foreach ($args as $i => $arg) {
+            if (! str_starts_with($arg, '-')) {
+                if ($optionValue) {
+                    $optionValue = false;
+                } else {
+                    $segments[] = $arg;
+                }
+
+                continue;
+            }
+
+            $value = null;
+            if (isset($args[$i + 1]) && ! str_starts_with($args[$i + 1], '-')) {
+                $value       = $args[$i + 1];
+                $optionValue = true;
+            }
+            $options[ltrim($arg, '-')] = $value;
+        }
+
+        // Ako Console::run(): prikaz = prva hodnota z array_merge(segmenty, volby).
+        $params  = array_merge($segments, $options);
+        $command = array_shift($params) ?? '';
+        if (! str_starts_with($command, 'migrate')) {
+            return null;
+        }
+
+        $group = $options['g'] ?? null;
+
+        return in_array($group, self::migrationOwnerGroups($environment), true) ? $group : null;
     }
 }
