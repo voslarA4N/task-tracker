@@ -9,8 +9,10 @@ use CodeIgniter\CLI\CLI;
 
 /**
  * Pošle testovací e-mail cez SMTP z .env (vo vývoji Mailpit).
+ *
+ * @internal
  */
-class MailTest extends BaseCommand
+final class MailTest extends BaseCommand
 {
     protected $group       = 'Dev';
     protected $name        = 'mail:test';
@@ -18,7 +20,7 @@ class MailTest extends BaseCommand
     protected $usage       = 'mail:test [subject]';
     protected $arguments   = ['subject' => 'Predmet správy (predvolene mail:test)'];
 
-    public function run(array $params)
+    public function run(array $params): int
     {
         $subject = $params[0] ?? 'mail:test';
 

@@ -28,6 +28,7 @@ final class LangKeysTest extends CIUnitTestCase
             if (preg_match_all("/lang\\(\\s*'([A-Z][A-Za-z]+)\\.([A-Za-z0-9_.]+)'/", $src, $m, PREG_SET_ORDER) === 0) {
                 continue;
             }
+
             foreach ($m as $hit) {
                 $key = $hit[1] . '.' . $hit[2];
                 if (lang($key, [], 'sk') === $key) {
@@ -45,6 +46,7 @@ final class LangKeysTest extends CIUnitTestCase
         $en = $this->load(APPPATH . 'Language/en');
 
         $this->assertSame(array_keys($sk), array_keys($en), 'Rozdielne subory sk/en');
+
         foreach ($sk as $name => $keys) {
             $this->assertSame($keys, $en[$name], "Rozdielne kluce v {$name}");
         }
@@ -64,7 +66,7 @@ final class LangKeysTest extends CIUnitTestCase
      */
     private function load(string $dir): array
     {
-        $out = [];
+        $out   = [];
         $files = glob($dir . '/*.php') ?: [];
         sort($files);
 

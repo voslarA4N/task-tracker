@@ -22,8 +22,8 @@ final class DbRolesTest extends PgTestCase
         $db = self::ownerConn();
         $db->query('DROP TABLE IF EXISTS _probe_insert_only, _probe_mutable');
         $ddl = 'id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, note text NOT NULL';
-        $db->query("CREATE TABLE _probe_insert_only ($ddl)");
-        $db->query("CREATE TABLE _probe_mutable ($ddl)");
+        $db->query("CREATE TABLE _probe_insert_only ({$ddl})");
+        $db->query("CREATE TABLE _probe_mutable ({$ddl})");
 
         // Rovnaka cesta ako v migracii: trait nad objektom s $this->db.
         $migration = new class ($db) {

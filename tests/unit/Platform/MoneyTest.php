@@ -21,28 +21,28 @@ final class MoneyTest extends CIUnitTestCase
         $this->assertSame('33.75', Money::of('27.00')->timesHours('1.25')->toDecimalString());
     }
 
-    /**
-     * @return array<string, array{string, string, string}>
-     */
-    public static function roundingProvider(): array
-    {
-        return [
-            'tie +0.125'  => ['0.25', '0.50', '0.13'],
-            'tie +1.005'  => ['2.01', '0.50', '1.01'],
-            'tie +0.005'  => ['0.01', '0.50', '0.01'],
-            'tie -0.125'  => ['-0.25', '0.50', '-0.13'],
-            'tie -1.005'  => ['-2.01', '0.50', '-1.01'],
-            'tie -0.005'  => ['-0.01', '0.50', '-0.01'],
-            'neg zero'    => ['-0.01', '0.40', '0.00'],
-            'below tie'   => ['0.01', '0.40', '0.00'],
-            'exact'       => ['10.00', '0.25', '2.50'],
-        ];
-    }
-
-    #[DataProvider('roundingProvider')]
+    #[DataProvider('provideHalfUpRounding')]
     public function testHalfUpRounding(string $rate, string $hours, string $expected): void
     {
         $this->assertSame($expected, Money::of($rate)->timesHours($hours)->toDecimalString());
+    }
+
+    /**
+     * @return array<string, array{string, string, string}>
+     */
+    public static function provideHalfUpRounding(): iterable
+    {
+        return [
+            'tie +0.125' => ['0.25', '0.50', '0.13'],
+            'tie +1.005' => ['2.01', '0.50', '1.01'],
+            'tie +0.005' => ['0.01', '0.50', '0.01'],
+            'tie -0.125' => ['-0.25', '0.50', '-0.13'],
+            'tie -1.005' => ['-2.01', '0.50', '-1.01'],
+            'tie -0.005' => ['-0.01', '0.50', '-0.01'],
+            'neg zero'   => ['-0.01', '0.40', '0.00'],
+            'below tie'  => ['0.01', '0.40', '0.00'],
+            'exact'      => ['10.00', '0.25', '2.50'],
+        ];
     }
 
     public function testNegativeZeroNormalization(): void
@@ -82,26 +82,7 @@ final class MoneyTest extends CIUnitTestCase
         $this->assertTrue(Money::zero()->isZero());
     }
 
-    /**
-     * @return array<string, array{string}>
-     */
-    public static function invalidMoneyProvider(): array
-    {
-        return [
-            'comma'        => ['1,5'],
-            'three dec'    => ['1.234'],
-            'empty'        => [''],
-            'leading ws'   => [' 1'],
-            'trailing ws'  => ['1 '],
-            'trailing nl'  => ["1\n"],
-            'letters'      => ['abc'],
-            'exponent'     => ['1e3'],
-            'plus sign'    => ['+1'],
-            'too long'     => ['12345678901'],
-        ];
-    }
-
-    #[DataProvider('invalidMoneyProvider')]
+    #[DataProvider('provideInvalidMoneyRejected')]
     public function testInvalidMoneyRejected(string $value): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -111,7 +92,33 @@ final class MoneyTest extends CIUnitTestCase
     /**
      * @return array<string, array{string}>
      */
-    public static function invalidHoursProvider(): array
+    public static function provideInvalidMoneyRejected(): iterable
+    {
+        return [
+            'comma'       => ['1,5'],
+            'three dec'   => ['1.234'],
+            'empty'       => [''],
+            'leading ws'  => [' 1'],
+            'trailing ws' => ['1 '],
+            'trailing nl' => ["1\n"],
+            'letters'     => ['abc'],
+            'exponent'    => ['1e3'],
+            'plus sign'   => ['+1'],
+            'too long'    => ['12345678901'],
+        ];
+    }
+
+    #[DataProvider('provideInvalidHoursRejected')]
+    public function testInvalidHoursRejected(string $hours): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Money::of('1.00')->timesHours($hours);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function provideInvalidHoursRejected(): iterable
     {
         return [
             'three dec' => ['1.234'],
@@ -119,13 +126,6 @@ final class MoneyTest extends CIUnitTestCase
             'comma'     => ['1,5'],
             'empty'     => [''],
         ];
-    }
-
-    #[DataProvider('invalidHoursProvider')]
-    public function testInvalidHoursRejected(string $hours): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        Money::of('1.00')->timesHours($hours);
     }
 
     public function testOverflowOnMultiplication(): void

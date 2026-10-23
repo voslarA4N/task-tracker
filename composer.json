@@ -48,8 +48,28 @@
         "test:unit": "phpunit --testsuite unit",
         "test:migrate": [
             "@php spark migrate -g tests_owner --all"
+        ],
+        "stan": [
+            "phpstan analyse --no-progress --memory-limit=1G",
+            "@php tests/_support/PhpStan/selftest.php"
+        ],
+        "cs": "php-cs-fixer fix --dry-run --diff --ansi",
+        "cs-fix": "php-cs-fixer fix --ansi",
+        "check": [
+            "@stan",
+            "@cs",
+            "@test"
         ]
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "scripts-descriptions": {
+        "test": "Spusti vsetky testy (PHPUnit)",
+        "test:unit": "Spusti unit testy",
+        "test:migrate": "Migracie testovacej DB ako tests_owner",
+        "stan": "PHPStan level 6 + self-test vlastneho pravidla",
+        "cs": "Kontrola stylu kodu (php-cs-fixer, dry-run)",
+        "cs-fix": "Oprava stylu kodu (php-cs-fixer)",
+        "check": "stan + cs + test (jediny zdroj pravdy pre Makefile a CI)"
+    }
 }

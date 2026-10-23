@@ -10,11 +10,14 @@
  */
 
 declare(strict_types=1);
+use Composer\InstalledVersions;
+use Mpdf\Mpdf;
+use Mpdf\Output\Destination;
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 
-$root = dirname(__DIR__, 2);
+$root  = dirname(__DIR__, 2);
 $isFpm = PHP_SAPI === 'fpm-fcgi';
 
 /** @var array<string, string> $issues */
@@ -106,35 +109,35 @@ try {
 
     $start = hrtime(true);
 
-    $mpdf = new \Mpdf\Mpdf([
-        'mode'              => 'utf-8',
-        'format'            => 'A4',
-        'tempDir'           => $tempDir,
-        'fontDir'           => [$root . '/resources/fonts'],
-        'fontdata'          => ['dejavusans' => ['R' => 'DejaVuSans.ttf', 'B' => 'DejaVuSans-Bold.ttf']],
-        'default_font'      => 'dejavusans',
+    $mpdf = new Mpdf([
+        'mode'             => 'utf-8',
+        'format'           => 'A4',
+        'tempDir'          => $tempDir,
+        'fontDir'          => [$root . '/resources/fonts'],
+        'fontdata'         => ['dejavusans' => ['R' => 'DejaVuSans.ttf', 'B' => 'DejaVuSans-Bold.ttf']],
+        'default_font'     => 'dejavusans',
         'useSubstitutions' => false,
         'autoScriptToLang' => false,
-        'autoLangToFont' => false,
+        'autoLangToFont'   => false,
     ]);
     $mpdf->WriteHTML($html);
-    $mpdf->Output($pdfPath, \Mpdf\Output\Destination::FILE);
+    $mpdf->Output($pdfPath, Destination::FILE);
 
     $elapsedMs = intdiv((int) (hrtime(true) - $start), 1_000_000);
 
     spikeOut([
-        'php_version'       => PHP_VERSION,
-        'sapi'              => PHP_SAPI,
-        'mpdf_version'      => \Composer\InstalledVersions::getPrettyVersion('mpdf/mpdf'),
-        'mode'              => $cold ? 'cold' : 'warm',
-        'elapsed_ms'        => $elapsedMs,
-        'peak_memory_mb'    => intdiv(memory_get_peak_usage(true), 1048576),
-        'memory_limit'      => ini_get('memory_limit'),
-        'pdf_bytes'         => (int) filesize($pdfPath),
-        'pdf_path'          => $pdfPath,
+        'php_version'        => PHP_VERSION,
+        'sapi'               => PHP_SAPI,
+        'mpdf_version'       => InstalledVersions::getPrettyVersion('mpdf/mpdf'),
+        'mode'               => $cold ? 'cold' : 'warm',
+        'elapsed_ms'         => $elapsedMs,
+        'peak_memory_mb'     => intdiv(memory_get_peak_usage(true), 1048576),
+        'memory_limit'       => ini_get('memory_limit'),
+        'pdf_bytes'          => (int) filesize($pdfPath),
+        'pdf_path'           => $pdfPath,
         'deprecations_count' => count($deprecations),
-        'deprecations'      => array_values($deprecations),
-        'issues_count'      => count($issues),
+        'deprecations'       => array_values($deprecations),
+        'issues_count'       => count($issues),
     ], $isFpm, 0);
 } catch (Throwable $e) {
     spikeOut(['error' => $e::class . ': ' . $e->getMessage()], $isFpm, 1);

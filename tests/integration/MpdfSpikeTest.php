@@ -79,7 +79,7 @@ final class MpdfSpikeTest extends CIUnitTestCase
      */
     private function runSpike(bool $cold): array
     {
-        $cmd  = [PHP_BINARY, ROOTPATH . 'scripts/spikes/mpdf.php'];
+        $cmd = [PHP_BINARY, ROOTPATH . 'scripts/spikes/mpdf.php'];
         if ($cold) {
             $cmd[] = '--cold';
         }

@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-/**
- * Self-test pravidla ForbiddenCallsRule: fixture musí vyprodukovať presný počet chýb.
- */
+/** Self-test pravidla ForbiddenCallsRule: fixture musí vyprodukovať presný počet chýb. */
 $root     = dirname(__DIR__, 3);
 $expected = ['app.forbiddenTime' => 10, 'app.forbiddenFloat' => 4, 'app.forbiddenBcmath' => 2];
 
@@ -12,6 +10,7 @@ $cmd  = [PHP_BINARY, $root . '/vendor/bin/phpstan', 'analyse', '-c', 'phpstan.se
 $proc = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $root);
 if (! is_resource($proc)) {
     fwrite(STDERR, "Nepodarilo sa spustit phpstan\n");
+
     exit(1);
 }
 $out = stream_get_contents($pipes[1]);
@@ -21,6 +20,7 @@ proc_close($proc);
 $json = json_decode((string) $out, true);
 if (! is_array($json)) {
     fwrite(STDERR, "Neplatny vystup phpstan:\n{$out}\n{$err}\n");
+
     exit(1);
 }
 
@@ -42,6 +42,8 @@ echo implode(' ', $parts), "\n";
 
 if ($actual !== $expected) {
     fwrite(STDERR, 'Ocakavane: ' . json_encode($expected) . "\nSkutocne: " . json_encode($actual) . "\n");
+
     exit(1);
 }
+
 exit(0);

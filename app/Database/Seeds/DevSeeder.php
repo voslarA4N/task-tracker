@@ -6,6 +6,7 @@ namespace App\Database\Seeds;
 
 use CodeIgniter\CLI\CLI;
 use CodeIgniter\Database\Seeder;
+use Config\Database;
 use RuntimeException;
 
 /**
@@ -24,7 +25,7 @@ class DevSeeder extends Seeder
     {
         self::assertAllowed(ENVIRONMENT);
 
-        $this->db = \Config\Database::connect('owner');
+        $this->db = Database::connect('owner');
 
         CLI::write('DevSeeder: no seed data in phase 1');
     }

@@ -15,15 +15,17 @@ use RecursiveIteratorIterator;
 #[Group('unit')]
 final class ViewsHardcodedTextTest extends CIUnitTestCase
 {
+    private const ATTRS = ['title', 'alt', 'placeholder', 'aria-label', 'aria-description', 'label'];
+
     /**
      * Technicke vynimky (napr. kody mien). Pridavat len s odovodnenim v komentari.
      *
      * @var list<string>
      */
-    /** @var list<string> */
+    /**
+     * @var list<string>
+     */
     private static array $allowlist = [];
-
-    private const ATTRS = ['title', 'alt', 'placeholder', 'aria-label', 'aria-description', 'label'];
 
     public function testViewsHaveNoHardcodedText(): void
     {

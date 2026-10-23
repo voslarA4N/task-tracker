@@ -27,21 +27,16 @@ final class ForbiddenCallsRule implements Rule
         'date', 'gmdate', 'time', 'mktime', 'gmmktime', 'strtotime',
         'date_create', 'date_create_immutable', 'microtime',
     ];
-
-    private const TIME_CLASSES = ['datetime', 'datetimeimmutable', 'codeigniter\\i18n\\time'];
-
+    private const TIME_CLASSES    = ['datetime', 'datetimeimmutable', 'codeigniter\\i18n\\time'];
     private const FLOAT_FUNCTIONS = ['floatval', 'doubleval', 'round', 'number_format'];
-
-    private const BC_FUNCTIONS = [
+    private const BC_FUNCTIONS    = [
         'bcadd', 'bcsub', 'bcmul', 'bcdiv', 'bcmod', 'bcpow', 'bcpowmod',
         'bcsqrt', 'bccomp', 'bcround', 'bcfloor', 'bcceil', 'bcscale',
     ];
-
     private const TIME_ALLOWED_FILES = [
         'app/Libraries/Platform/Clock.php',
         'app/Libraries/Platform/FrozenClock.php',
     ];
-
     private const BC_ALLOWED_FILES = ['app/Libraries/Platform/Money.php'];
 
     public function getNodeType(): string

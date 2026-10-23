@@ -16,11 +16,11 @@ use RecursiveIteratorIterator;
 final class ViewsCspTest extends CIUnitTestCase
 {
     private const PATTERNS = [
-        'inline <script>'   => '/<script\b(?![^>]*\bsrc=)[^>]*>/i',
-        '<style>'           => '/<style\b/i',
-        'atribut style='    => '/\sstyle\s*=/i',
-        'atribut on*='      => '/\son[a-z]+\s*=/i',
-        'javascript: URL'   => '/javascript:/i',
+        'inline <script>' => '/<script\b(?![^>]*\bsrc=)[^>]*>/i',
+        '<style>'         => '/<style\b/i',
+        'atribut style='  => '/\sstyle\s*=/i',
+        'atribut on*='    => '/\son[a-z]+\s*=/i',
+        'javascript: URL' => '/javascript:/i',
     ];
 
     public function testViewsHaveNoInlineCode(): void

@@ -36,22 +36,22 @@ final class ClockTest extends CIUnitTestCase
         $this->assertSame('Europe/Bratislava', $clock->now()->getTimezone()->getName());
     }
 
+    #[DataProvider('provideFrozenToday')]
+    public function testFrozenToday(string $instant, string $expected): void
+    {
+        $this->assertSame($expected, (new FrozenClock($instant))->today());
+    }
+
     /**
      * @return array<string, array{string, string}>
      */
-    public static function boundaryProvider(): array
+    public static function provideFrozenToday(): iterable
     {
         return [
             'CET after DST change'   => ['2026-10-31T23:30:00+00:00', '2026-11-01'],
             'CEST just before month' => ['2026-07-31T21:59:00+00:00', '2026-07-31'],
             'CEST month rollover'    => ['2026-07-31T22:00:00+00:00', '2026-08-01'],
         ];
-    }
-
-    #[DataProvider('boundaryProvider')]
-    public function testFrozenToday(string $instant, string $expected): void
-    {
-        $this->assertSame($expected, (new FrozenClock($instant))->today());
     }
 
     public function testFrozenNowConvertedToAppTimezone(): void
@@ -64,7 +64,7 @@ final class ClockTest extends CIUnitTestCase
     public function testFrozenNowIsStable(): void
     {
         $clock = new FrozenClock('2026-10-15T08:00:00+02:00');
-        $this->assertEquals($clock->now(), $clock->now());
+        $this->assertSame($clock->now(), $clock->now());
     }
 
     public function testInjectMock(): void
