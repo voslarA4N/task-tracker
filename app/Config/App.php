@@ -105,7 +105,7 @@ class App extends BaseConfig
      *
      * If false, no automatic detection will be performed.
      */
-    public bool $negotiateLocale = false;
+    public bool $negotiateLocale = true;
 
     /**
      * --------------------------------------------------------------------------
@@ -120,6 +120,8 @@ class App extends BaseConfig
      *
      * @var list<string>
      */
+    // pl a cs pribudnu spolu s prekladmi vo Phase 12 (E12). Nepodporovany jazyk
+    // (napr. pl) padne na prvy z tohto zoznamu (sk) bez chyby (D-23).
     public array $supportedLocales = ['sk', 'en'];
 
     /**

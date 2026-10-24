@@ -84,7 +84,7 @@ final class LoginTest extends AuthTestCase
 
         $known     = $this->postLogin(['email' => 'owner@example.test', 'password' => 'Nespravne-Heslo-1!']);
         $knownBody = $this->body($known);
-        $missing = $this->postLogin(['email' => 'nikto@example.test', 'password' => 'Nespravne-Heslo-1!']);
+        $missing   = $this->postLogin(['email' => 'nikto@example.test', 'password' => 'Nespravne-Heslo-1!']);
 
         $missing->assertStatus(422);
         $this->assertStringContainsString(esc(lang('Login.errorInvalid')), $this->body($missing));

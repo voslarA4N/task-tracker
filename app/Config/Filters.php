@@ -5,6 +5,7 @@ namespace Config;
 use App\Filters\AuthGate;
 use App\Filters\HtmxCsrf;
 use App\Filters\HtmxVary;
+use App\Filters\LocaleNegotiation;
 use CodeIgniter\Config\Filters as BaseFilters;
 use CodeIgniter\Filters\Cors;
 use CodeIgniter\Filters\DebugToolbar;
@@ -29,6 +30,7 @@ class Filters extends BaseFilters
     public array $aliases = [
         'authgate'      => AuthGate::class,
         'csrf'          => HtmxCsrf::class,
+        'locale'        => LocaleNegotiation::class,
         'htmxvary'      => HtmxVary::class,
         'toolbar'       => DebugToolbar::class,
         'honeypot'      => Honeypot::class,
@@ -78,6 +80,7 @@ class Filters extends BaseFilters
             // 'honeypot',
             'csrf',
             'authgate',
+            'locale',
             // 'invalidchars',
         ],
         'after' => [
