@@ -104,7 +104,7 @@ final class TotpSetupTest extends AuthTestCase
         $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
     }
 
-    public function testCorrectCodeActivatesAndLogsIn(): void
+    public function testCorrectCodeActivatesAndShowsBackupCodes(): void
     {
         $user = $this->pendingUser();
         $this->fetch('/2fa/setup');
@@ -112,8 +112,8 @@ final class TotpSetupTest extends AuthTestCase
 
         $result = $this->postCode($this->totpCode($secret));
         $result->assertStatus(302);
-        $this->assertStringEndsWith('/', rtrim($result->response()->getHeaderLine('Location'), ''));
-        $this->assertTrue(auth('session')->loggedIn());
+        $this->assertStringEndsWith('/2fa/backup-codes', $result->response()->getHeaderLine('Location'));
+        $this->assertFalse(auth('session')->loggedIn());
 
         $row = $this->owner()->query('SELECT totp_secret_enc, totp_enabled_at, totp_last_step FROM user_security WHERE user_id = ?', [$user->id])->getRow();
         $this->assertNotNull($row->totp_enabled_at);
@@ -121,8 +121,7 @@ final class TotpSetupTest extends AuthTestCase
         $this->assertStringNotContainsString($secret, (string) $row->totp_secret_enc);
         $this->assertSame($secret, (new TotpService())->decryptSecret((string) $row->totp_secret_enc));
         $this->assertSame(1, $this->eventCount('totp_enrolled'));
-        $this->assertSame(1, $this->eventCount('login_totp_ok'));
-        $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM auth_lockouts')->getRow()->c);
+        $this->assertSame(0, $this->eventCount('login_totp_ok'));
     }
 
     public function testWrongCodeGives422AndStaysPending(): void
@@ -161,7 +160,7 @@ final class TotpSetupTest extends AuthTestCase
         $this->fetch('/2fa/setup')->assertStatus(200);
         $secret = $this->sessionSecret();
         $this->postCode($this->totpCode($secret))->assertStatus(302);
-        $this->assertTrue(auth('session')->loggedIn());
+        $this->assertFalse(auth('session')->loggedIn());
     }
 
     public function testPendingOlderThanEnrolTtlExpires(): void
