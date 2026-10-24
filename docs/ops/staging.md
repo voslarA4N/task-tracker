@@ -156,13 +156,14 @@ Stav k 2026-10-24 (overil Claude):
 - Odtlačok host kľúča: `SHA256:LslaUrQDpTdX38kT4AUjvq1CLyLA92Qt2yZifDTScUQ` (ED25519), overený cez `ssh-keyscan` z vývojového stroja.
 - SSH: `deploy` sa prihlási deploy kľúčom, prihlásenie heslom je vypnuté (`Permission denied (publickey)`), `PermitRootLogin prohibit-password`.
 - Adresáre `/opt/work-tracker/{secrets,certs,letsencrypt,docker}` a `/var/backups/work-tracker` existujú so správnymi právami.
-- GitHub environment `staging` existuje, nastavené sú `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KNOWN_HOSTS`. **Chýba** `DEPLOY_SSH_KEY` (nastaví vlastník).
+- GitHub environment `staging` existuje, nastavené sú `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KNOWN_HOSTS`.
 - TLS_MODE: `letsencrypt` (O-4).
 - DNS: `work-tracker.vostack.dev` je proxovaný cez Cloudflare (A 188.114.96.11/97.11, AAAA 2a06:98c1:3120::b/3121::b), origin IP sa nezverejňuje. Cloudflare edge vracia 521 (origin odmietol spojenie, nginx ešte nebeží), nie 522, takže firewall Cloudflare na port 443 púšťa.
 - Firewall: Hetzner Cloud Firewall nastavený (2026-10-24). Z vývojového stroja porty 80, 443 a 5432 končia timeoutom (zahodené), SSH (deploy aj aiagent) a ICMP fungujú. Prístup z Cloudflare na 80/443 sa overí pri prvom deployi (02-09).
 - Cloudflare token: `secrets/cloudflare.ini` existuje (600, deploy), jediný riadok `dns_cloudflare_api_token`, token je podľa `/user/tokens/verify` aktívny a vidí iba zónu `vostack.dev`.
 - `.env`: existuje (640, deploy, GID 82), obsahuje všetkých 30 kľúčov zo sekcie 6 bez duplicít a prázdnych hodnôt, heslá a kľúče majú očakávanú dĺžku, `database.*.password` sa zhoduje s `DB_*_PASSWORD`. Docker Compose formát s medzerami okolo `=` prečíta (overené na kópii s falošnými hodnotami).
-- Čaká na vlastníka: `DEPLOY_SSH_KEY`.
+- GitHub environment `staging`: všetky štyri secrets `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`, `DEPLOY_HOST`, `DEPLOY_USER` nastavené (DEPLOY_SSH_KEY vlastník 2026-10-24).
+- Príprava je hotová, ďalší krok je prvý deploy (plán 02-09).
 
 ## 12. Správa používateľa na stagingu
 
