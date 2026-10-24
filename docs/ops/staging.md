@@ -160,7 +160,8 @@ Stav k 2026-10-24 (overil Claude):
 - TLS_MODE: `letsencrypt` (O-4).
 - DNS: `work-tracker.vostack.dev` je proxovaný cez Cloudflare (A 188.114.96.11/97.11, AAAA 2a06:98c1:3120::b/3121::b), origin IP sa nezverejňuje. Cloudflare edge vracia 521 (origin odmietol spojenie, nginx ešte nebeží), nie 522, takže firewall Cloudflare na port 443 púšťa.
 - Firewall: Hetzner Cloud Firewall nastavený (2026-10-24). Z vývojového stroja porty 80, 443 a 5432 končia timeoutom (zahodené), SSH (deploy aj aiagent) a ICMP fungujú. Prístup z Cloudflare na 80/443 sa overí pri prvom deployi (02-09).
-- Čaká na vlastníka: Cloudflare token a `secrets/cloudflare.ini` (sekcia 3), `.env` (sekcia 6, spustiť celé ako root), `DEPLOY_SSH_KEY`.
+- Cloudflare token: `secrets/cloudflare.ini` existuje (600, deploy), jediný riadok `dns_cloudflare_api_token`, token je podľa `/user/tokens/verify` aktívny a vidí iba zónu `vostack.dev`.
+- Čaká na vlastníka: `.env` (sekcia 6, spustiť celé ako root), `DEPLOY_SSH_KEY`.
 
 ## 12. Správa používateľa na stagingu
 
