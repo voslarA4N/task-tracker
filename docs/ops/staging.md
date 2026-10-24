@@ -159,8 +159,8 @@ Stav k 2026-10-24 (overil Claude):
 - GitHub environment `staging` existuje, nastavené sú `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KNOWN_HOSTS`. **Chýba** `DEPLOY_SSH_KEY` (nastaví vlastník).
 - TLS_MODE: `letsencrypt` (O-4).
 - DNS: `work-tracker.vostack.dev` zatiaľ vracia NXDOMAIN aj na autoritatívnych NS Cloudflare (záznam ešte neexistuje).
-- Firewall: Hetzner Cloud Firewall zatiaľ nie je nastavený (port 80 odmieta spojenie okamžite, nič na ňom nepočúva; po spustení nginx by bol bez firewallu dostupný priamo).
-- Čaká na vlastníka: DNS záznam (sekcia 2), Cloud Firewall (sekcia 4), Cloudflare token a `secrets/cloudflare.ini` (sekcia 3), `.env` (sekcia 6, spustiť celé ako root), `DEPLOY_SSH_KEY`.
+- Firewall: Hetzner Cloud Firewall nastavený (2026-10-24). Z vývojového stroja porty 80, 443 a 5432 končia timeoutom (zahodené), SSH (deploy aj aiagent) a ICMP fungujú. Prístup z Cloudflare na 80/443 sa overí pri prvom deployi (02-09).
+- Čaká na vlastníka: DNS záznam (sekcia 2), Cloudflare token a `secrets/cloudflare.ini` (sekcia 3), `.env` (sekcia 6, spustiť celé ako root), `DEPLOY_SSH_KEY`.
 
 ## 12. Správa používateľa na stagingu
 
