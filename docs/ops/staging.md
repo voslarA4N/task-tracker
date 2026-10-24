@@ -147,3 +147,29 @@ ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && docker compose -f compose.stag
 ```
 
 Heslo sa zadáva iba interaktívne (D-09), pre interaktívny prompt použi `ssh -t`.
+
+## 11. Stav prípravy
+
+Stav k 2026-10-24 (overil Claude):
+
+- Bootstrap: hotový cez `ssh my-server-agent` (používateľ `aiagent` so sudo), Ubuntu 26.04 `resolute`, Docker Engine 29.9.2, Docker Compose v5.6.1. Ubuntu 26.04 má uutils coreutils, `install -g 82` nefunguje, skript preto používa `chown deploy:82`.
+- Odtlačok host kľúča: `SHA256:LslaUrQDpTdX38kT4AUjvq1CLyLA92Qt2yZifDTScUQ` (ED25519), overený cez `ssh-keyscan` z vývojového stroja.
+- SSH: `deploy` sa prihlási deploy kľúčom, prihlásenie heslom je vypnuté (`Permission denied (publickey)`), `PermitRootLogin prohibit-password`.
+- Adresáre `/opt/work-tracker/{secrets,certs,letsencrypt,docker}` a `/var/backups/work-tracker` existujú so správnymi právami.
+- GitHub environment `staging` existuje, nastavené sú `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KNOWN_HOSTS`. **Chýba** `DEPLOY_SSH_KEY` (nastaví vlastník).
+- TLS_MODE: `letsencrypt` (O-4).
+- DNS: `work-tracker.vostack.dev` zatiaľ vracia NXDOMAIN aj na autoritatívnych NS Cloudflare (záznam ešte neexistuje).
+- Firewall: Hetzner Cloud Firewall zatiaľ nie je nastavený (port 80 odmieta spojenie okamžite, nič na ňom nepočúva; po spustení nginx by bol bez firewallu dostupný priamo).
+- Čaká na vlastníka: DNS záznam (sekcia 2), Cloud Firewall (sekcia 4), Cloudflare token a `secrets/cloudflare.ini` (sekcia 3), `.env` (sekcia 6, spustiť celé ako root), `DEPLOY_SSH_KEY`.
+
+## 12. Správa používateľa na stagingu
+
+Na stagingu je `email.transport = log` (O-3), reset hesla e-mailom sa preto nedá dokončiť. Náhrada:
+
+```
+ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && docker compose -f compose.staging.yaml exec php php spark user:password <e-mail>'
+ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && docker compose -f compose.staging.yaml exec php php spark user:reset-2fa <e-mail>'
+```
+
+- `user:password`: skrytý prompt, minimálne 12 znakov, heslo nesmie obsahovať časť e-mailu pred `@`. Odvolá všetky dôveryhodné zariadenia.
+- `user:reset-2fa`: zruší TOTP aj záložné kódy, 2FA sa nastaví znova pri ďalšom prihlásení (`--yes` preskočí potvrdenie).
