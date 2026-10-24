@@ -101,7 +101,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 02-08-PLAN.md — Prihlásenie heslom (auth layout, generická chyba, dummy hash), jazyk z Accept-Language
+- [x] 02-08-PLAN.md — Prihlásenie heslom (auth layout, generická chyba, dummy hash), jazyk z Accept-Language
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -323,7 +323,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
-| 2. Identita a skoré nasadenie | 6/20 | In Progress|  |
+| 2. Identita a skoré nasadenie | 7/20 | In Progress|  |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
