@@ -42,7 +42,7 @@ final class PasswordResetService
             return null;
         }
 
-        $token = bin2hex(random_bytes(32));
+        $token  = bin2hex(random_bytes(32));
         $userId = (int) $user->id;
 
         $db->transStart();

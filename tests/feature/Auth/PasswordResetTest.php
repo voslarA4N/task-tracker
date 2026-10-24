@@ -138,14 +138,14 @@ final class PasswordResetTest extends AuthTestCase
     {
         $this->ownerWithTotp();
 
-        $known   = $this->body($this->postTo('/password/forgot', ['email' => self::EMAIL]));
+        $known = $this->body($this->postTo('/password/forgot', ['email' => self::EMAIL]));
         $this->mockEmail();
         $unknown = $this->postTo('/password/forgot', ['email' => 'nobody@example.test']);
 
         $unknown->assertStatus(200);
         $this->assertSame(
-            preg_replace('#name="csrf_[^"]*" value="[^"]*"#', '', $known),
-            preg_replace('#name="csrf_[^"]*" value="[^"]*"#', '', $this->body($unknown)),
+            preg_replace('#[0-9a-f]{64}#', '', $known),
+            preg_replace('#[0-9a-f]{64}#', '', $this->body($unknown)),
         );
         $this->assertEmpty($this->mail()->archive ?? null);
         $this->assertSame(1, (int) $this->owner()->query('SELECT count(*) AS c FROM password_resets')->getRow()->c);

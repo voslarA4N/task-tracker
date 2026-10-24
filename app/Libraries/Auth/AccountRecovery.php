@@ -61,7 +61,7 @@ final class AccountRecovery
     }
 
     /**
-     * @param 'reset'|'cli'|'settings' $source
+     * @param string $source jedno z SOURCES: reset, cli, settings
      *
      * @throws InvalidArgumentException pri slabom hesle alebo neznamom zdroji (nic sa nezmeni)
      */
@@ -76,9 +76,9 @@ final class AccountRecovery
         $userId = (int) $user->id;
         $db     = $this->db();
         $event  = match ($source) {
-            'reset'  => AuthEvent::PasswordResetDone,
-            'cli'    => AuthEvent::PasswordSetCli,
-            default  => AuthEvent::PasswordChanged,
+            'reset' => AuthEvent::PasswordResetDone,
+            'cli'   => AuthEvent::PasswordSetCli,
+            default => AuthEvent::PasswordChanged,
         };
 
         $db->transException(true)->transStart();

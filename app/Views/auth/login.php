@@ -36,6 +36,7 @@
     <?php if (! empty($lockedInfo)) : ?>
         <p class="small text-muted mt-3 mb-0" aria-live="polite"><?= esc($lockedInfo) ?></p>
     <?php endif ?>
+    <p class="mt-3 mb-0 text-center"><a href="/password/forgot" class="d-inline-block py-2"><?= esc(lang('PasswordReset.forgotLink')) ?></a></p>
     <p class="text-secondary small mt-3 mb-0"><?= esc(lang('Login.hint')) ?></p>
 </div>
 <?= $this->endSection() ?>

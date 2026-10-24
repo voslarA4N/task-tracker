@@ -8,9 +8,11 @@ use App\Libraries\Auth\AccountRecovery;
 use App\Libraries\Auth\BackupCodeService;
 use App\Libraries\Auth\TrustedDeviceService;
 use App\Libraries\Platform\FrozenClock;
+use CodeIgniter\Shield\Authentication\Passwords;
 use CodeIgniter\Shield\Entities\User;
 use CodeIgniter\Shield\Models\UserModel;
 use CodeIgniter\Test\Mock\MockEmail;
+use Config\Auth;
 use Config\Services;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
@@ -100,8 +102,8 @@ final class RecoveryTest extends AuthTestCase
 
         $fresh = model(UserModel::class)->findById((int) $user->id);
         $this->assertInstanceOf(User::class, $fresh);
-        $this->assertTrue(service('passwords')->verify(self::NEW_PASSWORD, (string) $fresh->password_hash));
-        $this->assertFalse(service('passwords')->verify(self::PASSWORD, (string) $fresh->password_hash));
+        $this->assertTrue((new Passwords(config(Auth::class)))->verify(self::NEW_PASSWORD, (string) $fresh->password_hash));
+        $this->assertFalse((new Passwords(config(Auth::class)))->verify(self::PASSWORD, (string) $fresh->password_hash));
         $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM trusted_devices WHERE user_id = ? AND revoked_at IS NULL', [$user->id])->getRow()->c);
         $this->assertSame($epoch + 1, (new TrustedDeviceService())->currentEpoch((int) $user->id));
         $this->assertSame(1, $this->eventCount('password_set_cli'));
