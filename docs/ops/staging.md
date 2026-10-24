@@ -158,9 +158,9 @@ Stav k 2026-10-24 (overil Claude):
 - Adresáre `/opt/work-tracker/{secrets,certs,letsencrypt,docker}` a `/var/backups/work-tracker` existujú so správnymi právami.
 - GitHub environment `staging` existuje, nastavené sú `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KNOWN_HOSTS`. **Chýba** `DEPLOY_SSH_KEY` (nastaví vlastník).
 - TLS_MODE: `letsencrypt` (O-4).
-- DNS: `work-tracker.vostack.dev` zatiaľ vracia NXDOMAIN aj na autoritatívnych NS Cloudflare (záznam ešte neexistuje).
+- DNS: `work-tracker.vostack.dev` je proxovaný cez Cloudflare (A 188.114.96.11/97.11, AAAA 2a06:98c1:3120::b/3121::b), origin IP sa nezverejňuje. Cloudflare edge vracia 521 (origin odmietol spojenie, nginx ešte nebeží), nie 522, takže firewall Cloudflare na port 443 púšťa.
 - Firewall: Hetzner Cloud Firewall nastavený (2026-10-24). Z vývojového stroja porty 80, 443 a 5432 končia timeoutom (zahodené), SSH (deploy aj aiagent) a ICMP fungujú. Prístup z Cloudflare na 80/443 sa overí pri prvom deployi (02-09).
-- Čaká na vlastníka: DNS záznam (sekcia 2), Cloudflare token a `secrets/cloudflare.ini` (sekcia 3), `.env` (sekcia 6, spustiť celé ako root), `DEPLOY_SSH_KEY`.
+- Čaká na vlastníka: Cloudflare token a `secrets/cloudflare.ini` (sekcia 3), `.env` (sekcia 6, spustiť celé ako root), `DEPLOY_SSH_KEY`.
 
 ## 12. Správa používateľa na stagingu
 
