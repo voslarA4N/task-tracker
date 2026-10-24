@@ -81,7 +81,63 @@ Plans:
   4. Denník prihlásení ukazuje úspech/neúspech, IP, zariadenie a čas; model obsahuje roly `admin` a `accountant`.
   5. Staging na Hetzner VPS beží cez HTTPS (Let's Encrypt) s CSP, HSTS, secure a httpOnly cookies a na reálnom iPhone sa dá aplikácia pridať na plochu, spustí sa standalone, zobrazí offline stránku a po zapamätaní zariadenia nežiada prihlásenie častejšie ako raz za 30 dní.
 
-**Plans**: TBD
+**Plans**: 20 plans (12 vĺn, MVP vertikálne rezy)
+Plans:
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Schválenie balíkov (T-02-SC) a rozhodnutia vlastníka O-1..O-6 (checkpointy)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-02-PLAN.md — Príprava servera, Cloudflare, firewallu a GitHub secrets (bootstrap + runbook, akcie vlastníka)
+- [ ] 02-03-PLAN.md — Spike Shield + TOTP akcia, roly admin/accountant, Argon2id, spark user:create
+- [ ] 02-04-PLAN.md — nginx (realip CF, limit_req, sw.js/manifest, cert parametre), nginx obraz, compose.staging.yaml
+- [ ] 02-05-PLAN.md — Bezpečnostné e-maily: AppMailer (Mailpit / metadata-only log), SecurityNotifier
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 02-06-PLAN.md — Deny-by-default AuthGate, enumerácia rout, AuthTestCase
+- [ ] 02-07-PLAN.md — deploy.sh (pg_dump brána pred migráciou), smoke-staging, GHA build → GHCR → SSH deploy
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 02-08-PLAN.md — Prihlásenie heslom (auth layout, generická chyba, dummy hash), jazyk z Accept-Language
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 02-09-PLAN.md — Prvé nasadenie stagingu a overenie (HTTPS, hlavičky, realip, origin, pamäť)
+- [ ] 02-10-PLAN.md — Zámky 5/15 min (IP + účet) a insert-only denník prihlásení
+- [ ] 02-11-PLAN.md — PWA inštalácia: manifest, ikony, iOS meta, inštalačný panel
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 02-12-PLAN.md — Nastavenie TOTP (QR SVG, Sodium tajomstvo, aktivácia, pending 10 min)
+- [ ] 02-13-PLAN.md — Service worker a offline stránka
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 02-14-PLAN.md — Overenie TOTP pri prihlásení s atomickou replay ochranou
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 02-15-PLAN.md — Záložné kódy (zobrazené raz, .txt, potvrdenie, prihlásenie kódom)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
+- [ ] 02-16-PLAN.md — Dôveryhodné zariadenia 30 dní, 2 h nečinnosť, odhlásenie podľa O-1
+
+**Wave 10** *(blocked on Wave 9 completion)*
+
+- [ ] 02-17-PLAN.md — Viac → Zabezpečenie: 2FA, zariadenia s odvolaním, posledných 50 prihlásení
+- [ ] 02-18-PLAN.md — Obnova hesla e-mailom bez obídenia TOTP, spark user:password a user:reset-2fa
+
+**Wave 11** *(blocked on Wave 10 completion)*
+
+- [ ] 02-19-PLAN.md — Zmena hesla a pregenerovanie záložných kódov s re-autentifikáciou
+
+**Wave 12** *(blocked on Wave 11 completion)*
+
+- [ ] 02-20-PLAN.md — Nasadenie celej fázy, staging smoke, meranie pamäte, UAT na iPhone (vlastník)
 **UI hint**: yes
 **Poznámky**: **Potrebuje /gsd-research-phase** (Shield 1.4: pending stav, `ConditionalActionInterface`, remember-me, iOS cookies). Spike s časovým limitom, fallback: TOTP vo vlastnom filtri nad Shield, až potom vlastné prihlasovanie. Service worker nesmie cachovať HTML, `Vary: HX-Request`, CSRF bez regenerácie pri každej požiadavke. Vlastník: objednať Hetzner VPS (x86 vs ARM CAX), Storage Box.
 
