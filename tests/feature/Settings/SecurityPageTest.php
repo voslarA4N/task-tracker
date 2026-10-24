@@ -205,7 +205,7 @@ final class SecurityPageTest extends AuthTestCase
     public function testCannotRevokeAnotherUsersDevice(): void
     {
         $owner = $this->createUser();
-        $other = $this->createUser('other@example.test', 'user');
+        $other = $this->createUser('other@example.test', 'accountant');
         $token = $this->trustDevice($other, self::CHROME);
         $row   = $this->deviceRow($token);
         $this->loginAs($owner);

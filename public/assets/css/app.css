@@ -168,3 +168,13 @@ img, table { max-width: 100%; }
   margin-left: -2rem;
   margin-top: 0.1rem;
 }
+
+/* Viac a Zabezpecenie */
+.security-card + .security-card { margin-top: 16px; }
+.device-row,
+.event-row { padding: 8px 0; border-bottom: 1px solid var(--app-border); }
+.device-row:last-child,
+.event-row:last-child { border-bottom: 0; }
+.btn-touch { min-width: 44px; min-height: 44px; }
+.event-ip { font-family: ui-monospace, monospace; font-size: 12px; }
+.more-item { min-height: 48px; display: flex; align-items: center; width: 100%; }

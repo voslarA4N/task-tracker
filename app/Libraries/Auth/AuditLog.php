@@ -44,4 +44,35 @@ final class AuditLog
             'detail'          => $detail === null ? null : mb_substr($detail, 0, 200),
         ]);
     }
+
+    /**
+     * Poslednych `$limit` udalosti pouzivatela, najnovsie prve. Nevracia hash, user agent ani detail.
+     *
+     * @return list<array{occurred_at: string, event: string, success: bool, ip: string, device_label: ?string}>
+     */
+    public function latestForUser(int $userId, int $limit = 50): array
+    {
+        $rows = $this->db->query(
+            'SELECT occurred_at, event, success, ip, device_label
+             FROM auth_events
+             WHERE user_id = :u:
+             ORDER BY occurred_at DESC, id DESC
+             LIMIT ' . max(1, $limit),
+            ['u' => $userId],
+        )->getResultArray();
+
+        $out = [];
+
+        foreach ($rows as $row) {
+            $out[] = [
+                'occurred_at'  => (string) $row['occurred_at'],
+                'event'        => (string) $row['event'],
+                'success'      => in_array($row['success'], [true, 't', 'true', '1', 1], true),
+                'ip'           => (string) $row['ip'],
+                'device_label' => $row['device_label'] === null ? null : (string) $row['device_label'],
+            ];
+        }
+
+        return $out;
+    }
 }
