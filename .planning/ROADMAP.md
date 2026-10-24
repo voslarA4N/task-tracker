@@ -124,7 +124,7 @@ Plans:
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
-- [ ] 02-16-PLAN.md — Dôveryhodné zariadenia 30 dní, 2 h nečinnosť, odhlásenie podľa O-1
+- [x] 02-16-PLAN.md — Dôveryhodné zariadenia 30 dní, 2 h nečinnosť, odhlásenie podľa O-1
 
 **Wave 10** *(blocked on Wave 9 completion)*
 
@@ -323,7 +323,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
-| 2. Identita a skoré nasadenie | 13/20 | In Progress|  |
+| 2. Identita a skoré nasadenie | 14/20 | In Progress|  |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
