@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use App\Libraries\Auth\TotpService;
+use App\Libraries\Auth\TrustedDeviceService;
 use App\Libraries\Auth\UserProvisioner;
 use App\Libraries\Platform\PsrClock;
 use CodeIgniter\Shield\Authentication\Authenticators\Session;
@@ -29,6 +30,7 @@ abstract class AuthTestCase extends PgTestCase
         parent::setUp();
         service('superglobals')->setServer('HTTPS', 'on');
         $_SESSION = [];
+        service('superglobals')->setCookieArray([]);
         auth('session')->logout();
         $this->cleanAuthTables();
     }
@@ -36,6 +38,7 @@ abstract class AuthTestCase extends PgTestCase
     protected function tearDown(): void
     {
         $_SESSION = [];
+        service('superglobals')->setCookieArray([]);
         auth('session')->logout();
         $this->cleanAuthTables();
         parent::tearDown();
@@ -52,6 +55,30 @@ abstract class AuthTestCase extends PgTestCase
     protected function loginAs(User $user): static
     {
         $this->actingAs($user);
+        session()->set([
+            'auth_epoch'    => (new TrustedDeviceService())->currentEpoch((int) $user->id),
+            'last_activity' => service('clock')->now()->getTimestamp(),
+        ]);
+
+        return $this;
+    }
+
+    /**
+     * Vyda dovernu cookie zariadenia (ako po overeni s "zapamatat"), vrati otvoreny token.
+     */
+    protected function trustDevice(User $user, string $userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'): string
+    {
+        $issued = (new TrustedDeviceService())->issue((int) $user->id, $userAgent, '203.0.113.7', service('clock')->now());
+
+        return $issued['token'];
+    }
+
+    /**
+     * Nastavi cookie zariadenia pre dalsiu poziadavku.
+     */
+    protected function withDeviceCookie(string $token): static
+    {
+        service('superglobals')->setCookie(TrustedDeviceService::COOKIE_PREFIX . TrustedDeviceService::COOKIE_NAME, $token);
 
         return $this;
     }
