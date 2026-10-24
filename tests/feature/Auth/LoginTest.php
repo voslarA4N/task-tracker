@@ -1,0 +1,179 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Auth;
+
+use App\Controllers\Auth\Login;
+use CodeIgniter\Test\TestResponse;
+use PHPUnit\Framework\Attributes\Group;
+use Tests\Support\AuthTestCase;
+
+/**
+ * @internal
+ */
+#[Group('feature')]
+final class LoginTest extends AuthTestCase
+{
+    /**
+     * @param array<string, string> $data
+     */
+    private function postLogin(array $data, string $path = '/login'): TestResponse
+    {
+        return $this->call('post', $path, $data + [csrf_token() => csrf_hash()]);
+    }
+
+    private function body(TestResponse $result): string
+    {
+        return (string) $result->response()->getBody();
+    }
+
+    private function stripToken(string $body): string
+    {
+        return (string) preg_replace('/value="[a-f0-9]{32}"/', 'value="T"', $body);
+    }
+
+    public function testLoginPageRenders(): void
+    {
+        $result = $this->get('/login');
+        $result->assertStatus(200);
+        $body = $this->body($result);
+
+        $this->assertStringContainsString('name="email"', $body);
+        $this->assertStringContainsString('autocomplete="username"', $body);
+        $this->assertStringContainsString('name="password"', $body);
+        $this->assertStringContainsString('autocomplete="current-password"', $body);
+        $this->assertStringContainsString('name="' . csrf_token() . '"', $body);
+        $this->assertStringNotContainsString('register', strtolower($body));
+        $this->assertMatchesRegularExpression('/<title>[^<]*· Work Tracker<\/title>/u', $body);
+        $this->assertStringNotContainsString('class="app-tabbar', $body);
+        $this->assertStringContainsString('data-submit-once', $body);
+    }
+
+    public function testCorrectPasswordGoesToPendingTwoFactor(): void
+    {
+        $this->createUser('owner@example.test');
+
+        $result = $this->postLogin(['email' => 'Owner@Example.test ', 'password' => self::PASSWORD]);
+        $result->assertStatus(302);
+        $this->assertStringEndsWith('/2fa', $result->response()->getHeaderLine('Location'));
+        $this->assertFalse(auth('session')->loggedIn());
+        $authenticator = auth('session')->getAuthenticator();
+        $this->assertTrue(method_exists($authenticator, 'isPending') && $authenticator->isPending());
+        $this->assertIsInt(session('pending_since'));
+    }
+
+    public function testWrongPasswordGives422GenericMessage(): void
+    {
+        $this->createUser('owner@example.test');
+
+        $result = $this->postLogin(['email' => 'owner@example.test', 'password' => 'Nespravne-Heslo-1!']);
+        $result->assertStatus(422);
+        $body = $this->body($result);
+
+        $this->assertStringContainsString(esc(lang('Login.errorInvalid')), $body);
+        $this->assertStringContainsString('owner@example.test', $body);
+        $this->assertStringNotContainsString('Nespravne-Heslo-1!', $body);
+    }
+
+    public function testUnknownEmailLooksIdenticalToWrongPassword(): void
+    {
+        $this->createUser('owner@example.test');
+
+        $known   = $this->postLogin(['email' => 'owner@example.test', 'password' => 'Nespravne-Heslo-1!']);
+        $unknown = $this->postLogin(['email' => 'owner@example.test', 'password' => 'Nespravne-Heslo-1!']);
+        $missing = $this->postLogin(['email' => 'nikto@example.test', 'password' => 'Nespravne-Heslo-1!']);
+
+        $missing->assertStatus(422);
+        $this->assertStringContainsString(esc(lang('Login.errorInvalid')), $this->body($missing));
+        $this->assertSame(
+            $this->stripToken($this->body($known)),
+            str_replace('nikto@example.test', 'owner@example.test', $this->stripToken($this->body($missing))),
+        );
+        $this->assertSame(422, $unknown->response()->getStatusCode());
+    }
+
+    public function testDummyHashIsArgon2id(): void
+    {
+        $this->assertStringStartsWith('$argon2id$v=19$m=19456,t=2,p=1$', Login::DUMMY_HASH);
+    }
+
+    public function testInvalidInputGives422(): void
+    {
+        foreach (['', 'abc'] as $email) {
+            $this->postLogin(['email' => $email, 'password' => 'x'])->assertStatus(422);
+        }
+    }
+
+    public function testLoggedInAdminIsRedirectedFromLogin(): void
+    {
+        $this->loginAs($this->createUser());
+
+        $result = $this->get('/login');
+        $result->assertStatus(302);
+        $this->assertStringEndsWith('/', $result->response()->getHeaderLine('Location'));
+    }
+
+    public function testPendingUserCanLoginAgain(): void
+    {
+        $user = $this->createUser('owner@example.test');
+        $this->startPending($user);
+
+        $result = $this->postLogin(['email' => 'owner@example.test', 'password' => self::PASSWORD]);
+        $result->assertStatus(302);
+        $this->assertStringEndsWith('/2fa', $result->response()->getHeaderLine('Location'));
+    }
+
+    public function testLogoutWhenLoggedIn(): void
+    {
+        $this->loginAs($this->createUser());
+
+        $result = $this->postLogin([], '/logout');
+        $result->assertStatus(302);
+        $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
+        $this->assertFalse(auth('session')->loggedIn());
+    }
+
+    public function testLogoutWhenPending(): void
+    {
+        $this->startPending($this->createUser());
+
+        $result = $this->postLogin([], '/logout');
+        $result->assertStatus(302);
+        $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
+        $authenticator = auth('session')->getAuthenticator();
+        $this->assertFalse(method_exists($authenticator, 'isPending') && $authenticator->isPending());
+    }
+
+    public function testEnglishAcceptLanguage(): void
+    {
+        $body = $this->body($this->withHeaders(['Accept-Language' => 'en-US,en;q=0.9'])->get('/login'));
+
+        $this->assertStringContainsString('<html lang="en"', $body);
+        $this->assertStringContainsString(lang('Login.heading', [], 'en'), $body);
+    }
+
+    public function testUnsupportedAcceptLanguageFallsBackToSlovak(): void
+    {
+        $result = $this->withHeaders(['Accept-Language' => 'pl-PL,pl;q=0.9'])->get('/login');
+        $result->assertStatus(200);
+        $body = $this->body($result);
+
+        $this->assertStringContainsString('<html lang="sk"', $body);
+        $this->assertStringContainsString(lang('Login.heading', [], 'sk'), $body);
+    }
+
+    public function testNoAcceptLanguageIsSlovak(): void
+    {
+        $this->assertStringContainsString('<html lang="sk"', $this->body($this->get('/login')));
+    }
+
+    public function testUserLocaleWinsAfterLogin(): void
+    {
+        $user = $this->createUser();
+        $this->owner()->query("UPDATE user_security SET locale = 'en' WHERE user_id = " . (int) $user->id);
+        $this->loginAs($user);
+
+        $this->assertStringContainsString('<html lang="en"', $this->body($this->get('/')));
+    }
+}
