@@ -78,7 +78,7 @@ jobs:
         run: |
           docker run --rm --network host -e CI=true \
             -v "$PWD:/var/www/html" -w /var/www/html task-tracker-php:ci \
-            sh -c 'composer install --no-interaction --prefer-dist && composer test:migrate && composer check'
+            sh -c 'composer install --no-interaction --prefer-dist && php spark key:generate --force && composer test:migrate && composer check'
 
       - name: Preload nezhodi PHP
         run: |
