@@ -9,7 +9,6 @@ use App\Libraries\Auth\TotpService;
 use App\Libraries\Auth\TrustedDeviceService;
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Cookie\Cookie;
-use CodeIgniter\I18n\Time;
 use CodeIgniter\Shield\Entities\User;
 use CodeIgniter\Test\Mock\MockEmail;
 use CodeIgniter\Test\TestResponse;
@@ -34,14 +33,12 @@ final class TrustedDeviceTest extends AuthTestCase
     {
         parent::setUp();
         $this->setClock(self::T0);
-        Time::setTestNow(self::T0);
         config('Email')->transport = 'smtp';
         $this->mockEmail();
     }
 
     protected function tearDown(): void
     {
-        Time::setTestNow();
         Services::reset();
         parent::tearDown();
     }
@@ -131,6 +128,7 @@ final class TrustedDeviceTest extends AuthTestCase
 
     private function freshBrowser(): void
     {
+        auth('session')->logout();
         $_SESSION = [];
         $this->withSession([]);
     }
@@ -150,7 +148,9 @@ final class TrustedDeviceTest extends AuthTestCase
         $this->assertSame('lax', strtolower($cookie->getSameSite()));
         $this->assertSame('/', $cookie->getPath());
         $this->assertSame('', $cookie->getDomain());
-        $this->assertSame(2592000, $cookie->getMaxAge());
+        // Max-Age pocita CI4 Cookie z realneho casu, preto sa overuje expiracia (T0 + 30 dni).
+        $this->assertSame($this->clock->now()->getTimestamp() + 2592000, $cookie->getExpiresTimestamp());
+        $this->assertStringContainsString('Max-Age=', (string) $cookie);
 
         $header = (string) $cookie;
         $this->assertStringContainsString('Secure', $header);
@@ -163,13 +163,14 @@ final class TrustedDeviceTest extends AuthTestCase
         $this->assertNotSame($cookie->getValue(), $row['token_hash']);
         $this->assertSame(
             $this->clock->now()->getTimestamp() + 2592000,
-            (new \DateTimeImmutable((string) $row['expires_at']))->getTimestamp(),
+            (int) $this->owner()->query('SELECT EXTRACT(EPOCH FROM expires_at)::bigint AS e FROM trusted_devices ORDER BY id DESC LIMIT 1')->getRow()->e,
         );
         $this->assertSame(1, $this->eventCount('device_trusted'));
 
         $mail = service('email');
         $this->assertInstanceOf(MockEmail::class, $mail);
-        $this->assertCount(1, $mail->archive);
+        $this->assertNotEmpty($mail->archive);
+        $this->assertSame(['owner@example.test'], $mail->archive['recipients'] ?? null);
     }
 
     public function testWithoutRememberNoDeviceIsIssued(): void
@@ -227,8 +228,8 @@ final class TrustedDeviceTest extends AuthTestCase
 
     public function testNewSessionWithValidDeviceCookieLogsInAndRotates(): void
     {
-        $user  = $this->createUser();
-        $token = $this->trustDevice($user);
+        $user   = $this->createUser();
+        $token  = $this->trustDevice($user);
         $before = $this->deviceRow($token);
         $this->assertNotNull($before);
 
@@ -322,7 +323,7 @@ final class TrustedDeviceTest extends AuthTestCase
 
         $other = $this->createUser('second@example.test');
         $token = $this->trustDevice($other);
-        $this->owner()->query('UPDATE users SET active = false WHERE id = ?', [$other->id]);
+        $this->owner()->query('UPDATE users SET active = 0 WHERE id = ?', [$other->id]);
         $this->freshBrowser();
         $this->withDeviceCookie($token);
         $inactive = $this->get('/');

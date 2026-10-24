@@ -28,4 +28,6 @@ return [
     'backupLabel'       => 'Záložný kód',
     'backupUsed'        => 'Záložný kód bol použitý. Zostáva ich {0}. Pregenerujte ich v Nastaveniach, ak ich je málo.',
     'backupPlaceholder' => 'XXXXX-XXXXX',
+    'remember'          => 'Zapamätať si toto zariadenie na 30 dní',
+    'rememberHelp'      => 'Heslo ani kód 2FA sa na tomto zariadení nebudú pýtať 30 dní. Nezapínajte na cudzom zariadení.',
 ];

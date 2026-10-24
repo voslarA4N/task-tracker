@@ -156,3 +156,15 @@ img, table { max-width: 100%; }
   font-size: 20px;
   font-weight: 600;
 }
+
+/* Zapamätať zariadenie: dotykový cieľ aspoň 44 px (UX) */
+.auth-card .form-check {
+  min-height: 44px;
+  padding-left: 2rem;
+}
+.auth-card .form-check-input {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: -2rem;
+  margin-top: 0.1rem;
+}

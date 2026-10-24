@@ -18,6 +18,11 @@
                    inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" autofocus required
                    <?= ! empty($error) ? 'aria-describedby="totp-error"' : '' ?>>
         </div>
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="remember" value="1" id="remember" checked>
+            <label class="form-check-label" for="remember"><?= esc(lang('TwoFactor.remember')) ?></label>
+            <div class="form-text"><?= esc(lang('TwoFactor.rememberHelp')) ?></div>
+        </div>
         <button type="submit" class="btn btn-primary btn-lg w-100">
             <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
             <?= esc(lang('TwoFactor.verifySubmit')) ?>

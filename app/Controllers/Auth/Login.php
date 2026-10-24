@@ -9,6 +9,7 @@ use App\Libraries\Auth\AuditLog;
 use App\Libraries\Auth\AuthEvent;
 use App\Libraries\Auth\LockoutService;
 use App\Libraries\Auth\SecurityNotifier;
+use App\Libraries\Auth\TrustedDeviceService;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\Shield\Authentication\Authenticators\Session;
 use CodeIgniter\Shield\Models\UserIdentityModel;
@@ -129,12 +130,28 @@ final class Login extends BaseController
             $user = $pending;
         }
 
-        (new AuditLog())->record(AuthEvent::Logout, true, $user === null ? null : (int) $user->id);
+        $userId   = $user === null ? null : (int) $user->id;
+        $deviceId = session('device_id');
+        $audit    = new AuditLog();
+        $redirect = redirect()->to('/login');
+
+        // O-1 = revoke: explicitne odhlasenie odvola aktualne dovernostne zariadenie a zmaze jeho cookie.
+        if ($userId !== null && is_int($deviceId)) {
+            $devices = new TrustedDeviceService();
+
+            if ($devices->revoke($deviceId, $userId, 'logout', service('clock')->now())) {
+                $audit->record(AuthEvent::DeviceRevoked, true, $userId, null, 'logout');
+            }
+
+            $redirect->setCookie($devices->expiredCookie());
+        }
+
+        $audit->record(AuthEvent::Logout, true, $userId);
 
         auth('session')->logout();
         session()->remove('pending_since');
 
-        return redirect()->to('/login');
+        return $redirect;
     }
 
     private function locked(string $email, DateTimeImmutable $until, DateTimeImmutable $now): ResponseInterface

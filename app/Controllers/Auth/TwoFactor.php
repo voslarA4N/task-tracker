@@ -9,9 +9,11 @@ use App\Controllers\BaseController;
 use App\Libraries\Auth\AuditLog;
 use App\Libraries\Auth\AuthEvent;
 use App\Libraries\Auth\BackupCodeService;
+use App\Libraries\Auth\DeviceLabel;
 use App\Libraries\Auth\LockoutService;
 use App\Libraries\Auth\SecurityNotifier;
 use App\Libraries\Auth\TotpService;
+use App\Libraries\Auth\TrustedDeviceService;
 use CodeIgniter\HTTP\RedirectResponse;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\Shield\Authentication\Authenticators\Session;
@@ -172,7 +174,8 @@ final class TwoFactor extends BaseController
 
         session()->remove(self::CODES_KEY);
 
-        return $this->completeLogin($user);
+        // O-5 = yes: zapamatanie zariadenia aj pri prvom nastaveni.
+        return $this->completeLogin($user, $this->wantsRemember());
     }
 
     public function backup(): ResponseInterface
@@ -233,7 +236,7 @@ final class TwoFactor extends BaseController
             'message' => lang('TwoFactor.backupUsed', [$remaining]),
         ]);
 
-        return $this->completeLogin($user);
+        return $this->completeLogin($user, $this->wantsRemember());
     }
 
     public function verify(): ResponseInterface
@@ -298,7 +301,7 @@ final class TwoFactor extends BaseController
             return $this->registerSecondFactorFailure($user, 'totp');
         }
 
-        return $this->completeLogin($user);
+        return $this->completeLogin($user, $this->wantsRemember());
     }
 
     /**
@@ -440,10 +443,15 @@ final class TwoFactor extends BaseController
         return $user;
     }
 
+    private function wantsRemember(): bool
+    {
+        return $this->request->getPost('remember') === '1';
+    }
+
     /**
-     * Dokonci Shield akciu po overenom kode a prihlasi pouzivatela.
+     * Dokonci Shield akciu po overenom kode a prihlasi pouzivatela; pri $remember vyda dovernu cookie zariadenia.
      */
-    private function completeLogin(User $user): RedirectResponse
+    private function completeLogin(User $user, bool $remember): RedirectResponse
     {
         $authenticator = auth('session')->getAuthenticator();
         $identity      = model(UserIdentityModel::class)->getIdentityByType($user, TotpAction::TYPE);
@@ -456,11 +464,38 @@ final class TwoFactor extends BaseController
             session()->regenerate(true);
         }
 
-        session()->remove('pending_since');
-        (new LockoutService())->clear($this->request->getIPAddress(), mb_strtolower((string) $user->email));
-        (new AuditLog())->record(AuthEvent::LoginTotpOk, true, (int) $user->id);
+        $userId  = (int) $user->id;
+        $now     = service('clock')->now();
+        $devices = new TrustedDeviceService();
 
-        return redirect()->to('/');
+        session()->remove('pending_since');
+        session()->set([
+            'auth_epoch'    => $devices->currentEpoch($userId),
+            'last_activity' => $now->getTimestamp(),
+        ]);
+        (new LockoutService())->clear($this->request->getIPAddress(), mb_strtolower((string) $user->email));
+        (new AuditLog())->record(AuthEvent::LoginTotpOk, true, $userId);
+
+        $redirect = redirect()->to('/');
+
+        if (! $remember) {
+            return $redirect;
+        }
+
+        $ua     = $this->request->getUserAgent()->getAgentString();
+        $ip     = $this->request->getIPAddress();
+        $device = $devices->issue($userId, $ua, $ip, $now);
+
+        session()->set('device_id', $device['id']);
+        (new AuditLog())->record(AuthEvent::DeviceTrusted, true, $userId);
+        (new SecurityNotifier())->notify(
+            SecurityNotifier::DEVICE_TRUSTED,
+            (string) $user->email,
+            $this->userLocale($userId),
+            ['at' => $now, 'ip' => $ip, 'device' => DeviceLabel::fromUserAgent($ua)],
+        );
+
+        return $redirect->setCookie($devices->cookie($device['token'], $device['expiresAt']));
     }
 
     private function hasTotp(User $user): bool

@@ -17,6 +17,11 @@
             <input class="form-check-input" type="checkbox" name="acknowledged" value="1" id="acknowledged" @change="toggle">
             <label class="form-check-label" for="acknowledged"><?= esc(lang('TwoFactor.codesAck')) ?></label>
         </div>
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="remember" value="1" id="remember" checked>
+            <label class="form-check-label" for="remember"><?= esc(lang('TwoFactor.remember')) ?></label>
+            <div class="form-text"><?= esc(lang('TwoFactor.rememberHelp')) ?></div>
+        </div>
         <button type="submit" class="btn btn-primary btn-lg w-100" disabled :disabled="!acked"><?= esc(lang('TwoFactor.continue')) ?></button>
     </form>
 </div>

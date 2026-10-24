@@ -16,4 +16,5 @@ return [
     'lockedFor'        => 'Účet je dočasne zamknutý. Skúste to znova o {0} min.',
     'unknownDevice'    => 'Neznáme zariadenie',
     'logout'           => 'Odhlásiť sa',
+    'infoIdleLogout'   => 'Boli ste odhlásený po 2 hodinách nečinnosti. Prihláste sa znova.',
 ];

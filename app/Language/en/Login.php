@@ -16,4 +16,5 @@ return [
     'lockedFor'        => 'The account is temporarily locked. Try again in {0} min.',
     'unknownDevice'    => 'Unknown device',
     'logout'           => 'Sign out',
+    'infoIdleLogout'   => 'You were signed out after 2 hours of inactivity. Sign in again.',
 ];

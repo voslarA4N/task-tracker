@@ -28,4 +28,6 @@ return [
     'backupLabel'       => 'Backup code',
     'backupUsed'        => 'A backup code was used. {0} left. Regenerate them in Settings if running low.',
     'backupPlaceholder' => 'XXXXX-XXXXX',
+    'remember'          => 'Remember this device for 30 days',
+    'rememberHelp'      => 'You will not be asked for your password or 2FA code on this device for 30 days. Do not enable this on a device that is not yours.',
 ];
