@@ -11,6 +11,7 @@ use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
 use CodeIgniter\Database\BaseConnection;
+use CodeIgniter\Encryption\EncrypterInterface;
 use Config\Database;
 use Config\Services;
 use OTPHP\TOTP;
@@ -44,9 +45,9 @@ final class TotpService
 
     public function provisioningUri(string $secret, string $email): string
     {
-        $totp = TOTP::createFromSecret($secret, $this->psrClock);
-        $totp->setLabel($email);
-        $totp->setIssuer(self::ISSUER);
+        $totp = TOTP::createFromSecret($secret, $this->psrClock)
+            ->withLabel($email)
+            ->withIssuer(self::ISSUER);
 
         return $totp->getProvisioningUri();
     }
@@ -126,7 +127,7 @@ final class TotpService
     /**
      * SodiumHandler po pouziti nuluje kluc, preto novy handler pre kazde volanie.
      */
-    private function encrypter(): \CodeIgniter\Encryption\EncrypterInterface
+    private function encrypter(): EncrypterInterface
     {
         return Services::encrypter(null, false);
     }

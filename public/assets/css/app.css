@@ -122,3 +122,25 @@ img, table { max-width: 100%; }
 .install-hint-close { min-width: 44px; min-height: 44px; }
 .auth-logo img { vertical-align: middle; margin-right: 8px; }
 .auth-wrap .install-hint { max-width: 400px; margin: 0 auto 16px; }
+
+/* 2FA nastavenie */
+.qr-box {
+  background: #fff;
+  padding: 16px;
+  max-width: 200px;
+  margin: 0 auto 32px;
+}
+.qr-box svg { width: 100%; height: auto; }
+.totp-secret {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 16px;
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+.auth-code-input {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: .25em;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}

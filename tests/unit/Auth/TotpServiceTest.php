@@ -62,21 +62,24 @@ final class TotpServiceTest extends CIUnitTestCase
         $this->assertNull($this->svc->matchStep(self::SECRET, $wrong, null));
     }
 
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function provideMalformed(): iterable
-    {
-        yield 'five digits' => ['12345'];
-        yield 'seven digits' => ['1234567'];
-        yield 'letters' => ['abcdef'];
-        yield 'with space' => ['12 345'];
-    }
-
-    #[DataProvider('provideMalformed')]
+    #[DataProvider('provideMalformedCodeRejected')]
     public function testMalformedCodeRejected(string $code): void
     {
         $this->assertNull($this->svc->matchStep(self::SECRET, $code, null));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideMalformedCodeRejected(): iterable
+    {
+        yield 'five digits' => ['12345'];
+
+        yield 'seven digits' => ['1234567'];
+
+        yield 'letters' => ['abcdef'];
+
+        yield 'with space' => ['12 345'];
     }
 
     public function testReplayWithLastStepRejected(): void

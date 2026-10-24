@@ -58,5 +58,21 @@
   /* Vzor registracie pre Alpine CSP build (musi sa nacitat pred Alpine). */
   document.addEventListener('alpine:init', function () {
     window.Alpine.data('appShell', function () { return {}; });
+    /* Kopirovanie TOTP tajomstva do schranky; texty a tajomstvo z data-* atributov. */
+    window.Alpine.data('copySecret', function () {
+      return {
+        label: '',
+        init: function () { this.label = this.$el.dataset.labelCopy || ''; },
+        copy: function () {
+          var self = this;
+          var el = this.$el;
+          if (!navigator.clipboard) { return; }
+          navigator.clipboard.writeText(el.dataset.secret).then(function () {
+            self.label = el.dataset.labelCopied || '';
+            setTimeout(function () { self.label = el.dataset.labelCopy || ''; }, 2000);
+          }, function () {});
+        }
+      };
+    });
   });
 })();
