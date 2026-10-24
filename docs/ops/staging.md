@@ -143,7 +143,7 @@ Environment `staging` v `voslarA4N/task-tracker` a štyri secrets (nastavuje Cla
 ## 10. Prvý admin
 
 ```
-ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && docker compose -f compose.staging.yaml exec php php spark user:create <e-mail> --admin'
+ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.staging.yaml exec php php spark user:create <e-mail> --admin'
 ```
 
 Heslo sa zadáva iba interaktívne (D-09), pre interaktívny prompt použi `ssh -t`.
@@ -170,8 +170,8 @@ Stav k 2026-10-24 (overil Claude):
 Na stagingu je `email.transport = log` (O-3), reset hesla e-mailom sa preto nedá dokončiť. Náhrada:
 
 ```
-ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && docker compose -f compose.staging.yaml exec php php spark user:password <e-mail>'
-ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && docker compose -f compose.staging.yaml exec php php spark user:reset-2fa <e-mail>'
+ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.staging.yaml exec php php spark user:password <e-mail>'
+ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.staging.yaml exec php php spark user:reset-2fa <e-mail>'
 ```
 
 - `user:password`: skrytý prompt, minimálne 12 znakov, heslo nesmie obsahovať časť e-mailu pred `@`. Odvolá všetky dôveryhodné zariadenia.
