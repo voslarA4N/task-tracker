@@ -19,6 +19,8 @@ use InvalidArgumentException;
  */
 final class UserCreate extends BaseCommand
 {
+    use ReadsSecretTrait;
+
     protected $group       = 'Auth';
     protected $name        = 'user:create';
     protected $description = 'Vytvorí používateľa (admin alebo accountant), heslo sa zadáva interaktívne.';
@@ -68,23 +70,5 @@ final class UserCreate extends BaseCommand
         CLI::write('Používateľ ' . $user->email . ' vytvorený v skupine ' . $group . '. 2FA sa nastaví pri prvom prihlásení.', 'green');
 
         return EXIT_SUCCESS;
-    }
-
-    private function readSecret(string $prompt): string
-    {
-        CLI::write($prompt, null, null);
-
-        if (! stream_isatty(STDIN)) {
-            return rtrim((string) fgets(STDIN), "\r\n");
-        }
-
-        // Bez echa: heslo sa nesmie zobrazit v terminali.
-        exec('stty -echo');
-
-        try {
-            return rtrim((string) fgets(STDIN), "\r\n");
-        } finally {
-            exec('stty echo');
-        }
     }
 }

@@ -147,7 +147,7 @@ final class PasswordResetTest extends AuthTestCase
             preg_replace('#name="csrf_[^"]*" value="[^"]*"#', '', $known),
             preg_replace('#name="csrf_[^"]*" value="[^"]*"#', '', $this->body($unknown)),
         );
-        $this->assertArrayNotHasKey('archive', get_object_vars($this->mail()) + ['archive' => null] === [] ? [] : array_filter(['archive' => $this->mail()->archive ?? null]));
+        $this->assertEmpty($this->mail()->archive ?? null);
         $this->assertSame(1, (int) $this->owner()->query('SELECT count(*) AS c FROM password_resets')->getRow()->c);
     }
 
