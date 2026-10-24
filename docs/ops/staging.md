@@ -176,3 +176,18 @@ ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && docker compose -f compose.stag
 
 - `user:password`: skrytý prompt, minimálne 12 znakov, heslo nesmie obsahovať časť e-mailu pred `@`. Odvolá všetky dôveryhodné zariadenia.
 - `user:reset-2fa`: zruší TOTP aj záložné kódy, 2FA sa nastaví znova pri ďalšom prihlásení (`--yes` preskočí potvrdenie).
+
+## 13. Prvé nasadenie
+
+Dátum: 2026-10-24. Prvé automatické nasadenie z `main` (D-07), GitHub Actions run 40131835824 (`check` aj `deploy` zelené), `IMAGE_TAG` = `sha-e9b2336137f05e62e79f6f22bc1b2473b0e0b6c1`, na serveri `/opt/work-tracker/.last-good-tag` má rovnakú hodnotu. Pred migráciou vznikla overená záloha `/var/backups/work-tracker/pre-*.dump`.
+
+Priebeh: prvý beh (9f712a2) skončil chybou 126, lebo `scp` neprenesie bit spustiteľnosti (oprava: `chmod +x` po kopírovaní, `sh ./deploy.sh`, režim 755 v gite). Druhý beh nasadil, ale smoke zlyhal na `/sw.js`: Cloudflare cachoval `.js` a prepísal `Cache-Control` na `max-age=14400` (oprava: `no-cache, no-store` v nginx). Tretí beh zelený.
+
+Výsledky:
+- Certifikát originu: issuer `Let's Encrypt` (CN=YE1), platný do 2027-01-22 (O-4 letsencrypt).
+- `https://work-tracker.vostack.dev/` = 302 na `/login`, `/login` = 200, HTTP/2, `http` presmerované 301.
+- Hlavičky (CSP bez `unsafe-`, HSTS, nosniff, Referrer-Policy, Permissions-Policy) a cookies `__Host-` Secure, HttpOnly, SameSite=Lax: OK. `cf-cache-status` na `/login` = DYNAMIC, v tele nie je `rocket-loader` ani `email-decode`.
+- Skutočná IP: nginx log obsahuje verejnú IP vývojového stroja (podľa `/cdn-cgi/trace`), nie adresu Cloudflare.
+- Origin 2.31.74.48:443 mimo Cloudflare nedostupný (smoke s `ORIGIN_IP`).
+- Pamäť v pokoji (`docker stats --no-stream`, 4+ minút po nasadení): nginx 4,4 MiB, php 21,5 MiB, db 31,2 MiB, spolu približne 57 MiB (< 512 MiB).
+- `SMOKE OK`; krok zmeny session cookie je `SKIP` (na stagingu ešte nie je používateľ, SMOKE_EMAIL/SMOKE_PASSWORD chýbajú).

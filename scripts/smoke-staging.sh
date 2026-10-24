@@ -106,7 +106,7 @@ fi
 if [ -n "${SSH_TARGET:-}" ]; then
   MEM=$(ssh "$SSH_TARGET" "docker stats --no-stream --format '{{.MemUsage}}'" 2>/dev/null \
     | awk '{ v=$1; n=v+0; if (v ~ /GiB/) n*=1024; else if (v ~ /KiB/) n/=1024; else if (v ~ /MiB/) n=n; s+=n } END { printf "%.0f", s }' || true)
-  if [ -n "$MEM" ] && [ "$MEM" -lt 512 ]; then pass "pamäť ${MEM} MiB < 512"; else fail "pamäť (${MEM:-?} MiB, limit 512)"; fi
+  if [ -n "$MEM" ] && [ "$MEM" -gt 0 ] && [ "$MEM" -lt 512 ]; then pass "pamäť ${MEM} MiB < 512"; else fail "pamäť (${MEM:-?} MiB, limit 512)"; fi
 else
   skip "pamäť (chýba SSH_TARGET)"
 fi
