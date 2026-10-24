@@ -150,6 +150,8 @@ final class ChangePasswordTest extends AuthTestCase
         $this->get('/')->assertStatus(200);
 
         // Ina relacia (stara epocha) je odhlasena.
+        auth('session')->logout();
+        $_SESSION = [];
         $this->actingAs($user);
         $this->withSession(['auth_epoch' => $epoch, 'last_activity' => $this->clock->now()->getTimestamp()]);
         $other = $this->get('/');
@@ -174,13 +176,12 @@ final class ChangePasswordTest extends AuthTestCase
     {
         $this->loggedInOwner();
         $this->mockEmail();
-        $last = null;
+        $last = $this->postPassword(['current_password' => 'zle-heslo-123456', 'password' => self::NEW_PASSWORD, 'password_confirm' => self::NEW_PASSWORD]);
 
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 1; $i < 5; $i++) {
             $last = $this->postPassword(['current_password' => 'zle-heslo-123456', 'password' => self::NEW_PASSWORD, 'password_confirm' => self::NEW_PASSWORD]);
         }
 
-        $this->assertNotNull($last);
         $last->assertStatus(429);
         $this->assertSame(1, $this->eventCount('lockout'));
         $this->assertSame([self::EMAIL], $this->mail()->archive['recipients'] ?? null);

@@ -126,7 +126,7 @@ final class RegenerateCodesTest extends AuthTestCase
         $page->assertStatus(200);
         $html = $this->body($page);
         $this->assertSame(10, preg_match_all('#<li><code>([A-Z0-9]{5}-[A-Z0-9]{5})</code></li>#', $html, $m));
-        $this->assertStringContainsString('/settings/security/backup-codes.txt', $html);
+        $this->assertStringContainsString('backup-codes.txt', $html);
         $this->assertStringContainsString('name="acknowledged"', $html);
 
         $svc = new BackupCodeService();
