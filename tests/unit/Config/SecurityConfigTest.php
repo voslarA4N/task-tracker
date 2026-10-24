@@ -42,7 +42,8 @@ final class SecurityConfigTest extends CIUnitTestCase
 
         $this->assertSame(HtmxCsrf::class, $cfg->aliases['csrf']);
         $this->assertNotContains('toolbar', $cfg->required['after']);
-        $this->assertContains('csrf', $cfg->globals['before']);
+        $this->assertArrayHasKey('csrf', $cfg->globals['before']);
+        $this->assertSame(['offline', 'sw.js'], $cfg->globals['before']['csrf']['except']);
         $this->assertNotContains('secureheaders', $cfg->globals['after']);
         $this->assertNotContains('secureheaders', $cfg->required['after']);
     }

@@ -1,6 +1,6 @@
 /*
  * PWA: instalacny panel pre iPhone Safari (D-24). ES5, bez inline skriptov (CSP).
- * Registraciu service workera a [data-reload] doplna plan 02-13.
+ * Registracia service workera (02-13) a tlacidlo [data-reload] na offline stranke.
  */
 (function () {
   'use strict';
@@ -40,5 +40,18 @@
         try { storage.setItem(DISMISS_KEY, '1'); } catch (e) { /* ignoruj */ }
       });
     }
+  });
+
+  if (typeof window.addEventListener === 'function') { window.addEventListener('load', function () {
+    if (window.navigator && 'serviceWorker' in window.navigator) {
+      try {
+        window.navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () { /* ticho */ });
+      } catch (e) { /* ticho */ }
+    }
+  }); }
+
+  document.addEventListener('click', function (ev) {
+    var t = ev.target;
+    if (t && t.closest && t.closest('[data-reload]')) { window.location.reload(); }
   });
 }());

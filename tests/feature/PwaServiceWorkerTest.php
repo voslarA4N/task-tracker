@@ -44,6 +44,7 @@ final class PwaServiceWorkerTest extends AuthTestCase
         $this->assertFalse($res->hasHeader('Set-Cookie'));
 
         $body = (string) $res->getBody();
+
         foreach (['csrf', 'hx-headers', 'htmx', 'alpine'] as $needle) {
             $this->assertStringNotContainsStringIgnoringCase($needle, $body);
         }
