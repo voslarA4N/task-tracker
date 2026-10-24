@@ -91,7 +91,7 @@ Plans:
 
 - [ ] 02-02-PLAN.md — Príprava servera, Cloudflare, firewallu a GitHub secrets (bootstrap + runbook, akcie vlastníka)
 - [x] 02-03-PLAN.md — Spike Shield + TOTP akcia, roly admin/accountant, Argon2id, spark user:create
-- [ ] 02-04-PLAN.md — nginx (realip CF, limit_req, sw.js/manifest, cert parametre), nginx obraz, compose.staging.yaml
+- [x] 02-04-PLAN.md — nginx (realip CF, limit_req, sw.js/manifest, cert parametre), nginx obraz, compose.staging.yaml
 - [ ] 02-05-PLAN.md — Bezpečnostné e-maily: AppMailer (Mailpit / metadata-only log), SecurityNotifier
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -323,7 +323,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
-| 2. Identita a skoré nasadenie | 2/20 | In Progress|  |
+| 2. Identita a skoré nasadenie | 3/20 | In Progress|  |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
