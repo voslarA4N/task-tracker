@@ -88,7 +88,9 @@ systemctl reload ssh 2>/dev/null || systemctl reload sshd
 # 7. Adresare
 install -d -m 0750 -o deploy -g deploy /opt/work-tracker
 install -d -m 0700 -o deploy -g deploy /opt/work-tracker/secrets
-install -d -m 0750 -o deploy -g 82 /opt/work-tracker/certs
+# GID 82 (www-data v alpine php obraze) na hostitelovi nema meno; uutils install -g ho neprijme, chown ano
+install -d -m 0750 -o deploy /opt/work-tracker/certs
+chown deploy:82 /opt/work-tracker/certs
 install -d -m 0750 -o deploy -g deploy /opt/work-tracker/letsencrypt
 install -d -m 0750 -o deploy -g deploy /opt/work-tracker/docker
 install -d -m 0700 -o deploy -g deploy /var/backups/work-tracker
