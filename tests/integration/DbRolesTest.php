@@ -98,23 +98,23 @@ final class DbRolesTest extends PgTestCase
     {
         $owner = $this->owner();
         $owner->query('TRUNCATE users, auth_identities, auth_groups_users, user_security, auth_logins RESTART IDENTITY CASCADE');
-        $owner->query('INSERT INTO users (active) VALUES (false)');
+        $owner->query('INSERT INTO users (active) VALUES (0)');
         $uid = (int) $owner->query('SELECT id FROM users LIMIT 1')->getRow()->id;
         $owner->query("INSERT INTO auth_identities (user_id, type, secret) VALUES ({$uid}, 'email_password', 'x@example.test')");
         $iid = (int) $owner->query('SELECT id FROM auth_identities LIMIT 1')->getRow()->id;
 
         $rw = $this->rw();
         $rw->query('UPDATE auth_identities SET last_used_at = now() WHERE id = ' . $iid);
-        $rw->query('UPDATE users SET active = true WHERE id = ' . $uid);
+        $rw->query('UPDATE users SET active = 1 WHERE id = ' . $uid);
         $rw->query("INSERT INTO auth_groups_users (user_id, \"group\", created_at) VALUES ({$uid}, 'admin', now())");
         $rw->query("DELETE FROM auth_groups_users WHERE user_id = {$uid}");
         $rw->query("INSERT INTO user_security (user_id, created_at, updated_at) VALUES ({$uid}, now(), now())");
         $rw->query("UPDATE user_security SET auth_epoch = auth_epoch + 1 WHERE user_id = {$uid}");
         $rw->query('DELETE FROM auth_identities WHERE id = ' . $iid);
 
-        $rw->query("INSERT INTO auth_logins (ip_address, identifier, user_id, date, success) VALUES ('127.0.0.1', 'x', {$uid}, now(), true)");
-        $this->assertPermissionDenied(fn () => $rw->query('UPDATE auth_logins SET success = false'));
-        $this->assertPermissionDenied(fn () => $rw->query('DELETE FROM auth_logins'));
+        $rw->query("INSERT INTO auth_logins (ip_address, id_type, identifier, user_id, date, success) VALUES ('127.0.0.1', 'email_password', 'x', {$uid}, now(), 1)");
+        $this->assertPermissionDenied(static fn () => $rw->query('UPDATE auth_logins SET success = 0'));
+        $this->assertPermissionDenied(static fn () => $rw->query('DELETE FROM auth_logins'));
 
         $owner->query('TRUNCATE users, auth_identities, auth_groups_users, user_security, auth_logins RESTART IDENTITY CASCADE');
     }

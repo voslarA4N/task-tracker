@@ -10,9 +10,13 @@
         "ext-intl": "*",
         "ext-mbstring": "*",
         "ext-pgsql": "*",
+        "bacon/bacon-qr-code": "^3.1",
         "codeigniter4/framework": "^4.7.5",
+        "codeigniter4/shield": "^1.4.1",
         "codeigniter4/translations": "^4.7",
-        "mpdf/mpdf": "^8.3.1"
+        "mpdf/mpdf": "^8.3.1",
+        "psr/clock": "^1.0",
+        "spomky-labs/otphp": "^11.5"
     },
     "require-dev": {
         "codeigniter/phpstan-codeigniter": "^2.2",

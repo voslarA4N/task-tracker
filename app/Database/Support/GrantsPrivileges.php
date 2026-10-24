@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Database\Support;
 
+use CodeIgniter\Database\BaseConnection;
 use InvalidArgumentException;
 
 /**
@@ -20,6 +21,7 @@ trait GrantsPrivileges
             throw new InvalidArgumentException('Invalid table name: ' . $table);
         }
 
+        assert($this->db instanceof BaseConnection);
         $this->db->query('GRANT UPDATE, DELETE ON TABLE ' . $this->db->escapeIdentifiers($table) . ' TO app_rw');
     }
 }

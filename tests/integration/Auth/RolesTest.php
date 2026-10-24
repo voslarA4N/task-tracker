@@ -19,7 +19,7 @@ use Tests\Support\PgTestCase;
 #[Group('integration')]
 final class RolesTest extends PgTestCase
 {
-    private const PASSWORD = 'Spike-Heslo-2026!';
+    private const PASSWORD = 'Zelena-Luka-2026!';
 
     protected function setUp(): void
     {

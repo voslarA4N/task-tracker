@@ -6,6 +6,7 @@ namespace Tests\Integration\Auth;
 
 use App\Authentication\Actions\TotpAction;
 use App\Libraries\Auth\UserProvisioner;
+use CodeIgniter\Shield\Authentication\Authenticators\Session;
 use CodeIgniter\Shield\Entities\User;
 use CodeIgniter\Shield\Models\UserIdentityModel;
 use PHPUnit\Framework\Attributes\Group;
@@ -21,7 +22,7 @@ use Tests\Support\PgTestCase;
 final class ShieldPendingStateTest extends PgTestCase
 {
     private const EMAIL    = 'spike@example.test';
-    private const PASSWORD = 'Spike-Heslo-2026!';
+    private const PASSWORD = 'Zelena-Luka-2026!';
 
     protected function setUp(): void
     {
@@ -44,8 +45,8 @@ final class ShieldPendingStateTest extends PgTestCase
 
         $this->assertTrue($result->isOK());
         $this->assertFalse(auth('session')->loggedIn());
-        $this->assertTrue(auth('session')->getAuthenticator()->isPending());
-        $this->assertSame($user->id, auth('session')->getAuthenticator()->getPendingUser()?->id);
+        $this->assertTrue($this->authenticator()->isPending());
+        $this->assertSame($user->id, $this->authenticator()->getPendingUser()?->id);
     }
 
     public function testOnlyCheckActionCompletesLogin(): void
@@ -57,7 +58,7 @@ final class ShieldPendingStateTest extends PgTestCase
         $identity   = $identities->getIdentityByType($user, TotpAction::TYPE);
         $this->assertNotNull($identity);
 
-        $auth = auth('session')->getAuthenticator();
+        $auth = $this->authenticator();
         $this->assertFalse($auth->checkAction($identity, 'zle'));
         $this->assertFalse(auth('session')->loggedIn());
         $this->assertTrue($auth->isPending());
@@ -78,7 +79,7 @@ final class ShieldPendingStateTest extends PgTestCase
 
         $second = auth('session')->attempt(['email' => self::EMAIL, 'password' => self::PASSWORD]);
         $this->assertTrue($second->isOK());
-        $this->assertTrue(auth('session')->getAuthenticator()->isPending());
+        $this->assertTrue($this->authenticator()->isPending());
         $this->assertFalse(auth('session')->loggedIn());
     }
 
@@ -92,7 +93,7 @@ final class ShieldPendingStateTest extends PgTestCase
         );
 
         model(UserIdentityModel::class)->deleteIdentitiesByType($user, TotpAction::TYPE);
-        auth('session')->getAuthenticator()->login($user);
+        $this->authenticator()->login($user);
 
         $this->assertTrue(auth('session')->loggedIn());
     }
@@ -105,8 +106,16 @@ final class ShieldPendingStateTest extends PgTestCase
 
         $this->assertFalse($result->isOK());
         $this->assertFalse(auth('session')->loggedIn());
-        $this->assertFalse(auth('session')->getAuthenticator()->isPending());
+        $this->assertFalse($this->authenticator()->isPending());
         $this->assertNull(auth('session')->user());
+    }
+
+    private function authenticator(): Session
+    {
+        $authenticator = auth('session')->getAuthenticator();
+        assert($authenticator instanceof Session);
+
+        return $authenticator;
     }
 
     private function createUser(): User
@@ -117,7 +126,7 @@ final class ShieldPendingStateTest extends PgTestCase
     private function resetSession(): void
     {
         $_SESSION = [];
-        service('auth')->logout();
+        auth('session')->logout();
     }
 
     private function cleanTables(): void
