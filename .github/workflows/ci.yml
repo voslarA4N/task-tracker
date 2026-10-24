@@ -148,8 +148,10 @@ jobs:
           scp -r $SSH_OPTS docker/postgres "$T:/opt/work-tracker/docker/"
           # shellcheck disable=SC2086
           echo "$GHCR_TOKEN" | ssh $SSH_OPTS "$T" "docker login ghcr.io -u ${{ github.actor }} --password-stdin"
+          # shellcheck disable=SC2086
+          ssh $SSH_OPTS "$T" "chmod +x /opt/work-tracker/deploy.sh /opt/work-tracker/cert-renew.sh"
           # shellcheck disable=SC2086,SC2029
-          ssh $SSH_OPTS "$T" "cd /opt/work-tracker && IMAGE_PREFIX=$PREFIX IMAGE_TAG=sha-$GITHUB_SHA ./deploy.sh"
+          ssh $SSH_OPTS "$T" "cd /opt/work-tracker && IMAGE_PREFIX=$PREFIX IMAGE_TAG=sha-$GITHUB_SHA sh ./deploy.sh"
 
       - name: Smoke staging
         env:
