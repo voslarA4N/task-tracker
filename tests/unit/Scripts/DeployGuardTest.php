@@ -35,7 +35,6 @@ final class DeployGuardTest extends CIUnitTestCase
         esac
         exit 0
         SH;
-
     private const FAKE_CRONTAB = <<<'SH'
         #!/bin/sh
         printf 'crontab %s\n' "$*" >> "$FAKE_LOG"
