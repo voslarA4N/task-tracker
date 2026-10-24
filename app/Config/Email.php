@@ -21,6 +21,13 @@ class Email extends BaseConfig
     public string $protocol = 'mail';
 
     /**
+     * Transport aplikacie: 'smtp' (odoslanie cez CI4 Email) alebo 'log'
+     * (nic sa neposle, loguju sa iba metadata; staging do Phase 7, D-14).
+     * Env: email.transport
+     */
+    public string $transport = 'smtp';
+
+    /**
      * The server path to Sendmail.
      */
     public string $mailPath = '/usr/sbin/sendmail';

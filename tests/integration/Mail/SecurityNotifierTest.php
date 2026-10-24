@@ -61,7 +61,7 @@ final class SecurityNotifierTest extends CIUnitTestCase
         (new SecurityNotifier())->notify('account_locked', self::TO, 'sk', $this->context());
 
         $archive = $this->mail()->archive;
-        $this->assertStringContainsString(self::TO, (string) $archive['recipients']);
+        $this->assertContains(self::TO, (array) $archive['recipients']);
         $this->assertStringContainsString('Work Tracker', (string) $archive['subject']);
         $this->assertStringContainsString('203.0.113.7', (string) $archive['body']);
         $this->assertStringContainsString('15', (string) $archive['body']);
@@ -82,22 +82,7 @@ final class SecurityNotifierTest extends CIUnitTestCase
         $this->assertStringNotContainsString('Notify.', $en);
     }
 
-    /**
-     * @return array<string, array{string}>
-     */
-    public static function kinds(): array
-    {
-        return [
-            'password_changed'         => ['password_changed'],
-            'password_reset'           => ['password_reset'],
-            'totp_reset'               => ['totp_reset'],
-            'backup_codes_regenerated' => ['backup_codes_regenerated'],
-            'device_trusted'           => ['device_trusted'],
-            'account_locked'           => ['account_locked'],
-        ];
-    }
-
-    #[DataProvider('kinds')]
+    #[DataProvider('provideEveryKindHasSubjectAndSafeBody')]
     public function testEveryKindHasSubjectAndSafeBody(string $kind): void
     {
         (new SecurityNotifier())->notify($kind, self::TO, 'sk', $this->context());
@@ -108,6 +93,21 @@ final class SecurityNotifierTest extends CIUnitTestCase
         $this->assertStringNotContainsString('Notify.', (string) $archive['subject'] . $archive['body']);
         $this->assertStringNotContainsStringIgnoringCase('http', (string) $archive['body']);
         $this->assertStringNotContainsStringIgnoringCase('token', (string) $archive['body']);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function provideEveryKindHasSubjectAndSafeBody(): iterable
+    {
+        return [
+            'password_changed'         => ['password_changed'],
+            'password_reset'           => ['password_reset'],
+            'totp_reset'               => ['totp_reset'],
+            'backup_codes_regenerated' => ['backup_codes_regenerated'],
+            'device_trusted'           => ['device_trusted'],
+            'account_locked'           => ['account_locked'],
+        ];
     }
 
     public function testUnknownContextKeysAreIgnored(): void
@@ -139,8 +139,7 @@ final class SecurityNotifierTest extends CIUnitTestCase
 
     private function assertNotLogged203(): void
     {
-        foreach (TestLogger::$op_logs as $log) {
-            $this->assertStringNotContainsString('203.0.113.7', (string) $log['message']);
-        }
+        $this->assertFalse(TestLogger::didLog('info', '203.0.113.7', false));
+        $this->assertFalse(TestLogger::didLog('error', '203.0.113.7', false));
     }
 }
