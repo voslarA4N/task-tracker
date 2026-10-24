@@ -24,6 +24,8 @@
         </button>
     </form>
 
+    <p class="mt-3 text-center"><a href="/2fa/backup"><?= esc(lang('TwoFactor.useBackup')) ?></a></p>
+
     <form method="post" action="/logout" class="mt-3 text-center">
         <?= csrf_field() ?>
         <button type="submit" class="btn btn-link"><?= esc(lang('TwoFactor.cancel')) ?></button>

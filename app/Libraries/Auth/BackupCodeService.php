@@ -119,7 +119,7 @@ final class BackupCodeService
     {
         $pepper = config('Auth')->backupCodePepper;
 
-        if (! is_string($pepper) || $pepper === '') {
+        if ($pepper === '') {
             throw new RuntimeException('auth.backupCodePepper is not configured.');
         }
 

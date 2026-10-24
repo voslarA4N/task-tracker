@@ -59,6 +59,13 @@
   document.addEventListener('alpine:init', function () {
     window.Alpine.data('appShell', function () { return {}; });
     /* Kopirovanie TOTP tajomstva do schranky; texty a tajomstvo z data-* atributov. */
+    /* Potvrdenie ulozenia zalozych kodov odomkne tlacidlo Pokracovat. */
+    window.Alpine.data('codesAck', function () {
+      return {
+        acked: false,
+        toggle: function () { this.acked = this.$event.target.checked; }
+      };
+    });
     window.Alpine.data('copySecret', function () {
       return {
         label: '',

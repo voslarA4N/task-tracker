@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Auth;
 
 use App\Libraries\Auth\BackupCodeService;
+use App\Libraries\Platform\FrozenClock;
 use Config\Database;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Group;
@@ -24,7 +25,7 @@ final class BackupCodeTest extends AuthTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->now = new DateTimeImmutable('2026-10-24T10:00:00+02:00');
+        $this->now = (new FrozenClock('2026-10-24T10:00:00+02:00'))->now();
     }
 
     private function svc(): BackupCodeService
@@ -130,8 +131,8 @@ final class BackupCodeTest extends AuthTestCase
 
     public function testEmptyPepperFailsClosed(): void
     {
-        $cfg      = config('Auth');
-        $original = $cfg->backupCodePepper;
+        $cfg                   = config('Auth');
+        $original              = $cfg->backupCodePepper;
         $cfg->backupCodePepper = '';
 
         try {

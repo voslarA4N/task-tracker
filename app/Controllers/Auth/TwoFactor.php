@@ -8,6 +8,7 @@ use App\Authentication\Actions\TotpAction;
 use App\Controllers\BaseController;
 use App\Libraries\Auth\AuditLog;
 use App\Libraries\Auth\AuthEvent;
+use App\Libraries\Auth\BackupCodeService;
 use App\Libraries\Auth\LockoutService;
 use App\Libraries\Auth\SecurityNotifier;
 use App\Libraries\Auth\TotpService;
@@ -30,6 +31,8 @@ final class TwoFactor extends BaseController
     public const ENROL_TTL = 1800;
 
     private const SETUP_SECRET_KEY = 'totp_setup_secret';
+    private const CODES_KEY        = 'backup_codes_display';
+    private const TXT_NAME         = 'work-tracker-zalozne-kody.txt';
 
     public function index(): ResponseInterface
     {
@@ -100,6 +103,135 @@ final class TwoFactor extends BaseController
 
         session()->remove(self::SETUP_SECRET_KEY);
         (new AuditLog())->record(AuthEvent::TotpEnrolled, true, $userId);
+
+        // Zobrazenie kodov moze trvat dlhsie nez povodne okno (D-10, D-11).
+        session()->set('pending_since', $now->getTimestamp());
+        $codes = (new BackupCodeService())->generate($userId, $now);
+        session()->set(self::CODES_KEY, $svc->encryptSecret((string) json_encode($codes)));
+
+        return redirect()->to('/2fa/backup-codes');
+    }
+
+    public function backupCodes(): ResponseInterface
+    {
+        $user = $this->pendingUserOrRedirect(self::ENROL_TTL);
+
+        if ($user instanceof RedirectResponse) {
+            return $user;
+        }
+
+        $codes = $this->displayCodes();
+
+        if ($codes === null) {
+            return redirect()->to('/2fa');
+        }
+
+        return $this->codesPage($user, $codes, null, 200);
+    }
+
+    public function backupCodesTxt(): ResponseInterface
+    {
+        $user = $this->pendingUserOrRedirect(self::ENROL_TTL);
+
+        if ($user instanceof RedirectResponse) {
+            return $user;
+        }
+
+        $codes = $this->displayCodes();
+
+        if ($codes === null) {
+            return redirect()->to('/2fa');
+        }
+
+        $text = "Work Tracker\n" . $user->email . "\n" . service('clock')->now()->format('Y-m-d') . "\n\n" . implode("\n", $codes) . "\n";
+
+        return $this->response
+            ->setHeader('Content-Type', 'text/plain; charset=utf-8')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . self::TXT_NAME . '"')
+            ->setHeader('Cache-Control', 'no-store')
+            ->setBody($text);
+    }
+
+    public function confirmBackupCodes(): ResponseInterface
+    {
+        $user = $this->pendingUserOrRedirect(self::ENROL_TTL);
+
+        if ($user instanceof RedirectResponse) {
+            return $user;
+        }
+
+        $codes = $this->displayCodes();
+
+        if ($codes === null) {
+            return redirect()->to('/2fa');
+        }
+
+        if ($this->request->getPost('acknowledged') !== '1') {
+            return $this->codesPage($user, $codes, lang('TwoFactor.codesAckRequired'), 422);
+        }
+
+        session()->remove(self::CODES_KEY);
+
+        return $this->completeLogin($user);
+    }
+
+    public function backup(): ResponseInterface
+    {
+        if (auth('session')->loggedIn()) {
+            return redirect()->to('/');
+        }
+
+        $user = $this->pendingUserOrRedirect();
+
+        if ($user instanceof RedirectResponse) {
+            return $user;
+        }
+
+        if (! $this->hasTotp($user)) {
+            return redirect()->to('/2fa/setup');
+        }
+
+        return $this->backupPage(null, 200);
+    }
+
+    public function checkBackup(): ResponseInterface
+    {
+        if (auth('session')->loggedIn()) {
+            return redirect()->to('/');
+        }
+
+        $user = $this->pendingUserOrRedirect();
+
+        if ($user instanceof RedirectResponse) {
+            return $user;
+        }
+
+        if (! $this->hasTotp($user)) {
+            return redirect()->to('/2fa/setup');
+        }
+
+        $locked = $this->lockedResponse($user, null, 'backup');
+
+        if ($locked !== null) {
+            return $locked;
+        }
+
+        $raw   = $this->request->getPost('code');
+        $input = is_string($raw) ? $raw : '';
+        $now   = service('clock')->now();
+        $svc   = new BackupCodeService();
+
+        if (! $svc->consume((int) $user->id, $input, $now)) {
+            return $this->registerSecondFactorFailure($user, 'backup', null, 'backup');
+        }
+
+        (new AuditLog())->record(AuthEvent::BackupCodeUsed, true, (int) $user->id);
+
+        $remaining = $svc->remaining((int) $user->id);
+        session()->setFlashdata('app_notice', [
+            'type'    => $remaining <= 3 ? 'warning' : 'info',
+            'message' => lang('TwoFactor.backupUsed', [$remaining]),
+        ]);
 
         return $this->completeLogin($user);
     }
@@ -172,7 +304,7 @@ final class TwoFactor extends BaseController
     /**
      * Ak je IP alebo ucet zamknuty, zapise pokus do dennika a vrati 429, inak null.
      */
-    private function lockedResponse(User $user, ?string $setupSecret = null): ?ResponseInterface
+    private function lockedResponse(User $user, ?string $setupSecret = null, string $kind = 'totp'): ?ResponseInterface
     {
         $email = mb_strtolower((string) $user->email);
         $until = (new LockoutService())->lockedUntil($this->request->getIPAddress(), $email, service('clock')->now());
@@ -183,13 +315,13 @@ final class TwoFactor extends BaseController
 
         (new AuditLog())->record(AuthEvent::LockedAttempt, false, (int) $user->id, $email);
 
-        return $this->failurePage($user, $setupSecret, lang('Login.errorLocked'), 429);
+        return $this->failurePage($user, $setupSecret, lang('Login.errorLocked'), 429, $kind);
     }
 
     /**
      * Spolocne spracovanie chybneho druheho faktora: pocitadlo zamku, dennik, e-mail pri zamku.
      */
-    private function registerSecondFactorFailure(User $user, string $detail, ?string $setupSecret = null): ResponseInterface
+    private function registerSecondFactorFailure(User $user, string $detail, ?string $setupSecret = null, string $kind = 'totp'): ResponseInterface
     {
         $email  = mb_strtolower((string) $user->email);
         $userId = (int) $user->id;
@@ -211,15 +343,66 @@ final class TwoFactor extends BaseController
         }
 
         if ($lock->lockedUntil($ip, $email, $now) !== null) {
-            return $this->failurePage($user, $setupSecret, lang('Login.errorLocked'), 429);
+            return $this->failurePage($user, $setupSecret, lang('Login.errorLocked'), 429, $kind);
         }
 
-        return $this->failurePage($user, $setupSecret, lang('TwoFactor.errorInvalidCode'), 422);
+        return $this->failurePage($user, $setupSecret, lang('TwoFactor.errorInvalidCode'), 422, $kind);
     }
 
-    private function failurePage(User $user, ?string $setupSecret, string $error, int $status): ResponseInterface
+    private function failurePage(User $user, ?string $setupSecret, string $error, int $status, string $kind = 'totp'): ResponseInterface
     {
-        return $setupSecret === null ? $this->verifyPage($error, $status) : $this->page($user, $setupSecret, $error, $status);
+        if ($setupSecret !== null) {
+            return $this->page($user, $setupSecret, $error, $status);
+        }
+
+        return $kind === 'backup' ? $this->backupPage($error, $status) : $this->verifyPage($error, $status);
+    }
+
+    private function backupPage(?string $error, int $status): ResponseInterface
+    {
+        return $this->response
+            ->setStatusCode($status)
+            ->setBody(view('auth/backup_verify', [
+                'title' => lang('TwoFactor.backupLabel'),
+                'error' => $error,
+            ]));
+    }
+
+    /**
+     * @param list<string> $codes
+     */
+    private function codesPage(User $user, array $codes, ?string $error, int $status): ResponseInterface
+    {
+        return $this->response
+            ->setStatusCode($status)
+            ->setHeader('Cache-Control', 'no-store')
+            ->setBody(view('auth/backup_codes', [
+                'title'       => lang('TwoFactor.codesTitle'),
+                'codes'       => $codes,
+                'email'       => (string) $user->email,
+                'downloadUrl' => '/2fa/backup-codes.txt',
+                'error'       => $error,
+            ]));
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    private function displayCodes(): ?array
+    {
+        $stored = session(self::CODES_KEY);
+
+        if (! is_string($stored) || $stored === '') {
+            return null;
+        }
+
+        $decoded = json_decode((new TotpService())->decryptSecret($stored), true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        return array_values(array_map('strval', $decoded));
     }
 
     private function verifyPage(?string $error, int $status): ResponseInterface
@@ -248,7 +431,7 @@ final class TwoFactor extends BaseController
 
         if (! is_int($since) || service('clock')->now()->getTimestamp() - $since > $maxAge) {
             auth('session')->logout();
-            session()->remove(['pending_since', self::SETUP_SECRET_KEY]);
+            session()->remove(['pending_since', self::SETUP_SECRET_KEY, self::CODES_KEY]);
             session()->setFlashdata('auth_info', lang('TwoFactor.pendingExpired'));
 
             return redirect()->to('/login');

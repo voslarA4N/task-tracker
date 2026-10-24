@@ -43,7 +43,10 @@ final class BackupCodesFlowTest extends AuthTestCase
         return $this->get($path);
     }
 
-    private function post(string $path, array $data): TestResponse
+    /**
+     * @param array<string, string> $data
+     */
+    private function postTo(string $path, array $data): TestResponse
     {
         $this->withSession();
 
@@ -79,7 +82,7 @@ final class BackupCodesFlowTest extends AuthTestCase
         $this->fetch('/2fa/setup');
         $secret = (new TotpService())->decryptSecret((string) session('totp_setup_secret'));
 
-        $result = $this->post('/2fa/setup', ['code' => $this->totpCode($secret)]);
+        $result = $this->postTo('/2fa/setup', ['code' => $this->totpCode($secret)]);
         $result->assertStatus(302);
         $this->assertStringEndsWith('/2fa/backup-codes', $result->response()->getHeaderLine('Location'));
 
@@ -144,7 +147,7 @@ final class BackupCodesFlowTest extends AuthTestCase
         $this->advance(1000);
 
         $this->fetch('/2fa/backup-codes')->assertStatus(200);
-        $result = $this->post('/2fa/backup-codes', ['acknowledged' => '1']);
+        $result = $this->postTo('/2fa/backup-codes', ['acknowledged' => '1']);
         $result->assertStatus(302);
         $this->assertTrue(auth('session')->loggedIn());
     }
@@ -164,7 +167,7 @@ final class BackupCodesFlowTest extends AuthTestCase
     {
         $this->activate();
 
-        $result = $this->post('/2fa/backup-codes', []);
+        $result = $this->postTo('/2fa/backup-codes', []);
         $result->assertStatus(422);
         $this->assertFalse(auth('session')->loggedIn());
         $this->assertStringContainsString(esc(lang('TwoFactor.codesAckRequired')), $this->body($result));
@@ -174,7 +177,7 @@ final class BackupCodesFlowTest extends AuthTestCase
     {
         $this->activate();
 
-        $result = $this->post('/2fa/backup-codes', ['acknowledged' => '1']);
+        $result = $this->postTo('/2fa/backup-codes', ['acknowledged' => '1']);
         $result->assertStatus(302);
         $this->assertStringEndsWith('/', $result->response()->getHeaderLine('Location'));
         $this->assertTrue(auth('session')->loggedIn());
@@ -218,7 +221,7 @@ final class BackupCodesFlowTest extends AuthTestCase
     {
         [, $codes] = $this->userWithCodes();
 
-        $result = $this->post('/2fa/backup', ['code' => $codes[0]]);
+        $result = $this->postTo('/2fa/backup', ['code' => $codes[0]]);
         $result->assertStatus(302);
         $this->assertStringEndsWith('/', $result->response()->getHeaderLine('Location'));
         $this->assertTrue(auth('session')->loggedIn());
@@ -232,10 +235,10 @@ final class BackupCodesFlowTest extends AuthTestCase
     public function testReusedBackupCodeIs422(): void
     {
         [$user, $codes] = $this->userWithCodes();
-        $this->post('/2fa/backup', ['code' => $codes[0]])->assertStatus(302);
+        $this->postTo('/2fa/backup', ['code' => $codes[0]])->assertStatus(302);
 
         $this->loginWithBackup($user);
-        $this->post('/2fa/backup', ['code' => $codes[0]])->assertStatus(422);
+        $this->postTo('/2fa/backup', ['code' => $codes[0]])->assertStatus(422);
         $this->assertFalse(auth('session')->loggedIn());
     }
 
@@ -244,8 +247,8 @@ final class BackupCodesFlowTest extends AuthTestCase
         $this->userWithCodes();
 
         for ($i = 0; $i < 4; $i++) {
-            $this->post('/2fa/backup', ['code' => 'AAAAA-AAAAA'])->assertStatus(422);
+            $this->postTo('/2fa/backup', ['code' => 'AAAAA-AAAAA'])->assertStatus(422);
         }
-        $this->post('/2fa/backup', ['code' => 'AAAAA-AAAAA'])->assertStatus(429);
+        $this->postTo('/2fa/backup', ['code' => 'AAAAA-AAAAA'])->assertStatus(429);
     }
 }

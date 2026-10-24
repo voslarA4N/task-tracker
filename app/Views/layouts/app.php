@@ -57,6 +57,10 @@ $htmxConfig = [
 
     <main id="content" class="app-main container-fluid">
         <?= $this->include('layouts/_install_hint') ?>
+        <?php $notice = session()->getFlashdata('app_notice'); ?>
+        <?php if (is_array($notice) && isset($notice['message'])) : ?>
+            <div class="alert alert-<?= ($notice['type'] ?? '') === 'warning' ? 'warning' : 'info' ?>" role="status"><?= esc((string) $notice['message']) ?></div>
+        <?php endif ?>
         <div id="app-alert" role="alert" aria-live="polite" hidden></div>
         <?= $this->renderSection('content') ?>
     </main>
