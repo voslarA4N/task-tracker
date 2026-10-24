@@ -64,7 +64,7 @@ server {
         include /etc/nginx/conf.d/snippets/security-headers.conf;
         fastcgi_hide_header Cache-Control;
         fastcgi_hide_header X-Powered-By;
-        add_header Cache-Control "no-cache" always;
+        add_header Cache-Control "no-cache, no-store" always;
         fastcgi_pass php:9000;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME /var/www/html/public/index.php;
