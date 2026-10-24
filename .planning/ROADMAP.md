@@ -96,7 +96,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 02-06-PLAN.md — Deny-by-default AuthGate, enumerácia rout, AuthTestCase
+- [x] 02-06-PLAN.md — Deny-by-default AuthGate, enumerácia rout, AuthTestCase
 - [ ] 02-07-PLAN.md — deploy.sh (pg_dump brána pred migráciou), smoke-staging, GHA build → GHCR → SSH deploy
 
 **Wave 4** *(blocked on Wave 3 completion)*
@@ -323,7 +323,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
-| 2. Identita a skoré nasadenie | 4/20 | In Progress|  |
+| 2. Identita a skoré nasadenie | 5/20 | In Progress|  |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
