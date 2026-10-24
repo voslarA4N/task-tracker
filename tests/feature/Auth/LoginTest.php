@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Auth;
 
 use App\Controllers\Auth\Login;
+use CodeIgniter\Test\Mock\MockEmail;
 use CodeIgniter\Test\TestResponse;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\AuthTestCase;
@@ -176,5 +177,85 @@ final class LoginTest extends AuthTestCase
         $this->loginAs($user);
 
         $this->assertStringContainsString('<html lang="en"', $this->body($this->get('/')));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function events(): array
+    {
+        return $this->owner()->query('SELECT event, ip FROM auth_events ORDER BY id')->getResultArray();
+    }
+
+    private function countEvent(string $event): int
+    {
+        return count(array_filter($this->events(), static fn (array $r): bool => $r['event'] === $event));
+    }
+
+    public function testFiveFailuresLockAccountEvenForCorrectPassword(): void
+    {
+        $this->createUser('owner@example.test');
+        config('Email')->transport = 'smtp';
+        $this->mockEmail();
+
+        $last = null;
+
+        for ($i = 0; $i < 5; $i++) {
+            $last = $this->postLogin(['email' => 'owner@example.test', 'password' => 'Nespravne-Heslo-1!']);
+        }
+
+        $last->assertStatus(429);
+        $this->assertStringContainsString(esc(lang('Login.errorLocked')), $this->body($last));
+
+        $after = $this->postLogin(['email' => 'owner@example.test', 'password' => self::PASSWORD]);
+        $after->assertStatus(429);
+        $authenticator = auth('session')->getAuthenticator();
+        $this->assertFalse(method_exists($authenticator, 'isPending') && $authenticator->isPending());
+
+        $this->assertSame(5, $this->countEvent('login_password_fail'));
+        $this->assertSame(1, $this->countEvent('lockout'));
+        $this->assertSame(1, $this->countEvent('locked_attempt'));
+
+        $mail = service('email');
+        $this->assertInstanceOf(MockEmail::class, $mail);
+        $this->assertContains('owner@example.test', (array) $mail->archive['recipients']);
+    }
+
+    public function testLockedUnknownEmailGives429WithoutMail(): void
+    {
+        config('Email')->transport = 'smtp';
+        $this->mockEmail();
+        $last = null;
+
+        for ($i = 0; $i < 5; $i++) {
+            $last = $this->postLogin(['email' => 'nikto@example.test', 'password' => 'Nespravne-Heslo-1!']);
+        }
+
+        $last->assertStatus(429);
+        $this->assertSame(1, $this->countEvent('lockout'));
+        $mail = service('email');
+        $this->assertInstanceOf(MockEmail::class, $mail);
+        $this->assertEmpty($mail->archive);
+    }
+
+    public function testSuccessfulPasswordIsAuditedAndKeepsCounters(): void
+    {
+        $this->createUser('owner@example.test');
+        $this->postLogin(['email' => 'owner@example.test', 'password' => 'Nespravne-Heslo-1!']);
+        $this->postLogin(['email' => 'owner@example.test', 'password' => self::PASSWORD])->assertStatus(302);
+
+        $this->assertSame(1, $this->countEvent('login_password_ok'));
+        $count = $this->owner()->query("SELECT fail_count FROM auth_lockouts WHERE kind = 'account'")->getRow();
+        $this->assertSame(1, (int) $count->fail_count);
+    }
+
+    public function testRemoteAddrIsStoredAsIp(): void
+    {
+        service('superglobals')->setServer('REMOTE_ADDR', '203.0.113.9');
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.9';
+        $this->createUser('owner@example.test');
+        $this->postLogin(['email' => 'owner@example.test', 'password' => 'Nespravne-Heslo-1!']);
+
+        $this->assertSame('203.0.113.9', $this->events()[0]['ip']);
     }
 }

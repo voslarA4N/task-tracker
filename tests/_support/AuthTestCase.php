@@ -73,7 +73,7 @@ abstract class AuthTestCase extends PgTestCase
     protected function cleanAuthTables(): void
     {
         $this->owner()->query(
-            'TRUNCATE users, auth_identities, auth_logins, auth_groups_users, auth_permissions_users, auth_remember_tokens, user_security RESTART IDENTITY CASCADE',
+            'TRUNCATE users, auth_identities, auth_logins, auth_groups_users, auth_permissions_users, auth_remember_tokens, user_security, auth_lockouts, auth_events RESTART IDENTITY CASCADE',
         );
     }
 }
