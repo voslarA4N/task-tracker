@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filters;
 
+use App\Libraries\Auth\AuditLog;
+use App\Libraries\Auth\AuthEvent;
+use App\Libraries\Auth\TrustedDeviceService;
 use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -25,6 +28,16 @@ final class AuthGate implements FilterInterface
     public const ALLOW_PREFIX = ['2fa', 'password/', 'assets/'];
 
     /**
+     * Necinnost nedovernostnej relacie (D-18), v sekundach.
+     */
+    public const IDLE_SECONDS = 7200;
+
+    /**
+     * Najvyssia frekvencia zapisu `last_activity` do relacie.
+     */
+    private const ACTIVITY_WRITE_INTERVAL = 60;
+
+    /**
      * @param list<string>|null $arguments
      */
     public function before(RequestInterface $request, $arguments = null): ?ResponseInterface
@@ -40,6 +53,10 @@ final class AuthGate implements FilterInterface
 
         if ($auth->loggedIn()) {
             $user = $auth->user();
+
+            if ($user !== null && ! $this->sessionStillValid((int) $user->id)) {
+                return $this->denyAnonymous($htmx);
+            }
 
             if ($user !== null && $user->inGroup('admin')) {
                 return null;
@@ -57,14 +74,68 @@ final class AuthGate implements FilterInterface
             return $response->setBody(view('errors/forbidden_403', ['title' => lang('App.title')]));
         }
 
-        $authenticator = $auth->getAuthenticator();
+        return $this->denyAnonymous($htmx);
+    }
+
+    /**
+     * Kontroly relacie pri kazdej poziadavke: epoch (zmena hesla, reset 2FA), odvolane zariadenie, necinnost.
+     * Pri zlyhani odhlasi a nastavi dovod; vracia false.
+     */
+    private function sessionStillValid(int $userId): bool
+    {
+        $svc = new TrustedDeviceService();
+        $now = service('clock')->now();
+
+        if (session('auth_epoch') !== $svc->currentEpoch($userId)) {
+            auth('session')->logout();
+
+            return false;
+        }
+
+        $deviceId = session('device_id');
+
+        if (is_int($deviceId)) {
+            if (! $svc->isActive($deviceId, $userId, $now)) {
+                auth('session')->logout();
+                service('response')->setCookie($svc->expiredCookie());
+
+                return false;
+            }
+        } else {
+            $last = session('last_activity');
+
+            if (! is_int($last) || $now->getTimestamp() - $last > self::IDLE_SECONDS) {
+                (new AuditLog())->record(AuthEvent::IdleLogout, true, $userId);
+                auth('session')->logout();
+                session()->setFlashdata('auth_info', lang('Login.infoIdleLogout'));
+
+                return false;
+            }
+        }
+
+        $last = session('last_activity');
+
+        if (! is_int($last) || $now->getTimestamp() - $last >= self::ACTIVITY_WRITE_INTERVAL) {
+            session()->set('last_activity', $now->getTimestamp());
+
+            if (is_int($deviceId)) {
+                $svc->touch($deviceId, $now);
+            }
+        }
+
+        return true;
+    }
+
+    private function denyAnonymous(bool $htmx): ResponseInterface
+    {
+        $authenticator = auth('session')->getAuthenticator();
         $target        = method_exists($authenticator, 'isPending') && $authenticator->isPending() ? '/2fa' : '/login';
 
         if ($htmx) {
             return service('response')->setStatusCode(401)->setHeader('HX-Redirect', $target)->setBody('');
         }
 
-        return redirect()->to($target);
+        return redirect()->to($target)->withCookies();
     }
 
     /**

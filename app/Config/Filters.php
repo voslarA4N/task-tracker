@@ -3,6 +3,7 @@
 namespace Config;
 
 use App\Filters\AuthGate;
+use App\Filters\DeviceLogin;
 use App\Filters\HtmxCsrf;
 use App\Filters\HtmxVary;
 use App\Filters\LocaleNegotiation;
@@ -29,6 +30,7 @@ class Filters extends BaseFilters
      */
     public array $aliases = [
         'authgate'      => AuthGate::class,
+        'devicelogin'   => DeviceLogin::class,
         'csrf'          => HtmxCsrf::class,
         'locale'        => LocaleNegotiation::class,
         'htmxvary'      => HtmxVary::class,
@@ -77,6 +79,7 @@ class Filters extends BaseFilters
      */
     public array $globals = [
         'before' => [
+            'devicelogin' => ['except' => ['offline', 'sw.js']],
             // 'honeypot',
             'csrf' => ['except' => ['offline', 'sw.js']],
             'authgate',
@@ -84,6 +87,7 @@ class Filters extends BaseFilters
             // 'invalidchars',
         ],
         'after' => [
+            'devicelogin',
             'htmxvary',
             // 'honeypot',
         ],

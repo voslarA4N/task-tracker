@@ -59,6 +59,7 @@ abstract class AuthTestCase extends PgTestCase
             'auth_epoch'    => (new TrustedDeviceService())->currentEpoch((int) $user->id),
             'last_activity' => service('clock')->now()->getTimestamp(),
         ]);
+        $this->withSession();
 
         return $this;
     }

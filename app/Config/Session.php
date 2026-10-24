@@ -40,8 +40,11 @@ class Session extends BaseConfig
      *
      * The number of SECONDS you want the session to last.
      * Setting to 0 (zero) means expire when the browser is closed.
+     *
+     * 30 dni: iOS PWA potrebuje trvalu cookie (session cookie by sa po zatvoreni aplikacie stratila).
+     * 2 h necinnosti nedovernostnych relacii vynucuje App\Filters\AuthGate (D-18), nie tato hodnota.
      */
-    public int $expiration = 7200;
+    public int $expiration = 2592000;
 
     /**
      * --------------------------------------------------------------------------
