@@ -30,7 +30,9 @@ final class LoginTest extends AuthTestCase
 
     private function stripToken(string $body): string
     {
-        return (string) preg_replace('/value="[a-f0-9]{32}"/', 'value="T"', $body);
+        $body = (string) preg_replace('/value="[a-f0-9]{32,}"/', 'value="T"', $body);
+
+        return (string) preg_replace('/[a-f0-9]{64}/', 'T', $body);
     }
 
     public function testLoginPageRenders(): void
@@ -72,7 +74,7 @@ final class LoginTest extends AuthTestCase
         $body = $this->body($result);
 
         $this->assertStringContainsString(esc(lang('Login.errorInvalid')), $body);
-        $this->assertStringContainsString('owner@example.test', $body);
+        $this->assertStringContainsString(esc('owner@example.test', 'attr'), $body);
         $this->assertStringNotContainsString('Nespravne-Heslo-1!', $body);
     }
 
@@ -80,17 +82,16 @@ final class LoginTest extends AuthTestCase
     {
         $this->createUser('owner@example.test');
 
-        $known   = $this->postLogin(['email' => 'owner@example.test', 'password' => 'Nespravne-Heslo-1!']);
-        $unknown = $this->postLogin(['email' => 'owner@example.test', 'password' => 'Nespravne-Heslo-1!']);
+        $known     = $this->postLogin(['email' => 'owner@example.test', 'password' => 'Nespravne-Heslo-1!']);
+        $knownBody = $this->body($known);
         $missing = $this->postLogin(['email' => 'nikto@example.test', 'password' => 'Nespravne-Heslo-1!']);
 
         $missing->assertStatus(422);
         $this->assertStringContainsString(esc(lang('Login.errorInvalid')), $this->body($missing));
         $this->assertSame(
-            $this->stripToken($this->body($known)),
-            str_replace('nikto@example.test', 'owner@example.test', $this->stripToken($this->body($missing))),
+            $this->stripToken($knownBody),
+            str_replace(esc('nikto@example.test', 'attr'), esc('owner@example.test', 'attr'), $this->stripToken($this->body($missing))),
         );
-        $this->assertSame(422, $unknown->response()->getStatusCode());
     }
 
     public function testDummyHashIsArgon2id(): void

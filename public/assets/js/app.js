@@ -43,6 +43,18 @@
     body.addEventListener('htmx:beforeRequest', hide);
   });
 
+  /* Jedno odoslanie: po submite zablokovat tlacidlo a ukazat spinner (formular funguje aj bez JS). */
+  document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('submit', function (e) {
+      var form = e && e.target;
+      if (!form || !form.matches || !form.matches('form[data-submit-once]')) { return; }
+      var button = form.querySelector('button[type=submit]');
+      var spinner = form.querySelector('button[type=submit] .spinner-border');
+      if (button) { button.disabled = true; }
+      if (spinner) { spinner.classList.remove('d-none'); }
+    }, true);
+  });
+
   /* Vzor registracie pre Alpine CSP build (musi sa nacitat pred Alpine). */
   document.addEventListener('alpine:init', function () {
     window.Alpine.data('appShell', function () { return {}; });

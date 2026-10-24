@@ -90,3 +90,30 @@ img, table { max-width: 100%; }
   .app-header { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; }
   .app-main { max-width: 960px; margin: 0 auto; padding-bottom: 24px; }
 }
+
+/* Prihlasovanie a 2FA (layouts/auth) */
+.auth-wrap {
+  min-height: 100dvh;
+  padding: calc(env(safe-area-inset-top) + 48px) 16px calc(env(safe-area-inset-bottom) + 24px);
+  background: var(--app-bg);
+}
+.auth-card {
+  max-width: 400px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  padding: 16px;
+}
+@media (min-width: 576px) {
+  .auth-card { padding: 24px; }
+}
+.auth-logo {
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 20px;
+  font-weight: 600;
+}
+.auth-wrap #app-alert { max-width: 400px; margin: 0 auto 16px; }
+.btn { font-weight: 600; }
+.form-label { font-weight: 600; }
