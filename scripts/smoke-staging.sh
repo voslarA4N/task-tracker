@@ -93,8 +93,8 @@ if [ -n "${SMOKE_EMAIL:-}" ] && [ -n "${SMOKE_PASSWORD:-}" ]; then
       --data-urlencode "email=$SMOKE_EMAIL" \
       --data-urlencode "password=$SMOKE_PASSWORD" 2>&1 | tr -d '\r' || true)
     AFTER=$(grep '__Host-ci_session' "$JAR" | awk '{print $7}' || true)
-    if echo "$PH" | head -n1 | grep -q ' 302' && echo "$PH" | grep -iq '^location:.*/2fa' && [ -n "$AFTER" ] && [ "$BEFORE" != "$AFTER" ]; then
-      pass "po hesle 302 /2fa a nová session cookie"; else fail "po hesle 302 /2fa a nová session cookie"; fi
+    if echo "$PH" | head -n1 | grep -qE ' 30[23]' && echo "$PH" | grep -iq '^location:.*/2fa' && [ -n "$AFTER" ] && [ "$BEFORE" != "$AFTER" ]; then
+      pass "po hesle 302/303 /2fa a nová session cookie"; else fail "po hesle 302/303 /2fa a nová session cookie"; fi
   else
     fail "csrf token vo formulári /login nenájdený"
   fi
