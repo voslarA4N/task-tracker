@@ -161,7 +161,8 @@ Stav k 2026-10-24 (overil Claude):
 - DNS: `work-tracker.vostack.dev` je proxovaný cez Cloudflare (A 188.114.96.11/97.11, AAAA 2a06:98c1:3120::b/3121::b), origin IP sa nezverejňuje. Cloudflare edge vracia 521 (origin odmietol spojenie, nginx ešte nebeží), nie 522, takže firewall Cloudflare na port 443 púšťa.
 - Firewall: Hetzner Cloud Firewall nastavený (2026-10-24). Z vývojového stroja porty 80, 443 a 5432 končia timeoutom (zahodené), SSH (deploy aj aiagent) a ICMP fungujú. Prístup z Cloudflare na 80/443 sa overí pri prvom deployi (02-09).
 - Cloudflare token: `secrets/cloudflare.ini` existuje (600, deploy), jediný riadok `dns_cloudflare_api_token`, token je podľa `/user/tokens/verify` aktívny a vidí iba zónu `vostack.dev`.
-- Čaká na vlastníka: `.env` (sekcia 6, spustiť celé ako root), `DEPLOY_SSH_KEY`.
+- `.env`: existuje (640, deploy, GID 82), obsahuje všetkých 30 kľúčov zo sekcie 6 bez duplicít a prázdnych hodnôt, heslá a kľúče majú očakávanú dĺžku, `database.*.password` sa zhoduje s `DB_*_PASSWORD`. Docker Compose formát s medzerami okolo `=` prečíta (overené na kópii s falošnými hodnotami).
+- Čaká na vlastníka: `DEPLOY_SSH_KEY`.
 
 ## 12. Správa používateľa na stagingu
 
