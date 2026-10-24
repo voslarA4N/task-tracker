@@ -116,7 +116,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 02-14-PLAN.md — Overenie TOTP pri prihlásení s atomickou replay ochranou
+- [x] 02-14-PLAN.md — Overenie TOTP pri prihlásení s atomickou replay ochranou
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
@@ -323,7 +323,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
-| 2. Identita a skoré nasadenie | 11/20 | In Progress|  |
+| 2. Identita a skoré nasadenie | 12/20 | In Progress|  |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
