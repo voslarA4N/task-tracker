@@ -252,7 +252,6 @@ final class LoginTest extends AuthTestCase
     public function testRemoteAddrIsStoredAsIp(): void
     {
         service('superglobals')->setServer('REMOTE_ADDR', '203.0.113.9');
-        $_SERVER['REMOTE_ADDR'] = '203.0.113.9';
         $this->createUser('owner@example.test');
         $this->postLogin(['email' => 'owner@example.test', 'password' => 'Nespravne-Heslo-1!']);
 

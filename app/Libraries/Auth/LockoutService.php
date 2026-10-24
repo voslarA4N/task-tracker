@@ -42,10 +42,10 @@ final class LockoutService
         $latest = null;
 
         foreach ($rows as $row) {
-            $until = new DateTimeImmutable((string) $row['locked_until']);
+            $until = $now->modify((string) $row['locked_until'])->setTimezone($now->getTimezone());
 
             if ($latest === null || $until > $latest) {
-                $latest = $until->setTimezone($now->getTimezone());
+                $latest = $until;
             }
         }
 

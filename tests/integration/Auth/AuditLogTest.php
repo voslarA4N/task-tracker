@@ -51,8 +51,6 @@ final class AuditLogTest extends PgTestCase
     public function testDeviceLabelFromIphoneUserAgent(): void
     {
         service('superglobals')->setServer('HTTP_USER_AGENT', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1');
-        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
-        $_SERVER['REMOTE_ADDR']     = '203.0.113.9';
         Services::injectMock('request', new IncomingRequest(config('App'), new SiteURI(config('App')), null, new UserAgent()));
 
         (new AuditLog($this->rw()))->record(AuthEvent::Logout, true, null);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
+use App\Libraries\Auth\AuditLog;
+use App\Libraries\Auth\AuthEvent;
 use App\Libraries\Auth\UserProvisioner;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
@@ -60,6 +62,8 @@ final class UserCreate extends BaseCommand
 
             return EXIT_ERROR;
         }
+
+        (new AuditLog())->record(AuthEvent::UserCreatedCli, true, (int) $user->id, null, 'group=' . $group);
 
         CLI::write('Používateľ ' . $user->email . ' vytvorený v skupine ' . $group . '. 2FA sa nastaví pri prvom prihlásení.', 'green');
 

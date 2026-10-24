@@ -12,5 +12,8 @@ return [
     'hint'             => 'After your password you will be asked for a code from your authenticator app.',
     'errorInvalid'     => 'The email or password is incorrect. Check them and try again.',
     'errorEmailFormat' => 'Enter an email in a valid format.',
+    'errorLocked'      => 'Too many incorrect attempts. Try again in 15 minutes.',
+    'lockedFor'        => 'The account is temporarily locked. Try again in {0} min.',
+    'unknownDevice'    => 'Unknown device',
     'logout'           => 'Sign out',
 ];

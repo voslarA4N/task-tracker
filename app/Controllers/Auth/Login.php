@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace App\Controllers\Auth;
 
 use App\Controllers\BaseController;
+use App\Libraries\Auth\AuditLog;
+use App\Libraries\Auth\AuthEvent;
+use App\Libraries\Auth\LockoutService;
+use App\Libraries\Auth\SecurityNotifier;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\Shield\Authentication\Authenticators\Session;
 use CodeIgniter\Shield\Models\UserIdentityModel;
+use DateTimeImmutable;
 
 final class Login extends BaseController
 {
@@ -58,36 +63,98 @@ final class Login extends BaseController
         }
 
         $identity = model(UserIdentityModel::class)->getIdentityBySecret(Session::ID_TYPE_EMAIL_PASSWORD, $email);
+        $userId   = $identity === null ? null : (int) $identity->user_id;
+
+        $now     = service('clock')->now();
+        $ip      = $this->request->getIPAddress();
+        $lockout = new LockoutService();
+        $audit   = new AuditLog();
+
+        $until = $lockout->lockedUntil($ip, $email, $now);
+
+        if ($until !== null) {
+            $audit->record(AuthEvent::LockedAttempt, false, $userId, $email);
+
+            return $this->locked($email, $until, $now);
+        }
+
+        $result = null;
 
         if ($identity === null) {
             password_verify($password, self::DUMMY_HASH);
+        } else {
+            $result = $auth->attempt(['email' => $email, 'password' => $password]);
+        }
+
+        if ($result === null || ! $result->isOK()) {
+            $audit->record(AuthEvent::LoginPasswordFail, false, $userId, $email);
+
+            if ($lockout->registerFailure($ip, $email, $now)) {
+                $audit->record(AuthEvent::Lockout, false, $userId, $email, 'account');
+
+                if ($userId !== null) {
+                    (new SecurityNotifier())->notify(
+                        SecurityNotifier::ACCOUNT_LOCKED,
+                        $email,
+                        $this->userLocale($userId),
+                        ['at' => $now, 'ip' => $ip, 'minutes' => LockoutService::LOCK_MINUTES],
+                    );
+                }
+            }
+
+            $until = $lockout->lockedUntil($ip, $email, $now);
+
+            if ($until !== null) {
+                return $this->locked($email, $until, $now);
+            }
 
             return $this->page($email, lang('Login.errorInvalid'), 422);
         }
 
-        $result = $auth->attempt(['email' => $email, 'password' => $password]);
-
-        if (! $result->isOK()) {
-            return $this->page($email, lang('Login.errorInvalid'), 422);
-        }
-
-        session()->set('pending_since', service('clock')->now()->getTimestamp());
+        $audit->record(AuthEvent::LoginPasswordOk, true, $userId);
+        session()->set('pending_since', $now->getTimestamp());
 
         return redirect()->to('/2fa');
     }
 
     public function logout(): ResponseInterface
     {
+        $user = auth('session')->user();
+
+        if ($user === null) {
+            $authenticator = auth('session')->getAuthenticator();
+            $pending       = $authenticator instanceof Session && $authenticator->isPending()
+                ? $authenticator->getPendingUser()
+                : null;
+            $user = $pending;
+        }
+
+        (new AuditLog())->record(AuthEvent::Logout, true, $user === null ? null : (int) $user->id);
+
         auth('session')->logout();
         session()->remove('pending_since');
 
         return redirect()->to('/login');
     }
 
-    private function page(string $email, ?string $error, int $status): ResponseInterface
+    private function locked(string $email, DateTimeImmutable $until, DateTimeImmutable $now): ResponseInterface
+    {
+        $minutes = max(1, intdiv($until->getTimestamp() - $now->getTimestamp() + 59, 60));
+
+        return $this->page($email, lang('Login.errorLocked'), 429, lang('Login.lockedFor', [$minutes]));
+    }
+
+    private function userLocale(int $userId): string
+    {
+        $row = db_connect()->table('user_security')->select('locale')->where('user_id', $userId)->get()->getRow();
+
+        return $row === null ? 'sk' : (string) $row->locale;
+    }
+
+    private function page(string $email, ?string $error, int $status, ?string $lockedInfo = null): ResponseInterface
     {
         return $this->response
             ->setStatusCode($status)
-            ->setBody(view('auth/login', ['title' => lang('Login.title'), 'email' => $email, 'error' => $error]));
+            ->setBody(view('auth/login', ['title' => lang('Login.title'), 'email' => $email, 'error' => $error, 'lockedInfo' => $lockedInfo]));
     }
 }

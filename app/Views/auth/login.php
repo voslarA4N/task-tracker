@@ -33,6 +33,9 @@
             <?= esc(lang('Login.submit')) ?>
         </button>
     </form>
+    <?php if (! empty($lockedInfo)) : ?>
+        <p class="small text-muted mt-3 mb-0" aria-live="polite"><?= esc($lockedInfo) ?></p>
+    <?php endif ?>
     <p class="text-secondary small mt-3 mb-0"><?= esc(lang('Login.hint')) ?></p>
 </div>
 <?= $this->endSection() ?>
