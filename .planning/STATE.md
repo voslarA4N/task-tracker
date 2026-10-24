@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-10-24T13:46:23.548Z"
-last_activity: 2026-10-24 -- Phase 02 execution started
+last_updated: "2026-10-24T13:58:08.641Z"
+last_activity: 2026-10-24
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 30
-  completed_plans: 10
+  completed_plans: 12
   percent: 8
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 02 (identita-a-skor-nasadenie) — EXECUTING
-Plan: 1 of 20
-Status: Executing Phase 02
-Last activity: 2026-10-24 -- Phase 02 execution started
+Plan: 2 of 20
+Status: Ready to execute
+Last activity: 2026-10-24
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -80,6 +80,7 @@ Recent decisions affecting current work:
 - [Phase 02-01]: O-4 = letsencrypt (DNS-01 cez Cloudflare token Zone:DNS:Edit, spĺňa NFR-03)
 - [Phase 02-01]: O-5 = yes (zapamätanie zariadenia aj pri prvom nastavení 2FA, TOTP bol práve zadaný)
 - [Phase 02-01]: O-6 = followup (7- a 30-dňová kontrola iPhone ako sledované úlohy)
+- [Phase 02]: 02-03: Shield spike passed; TOTP as Shield login action (totp_gateway), array-only Settings handler
 
 ### Pending Todos
 
@@ -104,6 +105,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-24T12:10:05.162Z
+Last session: 2026-10-24T13:57:52.884Z
 Stopped at: Phase 2 UI-SPEC approved
-Resume file: .planning/phases/02-identita-a-skor-nasadenie/02-UI-SPEC.md
+Resume file: None

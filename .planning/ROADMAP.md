@@ -85,12 +85,12 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Schválenie balíkov (T-02-SC) a rozhodnutia vlastníka O-1..O-6 (checkpointy)
+- [x] 02-01-PLAN.md — Schválenie balíkov (T-02-SC) a rozhodnutia vlastníka O-1..O-6 (checkpointy)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [ ] 02-02-PLAN.md — Príprava servera, Cloudflare, firewallu a GitHub secrets (bootstrap + runbook, akcie vlastníka)
-- [ ] 02-03-PLAN.md — Spike Shield + TOTP akcia, roly admin/accountant, Argon2id, spark user:create
+- [x] 02-03-PLAN.md — Spike Shield + TOTP akcia, roly admin/accountant, Argon2id, spark user:create
 - [ ] 02-04-PLAN.md — nginx (realip CF, limit_req, sw.js/manifest, cert parametre), nginx obraz, compose.staging.yaml
 - [ ] 02-05-PLAN.md — Bezpečnostné e-maily: AppMailer (Mailpit / metadata-only log), SecurityNotifier
 
@@ -138,6 +138,7 @@ Plans:
 **Wave 12** *(blocked on Wave 11 completion)*
 
 - [ ] 02-20-PLAN.md — Nasadenie celej fázy, staging smoke, meranie pamäte, UAT na iPhone (vlastník)
+
 **UI hint**: yes
 **Poznámky**: **Potrebuje /gsd-research-phase** (Shield 1.4: pending stav, `ConditionalActionInterface`, remember-me, iOS cookies). Spike s časovým limitom, fallback: TOTP vo vlastnom filtri nad Shield, až potom vlastné prihlasovanie. Service worker nesmie cachovať HTML, `Vary: HX-Request`, CSRF bez regenerácie pri každej požiadavke. Vlastník: objednať Hetzner VPS (x86 vs ARM CAX), Storage Box.
 
@@ -322,7 +323,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
-| 2. Identita a skoré nasadenie | 0/0 | Not started | - |
+| 2. Identita a skoré nasadenie | 2/20 | In Progress|  |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
