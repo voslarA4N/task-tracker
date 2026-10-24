@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-10-24T13:26:42.412Z"
-last_activity: 2026-10-24 -- Phase 2 planning complete
+last_updated: "2026-10-24T13:46:23.548Z"
+last_activity: 2026-10-24 -- Phase 02 execution started
 progress:
   total_phases: 12
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 01 — Základ a infraštruktúra
+**Current focus:** Phase 02 — identita-a-skor-nasadenie
 
 ## Current Position
 
-Phase: 01 (Základ a infraštruktúra) — EXECUTING
-Plan: 10 of 10
-Status: Ready to execute
-Last activity: 2026-10-24 -- Phase 2 planning complete
+Phase: 02 (identita-a-skor-nasadenie) — EXECUTING
+Plan: 1 of 20
+Status: Executing Phase 02
+Last activity: 2026-10-24 -- Phase 02 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -73,10 +73,18 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-08: feature tests read bodies via response()->getBody(); TestResponse::getBody is DOM-normalised
 - [Phase 01]: demo_calculations is insert-only with CHECK amount=round(hours*rate,2); demo controller shares validation between calculate/store
 - [Phase 01]: CI .env uses CI_ENVIRONMENT=development; phpstan schema cache in build/phpstan
+- [Phase 02-01]: balíky shield/settings/otphp/bacon/psr-clock schválené 2026-10-24 (overil Claude cez Packagist API na pokyn vlastníka; tranzitívne aj dasprid/enum, paragonie/constant_time_encoding, symfony/deprecation-contracts)
+- [Phase 02-01]: O-1 = revoke (odhlásenie odvolá aj dôveru aktuálneho zariadenia)
+- [Phase 02-01]: O-2 = 10 (záložný kód XXXXX-XXXXX, HMAC-SHA256 s pepperom mimo DB, pokusy obmedzené)
+- [Phase 02-01]: O-3 = metadata (staging mail log iba druh, príjemca, predmet, čas; nikdy telo ani reset odkaz)
+- [Phase 02-01]: O-4 = letsencrypt (DNS-01 cez Cloudflare token Zone:DNS:Edit, spĺňa NFR-03)
+- [Phase 02-01]: O-5 = yes (zapamätanie zariadenia aj pri prvom nastavení 2FA, TOTP bol práve zadaný)
+- [Phase 02-01]: O-6 = followup (7- a 30-dňová kontrola iPhone ako sledované úlohy)
 
 ### Pending Todos
 
-None yet.
+- [Phase 2 follow-up] iPhone: po 7 dňoch od zapamätania zariadenia overiť, že PWA nežiada prihlásenie (cieľ: dátum UAT + 7 dní)
+- [Phase 2 follow-up] iPhone: po 30 dňoch overiť, že sa vyžaduje heslo aj TOTP (D-17) a že predtým nebolo žiadne prihlásenie (kritérium 5)
 
 ### Blockers/Concerns
 
@@ -84,7 +92,7 @@ None yet.
 - [Phase 1]: mPDF pod PHP 8.5 s diakritikou treba overiť spikom
 - [Phase 3 -> 6, 8, 10]: Otázky pre účtovníčku (limity SK/PL, zákonné texty, kurz, dobropis, retencia) blokujú finálne znenie textov a limity
 - [Phase 7]: Vlastník musí zvoliť SMTP poskytovateľa a nastaviť DNS (SPF/DKIM/DMARC)
-- [Phase 2]: Vlastník objedná Hetzner VPS a Storage Box (overiť podmienky)
+- [Phase 2]: vlastník musí pripraviť Cloudflare, firewall a server podľa plánu 02-02
 
 ## Deferred Items
 
