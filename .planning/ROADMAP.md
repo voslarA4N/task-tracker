@@ -105,7 +105,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 02-09-PLAN.md — Prvé nasadenie stagingu a overenie (HTTPS, hlavičky, realip, origin, pamäť)
+- [x] 02-09-PLAN.md — Prvé nasadenie stagingu a overenie (HTTPS, hlavičky, realip, origin, pamäť)
 - [x] 02-10-PLAN.md — Zámky 5/15 min (IP + účet) a insert-only denník prihlásení
 - [x] 02-11-PLAN.md — PWA inštalácia: manifest, ikony, iOS meta, inštalačný panel
 
@@ -323,7 +323,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
-| 2. Identita a skoré nasadenie | 18/20 | In Progress|  |
+| 2. Identita a skoré nasadenie | 19/20 | In Progress|  |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
