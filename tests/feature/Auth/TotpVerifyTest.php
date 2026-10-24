@@ -6,6 +6,7 @@ namespace Tests\Feature\Auth;
 
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Shield\Entities\User;
+use CodeIgniter\Shield\Models\UserModel;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -186,7 +187,7 @@ final class TotpVerifyTest extends AuthTestCase
             $this->call('post', '/login', ['email' => 'owner@example.test', 'password' => 'Zle-Heslo-123!', csrf_token() => csrf_hash()])->assertStatus(422);
         }
 
-        $user = (new \CodeIgniter\Shield\Models\UserModel())->findByCredentials(['email' => 'owner@example.test']);
+        $user = (new UserModel())->findByCredentials(['email' => 'owner@example.test']);
         $this->assertNotNull($user);
         $this->secret = $this->enrollTotp($user);
         $this->startPending($user);
@@ -209,7 +210,7 @@ final class TotpVerifyTest extends AuthTestCase
     {
         $user = $this->createUser('owner@example.test');
         $this->loginAs($user);
-        $result = $this->get('/2fa/verify');
+        $result = $this->fetch('/2fa/verify');
         $result->assertStatus(302);
         $this->assertStringEndsWith('/', $result->response()->getHeaderLine('Location'));
     }
@@ -230,7 +231,10 @@ final class TotpVerifyTest extends AuthTestCase
         $result->assertStatus(302);
         $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
         $this->assertSame(lang('TwoFactor.pendingExpired'), session()->getFlashdata('auth_info'));
+    }
 
+    public function testExpiredPendingPostRedirectsToLogin(): void
+    {
         $this->pending();
         session()->set('pending_since', service('clock')->now()->getTimestamp() - 601);
         $result = $this->postCode($this->totpCode($this->secret));

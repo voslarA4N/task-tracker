@@ -13,5 +13,8 @@ return [
     'activate'         => 'Activate 2FA',
     'errorInvalidCode' => 'The code is incorrect or has already been used. Enter the current code from the app or a backup code.',
     'cancel'           => 'Cancel and sign out',
+    'verifyTitle'      => 'Enter your code',
+    'verifyIntro'      => 'Enter the six-digit code from the app to verify it is you.',
+    'verifySubmit'     => 'Verify code',
     'pendingExpired'   => 'Your sign-in expired. Enter your password again.',
 ];

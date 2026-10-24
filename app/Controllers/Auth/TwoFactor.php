@@ -71,19 +71,13 @@ final class TwoFactor extends BaseController
 
         $svc    = new TotpService();
         $secret = $this->setupSecret();
-        $email  = mb_strtolower((string) $user->email);
         $userId = (int) $user->id;
         $now    = service('clock')->now();
-        $ip     = $this->request->getIPAddress();
-        $lock   = new LockoutService();
-        $audit  = new AuditLog();
 
-        $until = $lock->lockedUntil($ip, $email, $now);
+        $locked = $this->lockedResponse($user, $secret);
 
-        if ($until !== null) {
-            $audit->record(AuthEvent::LockedAttempt, false, $userId, $email);
-
-            return $this->page($user, $secret, lang('Login.errorLocked'), 429);
+        if ($locked !== null) {
+            return $locked;
         }
 
         $raw  = $this->request->getPost('code');
@@ -91,25 +85,7 @@ final class TwoFactor extends BaseController
         $step = $svc->matchStep($secret, $code, null);
 
         if ($step === null) {
-            $audit->record(AuthEvent::LoginTotpFail, false, $userId, $email, 'setup');
-
-            if ($lock->registerFailure($ip, $email, $now)) {
-                $audit->record(AuthEvent::Lockout, false, $userId, $email, 'account');
-                (new SecurityNotifier())->notify(
-                    SecurityNotifier::ACCOUNT_LOCKED,
-                    $email,
-                    $this->userLocale($userId),
-                    ['at' => $now, 'ip' => $ip, 'minutes' => LockoutService::LOCK_MINUTES],
-                );
-            }
-
-            $until = $lock->lockedUntil($ip, $email, $now);
-
-            if ($until !== null) {
-                return $this->page($user, $secret, lang('Login.errorLocked'), 429);
-            }
-
-            return $this->page($user, $secret, lang('TwoFactor.errorInvalidCode'), 422);
+            return $this->registerSecondFactorFailure($user, 'setup', $secret);
         }
 
         $db = db_connect();
@@ -123,9 +99,137 @@ final class TwoFactor extends BaseController
         }
 
         session()->remove(self::SETUP_SECRET_KEY);
-        $audit->record(AuthEvent::TotpEnrolled, true, $userId);
+        (new AuditLog())->record(AuthEvent::TotpEnrolled, true, $userId);
 
         return $this->completeLogin($user);
+    }
+
+    public function verify(): ResponseInterface
+    {
+        if (auth('session')->loggedIn()) {
+            return redirect()->to('/');
+        }
+
+        $user = $this->pendingUserOrRedirect();
+
+        if ($user instanceof RedirectResponse) {
+            return $user;
+        }
+
+        if (! $this->hasTotp($user)) {
+            return redirect()->to('/2fa/setup');
+        }
+
+        return $this->verifyPage(null, 200);
+    }
+
+    public function check(): ResponseInterface
+    {
+        if (auth('session')->loggedIn()) {
+            return redirect()->to('/');
+        }
+
+        $user = $this->pendingUserOrRedirect();
+
+        if ($user instanceof RedirectResponse) {
+            return $user;
+        }
+
+        if (! $this->hasTotp($user)) {
+            return redirect()->to('/2fa/setup');
+        }
+
+        $locked = $this->lockedResponse($user);
+
+        if ($locked !== null) {
+            return $locked;
+        }
+
+        $raw  = $this->request->getPost('code');
+        $code = is_string($raw) ? (string) preg_replace('/\s+/', '', $raw) : '';
+
+        if (preg_match('/^[0-9]{6}$/', $code) !== 1) {
+            return $this->registerSecondFactorFailure($user, 'totp');
+        }
+
+        $row = db_connect()->table('user_security')->select('totp_secret_enc, totp_last_step')->where('user_id', $user->id)->get()->getRow();
+
+        if ($row === null || $row->totp_secret_enc === null) {
+            return $this->registerSecondFactorFailure($user, 'totp');
+        }
+
+        $svc  = new TotpService();
+        $last = $row->totp_last_step === null ? null : (int) $row->totp_last_step;
+        $step = $svc->matchStep($svc->decryptSecret((string) $row->totp_secret_enc), $code, $last);
+
+        if ($step === null || ! $svc->claimStep((int) $user->id, $step)) {
+            return $this->registerSecondFactorFailure($user, 'totp');
+        }
+
+        return $this->completeLogin($user);
+    }
+
+    /**
+     * Ak je IP alebo ucet zamknuty, zapise pokus do dennika a vrati 429, inak null.
+     */
+    private function lockedResponse(User $user, ?string $setupSecret = null): ?ResponseInterface
+    {
+        $email = mb_strtolower((string) $user->email);
+        $until = (new LockoutService())->lockedUntil($this->request->getIPAddress(), $email, service('clock')->now());
+
+        if ($until === null) {
+            return null;
+        }
+
+        (new AuditLog())->record(AuthEvent::LockedAttempt, false, (int) $user->id, $email);
+
+        return $this->failurePage($user, $setupSecret, lang('Login.errorLocked'), 429);
+    }
+
+    /**
+     * Spolocne spracovanie chybneho druheho faktora: pocitadlo zamku, dennik, e-mail pri zamku.
+     */
+    private function registerSecondFactorFailure(User $user, string $detail, ?string $setupSecret = null): ResponseInterface
+    {
+        $email  = mb_strtolower((string) $user->email);
+        $userId = (int) $user->id;
+        $now    = service('clock')->now();
+        $ip     = $this->request->getIPAddress();
+        $lock   = new LockoutService();
+        $audit  = new AuditLog();
+
+        $audit->record(AuthEvent::LoginTotpFail, false, $userId, $email, $detail);
+
+        if ($lock->registerFailure($ip, $email, $now)) {
+            $audit->record(AuthEvent::Lockout, false, $userId, $email, 'account');
+            (new SecurityNotifier())->notify(
+                SecurityNotifier::ACCOUNT_LOCKED,
+                $email,
+                $this->userLocale($userId),
+                ['at' => $now, 'ip' => $ip, 'minutes' => LockoutService::LOCK_MINUTES],
+            );
+        }
+
+        if ($lock->lockedUntil($ip, $email, $now) !== null) {
+            return $this->failurePage($user, $setupSecret, lang('Login.errorLocked'), 429);
+        }
+
+        return $this->failurePage($user, $setupSecret, lang('TwoFactor.errorInvalidCode'), 422);
+    }
+
+    private function failurePage(User $user, ?string $setupSecret, string $error, int $status): ResponseInterface
+    {
+        return $setupSecret === null ? $this->verifyPage($error, $status) : $this->page($user, $setupSecret, $error, $status);
+    }
+
+    private function verifyPage(?string $error, int $status): ResponseInterface
+    {
+        return $this->response
+            ->setStatusCode($status)
+            ->setBody(view('auth/totp_verify', [
+                'title' => lang('TwoFactor.verifyTitle'),
+                'error' => $error,
+            ]));
     }
 
     /**

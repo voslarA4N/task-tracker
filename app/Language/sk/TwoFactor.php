@@ -13,5 +13,8 @@ return [
     'activate'         => 'Aktivovať 2FA',
     'errorInvalidCode' => 'Kód nie je správny alebo už bol použitý. Zadajte aktuálny kód z aplikácie alebo záložný kód.',
     'cancel'           => 'Zrušiť a odhlásiť',
+    'verifyTitle'      => 'Overenie kódom',
+    'verifyIntro'      => 'Zadajte šesťčíslicový kód z aplikácie na overenie.',
+    'verifySubmit'     => 'Overiť kód',
     'pendingExpired'   => 'Prihlásenie vypršalo. Zadajte heslo znova.',
 ];
