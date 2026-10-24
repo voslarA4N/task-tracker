@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Settings;
 
 use App\Libraries\Auth\BackupCodeService;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Shield\Entities\User;
 use CodeIgniter\Test\TestResponse;
 use PHPUnit\Framework\Attributes\Group;
@@ -210,8 +211,12 @@ final class SecurityPageTest extends AuthTestCase
         $row   = $this->deviceRow($token);
         $this->loginAs($owner);
 
-        $this->postTo('/settings/security/devices/' . $row['id'] . '/revoke')->assertStatus(404);
-        $this->assertNull($this->deviceRow($token)['revoked_at']);
+        try {
+            $this->postTo('/settings/security/devices/' . $row['id'] . '/revoke');
+            $this->fail('Ocakavana vynimka 404');
+        } catch (PageNotFoundException) {
+            $this->assertNull($this->deviceRow($token)['revoked_at']);
+        }
     }
 
     public function testRevokeWithoutCsrfTokenIsForbidden(): void

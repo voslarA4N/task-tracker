@@ -6,9 +6,13 @@ namespace App\Controllers\Settings;
 
 use App\Controllers\BaseController;
 use App\Libraries\Auth\AuditLog;
+use App\Libraries\Auth\AuthEvent;
 use App\Libraries\Auth\BackupCodeService;
 use App\Libraries\Auth\TrustedDeviceService;
+use CodeIgniter\Exceptions\PageNotFoundException;
+use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\Shield\Entities\User;
+use DateMalformedStringException;
 use IntlDateFormatter;
 
 final class Security extends BaseController
@@ -21,6 +25,32 @@ final class Security extends BaseController
         assert($user instanceof User);
 
         return view('settings/security', $this->pageData($user));
+    }
+
+    public function revokeDevice(int $id): ResponseInterface
+    {
+        $user = auth()->user();
+        assert($user instanceof User);
+        $userId = (int) $user->id;
+
+        $devices = new TrustedDeviceService();
+
+        if (! $devices->revoke($id, $userId, 'user', service('clock')->now())) {
+            throw PageNotFoundException::forPageNotFound();
+        }
+
+        (new AuditLog())->record(AuthEvent::DeviceRevoked, true, $userId, null, 'user');
+
+        if ($id === session('device_id')) {
+            auth('session')->logout();
+            session()->setFlashdata('auth_info', lang('Account.revoked'));
+
+            return redirect()->to('/login')->setCookie($devices->expiredCookie());
+        }
+
+        session()->setFlashdata('app_notice', ['type' => 'info', 'message' => lang('Account.revoked')]);
+
+        return redirect()->to('/settings/security');
     }
 
     /**
@@ -70,9 +100,9 @@ final class Security extends BaseController
 
     private function formatTime(string $timestamp): string
     {
-        $unix = strtotime($timestamp);
-
-        if ($unix === false) {
+        try {
+            $unix = service('clock')->now()->modify($timestamp)->getTimestamp();
+        } catch (DateMalformedStringException) {
             return $timestamp;
         }
 

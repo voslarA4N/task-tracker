@@ -77,7 +77,7 @@ final class AuthGateTest extends AuthTestCase
 
         foreach (['get', 'post', 'put', 'patch', 'delete'] as $verb) {
             foreach (array_keys($routes->getRoutes(strtoupper($verb))) as $route) {
-                $path = '/' . trim((string) preg_replace(['/\(:num\)/', '/\(:[^)]*\)/'], ['1', 'x'], $route), '/');
+                $path = '/' . trim((string) preg_replace(['/\(:num\)/', '/\(\[0-9\]\+\)/', '/\(:[^)]*\)/'], ['1', '1', 'x'], $route), '/');
 
                 if ($this->isAllowlisted($path)) {
                     continue;
