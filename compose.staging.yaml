@@ -1,0 +1,80 @@
+# Staging (a buduca produkcia, D-03): spusta sa v /opt/work-tracker cez
+#   docker compose -f compose.staging.yaml up -d
+# Obrazy php a nginx idu z GHCR podla IMAGE_PREFIX a IMAGE_TAG. .env je mimo gitu
+# a do obrazu sa nedostane, preto sa mountuje read-only. writable/ je na volume.
+# Bez Mailpitu, bez build, bez bind mountov kodu. DB nema publikovane porty.
+name: task-tracker
+
+services:
+  php:
+    image: ${IMAGE_PREFIX:?}-php:${IMAGE_TAG:?}
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Bratislava
+    volumes:
+      - ./.env:/var/www/html/.env:ro
+      - writable:/var/www/html/writable
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: ${IMAGE_PREFIX:?}-nginx:${IMAGE_TAG:?}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?}
+      NGINX_HSTS_VALUE: ${NGINX_HSTS_VALUE:?}
+      SSL_CERT: ${SSL_CERT:?}
+      SSL_KEY: ${SSL_KEY:?}
+    volumes:
+      - ./letsencrypt:/etc/letsencrypt:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on: [php]
+
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${DB_SUPERUSER_PASSWORD:?}
+      DB_OWNER_PASSWORD: ${DB_OWNER_PASSWORD:?}
+      DB_RW_PASSWORD: ${DB_RW_PASSWORD:?}
+      TZ: Europe/Bratislava
+      PGTZ: Europe/Bratislava
+    command: >
+      postgres
+      -c shared_buffers=64MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
+      -c effective_cache_size=192MB
+      -c max_connections=20
+      -c timezone=Europe/Bratislava
+      -c log_timezone=Europe/Bratislava
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./docker/postgres:/opt/provision:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Iba na vyziadanie: docker compose -f compose.staging.yaml run --rm certbot ...
+  certbot:
+    image: certbot/dns-cloudflare:v5.8.0
+    profiles: ["certbot"]
+    volumes:
+      - ./letsencrypt:/etc/letsencrypt
+      - ./secrets/cloudflare.ini:/secrets/cloudflare.ini:ro
+
+volumes:
+  pgdata:
+  writable:
