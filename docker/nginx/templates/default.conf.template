@@ -1,5 +1,14 @@
 server_tokens off;
 
+# Limit pokusov na prihlasovacie URL (AUTH-04): kluc iba pre /login, /2fa, /password.
+# Prazdny kluc = bez limitu. Pouziva $request_uri, lebo $uri je v PHP location /index.php.
+map $request_uri $auth_limit_key {
+    ~^/(login|2fa|password) $binary_remote_addr;
+    default "";
+}
+limit_req_zone $auth_limit_key zone=authz:1m rate=20r/m;
+limit_req_status 429;
+
 server {
     listen 80 default_server;
     server_name ${APP_DOMAIN};
@@ -11,10 +20,13 @@ server {
     http2 on;
     server_name ${APP_DOMAIN};
 
-    ssl_certificate /etc/nginx/certs/work-tracker.loc.pem;
-    ssl_certificate_key /etc/nginx/certs/work-tracker.loc-key.pem;
+    ssl_certificate ${SSL_CERT};
+    ssl_certificate_key ${SSL_KEY};
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_session_cache shared:SSL:1m;
+
+    # Skutocna IP klienta z Cloudflare (staging obraz); v dev je adresar prazdny.
+    include /etc/nginx/realip.d/*.conf;
 
     root /var/www/html/public;
     index index.php;
@@ -48,8 +60,28 @@ server {
         try_files $uri /index.php$is_args$args;
     }
 
+    location = /sw.js {
+        include /etc/nginx/conf.d/snippets/security-headers.conf;
+        fastcgi_hide_header Cache-Control;
+        fastcgi_hide_header X-Powered-By;
+        add_header Cache-Control "no-cache" always;
+        fastcgi_pass php:9000;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /var/www/html/public/index.php;
+        fastcgi_param HTTPS on;
+    }
+
+    location = /manifest.webmanifest {
+        include /etc/nginx/conf.d/snippets/security-headers.conf;
+        types { }
+        default_type application/manifest+json;
+        add_header Cache-Control "no-cache" always;
+        try_files $uri =404;
+    }
+
     location = /index.php {
         include /etc/nginx/conf.d/snippets/security-headers.conf;
+        limit_req zone=authz burst=10 nodelay;
         fastcgi_hide_header Cache-Control;
         fastcgi_hide_header X-Powered-By;
         add_header Cache-Control "no-store" always;
