@@ -191,3 +191,17 @@ Výsledky:
 - Origin 2.31.74.48:443 mimo Cloudflare nedostupný (smoke s `ORIGIN_IP`).
 - Pamäť v pokoji (`docker stats --no-stream`, 4+ minút po nasadení): nginx 4,4 MiB, php 21,5 MiB, db 31,2 MiB, spolu približne 57 MiB (< 512 MiB).
 - `SMOKE OK`; krok zmeny session cookie je `SKIP` (na stagingu ešte nie je používateľ, SMOKE_EMAIL/SMOKE_PASSWORD chýbajú).
+
+## 14. Nasadenie fázy 2 (plán 02-20)
+
+Dátum: 2026-10-24. Celá fáza 2 je nasadená automaticky z `main` (D-07): HEAD `ba9b92f`, GitHub Actions run 40132767378 (`check` aj `deploy` zelené), `IMAGE_TAG` = `sha-ba9b92f689e80dff486c4d57865e3b48860d5dcf`, zhodné s `/opt/work-tracker/.last-good-tag`. V tomto pláne sa nepushovalo, nasadenie už bolo hotové. Lokálne `make check` (335 testov) a `node --test tests/js/*.test.js` (26 testov) zelené.
+
+Smoke s dočasným účtom (skupina `accountant`, náhodné heslo iba v premennej shellu): `SMOKE OK`, vrátane riadku `po hesle 302/303 /2fa a nová session cookie` = OK (nie skip). Prvý beh tohto riadku zlyhal, lebo staging vracia `HTTP/2 303`, nie 302; regenerácia session bola správna (cookie `__Host-ci_session` sa po hesle zmenila, `Location: /2fa`). Opravené uvoľnením kontroly v `scripts/smoke-staging.sh` na 302 alebo 303.
+
+Pamäť v pokoji (`docker stats --no-stream`, 5 minút po poslednej aktivite): nginx 4,5 MiB, php 22,3 MiB, db 31,6 MiB, spolu približne 58 MiB (< 512 MiB, NFR-02).
+
+Dočasné smoke účty `smoke+*@work-tracker.invalid` boli po každom behu zmazané (`DELETE FROM users`), overené: `SELECT count(*) FROM auth_identities WHERE secret LIKE 'smoke+%'` = 0.
+
+Poznámka k príkazom: `docker compose -f compose.staging.yaml` na serveri vyžaduje `IMAGE_TAG` (napr. `export IMAGE_TAG=$(cat /opt/work-tracker/.last-good-tag)`), inak zlyhá na interpolácii.
+
+Ďalší krok: UAT na iPhone podľa `docs/ops/iphone-uat.md`.
