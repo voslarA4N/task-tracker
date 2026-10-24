@@ -68,6 +68,7 @@ jobs:
             -e '/^database\.\(default\|tests\)\.password/ s/= .*/= ci-rw/' \
             -e '/^database\.\(owner\|tests_owner\)\.password/ s/= .*/= ci-owner/' \
             .env
+          sed -i "s/^auth\.backupCodePepper =.*/auth.backupCodePepper = $(openssl rand -hex 32)/" .env
 
       - name: "Prod obraz: migracie na CI DB"
         run: |

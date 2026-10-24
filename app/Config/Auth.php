@@ -41,6 +41,12 @@ class Auth extends ShieldAuth
         'rememberLength'     => 30 * DAY,
     ];
 
+    /**
+     * Pepper pre HMAC-SHA256 zalozych kodov (env `auth.backupCodePepper`, 64 hex znakov,
+     * kopia mimo servera). Prazdny => BackupCodeService zlyha (fail closed).
+     */
+    public string $backupCodePepper = '';
+
     public int $minimumPasswordLength = 12;
     public string $hashAlgorithm      = PASSWORD_ARGON2ID;
     public int $hashMemoryCost        = 19456;
