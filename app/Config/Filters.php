@@ -2,6 +2,7 @@
 
 namespace Config;
 
+use App\Filters\AuthGate;
 use App\Filters\HtmxCsrf;
 use App\Filters\HtmxVary;
 use CodeIgniter\Config\Filters as BaseFilters;
@@ -26,6 +27,7 @@ class Filters extends BaseFilters
      * or [filter_name => [classname1, classname2, ...]]
      */
     public array $aliases = [
+        'authgate'      => AuthGate::class,
         'csrf'          => HtmxCsrf::class,
         'htmxvary'      => HtmxVary::class,
         'toolbar'       => DebugToolbar::class,
@@ -75,6 +77,7 @@ class Filters extends BaseFilters
         'before' => [
             // 'honeypot',
             'csrf',
+            'authgate',
             // 'invalidchars',
         ],
         'after' => [

@@ -7,6 +7,7 @@ namespace Tests\Feature\Auth;
 use App\Filters\AuthGate;
 use CodeIgniter\Test\TestResponse;
 use PHPUnit\Framework\Attributes\Group;
+use ReflectionClass;
 use Tests\Support\AuthTestCase;
 
 /**
@@ -17,8 +18,8 @@ final class AuthGateTest extends AuthTestCase
 {
     public function testAllowlistIsFixed(): void
     {
-        $this->assertSame(['login', 'logout', 'offline', 'sw.js', 'manifest.webmanifest'], AuthGate::ALLOW_EXACT);
-        $this->assertSame(['2fa', 'password/', 'assets/'], AuthGate::ALLOW_PREFIX);
+        $this->assertSame(['login', 'logout', 'offline', 'sw.js', 'manifest.webmanifest'], (new ReflectionClass(AuthGate::class))->getConstant('ALLOW_EXACT'));
+        $this->assertSame(['2fa', 'password/', 'assets/'], (new ReflectionClass(AuthGate::class))->getConstant('ALLOW_PREFIX'));
     }
 
     public function testAnonymousIsRedirectedToLogin(): void

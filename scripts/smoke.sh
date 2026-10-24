@@ -9,6 +9,10 @@ if [ -f .env ]; then
   [ -n "$d" ] && DOMAIN=$d
 fi
 
+# Voliteľné porty (hostiteľ s obsadeným 80/443): HTTPS_PORT=8443 HTTP_PORT=8080 sh scripts/smoke.sh
+BASE="https://$DOMAIN${HTTPS_PORT:+:$HTTPS_PORT}"
+HBASE="http://$DOMAIN${HTTP_PORT:+:$HTTP_PORT}"
+
 FAILS=0
 pass() { echo "OK    $1"; }
 fail() { echo "FAIL  $1"; FAILS=$((FAILS + 1)); }
@@ -22,11 +26,13 @@ done
 if echo "$PS" | grep -q '^db running healthy'; then pass "db healthy"; else fail "db healthy"; fi
 
 # 2. HTTPS + HTTP/2
-R=$(curl -sS -o /dev/null -w '%{http_code} %{http_version}' "https://$DOMAIN/" 2>&1 || true)
-if [ "$R" = "200 2" ]; then pass "https 200 HTTP/2"; else fail "https 200 HTTP/2 (got: $R)"; fi
+R=$(curl -sS -o /dev/null -w '%{http_code} %{http_version}' "$BASE/" 2>&1 || true)
+if [ "$R" = "302 2" ]; then pass "https 302 HTTP/2 (brana)"; else fail "https 302 HTTP/2 (got: $R)"; fi
+LH=$(curl -sS -o /dev/null -D - "$BASE/" | tr -d '\r' | grep -i '^location:' || true)
+if echo "$LH" | grep -Eiq "^location: *https://$DOMAIN(:[0-9]+)?/login$"; then pass "/ -> /login"; else fail "/ -> /login (got: $LH)"; fi
 
 # 3. redirect
-H=$(curl -sS -o /dev/null -D - "http://$DOMAIN/" 2>&1 || true)
+H=$(curl -sS -o /dev/null -D - "$HBASE/" 2>&1 || true)
 if echo "$H" | head -n1 | grep -q ' 301' && echo "$H" | grep -i '^location: https://' >/dev/null; then
   pass "http -> https 301"
 else fail "http -> https 301"; fi
@@ -51,23 +57,25 @@ check_headers() {
   if [ "$2" = "html" ]; then has '^cache-control:.*no-store' || ok=0; fi
   if [ "$ok" = 1 ]; then pass "headers $url"; else fail "headers $url"; fi
 }
-check_headers "https://$DOMAIN/" html
-check_headers "https://$DOMAIN/smoke-nonexistent-xyz" html
-check_headers "https://$DOMAIN/x.php" other
+check_headers "$BASE/" html
+check_headers "$BASE/smoke-nonexistent-xyz" html
+check_headers "$BASE/x.php" other
 
-# 6. gzip
-if curl -sS -H 'Accept-Encoding: gzip' -o /dev/null -D - "https://$DOMAIN/" | tr -d '\r' | grep -i '^content-encoding: *gzip' >/dev/null; then
+# 6. gzip (na statickom assete, `/` je za branou len presmerovanie bez tela)
+GZF=$(ls public/assets/vendor/*.css 2>/dev/null | head -n1 || true)
+if [ -z "$GZF" ]; then GZF=public/assets/css/app.css; fi
+if curl -sS -H 'Accept-Encoding: gzip' -o /dev/null -D - "$BASE/assets/${GZF#public/assets/}" | tr -d '\r' | grep -i '^content-encoding: *gzip' >/dev/null; then
   pass "gzip"; else fail "gzip"; fi
 
 # 7. vendor cache
 VF=$(ls public/assets/vendor/*.js 2>/dev/null | head -n1 || true)
 if [ -n "$VF" ]; then
-  VH=$(curl -sSI "https://$DOMAIN/assets/vendor/$(basename "$VF")" | tr -d '\r' | grep -i '^cache-control:' || true)
+  VH=$(curl -sSI "$BASE/assets/vendor/$(basename "$VF")" | tr -d '\r' | grep -i '^cache-control:' || true)
   if echo "$VH" | grep -q 'max-age=31536000' && echo "$VH" | grep -q immutable; then pass "vendor-cache"; else fail "vendor-cache"; fi
 else
   skip "SKIP vendor-cache"
 fi
-NH=$(curl -sSI "https://$DOMAIN/assets/vendor/smoke-missing-xyz.js" | tr -d '\r' || true)
+NH=$(curl -sSI "$BASE/assets/vendor/smoke-missing-xyz.js" | tr -d '\r' || true)
 if echo "$NH" | head -n1 | grep -q ' 404' && ! echo "$NH" | grep -i '^cache-control:.*immutable' >/dev/null; then
   pass "asset 404 not immutable"; else fail "asset 404 not immutable"; fi
 
@@ -81,9 +89,9 @@ else
   fail "spark mail:test"
 fi
 
-# 9. /demo: 200, cookies Secure/HttpOnly/SameSite=Lax (D-04), POST bez tokenu = 403
-DH=$(curl -sS -D - -o /dev/null "https://$DOMAIN/demo" 2>&1 | tr -d '\r' || true)
-if echo "$DH" | head -n1 | grep -q ' 200'; then pass "demo 200"; else fail "demo 200"; fi
+# 9. /demo za branou: anonymne 302 na /login; cookies Secure/HttpOnly/SameSite=Lax (D-04), POST bez tokenu = 403
+DH=$(curl -sS -D - -o /dev/null "$BASE/demo" 2>&1 | tr -d '\r' || true)
+if echo "$DH" | head -n1 | grep -q ' 302'; then pass "demo 302 (brana)"; else fail "demo 302 (brana)"; fi
 CK=$(echo "$DH" | grep -i '^set-cookie:' || true)
 COK=1
 if [ -n "$CK" ]; then
@@ -94,7 +102,7 @@ if [ -n "$CK" ]; then
   done || COK=0
 fi
 if [ "$COK" = 1 ]; then pass "cookie flags"; else fail "cookie flags"; fi
-PH=$(curl -sS -o /dev/null -D - -X POST "https://$DOMAIN/demo/calculate" -H 'HX-Request: true' -d 'hours=1&rate=1' | tr -d '\r' || true)
+PH=$(curl -sS -o /dev/null -D - -X POST "$BASE/demo/calculate" -H 'HX-Request: true' -d 'hours=1&rate=1' | tr -d '\r' || true)
 if echo "$PH" | head -n1 | grep -q ' 403' && echo "$PH" | grep -i '^hx-retarget: *#app-alert' >/dev/null; then
   pass "csrf 403 without token"; else fail "csrf 403 without token"; fi
 

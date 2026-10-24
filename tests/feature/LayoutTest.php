@@ -5,25 +5,22 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use CodeIgniter\Exceptions\PageNotFoundException;
-use CodeIgniter\Test\CIUnitTestCase;
-use CodeIgniter\Test\FeatureTestTrait;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
 use PHPUnit\Framework\Attributes\Group;
+use Tests\Support\AuthTestCase;
 
 /**
  * @internal
  */
 #[Group('feature')]
-final class LayoutTest extends CIUnitTestCase
+final class LayoutTest extends AuthTestCase
 {
-    use FeatureTestTrait;
-
     protected function setUp(): void
     {
         parent::setUp();
-        service('superglobals')->setServer('HTTPS', 'on');
+        $this->loginAs($this->createUser());
     }
 
     private function homeHtml(): string

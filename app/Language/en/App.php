@@ -15,6 +15,7 @@ return [
     'errorNetwork'     => 'No connection to the server. Please try again.',
     'errorServer'      => 'A server error occurred. Please try again.',
     'csrfFailed'       => 'The form has expired. Reload the page and try again.',
+    'forbidden'        => 'You do not have access to this page.',
     'error404Title'    => 'Page not found',
     'error404Text'     => 'The requested page does not exist.',
     'error400Title'    => 'Bad request',

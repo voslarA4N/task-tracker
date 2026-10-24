@@ -4,24 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use CodeIgniter\Test\CIUnitTestCase;
-use CodeIgniter\Test\FeatureTestTrait;
 use CodeIgniter\Test\TestResponse;
 use Config\Database;
 use PHPUnit\Framework\Attributes\Group;
+use Tests\Support\AuthTestCase;
 
 /**
  * @internal
  */
 #[Group('feature')]
-final class DemoPersistTest extends CIUnitTestCase
+final class DemoPersistTest extends AuthTestCase
 {
-    use FeatureTestTrait;
-
     protected function setUp(): void
     {
         parent::setUp();
-        service('superglobals')->setServer('HTTPS', 'on');
+        $this->loginAs($this->createUser());
         Database::connect('tests_owner', false)->query('TRUNCATE demo_calculations RESTART IDENTITY');
     }
 

@@ -15,6 +15,7 @@ return [
     'errorNetwork'     => 'Bez pripojenia k serveru. Skúste to znova.',
     'errorServer'      => 'Na serveri nastala chyba. Skúste to znova.',
     'csrfFailed'       => 'Platnosť formulára vypršala. Obnovte stránku a skúste to znova.',
+    'forbidden'        => 'Na túto stránku nemáte prístup.',
     'error404Title'    => 'Stránka sa nenašla',
     'error404Text'     => 'Požadovaná stránka neexistuje.',
     'error400Title'    => 'Neplatná požiadavka',

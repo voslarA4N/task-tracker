@@ -4,24 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use CodeIgniter\Test\CIUnitTestCase;
-use CodeIgniter\Test\FeatureTestTrait;
 use CodeIgniter\Test\TestResponse;
 use Config\Security;
 use PHPUnit\Framework\Attributes\Group;
+use Tests\Support\AuthTestCase;
 
 /**
  * @internal
  */
 #[Group('feature')]
-final class HtmxCsrfTest extends CIUnitTestCase
+final class HtmxCsrfTest extends AuthTestCase
 {
-    use FeatureTestTrait;
-
     protected function setUp(): void
     {
         parent::setUp();
-        service('superglobals')->setServer('HTTPS', 'on');
+        $this->loginAs($this->createUser());
     }
 
     /**
@@ -43,7 +40,7 @@ final class HtmxCsrfTest extends CIUnitTestCase
      * @param array<string, string> $headers
      * @param array<string, string> $post
      */
-    private function post(array $headers, array $post): TestResponse
+    private function postDemo(array $headers, array $post): TestResponse
     {
         return $this->withHeaders($headers)->call('post', '/demo/calculate', $post);
     }
@@ -81,7 +78,7 @@ final class HtmxCsrfTest extends CIUnitTestCase
 
     public function testValidPostComputesSum(): void
     {
-        $result = $this->post($this->htmx(['X-CSRF-TOKEN' => $this->token()]), ['hours' => '1,25', 'rate' => '27.00']);
+        $result = $this->postDemo($this->htmx(['X-CSRF-TOKEN' => $this->token()]), ['hours' => '1,25', 'rate' => '27.00']);
         $result->assertStatus(200);
         $this->assertStringContainsString('33.75', (string) $result->response()->getBody());
         $this->assertStringNotContainsString('<html', (string) $result->response()->getBody());
@@ -89,7 +86,7 @@ final class HtmxCsrfTest extends CIUnitTestCase
 
     public function testMissingTokenHtmxGives403Fragment(): void
     {
-        $result = $this->post($this->htmx(), ['hours' => '1', 'rate' => '1']);
+        $result = $this->postDemo($this->htmx(), ['hours' => '1', 'rate' => '1']);
         $result->assertStatus(403);
         $this->assertSame('#app-alert', $result->response()->getHeaderLine('HX-Retarget'));
         $this->assertSame('innerHTML', $result->response()->getHeaderLine('HX-Reswap'));
@@ -133,7 +130,7 @@ final class HtmxCsrfTest extends CIUnitTestCase
     {
         $this->assertFalse(config(Security::class)->redirect);
 
-        $result = $this->post([], ['hours' => '1', 'rate' => '1']);
+        $result = $this->postDemo([], ['hours' => '1', 'rate' => '1']);
         $result->assertStatus(403);
         $this->assertStringContainsString('<html', (string) $result->response()->getBody());
         $this->assertNotContains($result->response()->getStatusCode(), [302, 303]);
@@ -141,13 +138,13 @@ final class HtmxCsrfTest extends CIUnitTestCase
 
     public function testInvalidTokenGives403(): void
     {
-        $result = $this->post($this->htmx(['X-CSRF-TOKEN' => 'invalid']), ['hours' => '1', 'rate' => '1']);
+        $result = $this->postDemo($this->htmx(['X-CSRF-TOKEN' => 'invalid']), ['hours' => '1', 'rate' => '1']);
         $result->assertStatus(403);
     }
 
     public function testEmptyAndNonNumericGives422(): void
     {
-        $result = $this->post($this->htmx(['X-CSRF-TOKEN' => $this->token()]), ['hours' => '', 'rate' => 'abc']);
+        $result = $this->postDemo($this->htmx(['X-CSRF-TOKEN' => $this->token()]), ['hours' => '', 'rate' => 'abc']);
         $result->assertStatus(422);
         $body = (string) $result->response()->getBody();
         $this->assertStringContainsString('is-invalid', $body);
@@ -156,13 +153,13 @@ final class HtmxCsrfTest extends CIUnitTestCase
 
     public function testThreeDecimalsGives422(): void
     {
-        $result = $this->post($this->htmx(['X-CSRF-TOKEN' => $this->token()]), ['hours' => '1.234', 'rate' => '1']);
+        $result = $this->postDemo($this->htmx(['X-CSRF-TOKEN' => $this->token()]), ['hours' => '1.234', 'rate' => '1']);
         $result->assertStatus(422);
     }
 
     public function testOutOfRangeGives422(): void
     {
-        $result = $this->post($this->htmx(['X-CSRF-TOKEN' => $this->token()]), ['hours' => '100000', 'rate' => '1']);
+        $result = $this->postDemo($this->htmx(['X-CSRF-TOKEN' => $this->token()]), ['hours' => '100000', 'rate' => '1']);
         $result->assertStatus(422);
     }
 }
