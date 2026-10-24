@@ -128,7 +128,7 @@ Plans:
 
 **Wave 10** *(blocked on Wave 9 completion)*
 
-- [ ] 02-17-PLAN.md — Viac → Zabezpečenie: 2FA, zariadenia s odvolaním, posledných 50 prihlásení
+- [x] 02-17-PLAN.md — Viac → Zabezpečenie: 2FA, zariadenia s odvolaním, posledných 50 prihlásení
 - [ ] 02-18-PLAN.md — Obnova hesla e-mailom bez obídenia TOTP, spark user:password a user:reset-2fa
 
 **Wave 11** *(blocked on Wave 10 completion)*
@@ -323,7 +323,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
-| 2. Identita a skoré nasadenie | 14/20 | In Progress|  |
+| 2. Identita a skoré nasadenie | 15/20 | In Progress|  |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
