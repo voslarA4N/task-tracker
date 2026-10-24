@@ -15,6 +15,7 @@ final class PwaManifestTest extends AuthTestCase
 {
     private function assertPwaMeta(string $body): void
     {
+        $body = html_entity_decode($body, ENT_QUOTES | ENT_HTML5);
         $this->assertStringContainsString('<link rel="manifest" href="/manifest.webmanifest">', $body);
         $this->assertMatchesRegularExpression('#rel="apple-touch-icon" href="[^"]*icon-180\.v1\.png#', $body);
         $this->assertStringContainsString('name="apple-mobile-web-app-capable" content="yes"', $body);
@@ -58,8 +59,8 @@ final class PwaManifestTest extends AuthTestCase
 
     public function testIconsExistWithDeclaredSizes(): void
     {
-        $m     = json_decode((string) file_get_contents(FCPATH . 'manifest.webmanifest'), true, 512, JSON_THROW_ON_ERROR);
-        $icons = array_column($m['icons'], 'sizes', 'src');
+        $m                                      = json_decode((string) file_get_contents(FCPATH . 'manifest.webmanifest'), true, 512, JSON_THROW_ON_ERROR);
+        $icons                                  = array_column($m['icons'], 'sizes', 'src');
         $icons['/assets/icons/icon-180.v1.png'] = '180x180';
 
         foreach ($icons as $src => $sizes) {
