@@ -4,7 +4,7 @@ DC        := docker compose
 EXEC      := $(DC) exec -T -u www-data -e COMPOSER_HOME=/tmp/composer php
 EXEC_ROOT := $(DC) exec -T php
 
-.PHONY: help doctor up down ps logs shell composer spark migrate reset test-db perms test test-unit stan cs cs-fix check certs smoke spike-pdf vendor-assets
+.PHONY: help doctor up down ps logs shell composer spark migrate reset test-db perms test test-unit stan cs cs-fix check certs smoke smoke-staging spike-pdf vendor-assets
 
 help: ## Vypíše dostupné príkazy
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -73,3 +73,6 @@ spike-pdf: perms ## Spike mPDF (studený štart, opakovanie, FPM)
 
 vendor-assets: ## Stiahne frontend knižnice do public/assets/vendor
 	sh scripts/vendor-assets.sh
+
+smoke-staging: ## Smoke kontrola stagingu (DOMAIN=work-tracker.vostack.dev)
+	sh scripts/smoke-staging.sh $(or $(DOMAIN),work-tracker.vostack.dev)

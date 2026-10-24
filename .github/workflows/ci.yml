@@ -32,8 +32,8 @@ jobs:
 
       - name: Tajomstva nesmu byt v gite
         run: |
-          if git ls-files | grep -E '(^|/)\.env(\.[^/]+)?$|\.pem$|^docker/certs/' | grep -vE '(^|/)\.env\.example$'; then
-            echo "V gite su tajomstva (.env, .env.*, *.pem, docker/certs/)" >&2
+          if git ls-files | grep -E '(^|/)\.env(\.[^/]+)?$|\.pem$|^docker/certs/|cloudflare\.ini|\.dump$' | grep -vE '(^|/)\.env\.example$'; then
+            echo "V gite su tajomstva (.env, .env.*, *.pem, docker/certs/, cloudflare.ini, *.dump)" >&2
             exit 1
           fi
 
@@ -69,6 +69,11 @@ jobs:
             -e '/^database\.\(owner\|tests_owner\)\.password/ s/= .*/= ci-owner/' \
             .env
 
+      - name: "Prod obraz: migracie na CI DB"
+        run: |
+          docker run --rm --network host -v "$PWD/.env:/var/www/html/.env:ro" \
+            task-tracker-php:prod php spark migrate -g owner --all
+
       - name: composer install, migracie testovacej DB, composer check
         run: |
           docker run --rm --network host -e CI=true \
@@ -79,3 +84,76 @@ jobs:
         run: |
           out=$(docker run --rm task-tracker-php:prod php -d opcache.enable_cli=1 -d opcache.preload=/var/www/html/preload.php -d opcache.preload_user=www-data -r 'echo 1;')
           test "$out" = "1"
+
+  deploy:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: write
+    env:
+      STAGING_DOMAIN: work-tracker.vostack.dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prefix obrazov (male pismena)
+        run: echo "PREFIX=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Login do GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build obrazov
+        run: |
+          docker build --platform linux/amd64 --target prod \
+            -t "$PREFIX-php:sha-$GITHUB_SHA" -t "$PREFIX-php:main" .
+          docker build --platform linux/amd64 -f docker/nginx/Dockerfile \
+            -t "$PREFIX-nginx:sha-$GITHUB_SHA" -t "$PREFIX-nginx:main" .
+
+      - name: Push obrazov
+        run: |
+          for t in "$PREFIX-php:sha-$GITHUB_SHA" "$PREFIX-php:main" "$PREFIX-nginx:sha-$GITHUB_SHA" "$PREFIX-nginx:main"; do
+            docker push "$t"
+          done
+
+      - name: SSH priprava
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m700 -d ~/.ssh
+          umask 077
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf 'Host *\n  IdentityFile ~/.ssh/deploy_key\n  StrictHostKeyChecking yes\n  UserKnownHostsFile ~/.ssh/known_hosts\n' > ~/.ssh/config
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts ~/.ssh/config
+
+      - name: Nasadenie
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SSH_OPTS="-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts"
+          T="$DEPLOY_USER@$DEPLOY_HOST"
+          # shellcheck disable=SC2086
+          scp $SSH_OPTS compose.staging.yaml scripts/deploy.sh scripts/cert-renew.sh "$T:/opt/work-tracker/"
+          # shellcheck disable=SC2086
+          scp -r $SSH_OPTS docker/postgres "$T:/opt/work-tracker/docker/"
+          # shellcheck disable=SC2086
+          echo "$GHCR_TOKEN" | ssh $SSH_OPTS "$T" "docker login ghcr.io -u ${{ github.actor }} --password-stdin"
+          # shellcheck disable=SC2086,SC2029
+          ssh $SSH_OPTS "$T" "cd /opt/work-tracker && IMAGE_PREFIX=$PREFIX IMAGE_TAG=sha-$GITHUB_SHA ./deploy.sh"
+
+      - name: Smoke staging
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          SSH_TARGET="$DEPLOY_USER@$DEPLOY_HOST" \
+          sh scripts/smoke-staging.sh "$STAGING_DOMAIN"
