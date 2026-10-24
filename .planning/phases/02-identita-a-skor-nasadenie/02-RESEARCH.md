@@ -603,19 +603,20 @@ Precache list: `/offline`, bootstrap/app.css/app.js/htmx/alpine URLs exactly as 
 | A15 | CI4 merges same-named lang files from several namespaces key by key | Pitfall 6 | Rename files anyway (recommended) |
 | A16 | `certbot/dns-cloudflare` usage (`dns_cloudflare_api_token` in a 0600 ini, `certonly --dns-cloudflare`) | Staging | Standard but unverified in this session |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **30-day iPhone criterion cannot finish inside the phase.**
+Each question is resolved in the plan set. Questions that need an owner preference are planned with the recommended default as the resolution; plan 02-01 Task 2 only confirms it (or records an explicit deviation) and downstream plans read the value from `02-01-SUMMARY.md` `## Owner decisions`. Both option branches are fully planned, so no downstream plan is blocked on an unknown.
+
+1. **30-day iPhone criterion cannot finish inside the phase.** RESOLVED -> owner decision **O-6**, planned resolution `followup`.
    - Known: criterion 5 needs "no login more often than once per 30 days"; WebKit says home-screen apps are exempt from the 7-day cap, one bug report disagrees.
-   - Unclear: real behaviour on the owner's iOS version.
-   - Recommendation: Phase UAT checks install/standalone/offline/cookie survival after force-quit and after >= 7 days; leave a tracked follow-up (STATE todo) for the 30-day check. Device cookie is set only via `Set-Cookie` (never JS) to stay outside the script-cookie cap.
-2. **Remember checkbox at first enrolment.** UI-SPEC puts "zapamätať zariadenie" only on `/2fa/verify`. On first login (setup + backup codes) the user has no chance to trust the device and must log in once more on the iPhone. Recommend adding the same checkbox to the "Uložil som si ich / Pokračovať" step (low cost); planner/user to confirm.
-3. **Logout vs device trust** (A7). Recommend explicit logout revokes the current device.
-4. **Mail `log` transport content** (A11).
-5. **LE DNS-01 vs Origin CA.** Recommendation: LE DNS-01 (literal NFR-03/ROADMAP); CF API token scoped `Zone:DNS:Edit` for `vostack.dev` stored only in `/opt/work-tracker/secrets/cloudflare.ini` (0600).
-6. **Backup code length** (A9).
-7. **UI-SPEC lang file names** (`Auth.php`, `Security.php`) collide; rename (Pitfall 6).
-8. **DNS not resolvable from the research host** (`work-tracker.vostack.dev` returned no address, no SSH keys on the dev box): owner must confirm the CF record exists and provide SSH key/known_hosts for GitHub Secrets.
+   - Resolution: phase UAT (02-20, `docs/ops/iphone-uat.md`) checks install/standalone/offline/cookie survival after force-quit; 02-01 writes two STATE.md follow-up todos (7-day and 30-day checks). Device cookie is set only via `Set-Cookie` (never JS), implemented in 02-16. Alternative `block` (phase verification waits) is planned as a STATE.md blocker line.
+2. **Remember checkbox at first enrolment.** RESOLVED -> owner decision **O-5**, planned resolution `yes`: the "Uložil som si ich / Pokračovať" step on `/2fa/backup-codes` carries the same "Zapamätať zariadenie" checkbox (default on, D-16); implemented in 02-16 (`confirmBackupCodes()` passes `remember`). Pending window during enrolment is 30 min (`ENROL_TTL`, 02-12/02-15) so first-time setup does not force a second password entry.
+3. **Logout vs device trust** (A7). RESOLVED -> owner decision **O-1**, planned resolution `revoke`: explicit logout revokes the current trusted device (02-16).
+4. **Mail `log` transport content** (A11). RESOLVED -> owner decision **O-3**, planned resolution `metadata` (recipient, subject, template key, time; never body tokens, Pitfall 18 wins even with `full`); implemented in 02-05.
+5. **LE DNS-01 vs Origin CA.** RESOLVED -> owner decision **O-4**, planned resolution `letsencrypt` (DNS-01 via `certbot/dns-cloudflare`; CF API token scoped `Zone:DNS:Edit` for `vostack.dev` stored only in `/opt/work-tracker/secrets/cloudflare.ini` (0600)); both branches planned in 02-02 (runbook) and 02-07 (`deploy.sh` `ensure_cert`, `cert-renew.sh`).
+6. **Backup code length** (A9). RESOLVED -> owner decision **O-2**, planned resolution `10` characters Crockford-style base32 (`XXXXX-XXXXX`, HMAC with off-DB pepper + shared 5/15 lockout); `13` branch planned in 02-15 `BackupCodeService`.
+7. **UI-SPEC lang file names** (`Auth.php`, `Security.php`) collide (Pitfall 6). RESOLVED in plans: language files are `Login.php` (02-08), `TwoFactor.php` (02-12), `Account.php` (02-17), `Pwa.php` (02-11), plus `Notify.php`, `PasswordReset.php`, `App.php`; no `Auth.php` / `Security.php` is created.
+8. **DNS not resolvable from the research host / no SSH keys on the dev box.** RESOLVED -> plan **02-02** (owner human-action checkpoint: Cloudflare A record, Hetzner firewall, `server-bootstrap.sh`, deploy key, GitHub Secrets) with automated verification (`dig`, SSH key-only login, firewall timeout) before any deploy plan runs.
 
 ## Environment Availability
 

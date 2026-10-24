@@ -30,10 +30,11 @@ Scope searched: `app/`, `tests/`, `docker/`, `scripts/`, `compose*.yaml`, `Docke
 | `app/Views/layouts/auth.php` | view (layout) | n/a | `app/Views/layouts/app.php` | exact |
 | `app/Views/auth/*`, `settings/security*.php`, `pwa/offline.php`, `layouts/_install_hint.php` | view | request-response | `app/Views/demo/index.php`, `demo/_calculator.php`, `fragments/alert.php` | exact |
 | `app/Views/layouts/_nav_items.php` (modify: Viac -> Zabezpečenie) | view | n/a | itself | exact |
-| `public/assets/js/app.js` (modify: SW register, install hint) | frontend | event-driven | itself | exact |
+| `public/assets/js/pwa.js` (new, 02-11/02-13: install hint + SW register; loaded by both layouts and `/offline`) | frontend | event-driven | `public/assets/js/app.js` | role-match |
+| `public/assets/js/app.js` (modify: only Alpine components `copySecret` 02-12, `codesAck` 02-15) | frontend | event-driven | itself | exact |
 | `public/manifest.webmanifest`, `public/assets/icons/*` | static | n/a | none | no analog |
 | `docker/nginx/templates/default.conf.template` (modify) | config | request-response | itself | exact |
-| `docker/nginx/templates/snippets/cloudflare-realip.conf.template` (new) | config | n/a | `snippets/security-headers.conf.template` | role-match |
+| `docker/nginx/realip/cloudflare.conf` (new, 02-04; baked to `/etc/nginx/realip.d/` only in the staging nginx image, included via `include /etc/nginx/realip.d/*.conf`) | config | n/a | `snippets/security-headers.conf.template` | role-match |
 | `docker/nginx/Dockerfile` (new, bakes `public/`) | config | build | root `Dockerfile` | role-match |
 | `compose.staging.yaml` (new) | config | n/a | `compose.yaml` + `compose.override.yaml` | exact |
 | `scripts/deploy.sh`, `scripts/smoke-staging.sh`, `scripts/cf-ips-check.sh`, `scripts/make-icons.sh` | script | batch | `scripts/smoke.sh`, `scripts/lib-env-guard.sh` | role-match |
@@ -85,7 +86,7 @@ final class HtmxCsrf implements FilterInterface
 }
 ```
 
-AuthGate adaptation: anonymous htmx -> `setStatusCode(401)->setHeader('HX-Redirect', '/login')` (RESEARCH A12, test it); non-htmx -> `redirect()->to('/login')` (or `/2fa` when pending). Allowlist: `/login /2fa* /password* /offline /sw.js /manifest.webmanifest /assets /health`. Use `service('clock')` for the 2 h idle check (never `time()`/`new DateTime`).
+AuthGate adaptation: anonymous htmx -> `setStatusCode(401)->setHeader('HX-Redirect', '/login')` (RESEARCH A12, test it); non-htmx -> `redirect()->to('/login')` (or `/2fa` when pending). Allowlist (as planned in 02-06 and pinned by a test): `ALLOW_EXACT = ['login', 'logout', 'offline', 'sw.js', 'manifest.webmanifest']`, `ALLOW_PREFIX = ['2fa', 'password/', 'assets/']`. There is no `/health` route (container healthchecks do not use an HTTP app route), so it is not allowlisted. Use `service('clock')` for the 2 h idle check (never `time()`/`new DateTime`).
 
 **Registration pattern** (`app/Config/Filters.php` lines `aliases`/`globals`): add aliases `'authgate' => AuthGate::class`, `'devicelogin' => DeviceLogin::class`, `'locale' => LocaleNegotiation::class`. Globals `before` is currently `['csrf']`; required order per RESEARCH diagram: `forcehttps` (in `required`), `devicelogin`, `csrf`, `authgate`. `htmxvary` stays in `globals.after`. Keep the `use App\Filters\...` import block alphabetical as in the file.
 
@@ -234,13 +235,13 @@ helper(['asset', 'security']);
 ```
 Page views extend a layout and fill sections (csrf_403.php): `<?= $this->extend('layouts/app') ?>`, `<?= $this->section('content') ?> ... <?= $this->endSection() ?>`, `<div class="app-card">`. Add to head for PWA: `<link rel="manifest" href="/manifest.webmanifest">`, `apple-touch-icon`, `apple-mobile-web-app-capable`, `apple-mobile-web-app-title` = "Work Tracker". Output: `esc(lang('X.key'))`, attributes `esc(..., 'attr')`. No inline `<script>`, `style=`, `on*=` (`tests/unit/Security/ViewsCspTest.php` scans all of `app/Views` recursively, regexes at lines 17-23) and no hardcoded text (`ViewsHardcodedTextTest`). Alpine uses the CSP build only (`x-data="appShell"` registered in `app.js`; no inline expressions beyond what the CSP build allows). `_nav_items.php`: replace the disabled `<span aria-disabled="true"><?= esc(lang('App.navMore')) ?></span>` with a link to the Viac/Zabezpečenie page and keep the `aria-current` path logic.
 
-### `public/assets/js/app.js` (modify)
+### `public/assets/js/pwa.js` (new) and `public/assets/js/app.js` (modify)
 
-**Analog:** itself. IIFE `(function () { 'use strict'; ... })();` with `document.addEventListener('DOMContentLoaded', ...)`, ES5 `var`/function style, strings read from `body.dataset.msg*` (data attributes rendered via `lang()`), never hardcoded. Add SW registration (`navigator.serviceWorker.register('/sw.js')`) and install hint logic (`navigator.standalone`, localStorage dismissal) the same way, testable with `node --test` like `tests/js/app-alert.test.js`.
+**Analog:** `app.js` itself. IIFE `(function () { 'use strict'; ... })();` with `document.addEventListener('DOMContentLoaded', ...)`, ES5 `var`/function style, strings read from `body.dataset.msg*` (data attributes rendered via `lang()`), never hardcoded. SW registration (`navigator.serviceWorker.register('/sw.js', { scope: '/' })`, 02-13) and install hint logic (`window.WtPwa.shouldShowInstallHint`, `navigator.standalone`, localStorage dismissal, 02-11) live in the separate `pwa.js` (it must also run on `/offline`, which loads no htmx/Alpine), testable with `node --test` like `tests/js/app-alert.test.js`. `app.js` only receives Alpine components (`copySecret`, `codesAck`).
 
 ---
 
-### Nginx: `docker/nginx/templates/default.conf.template` (modify) and `snippets/cloudflare-realip.conf.template`
+### Nginx: `docker/nginx/templates/default.conf.template` (modify) and `docker/nginx/realip/cloudflare.conf`
 
 **Analog:** the current template and `snippets/security-headers.conf.template`.
 
@@ -249,7 +250,7 @@ Existing facts to preserve:
 - Every `location` that calls `add_header` must re-include `include /etc/nginx/conf.d/snippets/security-headers.conf;` (see `^~ /assets/` and `= /index.php` blocks) because `add_header` inheritance resets per level. New `location = /sw.js` and `= /manifest.webmanifest` blocks need it too.
 - PHP location pattern to copy for `/sw.js` (served by controller): `fastcgi_hide_header Cache-Control; fastcgi_hide_header X-Powered-By; add_header Cache-Control "no-store" always; fastcgi_pass php:9000; include fastcgi_params; fastcgi_param SCRIPT_FILENAME /var/www/html/public/index.php; fastcgi_param HTTPS on;` but with `Cache-Control "no-cache"` for sw.js.
 - `limit_req_zone` + `map` go in `http` context: template files in `/etc/nginx/templates/*.template` land in `conf.d/`, which is http-level, so top-level `map`/`limit_req_zone` before `server {}` works (the file already has top-level `server_tokens off;`). Use `$request_uri` (not `$uri`) inside `= /index.php`.
-- Realip snippet: `set_real_ip_from <CF range>;` lines + `real_ip_header CF-Connecting-IP; real_ip_recursive off;` included in the `server` block (RESEARCH "nginx pieces"). Staging-only; keep it out of the dev path.
+- Realip snippet (as planned in 02-04): plain file `docker/nginx/realip/cloudflare.conf` with `set_real_ip_from <CF range>;` lines + `real_ip_header CF-Connecting-IP; real_ip_recursive off;`, copied by `docker/nginx/Dockerfile` to `/etc/nginx/realip.d/` and pulled into the `server` block by `include /etc/nginx/realip.d/*.conf;` (empty glob in dev = unchanged behaviour). Not an envsubst template. `scripts/cf-ips-check.sh` compares it with the live CF lists.
 - HSTS comes from `${NGINX_HSTS_VALUE}` (dev `max-age=300`, compose.yaml default `max-age=31536000`); staging should set a deliberate value.
 
 ### `compose.staging.yaml` (new)

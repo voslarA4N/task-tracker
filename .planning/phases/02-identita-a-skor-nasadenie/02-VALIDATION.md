@@ -1,8 +1,8 @@
 ---
 phase: 2
 slug: identita-a-skor-nasadenie
-status: draft
-nyquist_compliant: false
+status: planned
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-10-24
 ---
@@ -48,15 +48,15 @@ created: 2026-10-24
 | 02-09-T1/T2 | 02-09 | 5 | NFR-08, NFR-03, NFR-02 | T-02-09-01..05 | HTTPS, hlavičky, realip, origin, pamäť | smoke | `sh scripts/smoke-staging.sh work-tracker.vostack.dev` | ❌ (02-07-T2) | ⬜ pending |
 | 02-10-T2/T3 | 02-10 | 5 | AUTH-04, AUTH-07 | T-02-10-01/03 | 5 → 15 min IP + účet, insert-only denník | integration+feature | `phpunit --filter 'LockoutTest|AuditLogTest|LoginTest'` | ❌ W0 (02-10-T1) | ⬜ pending |
 | 02-11-T2/T3 | 02-11 | 5 | PWA-01 | T-02-11-01 | manifest, ikony, inštalačný panel | feature+js | `phpunit --filter PwaManifestTest`; `node --test tests/js/install-hint.test.js` | ❌ W0 (02-11-T1) | ⬜ pending |
-| 02-12-T2/T3 | 02-12 | 6 | AUTH-02, NFR-03 | T-02-12-01..06 | ±1 krok, Sodium tajomstvo, QR lokálne | unit+feature | `phpunit --filter 'TotpServiceTest|EncryptionConfigTest|TotpSetupTest'` | ❌ W0 (02-12-T1) | ⬜ pending |
-| 02-13-T2 | 02-13 | 6 | PWA-01 | T-02-13-01/02 | navigácie network-only, /offline bez cookies | feature+js | `phpunit --filter PwaServiceWorkerTest`; `node --test tests/js/sw.test.js` | ❌ W0 (02-13-T1) | ⬜ pending |
+| 02-12-T2/T3 | 02-12 | 6 | AUTH-02, NFR-03 | T-02-12-01..06 | ±1 krok, Sodium tajomstvo, QR lokálne, pending okno 600 s / enrolment 1800 s | unit+feature | `phpunit --filter 'TotpServiceTest|EncryptionConfigTest|TotpSetupTest'` | ❌ W0 (02-12-T1) | ⬜ pending |
+| 02-13-T2 | 02-13 | 6 | PWA-01 | T-02-13-01/02 | navigácie network-only, /offline bez cookies, každá precache URL existuje | feature+js | `phpunit --filter PwaServiceWorkerTest`; `node --test tests/js/sw.test.js` | ❌ W0 (02-13-T1) | ⬜ pending |
 | 02-14-T2 | 02-14 | 7 | AUTH-02, AUTH-04 | T-02-14-01 | atomický claim kroku, replay odmietnutý | integration+feature | `phpunit --filter 'TotpReplayTest|TotpVerifyTest'` | ❌ W0 (02-14-T1) | ⬜ pending |
-| 02-15-T2/T3 | 02-15 | 8 | AUTH-03 | T-02-15-01/02 | HMAC s pepperom, jednorazové, zobrazené raz | integration+feature | `phpunit --filter 'BackupCodeTest|BackupCodesFlowTest'` | ❌ W0 (02-15-T1) | ⬜ pending |
+| 02-15-T2/T3 | 02-15 | 8 | AUTH-03 | T-02-15-01/02 | HMAC s pepperom, jednorazové, zobrazené raz, pending_since obnovené po aktivácii | integration+feature | `phpunit --filter 'BackupCodeTest|BackupCodesFlowTest'` | ❌ W0 (02-15-T1) | ⬜ pending |
 | 02-16-T2/T3 | 02-16 | 9 | AUTH-05, PWA-01 | T-02-16-01..06 | __Host- cookie, pevných 30 dní, odvolanie, 2 h nečinnosť | feature | `phpunit --filter 'TrustedDeviceTest|IdleTimeoutTest'` | ❌ W0 (02-16-T1) | ⬜ pending |
 | 02-17-T2/T3 | 02-17 | 10 | AUTH-05, AUTH-07 | T-02-17-01/03 | zoznam/odvolanie, 50 záznamov bez tajomstiev | feature | `phpunit --filter SecurityPageTest` | ❌ W0 (02-17-T1) | ⬜ pending |
 | 02-18-T2/T3 | 02-18 | 10 | AUTH-06 | T-02-18-01..04 | reset neprihlási, token 60 min jednorazový, spark recovery | integration+feature | `phpunit --filter 'RecoveryTest|PasswordResetTest'` | ❌ W0 (02-18-T1) | ⬜ pending |
 | 02-19-T2/T3 | 02-19 | 11 | AUTH-03, AUTH-05 | T-02-19-01/02 | re-auth, epoch + revokeAll | feature | `phpunit --filter 'ChangePasswordTest|RegenerateCodesTest'` | ❌ W0 (02-19-T1) | ⬜ pending |
-| 02-20-T1 | 02-20 | 12 | NFR-02, NFR-08 | T-02-20-01 | session sa mení po hesle, pamäť < 512 MB | smoke | `SMOKE_EMAIL=… SSH_TARGET=… sh scripts/smoke-staging.sh work-tracker.vostack.dev` | ❌ (02-07-T2) | ⬜ pending |
+| 02-20-T1 | 02-20 | 12 | NFR-02, NFR-08 | T-02-20-01 | session sa mení po hesle, pamäť < 512 MiB (tvrdé kritérium, rovnako 02-09) | smoke | `SMOKE_EMAIL=… SSH_TARGET=… sh scripts/smoke-staging.sh work-tracker.vostack.dev` | ❌ (02-07-T2) | ⬜ pending |
 | 02-20-T3 | 02-20 | 12 | PWA-01, AUTH-05 | — | iPhone UAT | manual | `docs/ops/iphone-uat.md` | ❌ (02-20-T2) | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky* — Task IDs filled in by planner/executor.
@@ -86,11 +86,11 @@ created: 2026-10-24
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** plans approved for execution (planner revision 2026-10-24); `wave_0_complete` stays false until the RED tasks (02-03-T1, 02-06-T1, 02-08-T1, 02-10-T1, 02-11-T1, 02-12-T1, 02-13-T1, 02-14-T1, 02-15-T1, 02-16-T1, 02-17-T1, 02-18-T1, 02-19-T1) are executed
