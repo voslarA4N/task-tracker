@@ -9,7 +9,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 ## Fázy
 
 - [x] **Phase 1: Základ a infraštruktúra** - Docker/WSL2, CI4, PostgreSQL roly, Money, Clock, htmx/CSP/CSRF vzory, spike mPDF (completed 2026-10-23)
-- [ ] **Phase 2: Identita a skoré nasadenie** - Prihlásenie s povinnou TOTP, PWA kostra a HTTPS staging otestovaný na reálnom iPhone
+- [x] **Phase 2: Identita a skoré nasadenie** - Prihlásenie s povinnou TOTP, PWA kostra a HTTPS staging otestovaný na reálnom iPhone (completed 2026-10-25)
 - [ ] **Phase 3: Master dáta (subjekty a klienti)** - Verziované subjekty, klienti, právny dôvod oslobodenia, audit zmien
 - [ ] **Phase 4: Úlohy, fakturačné časti a dashboard** - Evidencia úloh, rozdelenie na časti po mesiacoch, dashboard, import z Excelu
 - [ ] **Phase 5: Fakturačné jadro** - Atómové vystavenie nemennej faktúry, číslovanie, kópia údajov, uložené PDF so sha256
@@ -137,7 +137,7 @@ Plans:
 
 **Wave 12** *(blocked on Wave 11 completion)*
 
-- [ ] 02-20-PLAN.md — Nasadenie celej fázy, staging smoke, meranie pamäte, UAT na iPhone (vlastník)
+- [x] 02-20-PLAN.md — Nasadenie celej fázy, staging smoke, meranie pamäte, UAT na iPhone (vlastník)
 
 **UI hint**: yes
 **Poznámky**: **Potrebuje /gsd-research-phase** (Shield 1.4: pending stav, `ConditionalActionInterface`, remember-me, iOS cookies). Spike s časovým limitom, fallback: TOTP vo vlastnom filtri nad Shield, až potom vlastné prihlasovanie. Service worker nesmie cachovať HTML, `Vary: HX-Request`, CSRF bez regenerácie pri každej požiadavke. Vlastník: objednať Hetzner VPS (x86 vs ARM CAX), Storage Box.
@@ -323,7 +323,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
-| 2. Identita a skoré nasadenie | 19/20 | In Progress|  |
+| 2. Identita a skoré nasadenie | 20/20 | Complete   | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |

@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Completed 02-09-PLAN.md
-last_updated: "2026-10-24T21:06:20.558Z"
-last_activity: 2026-10-24
+last_updated: "2026-10-25T10:00:30.501Z"
+last_activity: 2026-10-25
 progress:
   total_phases: 12
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 30
-  completed_plans: 29
-  percent: 8
+  completed_plans: 30
+  percent: 17
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 02 (identita-a-skor-nasadenie) — EXECUTING
-Plan: 19 of 20
+Plan: 20 of 20
 Status: Ready to execute
-Last activity: 2026-10-24
+Last activity: 2026-10-25
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -95,8 +95,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- [Phase 2 follow-up] iPhone: po 7 dňoch od zapamätania zariadenia overiť, že PWA nežiada prihlásenie (cieľ: dátum UAT + 7 dní)
-- [Phase 2 follow-up] iPhone: po 30 dňoch overiť, že sa vyžaduje heslo aj TOTP (D-17) a že predtým nebolo žiadne prihlásenie (kritérium 5)
+- [Phase 2 follow-up] iPhone: po 7 dňoch od zapamätania zariadenia overiť, že PWA nežiada prihlásenie (cieľ: 2026-11-01; zariadenie zapamätané pri UAT 2026-10-25)
+- [Phase 2 follow-up] iPhone: po 30 dňoch overiť, že sa vyžaduje heslo aj TOTP (D-17) a že predtým nebolo žiadne prihlásenie (kritérium 5) (cieľ: 2026-11-24)
 
 ### Blockers/Concerns
 
