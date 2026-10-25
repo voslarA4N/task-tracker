@@ -35,7 +35,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **ENT-01**: Používateľ spravuje viac subjektov. Každý má obdobie pôsobenia od–do, krajinu (SK, PL, CZ), menu, jazyk dokladov, DPH režim, vlastný číselný rad a predvolenú splatnosť.
 - [x] **ENT-02**: Subjekt má obchodné meno, sídlo, IČO alebo NIP/REGON, DIČ, údaj o zápise v registri, e-mail a telefón.
 - [ ] **ENT-03**: Každá zmena údajov subjektu vytvorí novú verziu s dátumom „platné od“. História verzií je viditeľná a verzie sa nemažú. Nová faktúra použije verziu platnú k dátumu vystavenia a zmena adresy nezmení už vystavenú faktúru.
-- [ ] **ENT-04**: Ukončený subjekt môže naďalej zobrazovať, znova odosielať a stornovať (dobropis) svoje doklady.
+- [x] **ENT-04**: Ukončený subjekt môže naďalej zobrazovať, znova odosielať a stornovať (dobropis) svoje doklady.
 - [x] **ENT-05** [nové, M2]: Subjekt má voliteľné IČ DPH / VAT-UE (NIP UE), ktoré sa tlačí na faktúru, keď to vyžaduje režim fakturácie.
 - [ ] **ENT-06** [nové, M4]: Subjekt má viac bankových účtov (IBAN, SWIFT/BIC, mena). Faktúra použije účet v mene faktúry (alebo predvolený).
 - [x] **ENT-07** [nové, rozhodnutie]: Krajina a mena subjektu sú po vytvorení nemenné. Verziujú sa len ostatné údaje.
@@ -209,7 +209,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ENT-01 | Phase 3 | Complete |
 | ENT-02 | Phase 3 | Complete |
 | ENT-03 | Phase 3 | Pending |
-| ENT-04 | Phase 3 | Pending |
+| ENT-04 | Phase 3 | Complete |
 | ENT-05 | Phase 3 | Complete |
 | ENT-06 | Phase 3 | Pending |
 | ENT-07 | Phase 3 | Complete |

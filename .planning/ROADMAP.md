@@ -168,7 +168,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 03-03-PLAN.md — Zoznam subjektov, vstup z Viac, EntityDirectory (forSelect s ukončenými, activeAt) (vlna 3)
+- [x] 03-03-PLAN.md — Zoznam subjektov, vstup z Viac, EntityDirectory (forSelect s ukončenými, activeAt) (vlna 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -359,7 +359,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
-| 3. Master dáta (subjekty a klienti) | 2/10 | In Progress|  |
+| 3. Master dáta (subjekty a klienti) | 3/10 | In Progress|  |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
