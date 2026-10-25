@@ -106,6 +106,53 @@ final class ClientService
         return $changed;
     }
 
+    public function archive(int $id): bool
+    {
+        return $this->setArchived($id, true);
+    }
+
+    public function unarchive(int $id): bool
+    {
+        return $this->setArchived($id, false);
+    }
+
+    private function setArchived(int $id, bool $archive): bool
+    {
+        $now     = service('clock')->now()->format('Y-m-d H:i:sP');
+        $changed = false;
+
+        $this->db->transException(true)->transStart();
+
+        try {
+            $sql = $archive
+                ? 'UPDATE clients SET archived_at = :now:, updated_at = :now: WHERE id = :id: AND archived_at IS NULL'
+                : 'UPDATE clients SET archived_at = NULL, updated_at = :now: WHERE id = :id: AND archived_at IS NOT NULL';
+            $this->db->query($sql, ['now' => $now, 'id' => $id]);
+
+            if ($this->db->affectedRows() > 0) {
+                $changed = true;
+                $this->audit->record(
+                    'client',
+                    $id,
+                    $archive ? 'archive' : 'unarchive',
+                    ['archived_at' => $archive ? null : $now],
+                    ['archived_at' => $archive ? $now : null],
+                );
+            }
+
+            $this->db->transComplete();
+        } catch (Throwable $e) {
+            $this->db->transRollback();
+            $this->db->resetTransStatus();
+
+            throw $e;
+        } finally {
+            $this->db->transException(false);
+        }
+
+        return $changed;
+    }
+
     /**
      * @return array<string, mixed>|null
      */

@@ -19,7 +19,8 @@ final class Clients extends BaseController
 {
     public function index(): string
     {
-        $rows = (new ClientService())->listAll(false);
+        $archived = $this->request->getGet('archived') === '1';
+        $rows     = (new ClientService())->listAll($archived);
 
         foreach ($rows as &$row) {
             $row['summary'] = implode(' · ', [
@@ -30,7 +31,7 @@ final class Clients extends BaseController
         }
         unset($row);
 
-        return view('settings/clients/index', ['title' => lang('Clients.listTitle'), 'clients' => $rows]);
+        return view('settings/clients/index', ['title' => lang('Clients.listTitle'), 'clients' => $rows, 'archived' => $archived]);
     }
 
     public function new(): string
@@ -91,6 +92,39 @@ final class Clients extends BaseController
         return redirect()->to('/settings/clients');
     }
 
+    public function archive(int $id): ResponseInterface
+    {
+        return $this->toggleArchive($id, true);
+    }
+
+    public function unarchive(int $id): ResponseInterface
+    {
+        return $this->toggleArchive($id, false);
+    }
+
+    public function portalPreview(): ResponseInterface
+    {
+        $tpl  = trim((string) $this->request->getGet('portal_url_template'));
+        $data = $this->formData(null, array_merge($this->defaults(), ['portal_url_template' => $tpl]), []);
+
+        return $this->response->setHeader('Vary', 'HX-Request')
+            ->setBody(htmx_view('settings/clients/_portal_preview', $data, 'settings/clients/form'));
+    }
+
+    private function toggleArchive(int $id, bool $archive): ResponseInterface
+    {
+        $service = new ClientService();
+
+        if ($service->find($id) === null) {
+            throw PageNotFoundException::forPageNotFound(lang('Clients.notFound'));
+        }
+
+        $archive ? $service->archive($id) : $service->unarchive($id);
+        session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang($archive ? 'Clients.archivedFlash' : 'Clients.unarchivedFlash')]);
+
+        return redirect()->to('/settings/clients');
+    }
+
     /**
      * @param array<string, string> $values
      * @param array<string, string> $errors
@@ -107,9 +141,12 @@ final class Clients extends BaseController
 
         asort($countries);
 
+        $client = $id === null ? null : (new ClientService())->find($id);
+
         return [
             'title'     => lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle'),
             'id'        => $id,
+            'client'    => $client,
             'values'    => $values,
             'errors'    => $errors,
             'countries' => $countries,

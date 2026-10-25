@@ -61,8 +61,8 @@ final class ClientArchiveTest extends PgTestCase
 
         $this->assertTrue($this->service()->archive($id));
 
-        $row = $this->owner()->query("SELECT archived_at, extract(epoch FROM archived_at) AS e FROM clients WHERE id = ?", [$id])->getRow();
-        $this->assertSame((string) (new \DateTimeImmutable('2026-10-25T10:00:00+02:00'))->getTimestamp(), (string) (int) $row->e);
+        $row = $this->owner()->query('SELECT archived_at, extract(epoch FROM archived_at) AS e FROM clients WHERE id = ?', [$id])->getRow();
+        $this->assertSame((string) service('clock')->now()->getTimestamp(), (string) (int) $row->e);
 
         $audit = $this->owner()->query("SELECT before_data->>'archived_at' AS b, after_data->>'archived_at' AS a FROM audit_log WHERE entity_type = 'client' AND action = 'archive'")->getRow();
         $this->assertNull($audit->b);

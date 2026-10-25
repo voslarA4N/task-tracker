@@ -155,6 +155,26 @@ $title  = lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle');
             <label class="form-check-label" for="f-counts_toward_limit"><?= esc(lang('Clients.countsTowardLimit')) ?></label>
         </div>
 
+        <h2 class="h5 mt-4 mb-3"><?= esc(lang('Clients.groupPortal')) ?></h2>
+        <div class="mb-3">
+            <label class="form-label" for="f-portal_name"><?= esc(lang('Clients.portalName')) ?></label>
+            <input class="form-control<?= $invalid('portal_name') ?>" type="text" id="f-portal_name" name="portal_name" value="<?= esc($v('portal_name'), 'attr') ?>" autocomplete="off"<?= $describe('portal_name') ?>>
+            <?= $feedback('portal_name') ?>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="f-portal_url_template"><?= esc(lang('Clients.portalUrlTemplate')) ?></label>
+            <input class="form-control<?= $invalid('portal_url_template') ?>" type="url" id="f-portal_url_template" name="portal_url_template" value="<?= esc($v('portal_url_template'), 'attr') ?>" autocomplete="off"
+                   hx-get="/settings/clients/portal-preview" hx-trigger="keyup changed delay:300ms, change" hx-target="#portal-preview" hx-swap="outerHTML" hx-include="this"
+                   aria-describedby="f-portal_url_template-hint<?= isset($errors['portal_url_template']) ? ' f-portal_url_template-error' : '' ?>">
+            <div class="form-text" id="f-portal_url_template-hint"><?= esc(lang('Clients.portalHint')) ?></div>
+            <?= $feedback('portal_url_template') ?>
+            <?php if (! isset($errors['portal_url_template'])) : ?>
+                <?= $this->include('settings/clients/_portal_preview') ?>
+            <?php else : ?>
+                <div id="portal-preview"></div>
+            <?php endif ?>
+        </div>
+
         <h2 class="h5 mt-4 mb-3"><?= esc(lang('Clients.groupEmails')) ?></h2>
         <div class="mb-3">
             <label class="form-label" for="f-invoice_email"><?= esc(lang('Clients.invoiceEmail')) ?></label>
@@ -177,4 +197,40 @@ $title  = lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle');
         </div>
     </form>
 </section>
+
+<?php if ($id !== null && is_array($client ?? null)) : ?>
+    <?php $isArchived = ($client['archived_at'] ?? null) !== null; ?>
+    <section class="app-card mt-3" aria-labelledby="client-archive-title">
+        <h2 class="h5 mb-2" id="client-archive-title"><?= esc(lang('Clients.archiveTitle')) ?></h2>
+        <p class="text-body-secondary"><?= esc(lang('Clients.archiveInfo')) ?></p>
+        <?php if ($isArchived) : ?>
+            <form method="post" action="/settings/clients/<?= (int) $id ?>/unarchive" data-submit-once>
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn-outline-secondary btn-touch w-100"><?= esc(lang('Clients.unarchiveButton')) ?></button>
+            </form>
+        <?php else : ?>
+            <button type="button" class="btn btn-outline-danger btn-touch w-100" data-bs-toggle="modal" data-bs-target="#archive-client"><?= esc(lang('Clients.archiveButton')) ?></button>
+
+            <div class="modal fade" id="archive-client" tabindex="-1" aria-labelledby="archive-client-title" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title h5" id="archive-client-title"><?= esc(lang('Clients.archiveButton')) ?></h3>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-0"><?= esc(lang('Clients.archiveConfirm', [(string) $client['name']])) ?></p>
+                        </div>
+                        <div class="modal-footer flex-column flex-sm-row">
+                            <form method="post" action="/settings/clients/<?= (int) $id ?>/archive" class="w-100 w-sm-auto m-0">
+                                <?= csrf_field() ?>
+                                <button type="submit" class="btn btn-danger w-100"><?= esc(lang('Clients.archiveButton')) ?></button>
+                            </form>
+                            <button type="button" class="btn btn-outline-secondary w-100 w-sm-auto" data-bs-dismiss="modal"><?= esc(lang('Clients.cancel')) ?></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif ?>
+    </section>
+<?php endif ?>
 <?= $this->endSection() ?>

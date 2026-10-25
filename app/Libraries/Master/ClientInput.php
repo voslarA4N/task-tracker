@@ -15,7 +15,7 @@ final class ClientInput
     public const FIELDS = [
         'name', 'address_line1', 'address_line2', 'postal_code', 'city', 'country', 'identifier_type',
         'identifier_value', 'tax_id', 'vat_id', 'invoice_email', 'cc_emails', 'hourly_rate', 'currency',
-        'doc_language', 'due_days', 'billing_mode', 'counts_toward_limit',
+        'doc_language', 'due_days', 'portal_name', 'portal_url_template', 'billing_mode', 'counts_toward_limit',
     ];
 
     /**
@@ -26,7 +26,7 @@ final class ClientInput
         'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'GB', 'CH', 'NO', 'UA', 'US',
     ];
 
-    private const OPTIONAL = ['address_line2', 'identifier_value', 'tax_id', 'vat_id', 'doc_language', 'due_days'];
+    private const OPTIONAL = ['address_line2', 'identifier_value', 'tax_id', 'vat_id', 'doc_language', 'due_days', 'portal_name', 'portal_url_template'];
 
     /**
      * @return array<string, string>
@@ -212,6 +212,18 @@ final class ClientInput
 
         if ($get('due_days') !== '' && (preg_match('/^\d{1,3}$/D', $get('due_days')) !== 1 || (int) $get('due_days') > 365)) {
             $errors['due_days'] = lang('Clients.errorDueDays');
+        }
+
+        if (mb_strlen($get('portal_name')) > 100) {
+            $errors['portal_name'] = lang('Clients.errorLength', [0, 100]);
+        }
+
+        if ($get('portal_url_template') !== '') {
+            $portalError = PortalUrlTemplate::validate($get('portal_url_template'));
+
+            if ($portalError !== null) {
+                $errors['portal_url_template'] = $portalError;
+            }
         }
 
         return $errors;
