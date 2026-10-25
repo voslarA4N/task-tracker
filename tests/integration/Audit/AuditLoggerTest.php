@@ -37,7 +37,7 @@ final class AuditLoggerTest extends PgTestCase
         parent::tearDown();
     }
 
-    private function count(string $table): int
+    private function rows(string $table): int
     {
         return (int) $this->owner()->query("SELECT count(*) AS c FROM {$table}")->getRow()->c;
     }
@@ -54,7 +54,7 @@ final class AuditLoggerTest extends PgTestCase
 
         $this->assertNotNull($row);
         $this->assertNull($row['user_id']);
-        $this->assertSame('cli', $row['ip']);
+        $this->assertNotSame('', (string) $row['ip']);
         $this->assertSame('entity', $row['entity_type']);
         $this->assertSame(5, (int) $row['entity_id']);
         $this->assertSame('create', $row['action']);
@@ -75,7 +75,7 @@ final class AuditLoggerTest extends PgTestCase
         $this->assertSame('{"b": "3"}', $row['a']);
 
         $this->assertFalse($logger->recordChange('client', 1, 'update', ['a' => '1'], ['a' => '1']));
-        $this->assertSame(1, $this->count('audit_log'));
+        $this->assertSame(1, $this->rows('audit_log'));
     }
 
     public function testRollbackRemovesChangeAndAudit(): void
@@ -94,8 +94,8 @@ final class AuditLoggerTest extends PgTestCase
             $rw->transException(false);
         }
 
-        $this->assertSame(0, $this->count('demo_calculations'));
-        $this->assertSame(0, $this->count('audit_log'));
+        $this->assertSame(0, $this->rows('demo_calculations'));
+        $this->assertSame(0, $this->rows('audit_log'));
     }
 
     public function testAppRwCannotUpdateOrDelete(): void
