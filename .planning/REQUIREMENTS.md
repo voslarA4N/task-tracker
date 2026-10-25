@@ -54,15 +54,15 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 
 - [ ] **TSK-01**: Používateľ vytvorí úlohu: klient (predvolený posledný použitý), URL, názov, nacenené hodiny, sadzba (predvyplnená z klienta, dá sa prepísať), poznámka. Nacenená suma sa prepočítava hneď pri písaní.
 - [ ] **TSK-02**: Používateľ upraví a zmaže úlohu. Zmazať sa dá len úloha bez zamknutých častí.
-- [ ] **TSK-03**: Úloha má stav *V práci* / *Zapracovaná* (s dátumom). Fakturačný stav sa odvodzuje automaticky: *vyfakturovaná* = zapracovaná, bez nezamknutej časti a aspoň jedna časť zamknutá; *čiastočne* = aspoň jedna zamknutá časť, ale nie vyfakturovaná; inak *nevyfakturovaná*.
+- [x] **TSK-03**: Úloha má stav *V práci* / *Zapracovaná* (s dátumom). Fakturačný stav sa odvodzuje automaticky: *vyfakturovaná* = zapracovaná, bez nezamknutej časti a aspoň jedna časť zamknutá; *čiastočne* = aspoň jedna zamknutá časť, ale nie vyfakturovaná; inak *nevyfakturovaná*.
 - [ ] **TSK-04**: Zoznam „Aktuálne úlohy“ ukazuje úlohy, ktoré nie sú zapracované alebo majú nevyfakturované hodiny.
 - [ ] **TSK-05**: Úloha zobrazuje rozdiel medzi nacenenými a fakturovanými hodinami (napr. „+6 h“). Nič sa neblokuje.
 - [ ] **TSK-06**: Používateľ filtruje a vyhľadáva úlohy (klient, stav, mesiac, text).
 
 ### Fakturačné časti (E5)
 
-- [ ] **ALC-01**: Úloha má 0 až N fakturačných častí: hodiny, fakturačný mesiac (RRRR-MM), sadzba, suma. Mena sa preberá z klienta.
-- [ ] **ALC-02**: Nezamknutú časť možno upraviť, presunúť do iného mesiaca alebo zmazať.
+- [x] **ALC-01**: Úloha má 0 až N fakturačných častí: hodiny, fakturačný mesiac (RRRR-MM), sadzba, suma. Mena sa preberá z klienta.
+- [x] **ALC-02**: Nezamknutú časť možno upraviť, presunúť do iného mesiaca alebo zmazať.
 - [ ] **ALC-03**: Časť na vystavenej faktúre je zamknutá a odkazuje na faktúru. Pokus o jej úpravu odmietne server (nielen UI).
 - [ ] **ALC-04**: Pri „Označiť ako zapracovanú“ sa zobrazí panel: mesiac (Aktuálny / Ďalší / Iný), hodiny (predvolený zostatok nacenených hodín) a živý prepočet sumy. Po potvrdení sa vytvorí časť.
 - [ ] **ALC-05**: Časť sa dá pridať aj k nezapracovanej úlohe (čiastočná fakturácia veľkej úlohy). Detail úlohy ukazuje vyfakturované, naplánované a zostávajúce hodiny.
@@ -224,12 +224,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUD-01 | Phase 3 | Complete |
 | TSK-01 | Phase 4 | Pending |
 | TSK-02 | Phase 4 | Pending |
-| TSK-03 | Phase 4 | Pending |
+| TSK-03 | Phase 4 | Complete |
 | TSK-04 | Phase 4 | Pending |
 | TSK-05 | Phase 4 | Pending |
 | TSK-06 | Phase 4 | Pending |
-| ALC-01 | Phase 4 | Pending |
-| ALC-02 | Phase 4 | Pending |
+| ALC-01 | Phase 4 | Complete |
+| ALC-02 | Phase 4 | Complete |
 | ALC-04 | Phase 4 | Pending |
 | ALC-05 | Phase 4 | Pending |
 | DSH-01 | Phase 4 | Pending |
