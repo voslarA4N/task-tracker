@@ -79,6 +79,13 @@ final class EntityVersions extends BaseController
 
         $entity  = $this->entityOr404($id);
         $country = Country::from((string) $entity['country']);
+
+        if (EntityInput::hasImmutableKeys($request)) {
+            return $this->response
+                ->setStatusCode(422)
+                ->setBody(view('settings/entities/version_new', $this->formData($entity, $this->currentValues($request), ['_form' => lang('Entities.errorImmutable')])));
+        }
+
         $raw     = $request->getPost('valid_from');
         $rawDate = is_string($raw) ? trim($raw) : '';
 
@@ -122,6 +129,21 @@ final class EntityVersions extends BaseController
         return $this->response
             ->setStatusCode(422)
             ->setBody(view('settings/entities/version_new', $this->formData($entity, $values, $errors)));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function currentValues(IncomingRequest $request): array
+    {
+        $raw    = $request->getPost('valid_from');
+        $values = ['valid_from' => is_string($raw) ? trim($raw) : ''];
+
+        foreach (EntityInput::normalizeVersion(EntityInput::versionFromPost($request)) as $key => $value) {
+            $values[$key] = $value ?? '';
+        }
+
+        return $values;
     }
 
     /**

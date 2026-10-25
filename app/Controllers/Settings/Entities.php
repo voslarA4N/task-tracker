@@ -90,13 +90,9 @@ final class Entities extends BaseController
         return redirect()->to('/settings/entities/' . $id);
     }
 
-    public function show(int $id): string
+    public function show(int $id, ?string $endError = null): string
     {
-        $entity = (new EntityService())->find($id);
-
-        if ($entity === null) {
-            throw PageNotFoundException::forPageNotFound(lang('Entities.notFound'));
-        }
+        $entity = $this->entityOr404($id);
 
         $today = service('clock')->today();
 
@@ -126,6 +122,9 @@ final class Entities extends BaseController
         unset($item);
 
         return view('settings/entities/show', [
+            'endError'    => $endError,
+            'canEnd'      => $to === null || $to >= $today,
+            'today'       => $today,
             'history'     => $history,
             'fieldLabels' => $this->fieldLabels($country),
             'title'       => lang('Entities.detailTitle'),
@@ -137,6 +136,114 @@ final class Entities extends BaseController
             'activeFrom'  => $this->formatDate($from),
             'activeTo'    => $to === null ? null : $this->formatDate($to),
         ]);
+    }
+
+    public function edit(int $id): string
+    {
+        $entity = $this->entityOr404($id);
+
+        return view('settings/entities/edit', $this->editData($entity, [
+            'name_internal' => (string) $entity['name_internal'],
+            'active_from'   => (string) $entity['active_from'],
+            'active_to'     => $entity['active_to'] === null ? '' : (string) $entity['active_to'],
+        ], []));
+    }
+
+    public function update(int $id): ResponseInterface
+    {
+        $request = $this->request;
+        assert($request instanceof IncomingRequest);
+
+        $entity = $this->entityOr404($id);
+        $values = EntityInput::baseUpdateFromPost($request);
+
+        if (EntityInput::hasImmutableKeys($request)) {
+            return $this->response
+                ->setStatusCode(422)
+                ->setBody(view('settings/entities/edit', $this->editData($entity, $values, ['_form' => lang('Entities.errorImmutable')])));
+        }
+
+        $history = (new EntityVersionResolver())->history($id, service('clock')->today());
+        $first   = $history === [] ? (string) $entity['active_from'] : (string) $history[array_key_last($history)]['valid_from'];
+        $errors  = EntityInput::validateBaseUpdate($values, $first, service('clock')->today());
+
+        if ($errors !== []) {
+            return $this->response
+                ->setStatusCode(422)
+                ->setBody(view('settings/entities/edit', $this->editData($entity, $values, $errors)));
+        }
+
+        (new EntityService())->updateBase($id, $values);
+
+        session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang('Entities.saved')]);
+
+        return redirect()->to('/settings/entities/' . $id);
+    }
+
+    public function end(int $id): ResponseInterface
+    {
+        $request = $this->request;
+        assert($request instanceof IncomingRequest);
+
+        $entity = $this->entityOr404($id);
+
+        if (EntityInput::hasImmutableKeys($request)) {
+            return $this->response->setStatusCode(422)->setBody($this->showWithError($id, lang('Entities.errorImmutable')));
+        }
+
+        $raw = $request->getPost('active_to');
+        $to  = is_string($raw) ? EntityInput::parseDate(trim($raw)) : null;
+
+        if ($to === null) {
+            return $this->response->setStatusCode(422)->setBody($this->showWithError($id, lang('Entities.errorDate')));
+        }
+
+        if ($to < (string) $entity['active_from']) {
+            return $this->response->setStatusCode(422)->setBody($this->showWithError($id, lang('Entities.errorActiveToBeforeFrom')));
+        }
+
+        (new EntityService())->end($id, $to);
+
+        session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang('Entities.endedFlash', [$this->formatDate($to)])]);
+
+        return redirect()->to('/settings/entities/' . $id);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function entityOr404(int $id): array
+    {
+        $entity = (new EntityService())->find($id);
+
+        if ($entity === null) {
+            throw PageNotFoundException::forPageNotFound(lang('Entities.notFound'));
+        }
+
+        return $entity;
+    }
+
+    /**
+     * @param array<string, mixed>  $entity
+     * @param array<string, string> $values
+     * @param array<string, string> $errors
+     *
+     * @return array<string, mixed>
+     */
+    private function editData(array $entity, array $values, array $errors): array
+    {
+        return [
+            'title'   => lang('Entities.editTitle'),
+            'entity'  => $entity,
+            'country' => Country::from((string) $entity['country']),
+            'values'  => $values,
+            'errors'  => $errors,
+        ];
+    }
+
+    private function showWithError(int $id, string $message): string
+    {
+        return $this->show($id, $message);
     }
 
     /**

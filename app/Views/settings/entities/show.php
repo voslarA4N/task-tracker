@@ -42,6 +42,9 @@ $rows[] = [lang('Entities.dueDays'), $show($version['due_days'])];
 <?= $this->section('content') ?>
 <p class="mb-2"><a href="/more"><?= esc(lang('Entities.backToMore')) ?></a></p>
 
+<?php if (($endError ?? null) !== null) : ?>
+    <div class="alert alert-danger" role="alert"><?= esc($endError) ?></div>
+<?php endif ?>
 <section class="app-card" aria-labelledby="entity-name">
     <h1 class="h4" id="entity-name">
         <?= esc((string) $entity['name_internal']) ?>
@@ -49,6 +52,10 @@ $rows[] = [lang('Entities.dueDays'), $show($version['due_days'])];
     </h1>
     <div class="master-actions">
         <a class="btn btn-primary btn-touch" href="/settings/entities/<?= (int) $entity['id'] ?>/versions/new"><?= esc(lang('Entities.newVersion')) ?></a>
+        <a class="btn btn-outline-secondary btn-touch" href="/settings/entities/<?= (int) $entity['id'] ?>/edit"><?= esc(lang('Entities.editButton')) ?></a>
+        <?php if ($canEnd) : ?>
+            <button type="button" class="btn btn-outline-danger btn-touch" data-bs-toggle="modal" data-bs-target="#end-entity"><?= esc(lang('Entities.endButton')) ?></button>
+        <?php endif ?>
     </div>
     <div class="row g-3 mt-1">
         <div class="col-12 col-md-6">
@@ -80,4 +87,7 @@ $rows[] = [lang('Entities.dueDays'), $show($version['due_days'])];
     </dl>
 </section>
 <?= $this->include('settings/entities/_history') ?>
+<?php if ($canEnd) : ?>
+    <?= $this->include('settings/entities/_end_modal') ?>
+<?php endif ?>
 <?= $this->endSection() ?>

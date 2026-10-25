@@ -127,7 +127,7 @@ final class EntityVersionsTest extends AuthTestCase
         $this->assertStringContainsString('master-changed', $html);
         $this->assertStringContainsString('versions/new?from=', $html);
         $this->assertStringContainsString(esc(lang('Entities.historyTitle')), $html);
-        $this->assertStringNotContainsString('/edit', $html);
+        $this->assertSame(0, preg_match('#versions/\d+/edit#', $html));
         $this->assertStringNotContainsString('value="delete"', $html);
     }
 
@@ -171,10 +171,10 @@ final class EntityVersionsTest extends AuthTestCase
         $this->assertSame(1, $this->versions());
     }
 
-    public function testCountryCurrencyInPostIgnored(): void
+    public function testCountryCurrencyInPostRejected(): void
     {
         $id = $this->createEntity('SK');
-        $this->submit($id, $this->data(['country' => 'PL', 'currency' => 'PLN']))->assertStatus(302);
+        $this->submit($id, $this->data(['country' => 'PL', 'currency' => 'PLN']))->assertStatus(422);
 
         $row = $this->owner()->query('SELECT country, currency FROM entities WHERE id = ?', [$id])->getRow();
         $this->assertSame('SK', $row->country);

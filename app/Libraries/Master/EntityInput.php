@@ -16,8 +16,10 @@ final class EntityInput
         'trade_name', 'address_line1', 'address_line2', 'postal_code', 'city', 'company_id', 'regon', 'tax_id',
         'vat_id', 'registry_note', 'email', 'phone', 'doc_language', 'vat_regime', 'due_days',
     ];
-    private const MIN_DATE = '2000-01-01';
-    private const OPTIONAL = ['address_line2', 'regon', 'tax_id', 'vat_id', 'registry_note', 'phone'];
+    public const BASE_UPDATE_FIELDS = ['name_internal', 'active_from', 'active_to'];
+    public const IMMUTABLE_KEYS     = ['country', 'currency'];
+    private const MIN_DATE          = '2000-01-01';
+    private const OPTIONAL          = ['address_line2', 'regon', 'tax_id', 'vat_id', 'registry_note', 'phone'];
 
     /**
      * @return array<string, string>
@@ -25,6 +27,68 @@ final class EntityInput
     public static function baseFromPost(IncomingRequest $request): array
     {
         return self::pick($request, self::BASE_FIELDS);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function baseUpdateFromPost(IncomingRequest $request): array
+    {
+        return self::pick($request, self::BASE_UPDATE_FIELDS);
+    }
+
+    /**
+     * True, ak POST obsahuje nemenný kľúč (aj prázdny): krajina a mena sa po vytvorení nemenia (D-02).
+     */
+    public static function hasImmutableKeys(IncomingRequest $request): bool
+    {
+        $post = $request->getPost();
+
+        foreach (self::IMMUTABLE_KEYS as $key) {
+            if (array_key_exists($key, $post)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, string|null> $v
+     *
+     * @return array<string, string>
+     */
+    public static function validateBaseUpdate(array $v, string $firstValidFrom, string $today): array
+    {
+        $errors = [];
+        $name   = trim((string) ($v['name_internal'] ?? ''));
+
+        if ($name === '' || mb_strlen($name) > 100) {
+            $errors['name_internal'] = lang('Entities.errorLength', [1, 100]);
+        }
+
+        $from = self::parseDate((string) ($v['active_from'] ?? ''));
+        $max  = (service('clock')->parseDate($today) ?? service('clock')->now())->modify('+366 days')->format('Y-m-d');
+
+        if ($from === null || $from < self::MIN_DATE || $from > $max) {
+            $errors['active_from'] = lang('Entities.errorDateRange', [self::fmt(self::MIN_DATE), self::fmt($max)]);
+        } elseif ($from < $firstValidFrom) {
+            $errors['active_from'] = lang('Entities.errorActiveFromBeforeFirstVersion', [self::fmt($firstValidFrom)]);
+        }
+
+        $toRaw = (string) ($v['active_to'] ?? '');
+
+        if ($toRaw !== '') {
+            $to = self::parseDate($toRaw);
+
+            if ($to === null) {
+                $errors['active_to'] = lang('Entities.errorDate');
+            } elseif ($from !== null && $to < $from) {
+                $errors['active_to'] = lang('Entities.errorActiveToBeforeFrom');
+            }
+        }
+
+        return $errors;
     }
 
     /**

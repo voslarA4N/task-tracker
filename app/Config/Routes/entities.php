@@ -12,3 +12,6 @@ $routes->get('settings/entities/(:num)', 'Settings\Entities::show/$1');
 $routes->get('settings/entities/(:num)/versions/new', 'Settings\EntityVersions::newForm/$1');
 $routes->get('settings/entities/(:num)/versions/notice', 'Settings\EntityVersions::notice/$1');
 $routes->post('settings/entities/(:num)/versions', 'Settings\EntityVersions::create/$1');
+$routes->get('settings/entities/(:num)/edit', 'Settings\Entities::edit/$1');
+$routes->post('settings/entities/(:num)', 'Settings\Entities::update/$1');
+$routes->post('settings/entities/(:num)/end', 'Settings\Entities::end/$1');

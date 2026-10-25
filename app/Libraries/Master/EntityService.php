@@ -193,6 +193,102 @@ final class EntityService
     }
 
     /**
+     * Úprava interného názvu a obdobia pôsobenia (D-01). Zapisuje len stĺpce z grantu, audit v tej istej transakcii.
+     *
+     * @param array<string, string|null> $values BASE_UPDATE_FIELDS
+     *
+     * @return bool true, ak nastala zmena
+     */
+    public function updateBase(int $id, array $values): bool
+    {
+        $entity = $this->find($id);
+
+        if ($entity === null) {
+            throw new InvalidArgumentException('Entity ' . $id . ' not found');
+        }
+
+        $new = [
+            'name_internal' => (string) $values['name_internal'],
+            'active_from'   => (string) $values['active_from'],
+            'active_to'     => ($values['active_to'] ?? '') === '' ? null : (string) $values['active_to'],
+        ];
+        $old = [
+            'name_internal' => (string) $entity['name_internal'],
+            'active_from'   => (string) $entity['active_from'],
+            'active_to'     => $entity['active_to'] === null ? null : (string) $entity['active_to'],
+        ];
+
+        if ($old === $new) {
+            return false;
+        }
+
+        $now     = service('clock')->now()->format('Y-m-d H:i:sP');
+        $changed = false;
+
+        $this->db->transException(true)->transStart();
+
+        try {
+            $this->db->query(
+                'UPDATE entities SET name_internal = :n:, active_from = :f:, active_to = :t:, updated_at = :now: WHERE id = :id:',
+                ['n' => $new['name_internal'], 'f' => $new['active_from'], 't' => $new['active_to'], 'now' => $now, 'id' => $id],
+            );
+            $changed = $this->audit->recordChange('entity', $id, 'update', $old, $new);
+            $this->db->transComplete();
+        } catch (Throwable $e) {
+            $this->db->transRollback();
+            $this->db->resetTransStatus();
+
+            throw $e;
+        } finally {
+            $this->db->transException(false);
+        }
+
+        return $changed;
+    }
+
+    /**
+     * Ukončenie subjektu dátumom „Aktívny do“ (D-07). Subjekt ostáva zobraziteľný.
+     */
+    public function end(int $id, string $activeTo): void
+    {
+        $entity = $this->find($id);
+
+        if ($entity === null) {
+            throw new InvalidArgumentException('Entity ' . $id . ' not found');
+        }
+
+        if ($activeTo < (string) $entity['active_from']) {
+            throw new InvalidArgumentException('active_to is before active_from');
+        }
+
+        $now = service('clock')->now()->format('Y-m-d H:i:sP');
+
+        $this->db->transException(true)->transStart();
+
+        try {
+            $this->db->query(
+                'UPDATE entities SET active_to = :t:, updated_at = :now: WHERE id = :id:',
+                ['t' => $activeTo, 'now' => $now, 'id' => $id],
+            );
+            $this->audit->record(
+                'entity',
+                $id,
+                'end',
+                ['active_to' => $entity['active_to'] === null ? null : (string) $entity['active_to']],
+                ['active_to' => $activeTo],
+            );
+            $this->db->transComplete();
+        } catch (Throwable $e) {
+            $this->db->transRollback();
+            $this->db->resetTransStatus();
+
+            throw $e;
+        } finally {
+            $this->db->transException(false);
+        }
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function find(int $id): ?array

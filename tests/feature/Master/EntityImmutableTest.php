@@ -47,19 +47,7 @@ final class EntityImmutableTest extends AuthTestCase
         return $this->call('post', $path, $data + [csrf_token() => csrf_hash()]);
     }
 
-    /**
-     * @return iterable<string, array{0: string, 1: string}>
-     */
-    public static function forged(): iterable
-    {
-        yield 'country' => ['country', 'PL'];
-
-        yield 'currency' => ['currency', 'PLN'];
-
-        yield 'empty country' => ['country', ''];
-    }
-
-    #[DataProvider('forged')]
+    #[DataProvider('provideUpdateRejectsForgedKey')]
     public function testUpdateRejectsForgedKey(string $key, string $value): void
     {
         $id     = $this->createEntity('SK');
@@ -74,6 +62,18 @@ final class EntityImmutableTest extends AuthTestCase
         $this->assertSame('SK', $row->country);
         $this->assertSame('EUR', $row->currency);
         $this->assertSame('Moja firma SK', $row->name_internal);
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: string}>
+     */
+    public static function provideUpdateRejectsForgedKey(): iterable
+    {
+        yield 'country' => ['country', 'PL'];
+
+        yield 'currency' => ['currency', 'PLN'];
+
+        yield 'empty country' => ['country', ''];
     }
 
     public function testNewVersionRejectsCurrency(): void

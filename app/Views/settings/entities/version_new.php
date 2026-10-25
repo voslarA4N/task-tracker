@@ -21,7 +21,7 @@ $id     = (int) $entity['id'];
     <h1 class="h4 mb-3" id="version-new-title"><?= esc(lang('Entities.versionNewTitle')) ?>: <?= esc((string) $entity['name_internal']) ?></h1>
 
     <?php if ($errors !== []) : ?>
-        <div class="alert alert-danger" role="alert"><?= esc($errors['valid_from'] ?? lang('Entities.errorForm')) ?></div>
+        <div class="alert alert-danger" role="alert"><?= esc($errors['_form'] ?? $errors['valid_from'] ?? lang('Entities.errorForm')) ?></div>
     <?php endif ?>
 
     <div class="row g-3 mb-3">
