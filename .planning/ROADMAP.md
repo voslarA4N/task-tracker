@@ -156,7 +156,42 @@ Plans:
   4. Používateľ pridá, upraví a archivuje klienta (bez mazania) s adresou, typom a hodnotou identifikátora, sadzbou, menou, jazykom, splatnosťou, odkazom na portál úloh, režimom fakturácie a príznakom „započítavať do limitu“.
   5. Právny dôvod oslobodenia od DPH je štruktúrované pole s kódom (napr. `ART_113_1`) v právnom profile a každá zmena subjektov, klientov a nastavení sa objaví v denníku zmien s hodnotami pred a po.
 
-**Plans**: TBD
+**Plans**: 10 plans (8 vĺn)
+Plans:
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — audit_log insert-only, AuditLogger v transakcii, stĺpcový grant grantUpdateColumns, DbBool, MasterFixtures (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-02-PLAN.md — Vytvorenie SK/PL subjektu cez UI: entities, entity_versions, invoice_series, EntityService, verzia k dátumu, detail (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 03-03-PLAN.md — Zoznam subjektov, vstup z Viac, EntityDirectory (forSelect s ukončenými, activeAt) (vlna 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 03-04-PLAN.md — Nová verzia údajov „platné od“, história verzií so zmenami, Nová verzia z tejto (vlna 4)
+- [ ] 03-05-PLAN.md — Klienti: zoznam, pridanie, úprava, identifikátor, sadzba, režim fakturácie, e-maily v kópii (vlna 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 03-06-PLAN.md — Upraviť a ukončiť subjekt, odmietnutie zmeny krajiny/meny, súhrnný test oprávnení (vlna 5)
+- [ ] 03-07-PLAN.md — Archivácia klienta a vzor odkazu na portál úloh so živou ukážkou (vlna 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 03-08-PLAN.md — Bankové účty subjektu: IBAN mod-97, predvolený, archivácia, výber podľa meny (vlna 6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 03-09-PLAN.md — Číselný rad: SeriesFormat (TDD), SeriesService, formulár so živou ukážkou (vlna 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 03-10-PLAN.md — Právne profily a predbežný seed textov, sekcia na detaile, dev seeder, záverečná kontrola fázy (vlna 8)
+
 **UI hint**: yes
 **Poznámky**: Štandardné vzory. Prvé použitie vzoru „GRANT + insert-only“. Seed `legal_texts` je len predbežný, znenie potvrdí účtovníčka. **Akcia: poslať otázky účtovníčke pri štarte tejto fázy** (limity, PL/SK B2B, kurz, retencia, dobropis, obsah dokladov, zoznam v research/SUMMARY.md). Vlastník vyberie SMTP poskytovateľa a DNS (SPF/DKIM/DMARC) pred Phase 7.
 

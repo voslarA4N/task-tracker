@@ -38,24 +38,20 @@ created: 2026-10-25
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | — | — | ENT-01 | — | entita + prvá verzia + 2 rady + audit v 1 transakcii | integration | `phpunit tests/integration/Master/EntityServiceTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | ENT-01 | T-CSRF | vytvorenie cez UI POST | feature | `phpunit tests/feature/Master/EntitiesTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | ENT-02, ENT-05 | T-Input | validácie polí, VAT-UE formát | unit | `phpunit tests/unit/Master/EntityValidationTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | ENT-03 | T-Tamper | nová verzia, duplicitný `valid_from` 422, UPDATE/DELETE `entity_versions` denied | integration | `phpunit tests/integration/Master/EntityVersionTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | ENT-03 | — | história a `VersionDiff` | unit+feature | `phpunit tests/unit/Master/VersionDiffTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | ENT-04 | — | ukončený subjekt vo `forSelect()` | integration | `phpunit tests/integration/Master/EntityDirectoryTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | ENT-06 | T-IDOR | viac účtov, `forCurrency`, jedno predvolené, IBAN mod-97 | integration+unit | `phpunit tests/integration/Master/BankAccountTest.php tests/unit/Master/IbanTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | ENT-07 | T-MassAssign | podvrhnutý POST odmietnutý, `UPDATE entities SET country/currency` permission denied | feature+integration | `phpunit tests/feature/Master/EntityImmutableTest.php tests/integration/Master/MasterRolesTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | ENT-01 (D-09..D-11) | — | formát radu, rok povinný, invoice ≠ credit_note | unit | `phpunit tests/unit/Master/SeriesFormatTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | CLI-01 | T-Destroy | pridať, upraviť, archivovať, obnoviť; DELETE denied | integration+feature | `phpunit tests/integration/Master/ClientServiceTest.php tests/feature/Master/ClientsTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | CLI-02, CLI-03, CLI-05, CLI-06, CLI-07 | T-HeaderInj | validácie klienta, e-maily v kópii bez CR/LF | unit | `phpunit tests/unit/Master/ClientValidationTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | CLI-04 | T-XSS | `PortalUrlTemplate` len http(s), `{id}` práve raz | unit | `phpunit tests/unit/Master/PortalUrlTemplateTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | SET-02 | — | seed profilov a textov, `exemption_code`, fallback | integration | `phpunit tests/integration/Master/LegalProfileTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | AUD-01 | T-Repudiation | audit v tej istej transakcii, diff, denylist, insert-only | integration+unit | `phpunit tests/integration/Master/AuditLoggerTest.php tests/unit/Master/AuditDiffTest.php` | ❌ W0 | ⬜ pending |
-| TBD | — | — | UI | T-XSS | bez inline skriptov/štýlov, texty cez `lang()` | unit | `phpunit tests/unit/Security/ViewsCspTest.php tests/unit/I18n` | ✅ | ⬜ pending |
+| 03-01-T1/T2 | 03-01 | 1 | AUD-01 | T-03-01..05 | audit v tej istej transakcii, diff, denylist, insert-only, stĺpcový grant | integration+unit | `phpunit tests/integration/Audit/AuditLoggerTest.php tests/unit/Audit/AuditLoggerDiffTest.php tests/integration/DbRolesTest.php` | ❌ W0 (03-01-T1) | ⬜ pending |
+| 03-02-T1..T3 | 03-02 | 2 | ENT-01, ENT-02, ENT-05, ENT-07 | T-03-06..12 | entita + prvá verzia + 2 rady + audit v 1 transakcii; country/currency denied; UI POST SK aj PL | unit+integration+feature | `phpunit tests/unit/Master/EntityInputTest.php tests/integration/Master/EntityServiceTest.php tests/feature/Master/EntitiesCreateTest.php` | ❌ W0 (03-02-T1) | ⬜ pending |
+| 03-03-T1/T2 | 03-03 | 3 | ENT-04 | T-03-14..17 | ukončený subjekt vo `forSelect()`, `activeAt` s prekryvom | integration+feature | `phpunit tests/integration/Master/EntityDirectoryTest.php tests/feature/Master/EntitiesListTest.php` | ❌ W0 (03-03-T1) | ⬜ pending |
+| 03-04-T1..T3 | 03-04 | 4 | ENT-03 | T-03-18..23 | nová verzia, duplicitný `valid_from` 422, výber k dátumu, história a `VersionDiff` | unit+integration+feature | `phpunit tests/unit/Master/VersionDiffTest.php tests/integration/Master/EntityVersionTest.php tests/feature/Master/EntityVersionsTest.php` | ❌ W0 (03-04-T1) | ⬜ pending |
+| 03-05-T1..T3 | 03-05 | 4 | CLI-01, CLI-02, CLI-03, CLI-05, CLI-06, CLI-07 | T-03-24..31 | validácie klienta, e-maily v kópii bez CR/LF, sadzba string, DELETE denied | unit+integration+feature+js | `phpunit tests/unit/Master/CcEmailsTest.php tests/unit/Master/ClientInputTest.php tests/integration/Master/ClientServiceTest.php tests/feature/Master/ClientsTest.php` + `node --test tests/js/client-form.test.js` | ❌ W0 (03-05-T1) | ⬜ pending |
+| 03-06-T1/T2 | 03-06 | 5 | ENT-04, ENT-07 | T-03-32..36 | podvrhnutý POST country/currency → 422; oprávnenia všetkých master tabuliek | feature+integration | `phpunit tests/feature/Master/EntityImmutableTest.php tests/feature/Master/EntityEditTest.php tests/integration/Master/MasterRolesTest.php` | ❌ W0 (03-06-T1) | ⬜ pending |
+| 03-07-T1/T2 | 03-07 | 5 | CLI-01, CLI-04 | T-03-37..41 | archivácia s auditom; `PortalUrlTemplate` len http(s), `{id}` práve raz | unit+integration+feature | `phpunit tests/unit/Master/PortalUrlTemplateTest.php tests/integration/Master/ClientArchiveTest.php tests/feature/Master/ClientsArchivePortalTest.php` | ❌ W0 (03-07-T1) | ⬜ pending |
+| 03-08-T1..T3 | 03-08 | 6 | ENT-06 | T-03-42..47 | viac účtov, `forCurrency` (3 vetvy), jeden predvolený, IBAN mod-97, IDOR 404 | unit+integration+feature | `phpunit tests/unit/Master/IbanTest.php tests/integration/Master/BankAccountTest.php tests/feature/Master/BankAccountsTest.php` | ❌ W0 (03-08-T1) | ⬜ pending |
+| 03-09-T1..T3 | 03-09 | 7 | ENT-01 (D-09..D-11) | T-03-48..52 | formát radu, rok povinný, invoice ≠ credit_note, `isFormatLocked` | unit+integration+feature | `phpunit tests/unit/Master/SeriesFormatTest.php tests/integration/Master/SeriesServiceTest.php tests/feature/Master/SeriesTest.php` | ❌ W0 (03-09-T1) | ⬜ pending |
+| 03-10-T1/T2 | 03-10 | 8 | SET-02 | T-03-53..57 | seed profilov a textov, `exemption_code`, fallback, SELECT-only; dev seeder idempotentný | integration+feature | `phpunit tests/integration/Master/LegalProfileTest.php tests/feature/Master/LegalProfileSectionTest.php tests/integration/Database/DevSeederTest.php` | ❌ W0 (03-10-T1) | ⬜ pending |
+| 03-10-T3 | 03-10 | 8 | UI, všetky | T-03-09, T-03-28 | bez inline skriptov/štýlov, texty cez `lang()`, celá sada | unit (existujúce) + make check | `make check && node --test tests/js/` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
-*Task IDs are filled in by the planner once PLAN.md files exist.*
+*Každý plán začína úlohou RED (Wave 0 pre svoje testy), takže žiadne 3 po sebe idúce úlohy nie sú bez automatického overenia.*
 
 ---
 
