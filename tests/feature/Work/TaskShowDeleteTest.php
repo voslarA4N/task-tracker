@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Work;
 
 use App\Libraries\Platform\FrozenClock;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -76,7 +77,8 @@ final class TaskShowDeleteTest extends AuthTestCase
 
     public function testMissingTaskIs404(): void
     {
-        $this->get('/tasks/999')->assertStatus(404);
+        $this->expectException(PageNotFoundException::class);
+        $this->get('/tasks/999');
     }
 
     public function testDeleteWithoutLockedParts(): void
