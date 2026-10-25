@@ -22,7 +22,7 @@ final class MoneyFormatTest extends CIUnitTestCase
 
     public function testPolishZloty(): void
     {
-        $this->assertStringContainsString('zł', MoneyFormat::format('27.00', 'PLN', 'sk'));
+        $this->assertStringContainsString('zł', MoneyFormat::format('27.00', 'PLN', 'pl'));
     }
 
     public function testNegativeStartsWithMinus(): void

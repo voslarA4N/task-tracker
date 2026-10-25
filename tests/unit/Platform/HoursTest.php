@@ -14,6 +14,12 @@ use PHPUnit\Framework\Attributes\DataProvider;
  */
 final class HoursTest extends CIUnitTestCase
 {
+    #[DataProvider('provideOf')]
+    public function testOf(string $raw, string $expected): void
+    {
+        $this->assertSame($expected, Hours::of($raw));
+    }
+
     /**
      * @return iterable<string, array{string, string}>
      */
@@ -30,16 +36,17 @@ final class HoursTest extends CIUnitTestCase
         yield 'zero' => ['0', '0.00'];
     }
 
-    #[DataProvider('provideOf')]
-    public function testOf(string $raw, string $expected): void
+    #[DataProvider('provideOfRejects')]
+    public function testOfRejects(string $raw): void
     {
-        $this->assertSame($expected, Hours::of($raw));
+        $this->expectException(InvalidArgumentException::class);
+        Hours::of($raw);
     }
 
     /**
      * @return iterable<string, array{string}>
      */
-    public static function provideInvalid(): iterable
+    public static function provideOfRejects(): iterable
     {
         yield 'three decimals' => ['8.555'];
 
@@ -50,13 +57,6 @@ final class HoursTest extends CIUnitTestCase
         yield 'empty' => [''];
 
         yield 'too long' => ['123456'];
-    }
-
-    #[DataProvider('provideInvalid')]
-    public function testOfRejects(string $raw): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        Hours::of($raw);
     }
 
     public function testArithmetic(): void
@@ -83,10 +83,16 @@ final class HoursTest extends CIUnitTestCase
         $this->assertSame('0.00', Hours::delta('40.00', '40.00'));
     }
 
+    #[DataProvider('providePercentOf')]
+    public function testPercentOf(string $part, string $total, int $expected): void
+    {
+        $this->assertSame($expected, Hours::percentOf($part, $total));
+    }
+
     /**
      * @return iterable<string, array{string, string, int}>
      */
-    public static function providePercent(): iterable
+    public static function providePercentOf(): iterable
     {
         yield 'forty' => ['16.00', '40.00', 40];
 
@@ -97,12 +103,6 @@ final class HoursTest extends CIUnitTestCase
         yield 'zero total' => ['1.00', '0.00', 0];
 
         yield 'zero part' => ['0.00', '40.00', 0];
-    }
-
-    #[DataProvider('providePercent')]
-    public function testPercentOf(string $part, string $total, int $expected): void
-    {
-        $this->assertSame($expected, Hours::percentOf($part, $total));
     }
 
     public function testFormat(): void

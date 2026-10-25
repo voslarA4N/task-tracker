@@ -36,10 +36,17 @@ final class BillingMonthTest extends CIUnitTestCase
         $this->assertSame('2025-10', BillingMonth::addMonths('2026-10', -12));
     }
 
+    #[DataProvider('provideInRange')]
+    public function testInRange(string $month, bool $expected): void
+    {
+        $this->assertSame($expected, BillingMonth::inRange($month));
+        $this->assertSame(['min' => '2025-10', 'max' => '2028-10'], BillingMonth::rangeBounds());
+    }
+
     /**
      * @return iterable<string, array{string, bool}>
      */
-    public static function provideRange(): iterable
+    public static function provideInRange(): iterable
     {
         yield 'min' => ['2025-10', true];
 
@@ -48,13 +55,6 @@ final class BillingMonthTest extends CIUnitTestCase
         yield 'max' => ['2028-10', true];
 
         yield 'above max' => ['2028-11', false];
-    }
-
-    #[DataProvider('provideRange')]
-    public function testInRange(string $month, bool $expected): void
-    {
-        $this->assertSame($expected, BillingMonth::inRange($month));
-        $this->assertSame(['min' => '2025-10', 'max' => '2028-10'], BillingMonth::rangeBounds());
     }
 
     public function testParse(): void

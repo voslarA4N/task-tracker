@@ -8,12 +8,11 @@ use App\Controllers\BaseController;
 use App\Libraries\Master\BillingMode;
 use App\Libraries\Master\ClientInput;
 use App\Libraries\Master\ClientService;
-use App\Libraries\Platform\Money;
+use App\Libraries\Platform\MoneyFormat;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\ResponseInterface;
 use Locale;
-use NumberFormatter;
 
 final class Clients extends BaseController
 {
@@ -25,7 +24,7 @@ final class Clients extends BaseController
         foreach ($rows as &$row) {
             $row['summary'] = implode(' · ', [
                 $this->countryName((string) $row['country']),
-                lang('Clients.perHour', [$this->formatRate((string) $row['hourly_rate'], (string) $row['currency'])]),
+                lang('Clients.perHour', [MoneyFormat::format((string) $row['hourly_rate'], (string) $row['currency'])]),
                 BillingMode::tryFrom((string) $row['billing_mode'])?->label() ?? (string) $row['billing_mode'],
             ]);
         }
@@ -200,27 +199,5 @@ final class Clients extends BaseController
         $name = Locale::getDisplayRegion('-' . $code, service('request')->getLocale());
 
         return $name === '' ? $code : $name;
-    }
-
-    /**
-     * Iba zobrazenie, bez float: cele cislo cez NumberFormatter, desatinna cast a symbol meny zlozene
-     * podla vzoru lokality (suffix `1 080,00 €` alebo prefix `€1,080.00`).
-     */
-    private function formatRate(string $rate, string $currency): string
-    {
-        $locale             = service('request')->getLocale();
-        $money              = Money::of($rate)->toDecimalString();
-        [$whole, $fraction] = explode('.', $money) + [1 => '00'];
-
-        $decimal = new NumberFormatter($locale, NumberFormatter::DECIMAL);
-        $decimal->setAttribute(NumberFormatter::MAX_FRACTION_DIGITS, 0);
-        $integer = $decimal->format((int) $whole);
-        $number  = ($integer === false ? $whole : $integer) . $decimal->getSymbol(NumberFormatter::DECIMAL_SEPARATOR_SYMBOL) . $fraction;
-
-        $formatter = new NumberFormatter($locale, NumberFormatter::CURRENCY);
-        $formatter->setTextAttribute(NumberFormatter::CURRENCY_CODE, $currency);
-        $symbol = $formatter->getSymbol(NumberFormatter::CURRENCY_SYMBOL);
-
-        return str_starts_with($formatter->getPattern(), '¤') ? $symbol . $number : $number . "\u{00A0}" . $symbol;
     }
 }
