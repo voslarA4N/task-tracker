@@ -141,4 +141,5 @@ return [
     'errorSwift'                        => 'SWIFT/BIC má 8 alebo 11 znakov (písmená a číslice).',
     'errorBankCurrency'                 => 'Vyberte menu účtu.',
     'noAccountInCurrency'               => 'Subjekt nemá účet v mene {0}. Použije sa predvolený účet.',
+    'errorIbanDuplicate'                => 'Tento IBAN už má iný aktívny účet subjektu.',
 ];

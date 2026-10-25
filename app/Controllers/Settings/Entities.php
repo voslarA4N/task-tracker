@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Settings;
 
 use App\Controllers\BaseController;
+use App\Libraries\Master\BankAccountService;
 use App\Libraries\Master\Country;
 use App\Libraries\Master\EntityDirectory;
 use App\Libraries\Master\EntityInput;
@@ -121,20 +122,27 @@ final class Entities extends BaseController
         }
         unset($item);
 
+        $bank         = new BankAccountService();
+        $archivedList = $bank->listFor($id, true);
+        $openArchived = $this->request->getGet('archived') === '1';
+
         return view('settings/entities/show', [
-            'endError'    => $endError,
-            'canEnd'      => $to === null || $to >= $today,
-            'today'       => $today,
-            'history'     => $history,
-            'fieldLabels' => $this->fieldLabels($country),
-            'title'       => lang('Entities.detailTitle'),
-            'entity'      => $entity,
-            'version'     => $version,
-            'country'     => $country,
-            'status'      => $status,
-            'validFrom'   => $this->formatDate((string) $version['valid_from']),
-            'activeFrom'  => $this->formatDate($from),
-            'activeTo'    => $to === null ? null : $this->formatDate($to),
+            'bankAccounts' => $bank->listFor($id, false),
+            'archivedList' => $archivedList,
+            'openArchived' => $openArchived,
+            'endError'     => $endError,
+            'canEnd'       => $to === null || $to >= $today,
+            'today'        => $today,
+            'history'      => $history,
+            'fieldLabels'  => $this->fieldLabels($country),
+            'title'        => lang('Entities.detailTitle'),
+            'entity'       => $entity,
+            'version'      => $version,
+            'country'      => $country,
+            'status'       => $status,
+            'validFrom'    => $this->formatDate((string) $version['valid_from']),
+            'activeFrom'   => $this->formatDate($from),
+            'activeTo'     => $to === null ? null : $this->formatDate($to),
         ]);
     }
 

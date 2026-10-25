@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Master;
 
 use App\Libraries\Platform\FrozenClock;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -188,7 +189,20 @@ final class BankAccountsTest extends AuthTestCase
         $this->addAccount($id, ['label' => 'Hlavny', 'iban' => self::SK_IBAN, 'swift' => '', 'currency' => 'EUR'])->assertStatus(302);
         $acc = $this->accountId(self::SK_IBAN);
 
-        $this->get('/settings/entities/' . $other . '/bank-accounts/' . $acc . '/edit')->assertStatus(404);
-        $this->send('/settings/entities/' . $other . '/bank-accounts/' . $acc . '/archive')->assertStatus(404);
+        // FeatureTestTrait prepusta PageNotFoundException, handler 404 renderuje az produkcny front controller.
+        foreach ([
+            fn () => $this->get('/settings/entities/' . $other . '/bank-accounts/' . $acc . '/edit'),
+            fn () => $this->send('/settings/entities/' . $other . '/bank-accounts/' . $acc . '/archive'),
+            fn () => $this->send('/settings/entities/' . $other . '/bank-accounts/' . $acc . '/default'),
+        ] as $call) {
+            try {
+                $call();
+                $this->fail('Expected PageNotFoundException (404)');
+            } catch (PageNotFoundException) {
+                $this->addToAssertionCount(1);
+            }
+        }
+
+        $this->assertNull($this->owner()->query('SELECT archived_at FROM entity_bank_accounts WHERE id = ?', [$acc])->getRow()->archived_at);
     }
 }

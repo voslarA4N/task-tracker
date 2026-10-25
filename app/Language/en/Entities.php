@@ -141,4 +141,5 @@ return [
     'errorSwift'                        => 'SWIFT/BIC has 8 or 11 characters (letters and digits).',
     'errorBankCurrency'                 => 'Select the account currency.',
     'noAccountInCurrency'               => 'The entity has no account in {0}. The default account will be used.',
+    'errorIbanDuplicate'                => 'Another active account of the entity already has this IBAN.',
 ];
