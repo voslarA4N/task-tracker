@@ -64,7 +64,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **ALC-01**: Úloha má 0 až N fakturačných častí: hodiny, fakturačný mesiac (RRRR-MM), sadzba, suma. Mena sa preberá z klienta.
 - [x] **ALC-02**: Nezamknutú časť možno upraviť, presunúť do iného mesiaca alebo zmazať.
 - [ ] **ALC-03**: Časť na vystavenej faktúre je zamknutá a odkazuje na faktúru. Pokus o jej úpravu odmietne server (nielen UI).
-- [ ] **ALC-04**: Pri „Označiť ako zapracovanú“ sa zobrazí panel: mesiac (Aktuálny / Ďalší / Iný), hodiny (predvolený zostatok nacenených hodín) a živý prepočet sumy. Po potvrdení sa vytvorí časť.
+- [x] **ALC-04**: Pri „Označiť ako zapracovanú“ sa zobrazí panel: mesiac (Aktuálny / Ďalší / Iný), hodiny (predvolený zostatok nacenených hodín) a živý prepočet sumy. Po potvrdení sa vytvorí časť.
 - [x] **ALC-05**: Časť sa dá pridať aj k nezapracovanej úlohe (čiastočná fakturácia veľkej úlohy). Detail úlohy ukazuje vyfakturované, naplánované a zostávajúce hodiny.
 
 ### Faktúry (E6)
@@ -230,7 +230,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TSK-06 | Phase 4 | Complete |
 | ALC-01 | Phase 4 | Complete |
 | ALC-02 | Phase 4 | Complete |
-| ALC-04 | Phase 4 | Pending |
+| ALC-04 | Phase 4 | Complete |
 | ALC-05 | Phase 4 | Complete |
 | DSH-01 | Phase 4 | Complete |
 | IMP-01 | Phase 4 | Complete |
