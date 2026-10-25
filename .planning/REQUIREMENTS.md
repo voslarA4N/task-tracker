@@ -20,15 +20,15 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 
 ### Prihlásenie a bezpečnosť (E1)
 
-- [ ] **AUTH-01**: Používateľ sa prihlási e-mailom a heslom (Argon2id).
-- [ ] **AUTH-02**: Používateľ musí mať TOTP 2FA (RFC 6238, Google/Microsoft Authenticator). Nastaví ju cez QR kód (generovaný lokálne) pri prvom prihlásení. TOTP kód sa nedá použiť dvakrát (replay ochrana).
-- [ ] **AUTH-03**: Používateľ dostane 10 jednorazových záložných kódov (uložených ako hash) a môže ich pregenerovať. Použitý kód sa nedá použiť znova.
-- [ ] **AUTH-04**: Počet pokusov o prihlásenie a o zadanie TOTP je obmedzený.
-- [ ] **AUTH-05**: Používateľ si môže „zapamätať zariadenie“ na 30 dní. Na dôveryhodnom zariadení sa TOTP nevyžaduje. Zariadenia sa dajú zobraziť a odvolať. Po 30 dňoch alebo po odvolaní sa TOTP vyžaduje znova.
-- [ ] **AUTH-06**: Používateľ si obnoví heslo e-mailom (časovo obmedzený token). Obnovenie hesla neobíde TOTP.
-- [ ] **AUTH-07**: Denník prihlásení zaznamenáva úspech alebo neúspech, IP adresu, zariadenie a čas.
-- [ ] **AUTH-08**: Dátový model obsahuje používateľov a roly `admin` a `accountant` (UI pre `accountant` je voliteľné).
-- [ ] **AUTH-09** [nové]: Bez platného TOTP alebo záložného kódu sa nedá dostať na žiadnu stránku okrem prihlásenia (stav „čaká na 2FA“ nie je prihlásenie).
+- [x] **AUTH-01**: Používateľ sa prihlási e-mailom a heslom (Argon2id).
+- [x] **AUTH-02**: Používateľ musí mať TOTP 2FA (RFC 6238, Google/Microsoft Authenticator). Nastaví ju cez QR kód (generovaný lokálne) pri prvom prihlásení. TOTP kód sa nedá použiť dvakrát (replay ochrana).
+- [x] **AUTH-03**: Používateľ dostane 10 jednorazových záložných kódov (uložených ako hash) a môže ich pregenerovať. Použitý kód sa nedá použiť znova.
+- [x] **AUTH-04**: Počet pokusov o prihlásenie a o zadanie TOTP je obmedzený.
+- [x] **AUTH-05**: Používateľ si môže „zapamätať zariadenie“ na 30 dní. Na dôveryhodnom zariadení sa TOTP nevyžaduje. Zariadenia sa dajú zobraziť a odvolať. Po 30 dňoch alebo po odvolaní sa TOTP vyžaduje znova.
+- [x] **AUTH-06**: Používateľ si obnoví heslo e-mailom (časovo obmedzený token). Obnovenie hesla neobíde TOTP.
+- [x] **AUTH-07**: Denník prihlásení zaznamenáva úspech alebo neúspech, IP adresu, zariadenie a čas.
+- [x] **AUTH-08**: Dátový model obsahuje používateľov a roly `admin` a `accountant` (UI pre `accountant` je voliteľné).
+- [x] **AUTH-09** [nové]: Bez platného TOTP alebo záložného kódu sa nedá dostať na žiadnu stránku okrem prihlásenia (stav „čaká na 2FA“ nie je prihlásenie).
 
 ### Môj subjekt (E2)
 
@@ -130,7 +130,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **UI-01**: Responzívne rozhranie na Bootstrap 5.3 pre iPhone aj PC (dotykové ciele aspoň 44 px, bez horizontálneho posúvania).
 - [ ] **UI-02**: Jazyky rozhrania SK, PL, CZ a EN, voľba používateľa. Formát čísel, dátumov a mien podľa jazyka.
 - [ ] **UI-03**: Na PC sú tabuľkové zoznamy úloh a faktúr, obrazovka „Fakturácia mesiaca“ a nastavenia (subjekty, klienti, číslovanie, limity, šablóny, zákonné texty, používatelia, 2FA, zariadenia).
-- [ ] **PWA-01**: Manifest (ikony vrátane `apple-touch-icon`, `display: standalone`) a service worker s cache statických súborov a offline stránkou. Inštalácia na iPhone cez „Pridať na plochu“. Používateľ sa na dôveryhodnom zariadení neprihlasuje častejšie ako raz za 30 dní.
+- [x] **PWA-01**: Manifest (ikony vrátane `apple-touch-icon`, `display: standalone`) a service worker s cache statických súborov a offline stránkou. Inštalácia na iPhone cez „Pridať na plochu“. Používateľ sa na dôveryhodnom zariadení neprihlasuje častejšie ako raz za 30 dní.
 - [ ] **IMP-01**: Import úloh za 09 a 10/2026 z `docs/All4net-fakturovanie-prace.xlsx` pre klienta All4Net (27 €). „Zapracované = ÁNO“ sa importuje ako zapracovaná úloha s nezamknutou časťou v danom mesiaci. Import má suchý beh a je opakovateľný bez duplikátov.
 - [ ] **SET-01**: Zákonné texty a poznámky sa dajú upraviť pre každú krajinu, DPH režim, režim fakturácie a jazyk.
 - [ ] **SET-02** [nové, M5]: Právny dôvod oslobodenia od DPH je štruktúrované pole s kódom (napr. `ART_113_1`, `ART_113_9`, reverse charge) v právnom profile a uloží sa do kópie údajov.
@@ -138,13 +138,13 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 ### Prevádzka a nefunkčné požiadavky
 
 - [ ] **NFR-01**: Odozva servera p95 pod 100 ms na bežných stránkach, PDF pod 2 s. Žiadna SPA ani build pipeline, lokálne JS a CSS s dlhou cache, HTTP/2, kompresia, OPcache a preloading.
-- [ ] **NFR-02**: Aplikácia beží na najmenšom VPS Hetzner Cloud (Docker Compose: nginx, php-fpm, PostgreSQL), cieľovo do 512 MB RAM v pokoji.
-- [ ] **NFR-03**: HTTPS (Let's Encrypt), CSP, HSTS a ďalšie hlavičky, CSRF (aj pre htmx), secure a httpOnly cookies, tajomstvá v `.env` mimo gitu, šifrované TOTP tajomstvá.
+- [x] **NFR-02**: Aplikácia beží na najmenšom VPS Hetzner Cloud (Docker Compose: nginx, php-fpm, PostgreSQL), cieľovo do 512 MB RAM v pokoji.
+- [x] **NFR-03**: HTTPS (Let's Encrypt), CSP, HSTS a ďalšie hlavičky, CSRF (aj pre htmx), secure a httpOnly cookies, tajomstvá v `.env` mimo gitu, šifrované TOTP tajomstvá.
 - [x] **NFR-04**: Peniaze `numeric(12,2)`, hodiny `numeric(7,2)`, žiadny float. Jedna trieda na výpočet súm. Súčty na obrazovkách, vo výkaze, na faktúre a v exportoch sa vždy zhodujú (automatické testy).
 - [ ] **NFR-05**: Denný šifrovaný `pg_dump` a PDF dokladov mimo servera, rotácia 14 denných / 8 týždenných / 12 mesačných, zdokumentovaná a otestovaná obnova.
 - [ ] **NFR-06**: PHPUnit testy pre výpočty súm, číslovanie (vrátane súbehu), zamykanie častí, kópiu údajov, kurzy a limity.
 - [x] **NFR-07**: Rovnaké Docker obrazy pre vývoj (WSL2) aj produkciu, vo vývoji Mailpit.
-- [ ] **NFR-08**: Staging na HTTPS je k dispozícii skoro (spolu s prihlásením), aby sa PWA a cookies dali otestovať na reálnom iPhone.
+- [x] **NFR-08**: Staging na HTTPS je k dispozícii skoro (spolu s prihlásením), aby sa PWA a cookies dali otestovať na reálnom iPhone.
 - [ ] **NFR-09** [nové, M12]: Doklady sa nedajú zmazať (ani DB oprávneniami) a raz ročne vzniká archív dokladov, ktorý pokryje zákonnú dobu uchovávania (SK 10 rokov, PL podľa účtovníčky).
 
 ## v2 Requirements
@@ -193,19 +193,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NFR-04 | Phase 1 | Complete |
 | NFR-07 | Phase 1 | Complete |
 | UI-01 | Phase 1 | Complete |
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
-| AUTH-05 | Phase 2 | Pending |
-| AUTH-06 | Phase 2 | Pending |
-| AUTH-07 | Phase 2 | Pending |
-| AUTH-08 | Phase 2 | Pending |
-| AUTH-09 | Phase 2 | Pending |
-| PWA-01 | Phase 2 | Pending |
-| NFR-02 | Phase 2 | Pending |
-| NFR-03 | Phase 2 | Pending |
-| NFR-08 | Phase 2 | Pending |
+| AUTH-01 | Phase 2 | Complete |
+| AUTH-02 | Phase 2 | Complete |
+| AUTH-03 | Phase 2 | Complete |
+| AUTH-04 | Phase 2 | Complete |
+| AUTH-05 | Phase 2 | Complete |
+| AUTH-06 | Phase 2 | Complete |
+| AUTH-07 | Phase 2 | Complete |
+| AUTH-08 | Phase 2 | Complete |
+| AUTH-09 | Phase 2 | Complete |
+| PWA-01 | Phase 2 | Complete |
+| NFR-02 | Phase 2 | Complete |
+| NFR-03 | Phase 2 | Complete |
+| NFR-08 | Phase 2 | Complete |
 | ENT-01 | Phase 3 | Pending |
 | ENT-02 | Phase 3 | Pending |
 | ENT-03 | Phase 3 | Pending |
