@@ -147,15 +147,20 @@ final class SeriesServiceTest extends PgTestCase
         $this->assertSame(0, $this->auditCount());
     }
 
-    public function testLockedSeriesRejectsFormatChangeButAllowsInitialNumber(): void
+    public function testLockedSeriesRejectsFormatAndInitialNumberChange(): void
     {
         $id = $this->createEntity('SK');
 
         $this->assertSame('locked', $this->rejectedReason(fn () => $this->lockedService()->update($id, 'invoice', 'FA-RRRR###', '1')));
         $this->assertSame('RRRRMM###', $this->service()->find($id, 'invoice')['format']);
 
-        $this->lockedService()->update($id, 'invoice', 'RRRRMM###', '7');
-        $this->assertSame(7, (int) $this->service()->find($id, 'invoice')['initial_number']);
+        $this->assertSame('locked', $this->rejectedReason(fn () => $this->lockedService()->update($id, 'invoice', 'RRRRMM###', '7')));
+        $this->assertSame(1, (int) $this->service()->find($id, 'invoice')['initial_number']);
+        $this->assertSame(0, $this->auditCount());
+
+        // Bez zmeny je uloženie zamknutého radu stále v poriadku (no-op).
+        $this->lockedService()->update($id, 'invoice', 'RRRRMM###', '1');
+        $this->assertSame(0, $this->auditCount());
     }
 
     public function testNotLockedInPhaseThree(): void

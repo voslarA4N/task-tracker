@@ -52,7 +52,7 @@ $examples = [['RRRRMM###', '202610001'], ['DB-RRRRMM###', 'DB-202610001']];
         <div class="mb-3">
             <label class="form-label" for="f-initial"><?= esc(lang('Entities.seriesInitial')) ?></label>
             <input class="form-control<?= isset($errors['initial_number']) ? ' is-invalid' : '' ?>" type="text" id="f-initial" name="initial_number" value="<?= $init ?>"
-                   inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="9"
+                   inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="9"<?= $locked ? ' readonly' : '' ?>
                    hx-get="<?= $base ?>/preview" hx-trigger="keyup changed delay:300ms, change" hx-target="#series-preview" hx-swap="outerHTML" hx-include="closest form">
             <?php if (isset($errors['initial_number'])) : ?><div class="invalid-feedback"><?= esc($errors['initial_number']) ?></div><?php endif ?>
         </div>

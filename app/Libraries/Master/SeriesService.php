@@ -121,7 +121,10 @@ class SeriesService
 
             $seriesId = (int) $series['id'];
 
-            if ($series['format'] !== $parsed->format() && $this->isFormatLocked($seriesId)) {
+            // Po vystavení dokladu sa nesmie meniť formát ani počiatočné číslo, inak hrozí duplicita alebo medzera (WR-07).
+            $changesNumbering = $series['format'] !== $parsed->format() || (int) $series['initial_number'] !== $initial;
+
+            if ($changesNumbering && $this->isFormatLocked($seriesId)) {
                 throw new SeriesRejected('locked');
             }
 
