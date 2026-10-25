@@ -186,7 +186,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 03-09-PLAN.md — Číselný rad: SeriesFormat (TDD), SeriesService, formulár so živou ukážkou (vlna 7)
+- [x] 03-09-PLAN.md — Číselný rad: SeriesFormat (TDD), SeriesService, formulár so živou ukážkou (vlna 7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
@@ -359,7 +359,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
-| 3. Master dáta (subjekty a klienti) | 8/10 | In Progress|  |
+| 3. Master dáta (subjekty a klienti) | 9/10 | In Progress|  |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
