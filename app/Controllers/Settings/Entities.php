@@ -56,9 +56,19 @@ final class Entities extends BaseController
         $country = Country::tryFrom(strtoupper((string) $this->request->getGet('country'))) ?? Country::SK;
         $values  = $this->defaults($country);
 
+        // Zmena krajiny prekreslí aj identitu (REGON, popis IČO/NIP), už vpísané hodnoty ostanú (WR-09).
+        // Mena, DPH režim a jazyk dokladov sa nastavia podľa novej krajiny.
+        foreach (EntityInput::VERSION_FIELDS as $field) {
+            $raw = $this->request->getGet($field);
+
+            if (is_string($raw) && ! in_array($field, ['vat_regime', 'doc_language'], true)) {
+                $values[$field] = trim($raw);
+            }
+        }
+
         return $this->response
             ->setHeader('Vary', 'HX-Request')
-            ->setBody(htmx_view('settings/entities/_regime_fields', $this->formData($values, [], $country), 'settings/entities/new'));
+            ->setBody(htmx_view('settings/entities/_country_fields', $this->formData($values, [], $country), 'settings/entities/new'));
     }
 
     public function create(): ResponseInterface

@@ -25,7 +25,7 @@ $errors = $errors ?? [];
         <div class="mb-3">
             <label class="form-label" for="f-country"><?= esc(lang('Entities.country')) ?></label>
             <select class="form-select<?= isset($errors['country']) ? ' is-invalid' : '' ?>" id="f-country" name="country"
-                    hx-get="/settings/entities/regime-fields" hx-trigger="change" hx-target="#entity-regime-fields" hx-swap="innerHTML" hx-include="this">
+                    hx-get="/settings/entities/regime-fields" hx-trigger="change" hx-target="#entity-regime-fields" hx-swap="innerHTML" hx-include="#f-country, #entity-identity-fields">
                 <?php foreach (Country::cases() as $option) : ?>
                     <option value="<?= esc($option->value, 'attr') ?>"<?= $country === $option ? ' selected' : '' ?>><?= esc($option->label()) ?></option>
                 <?php endforeach ?>
@@ -47,7 +47,9 @@ $errors = $errors ?? [];
                 <div class="invalid-feedback" id="f-name_internal-error"><?= esc($errors['name_internal']) ?></div>
             <?php endif ?>
         </div>
-        <?= $this->include('settings/entities/_identity_fields') ?>
+        <div id="entity-identity-fields">
+            <?= $this->include('settings/entities/_identity_fields') ?>
+        </div>
 
         <h2 class="h5 mt-4 mb-3"><?= esc(lang('Entities.groupPeriod')) ?></h2>
         <div class="mb-3">

@@ -113,6 +113,44 @@ final class EntitiesCreateTest extends AuthTestCase
         $this->assertMatchesRegularExpression('/<option value="PLN" selected/', $html);
     }
 
+    public function testCountrySwitchRefreshesIdentityFieldsAndKeepsTypedValues(): void
+    {
+        $result = $this->withHeaders(['HX-Request' => 'true'])
+            ->get('/settings/entities/regime-fields?country=PL&trade_name=Jan%20Kowalski&company_id=5260250274&doc_language=sk');
+        $result->assertStatus(200);
+        $html = $this->body($result);
+
+        $this->assertStringContainsString('id="entity-identity-fields" hx-swap-oob="true"', $html);
+        $this->assertStringContainsString('name="regon"', $html);
+        $this->assertStringContainsString(esc(lang('Entities.companyIdPl')), $html);
+        $this->assertStringContainsString(esc(lang('Entities.registryHintPl')), $html);
+        $this->assertStringContainsString('value="' . esc('Jan Kowalski', 'attr') . '"', $html);
+        $this->assertStringContainsString('value="5260250274"', $html);
+        $this->assertMatchesRegularExpression('/<option value="pl" selected/', $html);
+
+        $sk = $this->body($this->withHeaders(['HX-Request' => 'true'])->get('/settings/entities/regime-fields?country=SK&regon=123456785'));
+        $this->assertStringNotContainsString('name="regon"', $sk);
+        $this->assertStringContainsString(esc(lang('Entities.companyIdSk')), $sk);
+    }
+
+    public function testNewFormIncludesIdentityFieldsInCountrySwitch(): void
+    {
+        $html = $this->body($this->get('/settings/entities/new'));
+
+        $this->assertStringContainsString('hx-include="#f-country, #entity-identity-fields"', $html);
+        $this->assertStringContainsString('<div id="entity-identity-fields">', $html);
+    }
+
+    public function testRegimeFieldsWithoutHtmxRendersFullPage(): void
+    {
+        $result = $this->get('/settings/entities/regime-fields?country=PL');
+        $result->assertStatus(200);
+        $html = $this->body($result);
+
+        $this->assertStringContainsString('action="/settings/entities"', $html);
+        $this->assertStringContainsString('name="regon"', $html);
+    }
+
     public function testCreateSlovakEntityRedirectsToDetail(): void
     {
         $result = $this->submit($this->skPost());
