@@ -37,7 +37,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **ENT-03**: Každá zmena údajov subjektu vytvorí novú verziu s dátumom „platné od“. História verzií je viditeľná a verzie sa nemažú. Nová faktúra použije verziu platnú k dátumu vystavenia a zmena adresy nezmení už vystavenú faktúru.
 - [x] **ENT-04**: Ukončený subjekt môže naďalej zobrazovať, znova odosielať a stornovať (dobropis) svoje doklady.
 - [x] **ENT-05** [nové, M2]: Subjekt má voliteľné IČ DPH / VAT-UE (NIP UE), ktoré sa tlačí na faktúru, keď to vyžaduje režim fakturácie.
-- [ ] **ENT-06** [nové, M4]: Subjekt má viac bankových účtov (IBAN, SWIFT/BIC, mena). Faktúra použije účet v mene faktúry (alebo predvolený).
+- [x] **ENT-06** [nové, M4]: Subjekt má viac bankových účtov (IBAN, SWIFT/BIC, mena). Faktúra použije účet v mene faktúry (alebo predvolený).
 - [x] **ENT-07** [nové, rozhodnutie]: Krajina a mena subjektu sú po vytvorení nemenné. Verziujú sa len ostatné údaje.
 
 ### Klienti (E3)
@@ -211,7 +211,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ENT-03 | Phase 3 | Complete |
 | ENT-04 | Phase 3 | Complete |
 | ENT-05 | Phase 3 | Complete |
-| ENT-06 | Phase 3 | Pending |
+| ENT-06 | Phase 3 | Complete |
 | ENT-07 | Phase 3 | Complete |
 | CLI-01 | Phase 3 | Complete |
 | CLI-02 | Phase 3 | Complete |
