@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration;
 
 use App\Database\Support\GrantsPrivileges;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\PgTestCase;
 
@@ -20,13 +21,21 @@ final class DbRolesTest extends PgTestCase
     {
         parent::setUpBeforeClass();
         $db = self::ownerConn();
-        $db->query('DROP TABLE IF EXISTS _probe_insert_only, _probe_mutable');
+        $db->query('DROP TABLE IF EXISTS _probe_insert_only, _probe_mutable, _probe_columns');
         $ddl = 'id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, note text NOT NULL';
         $db->query("CREATE TABLE _probe_insert_only ({$ddl})");
         $db->query("CREATE TABLE _probe_mutable ({$ddl})");
+        $db->query('CREATE TABLE _probe_columns (id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, a text NOT NULL DEFAULT \'\', b text NOT NULL DEFAULT \'\')');
 
         // Rovnaka cesta ako v migracii: trait nad objektom s $this->db.
-        $migration = new class ($db) {
+        $migration = self::migrationHelper($db);
+        $migration->run('_probe_mutable');
+        $migration->cols('_probe_columns', ['a']);
+    }
+
+    private static function migrationHelper(object $db): object
+    {
+        return new class ($db) {
             use GrantsPrivileges;
 
             public function __construct(protected object $db)
@@ -37,13 +46,20 @@ final class DbRolesTest extends PgTestCase
             {
                 $this->grantMutable($t);
             }
+
+            /**
+             * @param list<string> $c
+             */
+            public function cols(string $t, array $c): void
+            {
+                $this->grantUpdateColumns($t, $c);
+            }
         };
-        $migration->run('_probe_mutable');
     }
 
     public static function tearDownAfterClass(): void
     {
-        self::ownerConn()->query('DROP TABLE IF EXISTS _probe_insert_only, _probe_mutable');
+        self::ownerConn()->query('DROP TABLE IF EXISTS _probe_insert_only, _probe_mutable, _probe_columns');
         parent::tearDownAfterClass();
     }
 
@@ -85,6 +101,30 @@ final class DbRolesTest extends PgTestCase
         $this->rw()->query("UPDATE _probe_mutable SET note='b'");
         $this->rw()->query('DELETE FROM _probe_mutable');
         $this->assertPermissionDenied(fn () => $this->rw()->query('TRUNCATE _probe_mutable'));
+    }
+
+    public function testColumnGrantAllowsOnlyListedColumns(): void
+    {
+        $this->rw()->query("INSERT INTO _probe_columns (a, b) VALUES ('1', '1')");
+        $this->rw()->query("UPDATE _probe_columns SET a = 'x'");
+        $this->assertPermissionDenied(fn () => $this->rw()->query("UPDATE _probe_columns SET b = 'x'"));
+        $this->assertPermissionDenied(fn () => $this->rw()->query("UPDATE _probe_columns SET a = 'x', b = 'y'"));
+        $this->assertPermissionDenied(fn () => $this->rw()->query('DELETE FROM _probe_columns'));
+    }
+
+    public function testColumnGrantRejectsBadIdentifiers(): void
+    {
+        $m = self::migrationHelper(self::ownerConn());
+
+        try {
+            $m->cols('_probe_columns', ['a; drop']);
+            $this->fail('Expected InvalidArgumentException');
+        } catch (InvalidArgumentException) {
+            $this->addToAssertionCount(1);
+        }
+
+        $this->expectException(InvalidArgumentException::class);
+        $m->cols('_probe_columns', []);
     }
 
     public function testNumericComesBackAsString(): void
