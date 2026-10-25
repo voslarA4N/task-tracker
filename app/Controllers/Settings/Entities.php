@@ -6,11 +6,14 @@ namespace App\Controllers\Settings;
 
 use App\Controllers\BaseController;
 use App\Libraries\Master\BankAccountService;
+use App\Libraries\Master\BillingMode;
 use App\Libraries\Master\Country;
 use App\Libraries\Master\EntityDirectory;
 use App\Libraries\Master\EntityInput;
 use App\Libraries\Master\EntityService;
 use App\Libraries\Master\EntityVersionResolver;
+use App\Libraries\Master\LegalProfileResolver;
+use App\Libraries\Master\LegalTextMissing;
 use App\Libraries\Master\SeriesService;
 use App\Libraries\Master\VatRegime;
 use App\Libraries\Master\VersionNotFound;
@@ -130,6 +133,7 @@ final class Entities extends BaseController
         $openArchived  = $this->request->getGet('archived') === '1';
 
         return view('settings/entities/show', [
+            'legalRows'    => $this->legalRows($country, (string) $version['vat_regime'], (string) $version['doc_language']),
             'bankAccounts' => $bank->listFor($id, false),
             'series'       => $series,
             'seriesLocked' => array_map(static fn (array $row): bool => $seriesService->isFormatLocked((int) $row['id']), $series),
@@ -220,6 +224,29 @@ final class Entities extends BaseController
         session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang('Entities.endedFlash', [$this->formatDate($to)])]);
 
         return redirect()->to('/settings/entities/' . $id);
+    }
+
+    /**
+     * Pravny profil pre kazdy rezim fakturacie (len na citanie, D-16, D-17).
+     *
+     * @return list<array{label: string, code: ?string, body: ?string, provisional: bool, missing: bool}>
+     */
+    private function legalRows(Country $country, string $regime, string $language): array
+    {
+        $resolver = new LegalProfileResolver();
+        $rows     = [];
+
+        foreach (BillingMode::cases() as $mode) {
+            try {
+                $code = $resolver->exemptionCode($country->value, $regime, $mode->value);
+                $text = $resolver->text($country->value, $regime, $mode->value, $language, 'vat_note');
+                $rows[] = ['label' => $mode->label(), 'code' => $code, 'body' => $text['body'], 'provisional' => $text['provisional'], 'missing' => false];
+            } catch (LegalTextMissing) {
+                $rows[] = ['label' => $mode->label(), 'code' => null, 'body' => null, 'provisional' => false, 'missing' => true];
+            }
+        }
+
+        return $rows;
     }
 
     /**

@@ -170,4 +170,10 @@ return [
     'errorSeriesSame'                   => 'Invoices and credit notes must not share the same number format.',
     'errorSeriesLocked'                 => 'The format cannot be changed while the series contains issued documents.',
     'errorSeriesInitial'                => 'The starting number must be a whole number from 1 up to the highest number that fits the format.',
+    'legalTitle'                        => 'Legal profile',
+    'legalProvisional'                  => 'Provisional wording',
+    'legalHint'                         => 'The wording will be confirmed by the accountant. Editing will be available later.',
+    'legalMissing'                      => 'Legal profile not found, add it before issuing a document.',
+    'legalCode'                         => 'Code',
+    'legalWording'                      => 'Wording',
 ];

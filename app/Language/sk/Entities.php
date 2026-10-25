@@ -170,4 +170,10 @@ return [
     'errorSeriesSame'                   => 'Faktúry a dobropisy nesmú mať rovnaký formát čísla.',
     'errorSeriesLocked'                 => 'Formát sa nedá zmeniť, kým rad obsahuje vystavené doklady.',
     'errorSeriesInitial'                => 'Počiatočné číslo musí byť celé číslo od 1 po najvyššie číslo, ktoré sa zmestí do formátu.',
+    'legalTitle'                        => 'Právny profil',
+    'legalProvisional'                  => 'Predbežné znenie',
+    'legalHint'                         => 'Znenie potvrdí účtovníčka. Úprava bude dostupná neskôr.',
+    'legalMissing'                      => 'Právny profil sa nenašiel, doplňte ho pred vystavením dokladu.',
+    'legalCode'                         => 'Kód',
+    'legalWording'                      => 'Znenie',
 ];

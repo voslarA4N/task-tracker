@@ -86,6 +86,7 @@ $rows[] = [lang('Entities.dueDays'), $show($version['due_days'])];
         <?php endforeach ?>
     </dl>
 </section>
+<?= $this->include('settings/entities/_legal_profile') ?>
 <?= $this->include('settings/entities/_bank_accounts') ?>
 <?= $this->include('settings/entities/_series') ?>
 <?= $this->include('settings/entities/_history') ?>
