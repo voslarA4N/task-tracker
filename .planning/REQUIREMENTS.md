@@ -280,12 +280,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NFR-01 | Phase 12 | Pending |
 | NFR-05 | Phase 12 | Pending |
 | NFR-09 | Phase 12 | Pending |
+| KSEF-01 | v2 (mimo roadmapy) | Deferred |
+| ACC-01 | v2 (mimo roadmapy) | Deferred |
+| VIES-01 | v2 (mimo roadmapy) | Deferred |
+| INV-V2-01 | v2 (mimo roadmapy) | Deferred |
+| INV-V2-02 | v2 (mimo roadmapy) | Deferred |
+| VAT-01 | v2 (mimo roadmapy) | Deferred |
 
 **Coverage:**
 
 - v1 requirements: 90 total
 - Mapped to phases: 90
 - Unmapped: 0 ✓
+- v2 (odložené, bez fázy): 6 (KSEF-01, ACC-01, VIES-01, INV-V2-01, INV-V2-02, VAT-01)
 
 ---
 *Requirements defined: 2026-10-23*
