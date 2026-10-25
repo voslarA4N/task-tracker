@@ -6,10 +6,10 @@ namespace App\Libraries\Master;
 
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Platform\DbBool;
+use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
 use InvalidArgumentException;
-use Throwable;
 
 /**
  * Klient: jedna tabulka bez verzii, bez DELETE (D-15). Zmeny su v audit_log v tej istej transakcii.
@@ -40,9 +40,7 @@ final class ClientService
         $now  = service('clock')->now()->format('Y-m-d H:i:sP');
         $data = $this->dbValues($values);
 
-        $this->db->transException(true)->transStart();
-
-        try {
+        return Transaction::run($this->db, function () use ($data, $values, $now): int {
             $columns = array_keys($data);
             $sql     = 'INSERT INTO clients (' . implode(', ', $columns) . ', created_at, updated_at) VALUES ('
                 . implode(', ', array_map(static fn (string $c): string => self::placeholder($c), $columns))
@@ -50,17 +48,9 @@ final class ClientService
             $id = (int) $this->db->query($sql, $data + ['now' => $now])->getRow()->id;
 
             $this->audit->record('client', $id, 'create', null, ['id' => $id] + $this->auditValues($values));
-            $this->db->transComplete();
-        } catch (Throwable $e) {
-            $this->db->transRollback();
-            $this->db->resetTransStatus();
 
-            throw $e;
-        } finally {
-            $this->db->transException(false);
-        }
-
-        return $id;
+            return $id;
+        });
     }
 
     /**
@@ -83,27 +73,15 @@ final class ClientService
         $data    = $this->dbValues($values);
         $now     = service('clock')->now()->format('Y-m-d H:i:sP');
         $assigns = array_map(static fn (string $c): string => $c . ' = ' . self::placeholder($c), array_keys($data));
-        $changed = false;
 
-        $this->db->transException(true)->transStart();
-
-        try {
+        return Transaction::run($this->db, function () use ($id, $data, $assigns, $now, $before, $after): bool {
             $this->db->query(
                 'UPDATE clients SET ' . implode(', ', $assigns) . ', updated_at = :now: WHERE id = :id:',
                 $data + ['now' => $now, 'id' => $id],
             );
-            $changed = $this->audit->recordChange('client', $id, 'update', $this->auditValues($before), $after);
-            $this->db->transComplete();
-        } catch (Throwable $e) {
-            $this->db->transRollback();
-            $this->db->resetTransStatus();
 
-            throw $e;
-        } finally {
-            $this->db->transException(false);
-        }
-
-        return $changed;
+            return $this->audit->recordChange('client', $id, 'update', $this->auditValues($before), $after);
+        });
     }
 
     public function archive(int $id): bool
@@ -118,13 +96,11 @@ final class ClientService
 
     private function setArchived(int $id, bool $archive): bool
     {
-        $now     = service('clock')->now()->format('Y-m-d H:i:sP');
-        $changed = false;
+        $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        $this->db->transException(true)->transStart();
-
-        try {
-            $sql = $archive
+        return Transaction::run($this->db, function () use ($id, $archive, $now): bool {
+            $changed = false;
+            $sql     = $archive
                 ? 'UPDATE clients SET archived_at = :now:, updated_at = :now: WHERE id = :id: AND archived_at IS NULL'
                 : 'UPDATE clients SET archived_at = NULL, updated_at = :now: WHERE id = :id: AND archived_at IS NOT NULL';
             $this->db->query($sql, ['now' => $now, 'id' => $id]);
@@ -140,17 +116,8 @@ final class ClientService
                 );
             }
 
-            $this->db->transComplete();
-        } catch (Throwable $e) {
-            $this->db->transRollback();
-            $this->db->resetTransStatus();
-
-            throw $e;
-        } finally {
-            $this->db->transException(false);
-        }
-
-        return $changed;
+            return $changed;
+        });
     }
 
     /**

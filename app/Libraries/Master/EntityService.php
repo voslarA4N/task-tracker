@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Libraries\Master;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Database;
 use InvalidArgumentException;
-use Throwable;
 
 /**
  * Vytvorenie subjektu: entities + prvá entity_versions + dva invoice_series + audit v jednej transakcii.
@@ -45,9 +45,7 @@ final class EntityService
         $userId   = auth()->id();
         $activeTo = ($base['active_to'] ?? '') === '' ? null : $base['active_to'];
 
-        $this->db->transException(true)->transStart();
-
-        try {
+        return Transaction::run($this->db, function () use ($base, $version, $now, $userId, $activeTo): int {
             $entityRow = [
                 'name_internal' => (string) $base['name_internal'],
                 'country'       => (string) $base['country'],
@@ -85,18 +83,8 @@ final class EntityService
                 $this->audit->record('invoice_series', $seriesId, 'create', null, ['id' => $seriesId] + $seriesRow);
             }
 
-            $this->db->transComplete();
-        } catch (Throwable $e) {
-            $this->db->transRollback();
-            // Zlyhaný dotaz nechá transStatus = false, čo by potichu zrušilo ďalšiu transakciu na tom istom spojení.
-            $this->db->resetTransStatus();
-
-            throw $e;
-        } finally {
-            $this->db->transException(false);
-        }
-
-        return $entityId;
+            return $entityId;
+        });
     }
 
     /**
@@ -164,23 +152,13 @@ final class EntityService
         $after['valid_from'] = $validFrom;
         $after['entity_id']  = $entityId;
 
-        $versionId = 0;
-
         try {
-            $this->db->transException(true)->transStart();
-
-            try {
+            $versionId = Transaction::run($this->db, function () use ($row, $before, $after): int {
                 $versionId = $this->insert('entity_versions', $row);
                 $this->audit->record('entity_version', $versionId, 'create', $before, $after);
-                $this->db->transComplete();
-            } catch (Throwable $e) {
-                $this->db->transRollback();
-                $this->db->resetTransStatus();
 
-                throw $e;
-            } finally {
-                $this->db->transException(false);
-            }
+                return $versionId;
+            });
         } catch (DatabaseException $e) {
             if (str_contains($e->getMessage(), 'entity_versions_entity_id_valid_from_key') || str_contains($e->getMessage(), '23505')) {
                 throw VersionRejected::duplicateDate();
@@ -222,28 +200,16 @@ final class EntityService
             return false;
         }
 
-        $now     = service('clock')->now()->format('Y-m-d H:i:sP');
-        $changed = false;
+        $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        $this->db->transException(true)->transStart();
-
-        try {
+        return Transaction::run($this->db, function () use ($id, $old, $new, $now): bool {
             $this->db->query(
                 'UPDATE entities SET name_internal = :n:, active_from = :f:, active_to = :t:, updated_at = :now: WHERE id = :id:',
                 ['n' => $new['name_internal'], 'f' => $new['active_from'], 't' => $new['active_to'], 'now' => $now, 'id' => $id],
             );
-            $changed = $this->audit->recordChange('entity', $id, 'update', $old, $new);
-            $this->db->transComplete();
-        } catch (Throwable $e) {
-            $this->db->transRollback();
-            $this->db->resetTransStatus();
 
-            throw $e;
-        } finally {
-            $this->db->transException(false);
-        }
-
-        return $changed;
+            return $this->audit->recordChange('entity', $id, 'update', $old, $new);
+        });
     }
 
     /**
@@ -263,9 +229,7 @@ final class EntityService
 
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        $this->db->transException(true)->transStart();
-
-        try {
+        Transaction::run($this->db, function () use ($id, $activeTo, $now, $entity): void {
             $this->db->query(
                 'UPDATE entities SET active_to = :t:, updated_at = :now: WHERE id = :id:',
                 ['t' => $activeTo, 'now' => $now, 'id' => $id],
@@ -277,15 +241,7 @@ final class EntityService
                 ['active_to' => $entity['active_to'] === null ? null : (string) $entity['active_to']],
                 ['active_to' => $activeTo],
             );
-            $this->db->transComplete();
-        } catch (Throwable $e) {
-            $this->db->transRollback();
-            $this->db->resetTransStatus();
-
-            throw $e;
-        } finally {
-            $this->db->transException(false);
-        }
+        });
     }
 
     /**

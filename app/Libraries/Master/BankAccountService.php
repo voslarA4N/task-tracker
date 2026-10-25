@@ -6,10 +6,10 @@ namespace App\Libraries\Master;
 
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Platform\DbBool;
+use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
 use InvalidArgumentException;
-use Throwable;
 
 /**
  * Bankove ucty subjektu (ENT-06, D-06): archivacia namiesto mazania, najviac jeden predvoleny aktivny ucet.
@@ -40,9 +40,7 @@ final class BankAccountService
     {
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        $this->db->transException(true)->transStart();
-
-        try {
+        return Transaction::run($this->db, function () use ($entityId, $v, $now): int {
             $active = (int) $this->db->query(
                 'SELECT count(*) AS c FROM entity_bank_accounts WHERE entity_id = :e: AND archived_at IS NULL',
                 ['e' => $entityId],
@@ -79,17 +77,9 @@ final class BankAccountService
                 'currency'   => $row['currency'],
                 'is_default' => $default,
             ]);
-            $this->db->transComplete();
-        } catch (Throwable $e) {
-            $this->db->transRollback();
-            $this->db->resetTransStatus();
 
-            throw $e;
-        } finally {
-            $this->db->transException(false);
-        }
-
-        return $id;
+            return $id;
+        });
     }
 
     /**
@@ -111,12 +101,11 @@ final class BankAccountService
         ];
 
         $now     = service('clock')->now()->format('Y-m-d H:i:sP');
-        $changed = false;
         $promote = (bool) ($v['is_default'] ?? false) && ! $before['is_default'] && $before['archived_at'] === null;
 
-        $this->db->transException(true)->transStart();
+        return Transaction::run($this->db, function () use ($entityId, $accountId, $old, $new, $now, $promote): bool {
+            $changed = false;
 
-        try {
             if ($old !== $new) {
                 $this->db->query(
                     'UPDATE entity_bank_accounts SET label = :l:, iban = :i:, swift = :s:, updated_at = :now: WHERE id = :a: AND entity_id = :e:',
@@ -130,17 +119,8 @@ final class BankAccountService
                 $changed = true;
             }
 
-            $this->db->transComplete();
-        } catch (Throwable $e) {
-            $this->db->transRollback();
-            $this->db->resetTransStatus();
-
-            throw $e;
-        } finally {
-            $this->db->transException(false);
-        }
-
-        return $changed;
+            return $changed;
+        });
     }
 
     public function setDefault(int $entityId, int $accountId): void
@@ -157,19 +137,9 @@ final class BankAccountService
 
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        $this->db->transException(true)->transStart();
-
-        try {
+        Transaction::run($this->db, function () use ($entityId, $accountId, $now): void {
             $this->applyDefault($entityId, $accountId, $now);
-            $this->db->transComplete();
-        } catch (Throwable $e) {
-            $this->db->transRollback();
-            $this->db->resetTransStatus();
-
-            throw $e;
-        } finally {
-            $this->db->transException(false);
-        }
+        });
     }
 
     public function archive(int $entityId, int $accountId): void
@@ -182,9 +152,7 @@ final class BankAccountService
 
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        $this->db->transException(true)->transStart();
-
-        try {
+        Transaction::run($this->db, function () use ($entityId, $accountId, $now, $account): void {
             $this->db->query(
                 'UPDATE entity_bank_accounts SET archived_at = :now:, is_default = false, updated_at = :now: WHERE id = :a: AND entity_id = :e: AND archived_at IS NULL',
                 ['now' => $now, 'a' => $accountId, 'e' => $entityId],
@@ -201,16 +169,7 @@ final class BankAccountService
                     $this->applyDefault($entityId, (int) $next->id, $now, $accountId);
                 }
             }
-
-            $this->db->transComplete();
-        } catch (Throwable $e) {
-            $this->db->transRollback();
-            $this->db->resetTransStatus();
-
-            throw $e;
-        } finally {
-            $this->db->transException(false);
-        }
+        });
     }
 
     /**

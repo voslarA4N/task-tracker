@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Libraries\Master;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
-use Throwable;
 
 /**
  * Konfiguracia cislenych radov subjektu (ENT-01, D-09, D-10). Pridelenie cisla je Phase 5 (D-11).
@@ -118,24 +118,13 @@ class SeriesService
 
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        $this->db->resetTransStatus();
-        $this->db->transException(true)->transStart();
-
-        try {
+        Transaction::run($this->db, function () use ($entityId, $seriesId, $initial, $now, $old, $new): void {
             $this->db->query(
                 'UPDATE invoice_series SET format = :f:, initial_number = :n:, updated_at = :now: WHERE id = :id: AND entity_id = :e:',
                 ['f' => $new['format'], 'n' => $initial, 'now' => $now, 'id' => $seriesId, 'e' => $entityId],
             );
             $this->audit->recordChange('invoice_series', $seriesId, 'update', $old, $new);
-            $this->db->transComplete();
-        } catch (Throwable $e) {
-            $this->db->transRollback();
-            $this->db->resetTransStatus();
-
-            throw $e;
-        } finally {
-            $this->db->transException(false);
-        }
+        });
     }
 
     /**
