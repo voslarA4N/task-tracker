@@ -14,12 +14,14 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 - [x] Prihlásenie heslom (Argon2id) s povinnou TOTP 2FA, záložnými kódmi, „zapamätať zariadenie“ na 30 dní a denníkom prihlásení (E1). Validated in Phase 2: Identita a skoré nasadenie (staging https://work-tracker.vostack.dev, UAT na iPhone 2026-10-25; 7- a 30-dňová kontrola sledovaná v STATE.md)
 
+- [x] Viac vlastných subjektov (SK, PL, CZ) s verziami „platné od“, vlastným číselným radom, menou, jazykom a DPH režimom (E2). Validated in Phase 3: Master dáta (subjekty a klienti), nasadené na https://work-tracker.vostack.dev 2026-10-25
+
+- [x] Klienti so sadzbou, menou, jazykom, splatnosťou, režimom fakturácie a príznakom započítania do limitu (E3). Validated in Phase 3: Master dáta (subjekty a klienti)
+
 ### Active
 
 Úplný zoznam s ID je v `.planning/REQUIREMENTS.md` (prevzatý z `docs/PRD.md`, epiky E1–E12, priority P0 + P1 + P2).
 
-- [ ] Viac vlastných subjektov (SK, PL, CZ) s verziami „platné od“, vlastným číselným radom, menou, jazykom a DPH režimom (E2)
-- [ ] Klienti so sadzbou, menou, jazykom, splatnosťou, režimom fakturácie a príznakom započítania do limitu (E3)
 - [ ] Úlohy s nacenením, stavmi V práci / Zapracovaná a odvodeným fakturačným stavom (E4)
 - [ ] Fakturačné časti po mesiacoch, zamykanie po vystavení (kontrolované na serveri) (E5)
 - [ ] Faktúry za klienta a mesiac s kópiou údajov v JSONB, transakčným číslovaním `RRRRMM###`, PDF podľa právneho profilu a dobropisom (E6)
@@ -111,4 +113,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-25 after Phase 2 (Identita a skoré nasadenie)*
+*Last updated: 2026-10-25 after Phase 3 (Master dáta – subjekty a klienti)*
