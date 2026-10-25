@@ -209,7 +209,36 @@ Plans:
   4. Dashboard na iPhone ukazuje aktuálny fakturačný mesiac a klienta, dlaždice „Na fakturáciu tento mesiac“ a „V práci“, úlohy zoskupené podľa stavu, ukazovateľ priebehu a spodnú lištu Prehľad / Úlohy / Faktúry / Viac.
   5. Import úloh za 09 a 10/2026 z `docs/All4net-fakturovanie-prace.xlsx` má suchý beh s rozdielom proti súčtom v Exceli, „Zapracované = ÁNO“ vytvorí zapracovanú úlohu s nezamknutou časťou a opakovaný import nevytvorí duplikáty.
 
-**Plans**: TBD
+**Plans**: 13 plans (5 vĺn)
+Plans:
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — Schéma tasks a billing_allocations, trigger alloc_guard, pohľad task_billing_v, grantDelete, fixtures (vlna 1)
+- [ ] 04-02-PLAN.md — Hours (bcmath), MoneyFormat, BillingMonth cez TDD (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 04-03-PLAN.md — PhpSpreadsheet (require-dev, checkpoint legitimity), ExcelReader s hyperlinkmi, ImportPlanner (suchý beh) (vlna 2)
+- [ ] 04-04-PLAN.md — TaskInput, TaskService (atómové zmazanie, zámok klienta), LastClient, zámok meny klienta (vlna 2)
+- [ ] 04-05-PLAN.md — AllocationService s atómovou podmienkou invoice_id IS NULL, kritérium E5 (vlna 2)
+- [ ] 04-06-PLAN.md — TaskFilter a TaskQueries: zoznam bez N+1, detail, súčty dashboardu po menách (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 04-07-PLAN.md — Formulár úlohy so živou sumou (BigInt), detail, zmazanie, aktívna navigácia Úlohy, CSS .work-* (vlna 3)
+- [ ] 04-08-PLAN.md — TaskService::markDone a reopen v jednej transakcii (vlna 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 04-09-PLAN.md — spark import:excel: suchý beh, idempotentný ostrý beh, runbook (vlna 4)
+- [ ] 04-10-PLAN.md — Panel časti zospodu (pridať, upraviť, presunúť, zmazať), súhrn vyfakturované/naplánované/zostáva, 409 (vlna 4)
+- [ ] 04-12-PLAN.md — Zoznam Aktuálne úlohy s htmx filtrami a stavom v URL (vlna 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 04-11-PLAN.md — Panel Označiť ako zapracovanú a návrat do V práci (vlna 5)
+- [ ] 04-13-PLAN.md — Dashboard variant B: dlaždice po menách, skupiny úloh, prepínač mesiaca a klienta (vlna 5)
+
 **UI hint**: yes
 **Poznámky**: Štandardné vzory. PhpSpreadsheet len v `require-dev`, import ako `spark` príkaz s idempotentným kľúčom, hyperlinky na Taskman. Zamykanie častí na serveri (ALC-03) sa dokončí vo Phase 5, keď vzniknú faktúry; tu je pripravený stĺpec `invoice_id` a atómová podmienka `WHERE invoice_id IS NULL`.
 
