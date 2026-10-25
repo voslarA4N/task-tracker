@@ -238,3 +238,8 @@ img, table { max-width: 100%; }
     margin-right: -16px;
   }
 }
+
+/* Radio a checkbox riadky formularov Phase 3: dotykovy ciel aspon 44 px */
+.master-check { min-height: 44px; padding-left: 2rem; display: flex; align-items: center; }
+.master-check .form-check-input { width: 1.5rem; height: 1.5rem; margin-left: -2rem; margin-top: 0; flex: none; }
+.master-check .form-check-label { padding-left: 0.5rem; }

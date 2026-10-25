@@ -188,7 +188,7 @@ final class ClientInput
         $email = $get('invoice_email');
 
         if ($email === '' || preg_match('/[\x00-\x1F\x7F]/', (string) ($v['invoice_email'] ?? '')) === 1
-            || mb_strlen($email) > 254 || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+                          || mb_strlen($email) > 254 || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             $errors['invoice_email'] = lang('Clients.errorEmail');
         }
 

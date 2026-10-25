@@ -10,6 +10,7 @@ use CodeIgniter\HTTP\SiteURI;
 use CodeIgniter\HTTP\UserAgent;
 use CodeIgniter\Test\CIUnitTestCase;
 use Config\App;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 /**
@@ -26,23 +27,23 @@ final class ClientInputTest extends CIUnitTestCase
     private function valid(array $over = []): array
     {
         return $over + [
-            'name'              => 'All4Net',
-            'address_line1'     => 'Hlavna 1',
-            'address_line2'     => '',
-            'postal_code'       => '81101',
-            'city'              => 'Bratislava',
-            'country'           => 'SK',
-            'identifier_type'   => 'local_id',
-            'identifier_value'  => '12345678',
-            'tax_id'            => '',
-            'vat_id'            => '',
-            'invoice_email'     => 'fakturacia@all4net.example',
-            'cc_emails'         => '',
-            'hourly_rate'       => '27',
-            'currency'          => 'EUR',
-            'doc_language'      => '',
-            'due_days'          => '',
-            'billing_mode'      => 'domestic',
+            'name'                => 'All4Net',
+            'address_line1'       => 'Hlavna 1',
+            'address_line2'       => '',
+            'postal_code'         => '81101',
+            'city'                => 'Bratislava',
+            'country'             => 'SK',
+            'identifier_type'     => 'local_id',
+            'identifier_value'    => '12345678',
+            'tax_id'              => '',
+            'vat_id'              => '',
+            'invoice_email'       => 'fakturacia@all4net.example',
+            'cc_emails'           => '',
+            'hourly_rate'         => '27',
+            'currency'            => 'EUR',
+            'doc_language'        => '',
+            'due_days'            => '',
+            'billing_mode'        => 'domestic',
             'counts_toward_limit' => '1',
         ];
     }
@@ -62,7 +63,6 @@ final class ClientInputTest extends CIUnitTestCase
         $this->assertSame([], $this->errorsFor([]));
         $n = ClientInput::normalize($this->valid());
         $this->assertSame('27.00', $n['hourly_rate']);
-        $this->assertIsString($n['hourly_rate']);
         $this->assertNull($n['doc_language']);
         $this->assertNull($n['due_days']);
         $this->assertTrue($n['counts_toward_limit']);
@@ -76,21 +76,24 @@ final class ClientInputTest extends CIUnitTestCase
         $this->assertSame('1200.00', ClientInput::normalize($this->valid(['hourly_rate' => '1 200']))['hourly_rate']);
     }
 
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function badRates(): iterable
-    {
-        yield 'three decimals' => ['27.555'];
-        yield 'negative' => ['-1'];
-        yield 'text' => ['abc'];
-        yield 'empty' => [''];
-    }
-
-    #[\PHPUnit\Framework\Attributes\DataProvider('badRates')]
+    #[DataProvider('provideBadRate')]
     public function testBadRate(string $rate): void
     {
         $this->assertArrayHasKey('hourly_rate', $this->errorsFor(['hourly_rate' => $rate]));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideBadRate(): iterable
+    {
+        yield 'three decimals' => ['27.555'];
+
+        yield 'negative' => ['-1'];
+
+        yield 'text' => ['abc'];
+
+        yield 'empty' => [''];
     }
 
     public function testEuB2bRequiresVatId(): void

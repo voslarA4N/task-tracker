@@ -178,7 +178,7 @@ final class ClientService
                 'cc_emails'           => array_values((array) $value),
                 'counts_toward_limit' => (bool) $value,
                 'due_days'            => $value === null || $value === '' ? null : (int) $value,
-                default               => $value === '' || $value === null ? null : (string) $value,
+                default               => $value === ''   || $value === null ? null : (string) $value,
             };
         }
 

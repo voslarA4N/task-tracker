@@ -66,6 +66,21 @@
         toggle: function () { this.acked = this.$event.target.checked; }
       };
     });
+    /* Formular klienta: vypnutie hodnoty identifikatora pri type "none", povinne IC DPH pri eu_b2b. */
+    window.Alpine.data('clientForm', function () {
+      return {
+        identifierType: '',
+        billingMode: '',
+        init: function () {
+          this.identifierType = this.$el.dataset.identifierType || '';
+          this.billingMode = this.$el.dataset.billingMode || '';
+        },
+        setIdentifier: function () { this.identifierType = this.$event.target.value; },
+        setBilling: function () { this.billingMode = this.$event.target.value; },
+        get identifierDisabled() { return this.identifierType === 'none'; },
+        get vatRequired() { return this.billingMode === 'eu_b2b'; }
+      };
+    });
     window.Alpine.data('copySecret', function () {
       return {
         label: '',
