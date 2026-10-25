@@ -6,6 +6,7 @@ namespace App\Libraries\Work;
 
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Master\PortalUrlTemplate;
+use App\Libraries\Platform\Hours;
 use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
@@ -170,6 +171,98 @@ final class TaskService
             }
 
             $this->audit->record('task', $id, 'delete', $before, null);
+        });
+    }
+
+    /**
+     * Zostatok = nacenene hodiny minus vsetky existujuce casti, nikdy pod 0. Bez zamku, na predvyplnenie panelu (D-11).
+     */
+    public function remainingHours(int $id): string
+    {
+        $row = $this->db->query(
+            'SELECT t.hours, COALESCE((SELECT SUM(a.hours) FROM billing_allocations a WHERE a.task_id = t.id), 0) AS allocated FROM tasks t WHERE t.id = :id:',
+            ['id' => $id],
+        )->getRowArray();
+
+        if ($row === null) {
+            throw new InvalidArgumentException('Task ' . $id . ' not found');
+        }
+
+        return Hours::remaining(Hours::plus((string) $row['hours'], '0'), Hours::plus((string) $row['allocated'], '0'));
+    }
+
+    /**
+     * Oznaci ulohu ako zapracovanu: stav, cast v mesiaci a audit v jednej transakcii (D-11, D-13).
+     * Pri 0 h sa nova cast nevytvori. Vracia id novej casti alebo null.
+     */
+    public function markDone(int $id, string $month, string $hours): ?int
+    {
+        $now = service('clock')->now()->format('Y-m-d H:i:sP');
+
+        return Transaction::run($this->db, function () use ($id, $month, $hours, $now): ?int {
+            $row = $this->lock($id);
+
+            if ((string) $row['status'] === 'done') {
+                throw new TaskRejected('already_done');
+            }
+
+            $this->db->query(
+                "UPDATE tasks SET status = 'done', done_at = :now:, updated_at = :now: WHERE id = :id: AND status = 'in_progress'",
+                ['now' => $now, 'id' => $id],
+            );
+
+            if ($this->db->affectedRows() !== 1) {
+                throw new TaskRejected('already_done');
+            }
+
+            $allocationId = null;
+
+            if (Hours::isPositive($hours)) {
+                $allocationId = (new AllocationService($this->db, $this->audit))->add($id, ['hours' => $hours, 'billing_month' => $month]);
+            }
+
+            $this->audit->record('task', $id, 'mark_done', ['status' => 'in_progress', 'done_at' => null], [
+                'status'        => 'done',
+                'done_at'       => $now,
+                'allocation_id' => $allocationId,
+                'billing_month' => $month,
+                'hours'         => $hours,
+            ]);
+
+            return $allocationId;
+        });
+    }
+
+    /**
+     * Vrati zapracovanu ulohu do stavu V praci; casti ostavaju nezmenene.
+     */
+    public function reopen(int $id): void
+    {
+        $now = service('clock')->now()->format('Y-m-d H:i:sP');
+
+        Transaction::run($this->db, function () use ($id, $now): void {
+            $row = $this->lock($id);
+
+            if ((string) $row['status'] !== 'done') {
+                throw new TaskRejected('not_done');
+            }
+
+            $this->db->query(
+                "UPDATE tasks SET status = 'in_progress', done_at = NULL, updated_at = :now: WHERE id = :id: AND status = 'done'",
+                ['now' => $now, 'id' => $id],
+            );
+
+            if ($this->db->affectedRows() !== 1) {
+                throw new TaskRejected('not_done');
+            }
+
+            $this->audit->record(
+                'task',
+                $id,
+                'reopen',
+                ['status' => 'done', 'done_at' => $row['done_at'] === null ? null : (string) $row['done_at']],
+                ['status' => 'in_progress', 'done_at' => null],
+            );
         });
     }
 

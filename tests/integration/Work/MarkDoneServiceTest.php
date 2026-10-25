@@ -53,7 +53,7 @@ final class MarkDoneServiceTest extends PgTestCase
 
     private function state(int $task): object
     {
-        return $this->owner()->query('SELECT * FROM task_billing_v WHERE id = ?', [$task])->getRow();
+        return $this->owner()->query('SELECT * FROM task_billing_v WHERE task_id = ?', [$task])->getRow();
     }
 
     public function testRemainingHoursIsQuotedMinusAllocations(): void
