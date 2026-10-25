@@ -238,8 +238,8 @@ final class Entities extends BaseController
 
         foreach (BillingMode::cases() as $mode) {
             try {
-                $code = $resolver->exemptionCode($country->value, $regime, $mode->value);
-                $text = $resolver->text($country->value, $regime, $mode->value, $language, 'vat_note');
+                $code   = $resolver->exemptionCode($country->value, $regime, $mode->value);
+                $text   = $resolver->text($country->value, $regime, $mode->value, $language, 'vat_note');
                 $rows[] = ['label' => $mode->label(), 'code' => $code, 'body' => $text['body'], 'provisional' => $text['provisional'], 'missing' => false];
             } catch (LegalTextMissing) {
                 $rows[] = ['label' => $mode->label(), 'code' => null, 'body' => null, 'provisional' => false, 'missing' => true];
