@@ -59,13 +59,16 @@ final class LegalProfileResolver
     }
 
     /**
-     * Poradie: (jazyk, presny mod) -> (jazyk, NULL) -> (en, presny) -> (en, NULL) -> vynimka.
+     * Text vždy z toho istého riadku profilu ako kód oslobodenia (WR-11): mód sa určí cez profile()
+     * (presná zhoda, inak NULL) a text sa hľadá len pre tento mód. Poradie: (jazyk, mód) -> (en, mód) -> výnimka.
+     * Kód ART_28B_RC sa tak nikdy nespáruje so všeobecným znením "zwolniony ... art. 113".
      *
      * @return array{body: string, language: string, provisional: bool}
      */
     public function text(string $country, string $vatRegime, string $billingMode, string $language, string $key): array
     {
-        $attempts = [[$language, $billingMode], [$language, null], ['en', $billingMode], ['en', null]];
+        $mode     = $this->profile($country, $vatRegime, $billingMode)['billing_mode'];
+        $attempts = [[$language, $mode], ['en', $mode]];
 
         foreach ($attempts as [$lang, $mode]) {
             $row = $this->db->query(

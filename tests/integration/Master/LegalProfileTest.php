@@ -63,6 +63,29 @@ final class LegalProfileTest extends PgTestCase
         $this->assertStringContainsString('art. 113 ust. 1', $r->text('PL', 'pl_exempt_113_1', 'non_eu', 'pl', 'vat_note')['body']);
     }
 
+    public function testReverseChargeCodeNeverPairsWithGenericExemptionText(): void
+    {
+        // Jazyk má všeobecný text (billing_mode NULL), ale nie text pre eu_b2b: musí sa použiť eu_b2b text v en,
+        // nie všeobecné znenie art. 113 vedľa kódu ART_28B_RC (WR-11).
+        $this->owner()->query(
+            "INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at)
+             VALUES ('PL', 'pl_exempt_113_1', NULL, 'cs', 'vat_note', 'Prodávající je osvobozen podle čl. 113 odst. 1.', true, now())",
+        );
+
+        try {
+            $r = $this->resolver();
+            $this->assertSame('ART_28B_RC', $r->exemptionCode('PL', 'pl_exempt_113_1', 'eu_b2b'));
+
+            $t = $r->text('PL', 'pl_exempt_113_1', 'eu_b2b', 'cs', 'vat_note');
+            $this->assertSame('en', $t['language']);
+            $this->assertSame('Reverse charge.', $t['body']);
+
+            $this->assertStringContainsString('čl. 113', $r->text('PL', 'pl_exempt_113_1', 'domestic', 'cs', 'vat_note')['body']);
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE country = 'PL' AND language = 'cs'");
+        }
+    }
+
     public function testMissingKeyThrows(): void
     {
         $this->expectException(LegalTextMissing::class);
