@@ -10,7 +10,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 
 - [x] **Phase 1: Základ a infraštruktúra** - Docker/WSL2, CI4, PostgreSQL roly, Money, Clock, htmx/CSP/CSRF vzory, spike mPDF (completed 2026-10-23)
 - [x] **Phase 2: Identita a skoré nasadenie** - Prihlásenie s povinnou TOTP, PWA kostra a HTTPS staging otestovaný na reálnom iPhone (completed 2026-10-25)
-- [ ] **Phase 3: Master dáta (subjekty a klienti)** - Verziované subjekty, klienti, právny dôvod oslobodenia, audit zmien
+- [x] **Phase 3: Master dáta (subjekty a klienti)** - Verziované subjekty, klienti, právny dôvod oslobodenia, audit zmien (completed 2026-10-25)
 - [ ] **Phase 4: Úlohy, fakturačné časti a dashboard** - Evidencia úloh, rozdelenie na časti po mesiacoch, dashboard, import z Excelu
 - [ ] **Phase 5: Fakturačné jadro** - Atómové vystavenie nemennej faktúry, číslovanie, kópia údajov, uložené PDF so sha256
 - [ ] **Phase 6: Dokumenty faktúry a výkazu** - Právne profily, PDF faktúra a výkaz, QR platba, editovateľné zákonné texty
@@ -190,7 +190,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 03-10-PLAN.md — Právne profily a predbežný seed textov, sekcia na detaile, dev seeder, záverečná kontrola fázy (vlna 8)
+- [x] 03-10-PLAN.md — Právne profily a predbežný seed textov, sekcia na detaile, dev seeder, záverečná kontrola fázy (vlna 8)
 
 **UI hint**: yes
 **Poznámky**: Štandardné vzory. Prvé použitie vzoru „GRANT + insert-only“. Seed `legal_texts` je len predbežný, znenie potvrdí účtovníčka. **Akcia: poslať otázky účtovníčke pri štarte tejto fázy** (limity, PL/SK B2B, kurz, retencia, dobropis, obsah dokladov, zoznam v research/SUMMARY.md). Vlastník vyberie SMTP poskytovateľa a DNS (SPF/DKIM/DMARC) pred Phase 7.
@@ -359,7 +359,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
-| 3. Master dáta (subjekty a klienti) | 9/10 | In Progress|  |
+| 3. Master dáta (subjekty a klienti) | 10/10 | Complete   | 2026-10-25 |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |

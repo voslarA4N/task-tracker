@@ -133,7 +133,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **PWA-01**: Manifest (ikony vrátane `apple-touch-icon`, `display: standalone`) a service worker s cache statických súborov a offline stránkou. Inštalácia na iPhone cez „Pridať na plochu“. Používateľ sa na dôveryhodnom zariadení neprihlasuje častejšie ako raz za 30 dní.
 - [ ] **IMP-01**: Import úloh za 09 a 10/2026 z `docs/All4net-fakturovanie-prace.xlsx` pre klienta All4Net (27 €). „Zapracované = ÁNO“ sa importuje ako zapracovaná úloha s nezamknutou časťou v danom mesiaci. Import má suchý beh a je opakovateľný bez duplikátov.
 - [ ] **SET-01**: Zákonné texty a poznámky sa dajú upraviť pre každú krajinu, DPH režim, režim fakturácie a jazyk.
-- [ ] **SET-02** [nové, M5]: Právny dôvod oslobodenia od DPH je štruktúrované pole s kódom (napr. `ART_113_1`, `ART_113_9`, reverse charge) v právnom profile a uloží sa do kópie údajov.
+- [x] **SET-02** [nové, M5]: Právny dôvod oslobodenia od DPH je štruktúrované pole s kódom (napr. `ART_113_1`, `ART_113_9`, reverse charge) v právnom profile a uloží sa do kópie údajov.
 
 ### Prevádzka a nefunkčné požiadavky
 
@@ -220,7 +220,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLI-05 | Phase 3 | Complete |
 | CLI-06 | Phase 3 | Complete |
 | CLI-07 | Phase 3 | Complete |
-| SET-02 | Phase 3 | Pending |
+| SET-02 | Phase 3 | Complete |
 | AUD-01 | Phase 3 | Complete |
 | TSK-01 | Phase 4 | Pending |
 | TSK-02 | Phase 4 | Pending |
