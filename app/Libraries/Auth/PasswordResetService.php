@@ -14,7 +14,14 @@ use DateTimeImmutable;
 final class PasswordResetService
 {
     public const TTL_MINUTES = 60;
-    private const FORMAT     = 'Y-m-d H:i:sP';
+
+    /**
+     * Najviac tokenov (e-mailov) za hodinu na ucet a na IP (WR-03); dalsie poziadavky sa ticho zahodia.
+     */
+    public const MAX_PER_ACCOUNT_HOUR = 3;
+
+    public const MAX_PER_IP_HOUR = 5;
+    private const FORMAT         = 'Y-m-d H:i:sP';
 
     /**
      * @param BaseConnection<mixed, mixed>|null $db
@@ -24,7 +31,9 @@ final class PasswordResetService
     }
 
     /**
-     * Vrati otvoreny token iba pre existujuci aktivny ucet, inak null. Stare nepouzite tokeny pouzivatela zmaze.
+     * Vrati otvoreny token iba pre existujuci aktivny ucet, inak null; null aj po prekroceni limitu.
+     * Platne skorsie tokeny ostavaju platne (WR-03: cudzia poziadavka nezneplatni odkaz vlastnika),
+     * vsetky nepouzite zmaze az uspesna zmena hesla (AccountRecovery::setPassword).
      */
     public function request(string $email, string $ip, DateTimeImmutable $now): ?string
     {
@@ -44,20 +53,38 @@ final class PasswordResetService
 
         $token  = bin2hex(random_bytes(32));
         $userId = (int) $user->id;
+        $since  = $now->setTimestamp($now->getTimestamp() - 3600)->format(self::FORMAT);
+        $issued = false;
 
         $db->transStart();
-        $db->query('DELETE FROM password_resets WHERE user_id = :u: AND used_at IS NULL', ['u' => $userId]);
-        $db->query(
-            'INSERT INTO password_resets (user_id, token_hash, ip, created_at, expires_at) VALUES (:u:, :h:, :ip:, :now:, :exp:)',
-            [
-                'u'   => $userId,
-                'h'   => hash('sha256', $token),
-                'ip'  => $ip,
-                'now' => $now->format(self::FORMAT),
-                'exp' => $now->setTimestamp($now->getTimestamp() + self::TTL_MINUTES * 60)->format(self::FORMAT),
-            ],
-        );
+        // Subezne poziadavky pre ten isty ucet sa zoradia, limit sa neda prekrocit subehom.
+        $db->query("SELECT pg_advisory_xact_lock(hashtext('password_resets'), :u:)", ['u' => $userId]);
+        $db->query('DELETE FROM password_resets WHERE user_id = :u: AND used_at IS NULL AND expires_at <= :now:', ['u' => $userId, 'now' => $now->format(self::FORMAT)]);
+
+        $perAccount = (int) $db->query('SELECT count(*) AS c FROM password_resets WHERE user_id = :u: AND created_at > :since:', ['u' => $userId, 'since' => $since])->getRow()->c;
+        $perIp      = (int) $db->query('SELECT count(*) AS c FROM password_resets WHERE ip = :ip: AND created_at > :since:', ['ip' => $ip, 'since' => $since])->getRow()->c;
+
+        if ($perAccount < self::MAX_PER_ACCOUNT_HOUR && $perIp < self::MAX_PER_IP_HOUR) {
+            $db->query(
+                'INSERT INTO password_resets (user_id, token_hash, ip, created_at, expires_at) VALUES (:u:, :h:, :ip:, :now:, :exp:)',
+                [
+                    'u'   => $userId,
+                    'h'   => hash('sha256', $token),
+                    'ip'  => $ip,
+                    'now' => $now->format(self::FORMAT),
+                    'exp' => $now->setTimestamp($now->getTimestamp() + self::TTL_MINUTES * 60)->format(self::FORMAT),
+                ],
+            );
+            $issued = true;
+        }
+
         $db->transComplete();
+
+        if (! $issued) {
+            log_message('notice', sprintf('password_reset.throttled user=%d', $userId));
+
+            return null;
+        }
 
         return $db->transStatus() ? $token : null;
     }

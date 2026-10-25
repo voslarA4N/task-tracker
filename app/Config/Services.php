@@ -2,6 +2,7 @@
 
 namespace Config;
 
+use App\Libraries\Platform\AfterResponse;
 use App\Libraries\Platform\Clock;
 use CodeIgniter\Config\BaseService;
 
@@ -27,6 +28,15 @@ class Services extends BaseService
         }
 
         return new Clock();
+    }
+
+    public static function afterResponse(bool $getShared = true): AfterResponse
+    {
+        if ($getShared) {
+            return static::getSharedInstance('afterResponse');
+        }
+
+        return new AfterResponse();
     }
 
     /*

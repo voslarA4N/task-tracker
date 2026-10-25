@@ -13,6 +13,7 @@ use App\Libraries\Mail\AppMailer;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\Shield\Entities\User;
 use CodeIgniter\Shield\Models\UserModel;
+use DateTimeImmutable;
 use InvalidArgumentException;
 
 /**
@@ -36,20 +37,15 @@ final class PasswordReset extends BaseController
             return $this->forgotPage($email, false, 422, lang('Login.errorEmailFormat'));
         }
 
-        $now   = service('clock')->now();
-        $token = (new PasswordResetService())->request($email, $this->request->getIPAddress(), $now);
+        $now    = service('clock')->now();
+        $ip     = $this->request->getIPAddress();
+        $locale = $this->request->getLocale();
 
-        if ($token !== null) {
-            $link = rtrim(config('App')->baseURL, '/') . '/password/reset/' . $token;
-            $body = view('emails/password_reset', [
-                'link'    => $link,
-                'minutes' => PasswordResetService::TTL_MINUTES,
-                'locale'  => $this->request->getLocale(),
-            ], ['saveData' => false]);
-
-            (new AppMailer())->send($email, lang('PasswordReset.mailSubject'), $body, 'password_reset');
-            (new AuditLog())->record(AuthEvent::PasswordResetRequested, true, $this->userId($email));
-        }
+        // Vyhladanie uctu, limit, token aj SMTP az po odoslani odpovede (WR-03): cas odpovede
+        // je rovnaky pre existujuci aj neexistujuci ucet.
+        service('afterResponse')->defer(function () use ($email, $ip, $now, $locale): void {
+            $this->issueAndMail($email, $ip, $now, $locale);
+        });
 
         // Vzdy rovnaka odpoved: neprezradi, ci ucet existuje.
         return $this->forgotPage('', true, 200);
@@ -123,6 +119,25 @@ final class PasswordReset extends BaseController
         session()->setFlashdata('auth_info', lang('PasswordReset.done'));
 
         return redirect()->to('/login');
+    }
+
+    private function issueAndMail(string $email, string $ip, DateTimeImmutable $now, string $locale): void
+    {
+        $token = (new PasswordResetService())->request($email, $ip, $now);
+
+        if ($token === null) {
+            return;
+        }
+
+        $link = rtrim(config('App')->baseURL, '/') . '/password/reset/' . $token;
+        $body = view('emails/password_reset', [
+            'link'    => $link,
+            'minutes' => PasswordResetService::TTL_MINUTES,
+            'locale'  => $locale,
+        ], ['saveData' => false]);
+
+        (new AppMailer())->send($email, lang('PasswordReset.mailSubject', [], $locale), $body, 'password_reset');
+        (new AuditLog())->record(AuthEvent::PasswordResetRequested, true, $this->userId($email));
     }
 
     private function userId(string $email): ?int

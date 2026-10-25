@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Auth;
 
+use App\Libraries\Auth\PasswordResetService;
 use App\Libraries\Auth\TrustedDeviceService;
+use App\Libraries\Platform\AfterResponse;
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Shield\Authentication\Authenticators\Session;
 use CodeIgniter\Shield\Entities\User;
@@ -71,6 +73,11 @@ final class PasswordResetTest extends AuthTestCase
         $this->assertInstanceOf(MockEmail::class, $mail);
 
         return $mail;
+    }
+
+    private function tokenCount(): int
+    {
+        return (int) $this->owner()->query('SELECT count(*) AS c FROM password_resets')->getRow()->c;
     }
 
     private function eventCount(string $event): int
@@ -255,13 +262,90 @@ final class PasswordResetTest extends AuthTestCase
         $this->assertStringContainsString(esc(lang('PasswordReset.invalid')), $this->body($post));
     }
 
-    public function testNewRequestInvalidatesPreviousToken(): void
+    public function testNewRequestKeepsPreviousTokenValid(): void
     {
         $this->ownerWithTotp();
-        $first = $this->requestToken();
-        $this->requestToken();
+        $first  = $this->requestToken();
+        $second = $this->requestToken();
+
+        $this->assertNotSame($first, $second);
+        $this->assertStringNotContainsString(esc(lang('PasswordReset.invalid')), $this->body($this->get('/password/reset/' . $first)));
+        $this->assertStringNotContainsString(esc(lang('PasswordReset.invalid')), $this->body($this->get('/password/reset/' . $second)));
+    }
+
+    public function testSuccessfulResetInvalidatesOtherOutstandingTokens(): void
+    {
+        $this->ownerWithTotp();
+        $first  = $this->requestToken();
+        $second = $this->requestToken();
+
+        $this->postTo('/password/reset/' . $second, ['password' => self::NEW_PASSWORD, 'password_confirm' => self::NEW_PASSWORD])->assertStatus(302);
 
         $this->assertStringContainsString(esc(lang('PasswordReset.invalid')), $this->body($this->get('/password/reset/' . $first)));
+    }
+
+    public function testRequestsPerAccountAreCappedPerHour(): void
+    {
+        $this->ownerWithTotp();
+
+        for ($i = 0; $i < PasswordResetService::MAX_PER_ACCOUNT_HOUR + 2; $i++) {
+            $result = $this->postTo('/password/forgot', ['email' => self::EMAIL]);
+            $result->assertStatus(200);
+            $this->assertStringContainsString(esc(lang('PasswordReset.sent')), $this->body($result));
+        }
+
+        $this->assertSame(PasswordResetService::MAX_PER_ACCOUNT_HOUR, $this->tokenCount());
+        $this->assertSame(PasswordResetService::MAX_PER_ACCOUNT_HOUR, $this->eventCount('password_reset_requested'));
+
+        // Po hodine sa limit uvolni.
+        $this->setClock($this->clock->now()->modify('+61 minutes')->format(DATE_ATOM));
+        $this->mockEmail();
+        $this->requestToken();
+        $this->assertSame(PasswordResetService::MAX_PER_ACCOUNT_HOUR + 1, $this->eventCount('password_reset_requested'));
+    }
+
+    public function testRequestsPerIpAreCappedAcrossAccounts(): void
+    {
+        $this->ownerWithTotp();
+        $other = $this->createUser('accountant@example.test', 'accountant');
+        $this->enrollTotp($other);
+
+        for ($i = 0; $i < PasswordResetService::MAX_PER_ACCOUNT_HOUR; $i++) {
+            $this->postTo('/password/forgot', ['email' => self::EMAIL])->assertStatus(200);
+        }
+
+        for ($i = 0; $i < PasswordResetService::MAX_PER_ACCOUNT_HOUR; $i++) {
+            $this->postTo('/password/forgot', ['email' => 'accountant@example.test'])->assertStatus(200);
+        }
+
+        $this->assertSame(PasswordResetService::MAX_PER_IP_HOUR, $this->tokenCount());
+    }
+
+    public function testAccountLookupAndMailRunOnlyAfterResponse(): void
+    {
+        $this->ownerWithTotp();
+        $after = new AfterResponse(true);
+        Services::injectMock('afterResponse', $after);
+
+        $known = $this->postTo('/password/forgot', ['email' => self::EMAIL]);
+        $known->assertStatus(200);
+        $unknown = $this->postTo('/password/forgot', ['email' => 'nobody@example.test']);
+        $unknown->assertStatus(200);
+
+        // Pred odoslanim odpovede sa pre existujuci ucet neurobilo nic navyse (ziadny token, ziadny e-mail).
+        $this->assertSame(
+            preg_replace('#[0-9a-f]{64}#', '', $this->body($known)),
+            preg_replace('#[0-9a-f]{64}#', '', $this->body($unknown)),
+        );
+        $this->assertSame(0, $this->tokenCount());
+        $this->assertEmpty($this->mail()->archive ?? null);
+        $this->assertSame(2, $after->pending());
+
+        $after->flush();
+
+        $this->assertSame(1, $this->tokenCount());
+        $this->assertSame([self::EMAIL], $this->mail()->archive['recipients'] ?? null);
+        $this->assertSame(1, $this->eventCount('password_reset_requested'));
     }
 
     public function testOtherLoggedInSessionIsEndedByReset(): void
