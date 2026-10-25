@@ -70,4 +70,11 @@ return [
     'statusEnded'               => 'Ended',
     'statusFuture'              => 'Starts later',
     'emptyValue'                => '—',
+    'navTitle'                  => 'Entities',
+    'listTitle'                 => 'Entities',
+    'statusPrepared'            => 'Prepared',
+    'emptyHeading'              => 'You have no entity yet',
+    'emptyBody'                 => 'An entity is a company or sole proprietorship that issues invoices. Add the first entity so that clients and invoices can be created.',
+    'addButton'                 => 'Add entity',
+    'periodFrom'                => 'from {0}',
 ];

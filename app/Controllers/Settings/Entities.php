@@ -6,9 +6,11 @@ namespace App\Controllers\Settings;
 
 use App\Controllers\BaseController;
 use App\Libraries\Master\Country;
+use App\Libraries\Master\EntityDirectory;
 use App\Libraries\Master\EntityInput;
 use App\Libraries\Master\EntityService;
 use App\Libraries\Master\EntityVersionResolver;
+use App\Libraries\Master\VatRegime;
 use App\Libraries\Master\VersionNotFound;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\IncomingRequest;
@@ -17,6 +19,26 @@ use IntlDateFormatter;
 
 final class Entities extends BaseController
 {
+    public function index(): string
+    {
+        $rows = (new EntityDirectory())->listAll(service('clock')->today());
+
+        foreach ($rows as &$row) {
+            $row['country_label'] = Country::tryFrom($row['country'])?->label() ?? $row['country'];
+            $row['regime_label']  = VatRegime::tryFrom($row['vat_regime'])?->label() ?? lang('Entities.emptyValue');
+            $from                 = $this->formatDate($row['active_from']);
+            $row['period']        = $row['active_to'] === null
+                ? lang('Entities.periodFrom', [$from])
+                : $from . ' – ' . $this->formatDate($row['active_to']);
+        }
+        unset($row);
+
+        return view('settings/entities/index', [
+            'title'    => lang('Entities.listTitle'),
+            'entities' => $rows,
+        ]);
+    }
+
     public function new(): string
     {
         $country = Country::SK;

@@ -70,4 +70,11 @@ return [
     'statusEnded'               => 'Ukončený',
     'statusFuture'              => 'Začne platiť neskôr',
     'emptyValue'                => '—',
+    'navTitle'                  => 'Subjekty',
+    'listTitle'                 => 'Subjekty',
+    'statusPrepared'            => 'Pripravený',
+    'emptyHeading'              => 'Zatiaľ nemáte žiadny subjekt',
+    'emptyBody'                 => 'Subjekt je firma alebo živnosť, ktorá vystavuje faktúry. Pridajte prvý subjekt, aby bolo možné vytvoriť klientov a faktúry.',
+    'addButton'                 => 'Pridať subjekt',
+    'periodFrom'                => 'od {0}',
 ];
