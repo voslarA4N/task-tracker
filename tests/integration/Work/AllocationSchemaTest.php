@@ -46,7 +46,6 @@ final class AllocationSchemaTest extends PgTestCase
         $this->fail('Expected DatabaseException matching ' . $regex);
     }
 
-
     private function insertAllocation(int $taskId, string $hours, string $month, string $amount, string $currency = 'EUR'): void
     {
         $this->owner()->query(

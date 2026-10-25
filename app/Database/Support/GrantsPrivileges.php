@@ -11,8 +11,9 @@ use InvalidArgumentException;
  * Pre migracie (CodeIgniter\Database\Migration, $this->db).
  *
  * Predvolene su tabulky insert-only pre app_rw (default privileges v provision.sql).
- * Stlpcovy grant (grantUpdateColumns) je predvolena volba pre mutovatelne master tabulky,
- * grantMutable() pouzivat LEN pre ne-dokladove pomocne tabulky.
+ * Stlpcovy UPDATE grant (grantUpdateColumns) je predvolena volba pre mutovatelne tabulky.
+ * grantDelete() sa dava iba tabulkam, ktorych mazanie strazi databaza (trigger alebo FK),
+ * dnes tasks a billing_allocations. grantMutable() pouzivat LEN pre ne-dokladove pomocne tabulky.
  */
 trait GrantsPrivileges
 {
@@ -27,7 +28,20 @@ trait GrantsPrivileges
     }
 
     /**
-     * GRANT UPDATE len na vymenovane stlpce. DELETE sa nedava nikdy.
+     * GRANT DELETE pre app_rw. Len tabulky, kde mazanie strazi trigger alebo FK RESTRICT.
+     */
+    protected function grantDelete(string $table): void
+    {
+        if (preg_match('/^[a-z_][a-z0-9_]*$/', $table) !== 1) {
+            throw new InvalidArgumentException('Invalid table name: ' . $table);
+        }
+
+        assert($this->db instanceof BaseConnection);
+        $this->db->query('GRANT DELETE ON TABLE ' . $this->db->escapeIdentifiers($table) . ' TO app_rw');
+    }
+
+    /**
+     * GRANT UPDATE len na vymenovane stlpce. DELETE nedava, na to je grantDelete().
      *
      * @param list<string> $columns
      */

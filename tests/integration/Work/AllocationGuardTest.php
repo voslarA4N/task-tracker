@@ -46,7 +46,6 @@ final class AllocationGuardTest extends PgTestCase
         $this->fail('Expected DatabaseException matching ' . $regex);
     }
 
-
     public function testUnlockedAllocationCanBeUpdatedByRw(): void
     {
         $task  = $this->createTask($this->createClient());
@@ -105,7 +104,7 @@ final class AllocationGuardTest extends PgTestCase
         $task = $this->createTask($this->createClient());
         $this->createAllocation($task, '8.00', '2026-10');
 
-        $this->assertDbError('/violates foreign key/', fn () => $this->rw()->query('DELETE FROM tasks WHERE id = ?', [$task]));
+        $this->assertDbError('/violates (RESTRICT setting of )?foreign key/', fn () => $this->rw()->query('DELETE FROM tasks WHERE id = ?', [$task]));
     }
 
     public function testTaskWithoutAllocationCanBeDeleted(): void

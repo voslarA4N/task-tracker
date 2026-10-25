@@ -46,12 +46,14 @@ final class TaskBillingViewTest extends PgTestCase
         $this->fail('Expected DatabaseException matching ' . $regex);
     }
 
-
     private function state(int $task): object
     {
         return $this->owner()->query('SELECT * FROM task_billing_v WHERE task_id = ?', [$task])->getRow();
     }
 
+    /**
+     * @return array<string, string>
+     */
     private function done(): array
     {
         return ['status' => 'done', 'done_at' => '2026-10-25 10:00:00+02'];
