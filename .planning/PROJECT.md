@@ -12,13 +12,12 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 ### Validated
 
-(Zatiaľ žiadne, overí sa až nasadením)
+- [x] Prihlásenie heslom (Argon2id) s povinnou TOTP 2FA, záložnými kódmi, „zapamätať zariadenie“ na 30 dní a denníkom prihlásení (E1). Validated in Phase 2: Identita a skoré nasadenie (staging https://work-tracker.vostack.dev, UAT na iPhone 2026-10-25; 7- a 30-dňová kontrola sledovaná v STATE.md)
 
 ### Active
 
 Úplný zoznam s ID je v `.planning/REQUIREMENTS.md` (prevzatý z `docs/PRD.md`, epiky E1–E12, priority P0 + P1 + P2).
 
-- [ ] Prihlásenie heslom (Argon2id) s povinnou TOTP 2FA, záložnými kódmi, „zapamätať zariadenie“ na 30 dní a denníkom prihlásení (E1)
 - [ ] Viac vlastných subjektov (SK, PL, CZ) s verziami „platné od“, vlastným číselným radom, menou, jazykom a DPH režimom (E2)
 - [ ] Klienti so sadzbou, menou, jazykom, splatnosťou, režimom fakturácie a príznakom započítania do limitu (E3)
 - [ ] Úlohy s nacenením, stavmi V práci / Zapracovaná a odvodeným fakturačným stavom (E4)
@@ -112,4 +111,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-23 after Phase 1 (Základ a infraštruktúra)*
+*Last updated: 2026-10-25 after Phase 2 (Identita a skoré nasadenie)*
