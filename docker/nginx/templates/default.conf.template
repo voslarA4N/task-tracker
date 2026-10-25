@@ -1,9 +1,16 @@
 server_tokens off;
 
 # Limit pokusov na prihlasovacie URL (AUTH-04): kluc iba pre /login, /2fa, /password.
-# Prazdny kluc = bez limitu. Pouziva $request_uri, lebo $uri je v PHP location /index.php.
-map $request_uri $auth_limit_key {
-    ~^/(login|2fa|password) $binary_remote_addr;
+# Prazdny kluc = bez limitu. Kluc sa pocita z normalizovaneho $uri (dekodovane %XX,
+# zlucene lomky, vyriesene ./..), nie zo suroveho $request_uri (WR-01: //login,
+# /%6cogin, /index.php/login obchadzali limit). Pokryva aj formy, ktore CI4 smeruje
+# na ten isty kontroler: /index.php/login a query-string /?/login, /index.php?/login.
+# limit_req je v "location /" (pred vnutornym presmerovanim, ked $uri este nesie
+# povodnu cestu) aj v "location = /index.php" (priamy /index.php?/...). nginx ho
+# na jednu poziadavku uplatni iba raz.
+map "$uri|$args" $auth_limit_key {
+    "~^/(index\.php/)?(login|2fa|password)" $binary_remote_addr;
+    "~^/(index\.php/?)?\|/"                 $binary_remote_addr;
     default "";
 }
 limit_req_zone $auth_limit_key zone=authz:1m rate=20r/m;
@@ -19,6 +26,8 @@ server {
     listen 443 ssl default_server;
     http2 on;
     server_name ${APP_DOMAIN};
+    # Predvolene zapnute; $uri pre $auth_limit_key na tom zavisi (WR-01).
+    merge_slashes on;
 
     ssl_certificate ${SSL_CERT};
     ssl_certificate_key ${SSL_KEY};
@@ -57,6 +66,7 @@ server {
     }
 
     location / {
+        limit_req zone=authz burst=10 nodelay;
         try_files $uri /index.php$is_args$args;
     }
 

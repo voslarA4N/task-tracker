@@ -113,6 +113,22 @@ else
   skip "SKIP js app-alert (chyba node)"
 fi
 
+# 11. limit_req na prihlasovacich URL (AUTH-04, WR-01). Na konci, lebo vycerpa vedro pre IP.
+# Po vycerpani cez /login musia byt obmedzene aj obchadzkove formy (spolocny kluc),
+# bezne stranky nie.
+RL429=0
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13; do
+  c=$(curl -sS -o /dev/null -w '%{http_code}' "$BASE/login" 2>/dev/null || true)
+  [ "$c" = 429 ] && RL429=1
+done
+if [ "$RL429" = 1 ]; then pass "rate limit /login"; else fail "rate limit /login (bez 429)"; fi
+for p in '//login' '/index.php/login' '/?/login' '/index.php?/login' '/%6cogin' '//password/forgot'; do
+  c=$(curl -sS --path-as-is -o /dev/null -w '%{http_code}' "$BASE$p" 2>/dev/null || true)
+  if [ "$c" = 429 ]; then pass "rate limit $p"; else fail "rate limit $p (got: $c)"; fi
+done
+c=$(curl -sS -o /dev/null -w '%{http_code}' "$BASE/" 2>/dev/null || true)
+if [ "$c" = 302 ]; then pass "/ bez limitu"; else fail "/ bez limitu (got: $c)"; fi
+
 if [ "$FAILS" -eq 0 ]; then echo "SMOKE OK"; exit 0; fi
 echo "SMOKE FAILED ($FAILS)"
 exit 1
