@@ -13,6 +13,7 @@ use App\Libraries\Master\VersionNotFound;
 use App\Libraries\Master\VersionRejected;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\IncomingRequest;
+use CodeIgniter\HTTP\RedirectResponse;
 use CodeIgniter\HTTP\ResponseInterface;
 use IntlDateFormatter;
 
@@ -48,9 +49,14 @@ final class EntityVersions extends BaseController
         return view('settings/entities/version_new', $this->formData($entity, $values, []));
     }
 
-    public function notice(int $id): ResponseInterface
+    public function notice(int $id): RedirectResponse|ResponseInterface
     {
         $this->entityOr404($id);
+
+        if (! is_htmx_fragment_request()) {
+            // Celá stránka formulára potrebuje kompletné dáta, notice je len fragment (WR-08).
+            return redirect()->to('/settings/entities/' . $id . '/versions/new');
+        }
 
         $today = service('clock')->today();
         $raw   = $this->request->getGet('valid_from');
@@ -69,7 +75,7 @@ final class EntityVersions extends BaseController
 
         return $this->response
             ->setHeader('Vary', 'HX-Request')
-            ->setBody(htmx_view('settings/entities/_version_notice', $data, 'settings/entities/version_new'));
+            ->setBody(view('settings/entities/_version_notice', $data));
     }
 
     public function create(int $id): ResponseInterface

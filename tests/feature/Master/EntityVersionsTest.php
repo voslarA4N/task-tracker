@@ -200,6 +200,18 @@ final class EntityVersionsTest extends AuthTestCase
         $this->assertStringContainsString('alert-warning', $html);
     }
 
+    public function testNoticeWithoutHtmxRedirectsToForm(): void
+    {
+        $id = $this->createEntity('SK');
+
+        $this->get('/settings/entities/' . $id . '/versions/notice?valid_from=2026-12-01')
+            ->assertRedirectTo('/settings/entities/' . $id . '/versions/new');
+
+        $this->withHeaders(['HX-Request' => 'true', 'HX-Boosted' => 'true'])
+            ->get('/settings/entities/' . $id . '/versions/notice?valid_from=2026-12-01')
+            ->assertRedirectTo('/settings/entities/' . $id . '/versions/new');
+    }
+
     public function testNoEditOrDeleteRoutes(): void
     {
         $id = $this->createEntity('SK');
