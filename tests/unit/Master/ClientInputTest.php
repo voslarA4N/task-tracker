@@ -119,6 +119,16 @@ final class ClientInputTest extends CIUnitTestCase
         $this->assertSame([], ClientInput::validate($values));
     }
 
+    public function testOtherIdentifierKeepsSpacesAndCase(): void
+    {
+        foreach (['HRB 12345 B' => 'HRB 12345 B', 'Reg. no 12/a' => 'Reg. no 12/a', '  HRB   12345  ' => 'HRB 12345'] as $raw => $stored) {
+            $values = $this->valid(['identifier_type' => 'other', 'identifier_value' => $raw, 'country' => 'DE']);
+
+            $this->assertSame([], ClientInput::validate($values), $raw);
+            $this->assertSame($stored, ClientInput::normalize($values)['identifier_value'], $raw);
+        }
+    }
+
     public function testLocalIdPerCountry(): void
     {
         $this->assertArrayHasKey('identifier_value', $this->errorsFor(['country' => 'PL', 'identifier_value' => '123']));

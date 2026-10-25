@@ -64,6 +64,13 @@ final class ClientInput
 
             switch ($field) {
                 case 'identifier_value':
+                    // Iný identifikátor (zahraničný register) sa ukladá tak, ako ho validácia skontrolovala:
+                    // s medzerami a veľkosťou písmen, len viacnásobné medzery sa zlúčia (WR-10).
+                    $value = $get('identifier_type') === IdentifierType::Other->value
+                        ? (string) preg_replace('/\s+/u', ' ', $value)
+                        : strtoupper((string) preg_replace('/\s+/u', '', $value));
+                    break;
+
                 case 'vat_id':
                 case 'tax_id':
                     $value = strtoupper((string) preg_replace('/\s+/u', '', $value));
