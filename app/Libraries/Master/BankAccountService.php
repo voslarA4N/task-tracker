@@ -48,7 +48,8 @@ final class BankAccountService
                 ['e' => $entityId],
             )->getRow()->c;
 
-            $default = $active === 0 || (bool) ($v['is_default'] ?? false);
+            $default    = $active === 0 || (bool) ($v['is_default'] ?? false);
+            $oldDefault = $default ? $this->currentDefaultId($entityId) : null;
 
             if ($default) {
                 $this->clearDefault($entityId, $now);
@@ -79,6 +80,11 @@ final class BankAccountService
                 'currency'   => $row['currency'],
                 'is_default' => $default,
             ]);
+
+            if ($oldDefault !== null) {
+                // Zrušenie predošlého predvoleného účtu musí byť v audite rovnako ako pri setDefault (WR-04).
+                $this->audit->record('bank_account', $id, 'set_default', ['default_account_id' => $oldDefault], ['default_account_id' => $id]);
+            }
 
             return $id;
         });

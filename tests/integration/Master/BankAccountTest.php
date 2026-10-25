@@ -93,6 +93,26 @@ final class BankAccountTest extends PgTestCase
         $this->assertTrue($this->service()->find($e, $b)['is_default']);
     }
 
+    public function testAddWithDefaultAuditsDemotionOfPreviousDefault(): void
+    {
+        $e = $this->createEntity('PL');
+        $a = $this->service()->add($e, $this->values(self::SK_IBAN, 'EUR'));
+        $this->assertSame(0, $this->auditCount('set_default'), 'first account has no previous default');
+
+        $b   = $this->service()->add($e, $this->values(self::PL_IBAN, 'PLN', true));
+        $row = $this->owner()->query(
+            "SELECT entity_id, before_data->>'default_account_id' AS b, after_data->>'default_account_id' AS a FROM audit_log WHERE entity_type = 'bank_account' AND action = 'set_default'",
+        )->getResultArray();
+
+        $this->assertCount(1, $row);
+        $this->assertSame((string) $a, $row[0]['b']);
+        $this->assertSame((string) $b, $row[0]['a']);
+        $this->assertSame($b, (int) $row[0]['entity_id']);
+
+        $this->service()->add($e, $this->values(self::CZ_IBAN, 'CZK'));
+        $this->assertSame(1, $this->auditCount('set_default'), 'non-default add does not touch the default');
+    }
+
     public function testSetDefaultKeepsExactlyOneAndAudits(): void
     {
         $e = $this->createEntity('PL');
