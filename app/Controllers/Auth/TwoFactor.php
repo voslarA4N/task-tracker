@@ -433,14 +433,27 @@ final class TwoFactor extends BaseController
         $since = session('pending_since');
 
         if (! is_int($since) || service('clock')->now()->getTimestamp() - $since > $maxAge) {
-            auth('session')->logout();
-            session()->remove(['pending_since', self::SETUP_SECRET_KEY, self::CODES_KEY]);
-            session()->setFlashdata('auth_info', lang('TwoFactor.pendingExpired'));
+            return $this->abandonPending(lang('TwoFactor.pendingExpired'));
+        }
 
-            return redirect()->to('/login');
+        // Heslo alebo 2FA sa medzitym zmenili (epocha sa posunula): pending relacia uz neplati (WR-02).
+        if (session('pending_epoch') !== (new TrustedDeviceService())->currentEpoch((int) $user->id)) {
+            return $this->abandonPending(null);
         }
 
         return $user;
+    }
+
+    private function abandonPending(?string $info): RedirectResponse
+    {
+        auth('session')->logout();
+        session()->remove(['pending_since', 'pending_epoch', self::SETUP_SECRET_KEY, self::CODES_KEY]);
+
+        if ($info !== null) {
+            session()->setFlashdata('auth_info', $info);
+        }
+
+        return redirect()->to('/login');
     }
 
     private function wantsRemember(): bool
@@ -468,9 +481,11 @@ final class TwoFactor extends BaseController
         $now     = service('clock')->now();
         $devices = new TrustedDeviceService();
 
-        session()->remove('pending_since');
+        // Epocha z kroku hesla, nie aktualna: ak ju medzitym posunula zmena hesla, AuthGate relaciu odmietne (WR-02).
+        $epoch = session('pending_epoch');
+        session()->remove(['pending_since', 'pending_epoch']);
         session()->set([
-            'auth_epoch'    => $devices->currentEpoch($userId),
+            'auth_epoch'    => is_int($epoch) ? $epoch : -1,
             'last_activity' => $now->getTimestamp(),
         ]);
         (new LockoutService())->clear($this->request->getIPAddress(), mb_strtolower((string) $user->email));

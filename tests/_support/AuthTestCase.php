@@ -98,6 +98,9 @@ abstract class AuthTestCase extends PgTestCase
         $authenticator = auth('session')->getAuthenticator();
         assert($authenticator instanceof Session);
 
+        // Ako Login::attempt: epocha v case hesla (WR-02).
+        session()->set('pending_epoch', (new TrustedDeviceService())->currentEpoch((int) $user->id));
+
         return $this;
     }
 

@@ -113,7 +113,11 @@ final class Login extends BaseController
         }
 
         $audit->record(AuthEvent::LoginPasswordOk, true, $userId);
-        session()->set('pending_since', $now->getTimestamp());
+        // Epocha v case hesla: zmena hesla alebo reset 2FA pocas pending zneplatni tuto relaciu (WR-02).
+        session()->set([
+            'pending_since' => $now->getTimestamp(),
+            'pending_epoch' => (new TrustedDeviceService())->currentEpoch((int) $userId),
+        ]);
 
         return redirect()->to('/2fa');
     }
@@ -149,7 +153,7 @@ final class Login extends BaseController
         $audit->record(AuthEvent::Logout, true, $userId);
 
         auth('session')->logout();
-        session()->remove('pending_since');
+        session()->remove(['pending_since', 'pending_epoch']);
 
         return $redirect;
     }

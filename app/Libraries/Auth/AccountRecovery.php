@@ -89,6 +89,8 @@ final class AccountRecovery
             $this->devices->bumpEpoch($userId, $now);
             $this->devices->revokeAll($userId, 'password_' . $source, $now);
             $db->query('DELETE FROM password_resets WHERE user_id = :u: AND used_at IS NULL', ['u' => $userId]);
+            // Rozpracovane prihlasenie (Shield pending) uz nemoze dokoncit akciu 2FA (WR-02).
+            model(UserIdentityModel::class)->deleteIdentitiesByType($user, TotpAction::TYPE);
             $this->audit->record($event, true, $userId);
             $db->transComplete();
         } catch (Throwable $e) {

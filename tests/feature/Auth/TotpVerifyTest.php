@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Auth;
 
+use App\Authentication\Actions\TotpAction;
+use App\Libraries\Auth\AccountRecovery;
+use App\Libraries\Auth\TrustedDeviceService;
 use App\Libraries\Platform\FrozenClock;
+use CodeIgniter\Shield\Authentication\Authenticators\Session;
 use CodeIgniter\Shield\Entities\User;
+use CodeIgniter\Shield\Models\UserIdentityModel;
 use CodeIgniter\Shield\Models\UserModel;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
@@ -241,5 +246,47 @@ final class TotpVerifyTest extends AuthTestCase
         $result->assertStatus(302);
         $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
         $this->assertFalse(auth('session')->loggedIn());
+    }
+
+    public function testPasswordChangeDuringPendingBlocksCompletion(): void
+    {
+        $user                      = $this->pending();
+        config('Email')->transport = 'log';
+
+        (new AccountRecovery())->setPassword($user, 'Nove-Heslo-Slnko-2026!', 'cli', service('clock')->now());
+        $this->assertNull(model(UserIdentityModel::class)->getIdentityByType($user, TotpAction::TYPE));
+
+        $result = $this->postCode($this->totpCode($this->secret));
+        $result->assertStatus(302);
+        $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
+        $this->assertFalse(auth('session')->loggedIn());
+        $this->assertSame(0, $this->eventCount('login_totp_ok'));
+    }
+
+    public function testEpochBumpDuringPendingBlocksCompletion(): void
+    {
+        $user = $this->pending();
+
+        (new TrustedDeviceService())->bumpEpoch((int) $user->id, service('clock')->now());
+
+        $result = $this->postCode($this->totpCode($this->secret));
+        $result->assertStatus(302);
+        $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
+        $this->assertFalse(auth('session')->loggedIn());
+        $authenticator = auth('session')->getAuthenticator();
+        $this->assertInstanceOf(Session::class, $authenticator);
+        $this->assertFalse($authenticator->isPending());
+        $this->assertSame(0, $this->eventCount('login_totp_ok'));
+    }
+
+    public function testCompletedLoginCarriesEpochFromPasswordStep(): void
+    {
+        $user = $this->pending();
+
+        $this->postCode($this->totpCode($this->secret))->assertStatus(302);
+
+        $this->assertTrue(auth('session')->loggedIn());
+        $this->assertSame((new TrustedDeviceService())->currentEpoch((int) $user->id), session('auth_epoch'));
+        $this->assertNull(session('pending_epoch'));
     }
 }

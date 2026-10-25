@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Auth;
 
 use App\Controllers\Auth\Login;
+use App\Libraries\Auth\TrustedDeviceService;
 use CodeIgniter\Test\Mock\MockEmail;
 use CodeIgniter\Test\TestResponse;
 use PHPUnit\Framework\Attributes\Group;
@@ -55,7 +56,7 @@ final class LoginTest extends AuthTestCase
 
     public function testCorrectPasswordGoesToPendingTwoFactor(): void
     {
-        $this->createUser('owner@example.test');
+        $user = $this->createUser('owner@example.test');
 
         $result = $this->postLogin(['email' => 'Owner@Example.test ', 'password' => self::PASSWORD]);
         $result->assertStatus(302);
@@ -64,6 +65,7 @@ final class LoginTest extends AuthTestCase
         $authenticator = auth('session')->getAuthenticator();
         $this->assertTrue(method_exists($authenticator, 'isPending') && $authenticator->isPending());
         $this->assertIsInt(session('pending_since'));
+        $this->assertSame((new TrustedDeviceService())->currentEpoch((int) $user->id), session('pending_epoch'));
     }
 
     public function testWrongPasswordGives422GenericMessage(): void
