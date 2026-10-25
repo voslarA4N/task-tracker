@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-10-25T23:02:25.335Z"
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-10-25T23:12:10.875Z"
 last_activity: 2026-10-25
 progress:
   total_phases: 12
   completed_phases: 3
   total_plans: 53
-  completed_plans: 42
+  completed_plans: 43
   percent: 25
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 04 (lohy-faktura-n-asti-a-dashboard) — EXECUTING
-Plan: 3 of 13
+Plan: 4 of 13
 Status: Ready to execute
 Last activity: 2026-10-25
 
@@ -78,6 +78,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03 P08 | 40min | 3 tasks | 17 files |
 | Phase 03 P09 | 45min | 3 tasks | 17 files |
 | Phase 03 P10 | 40min | 3 tasks | 12 files |
+| Phase 04 P04 | 30min | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -106,6 +107,7 @@ Recent decisions affecting current work:
 - [Phase 03]: country/currency excluded from app_rw column grants (DB-enforced immutability); Clock::parseDate for strict dates
 - [Phase 03]: 03-05: ClientInput validates raw post then normalizes; rate display formatted without float
 - [Phase 03]: 03-07: portal URL template accepts only http/https with host and {id} once; preview is text only
+- [Phase 04]: 04-04: client currency lock applies to any billing allocation (locked or unlocked), stricter than Discretion text; RESEARCH Pitfall 9
 
 ### Pending Todos
 
@@ -130,6 +132,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-25T23:02:25.291Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-10-25T23:12:10.840Z
+Stopped at: Completed 04-04-PLAN.md
 Resume file: None
