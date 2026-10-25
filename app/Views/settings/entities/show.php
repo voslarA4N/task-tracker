@@ -36,7 +36,8 @@ $rows[] = [lang('Entities.dueDays'), $show($version['due_days'])];
 ?>
 <?= $this->extend('layouts/app') ?>
 
-<?= $this->section('subtitle') ?><?= esc(lang('Entities.detailTitle')) ?><?= $this->endSection() ?>
+<?= $this->section('subtitle') ?><?= esc(lang('Entities.detailTitle')) ?>
+<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 <p class="mb-2"><a href="/more"><?= esc(lang('Entities.backToMore')) ?></a></p>
@@ -46,6 +47,9 @@ $rows[] = [lang('Entities.dueDays'), $show($version['due_days'])];
         <?= esc((string) $entity['name_internal']) ?>
         <span class="badge text-bg-secondary"><?= esc(lang('Entities.' . $status)) ?></span>
     </h1>
+    <div class="master-actions">
+        <a class="btn btn-primary btn-touch" href="/settings/entities/<?= (int) $entity['id'] ?>/versions/new"><?= esc(lang('Entities.newVersion')) ?></a>
+    </div>
     <div class="row g-3 mt-1">
         <div class="col-12 col-md-6">
             <div class="small text-body-secondary"><?= esc(lang('Entities.country')) ?></div>
@@ -75,4 +79,5 @@ $rows[] = [lang('Entities.dueDays'), $show($version['due_days'])];
         <?php endforeach ?>
     </dl>
 </section>
+<?= $this->include('settings/entities/_history') ?>
 <?= $this->endSection() ?>

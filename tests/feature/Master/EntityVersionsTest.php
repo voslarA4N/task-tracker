@@ -50,10 +50,10 @@ final class EntityVersionsTest extends AuthTestCase
     private function data(array $over = []): array
     {
         return $over + [
-            'valid_from' => '2026-11-01', 'trade_name' => 'Jan Novak', 'address_line1' => 'Nova 2', 'address_line2' => '',
+            'valid_from'  => '2026-11-01', 'trade_name' => 'Jan Novak', 'address_line1' => 'Nova 2', 'address_line2' => '',
             'postal_code' => '81101', 'city' => 'Bratislava', 'company_id' => '12345678', 'regon' => '', 'tax_id' => '',
-            'vat_id' => '', 'registry_note' => '', 'email' => 'firma@example.test', 'phone' => '', 'doc_language' => 'sk',
-            'vat_regime' => 'sk_non_vat', 'due_days' => '14',
+            'vat_id'      => '', 'registry_note' => '', 'email' => 'firma@example.test', 'phone' => '', 'doc_language' => 'sk',
+            'vat_regime'  => 'sk_non_vat', 'due_days' => '14',
         ];
     }
 
@@ -79,7 +79,7 @@ final class EntityVersionsTest extends AuthTestCase
         $result->assertStatus(200);
         $html = $this->body($result);
 
-        $this->assertStringContainsString('value="Hlavna 1"', $html);
+        $this->assertStringContainsString('value="' . esc('Hlavna 1', 'attr') . '"', $html);
         $this->assertStringContainsString('name="valid_from"', $html);
         $this->assertStringContainsString('value="2026-10-25"', $html);
         $this->assertStringNotContainsString('name="country"', $html);
@@ -96,7 +96,7 @@ final class EntityVersionsTest extends AuthTestCase
 
         $this->withSession();
         $html = $this->body($this->get('/settings/entities/' . $id . '/versions/new?from=' . $vid));
-        $this->assertStringContainsString('value="Hlavna 1"', $html);
+        $this->assertStringContainsString('value="' . esc('Hlavna 1', 'attr') . '"', $html);
     }
 
     public function testFromOfOtherEntityIs404(): void

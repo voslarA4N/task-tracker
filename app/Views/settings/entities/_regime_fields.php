@@ -3,7 +3,9 @@ use App\Libraries\Master\Currency;
 
 $errors   = $errors ?? [];
 $selected = $values['vat_regime'] ?? '';
+$versionMode = $versionMode ?? false;
 ?>
+<?php if (! $versionMode) : ?>
 <div class="mb-3">
     <label class="form-label" for="f-currency"><?= esc(lang('Entities.currency')) ?></label>
     <select class="form-select<?= isset($errors['currency']) ? ' is-invalid' : '' ?>" id="f-currency" name="currency"<?= isset($errors['currency']) ? ' aria-invalid="true" aria-describedby="f-currency-error"' : '' ?>>
@@ -15,6 +17,7 @@ $selected = $values['vat_regime'] ?? '';
         <div class="invalid-feedback" id="f-currency-error"><?= esc($errors['currency']) ?></div>
     <?php endif ?>
 </div>
+<?php endif ?>
 <div class="mb-3">
     <label class="form-label" for="f-vat_regime"><?= esc(lang('Entities.vatRegime')) ?></label>
     <select class="form-select<?= isset($errors['vat_regime']) ? ' is-invalid' : '' ?>" id="f-vat_regime" name="vat_regime"<?= isset($errors['vat_regime']) ? ' aria-invalid="true" aria-describedby="f-vat_regime-error"' : '' ?>>

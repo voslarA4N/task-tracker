@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Master;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Master\EntityInput;
 use App\Libraries\Master\EntityService;
 use App\Libraries\Master\EntityVersionResolver;
 use App\Libraries\Master\VersionRejected;
@@ -61,7 +62,7 @@ final class EntityVersionTest extends PgTestCase
         $row = $this->resolver()->atDate($id, $at);
         $out = [];
 
-        foreach (\App\Libraries\Master\EntityInput::VERSION_FIELDS as $f) {
+        foreach (EntityInput::VERSION_FIELDS as $f) {
             $out[$f] = $row[$f] === null ? null : (string) $row[$f];
         }
 

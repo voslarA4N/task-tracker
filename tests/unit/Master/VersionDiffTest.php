@@ -22,10 +22,10 @@ final class VersionDiffTest extends CIUnitTestCase
     private function version(array $over = []): array
     {
         return $over + [
-            'trade_name' => 'Jan', 'address_line1' => 'Hlavna 1', 'address_line2' => null, 'postal_code' => '81101',
-            'city' => 'Bratislava', 'company_id' => '12345678', 'regon' => null, 'tax_id' => null, 'vat_id' => null,
+            'trade_name'    => 'Jan', 'address_line1' => 'Hlavna 1', 'address_line2' => null, 'postal_code' => '81101',
+            'city'          => 'Bratislava', 'company_id' => '12345678', 'regon' => null, 'tax_id' => null, 'vat_id' => null,
             'registry_note' => null, 'email' => 'a@example.test', 'phone' => null, 'doc_language' => 'sk',
-            'vat_regime' => 'sk_non_vat', 'due_days' => '14',
+            'vat_regime'    => 'sk_non_vat', 'due_days' => '14',
         ];
     }
 

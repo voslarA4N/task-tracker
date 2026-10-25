@@ -6,8 +6,8 @@ namespace App\Libraries\Master;
 
 use App\Libraries\Audit\AuditLogger;
 use CodeIgniter\Database\BaseConnection;
-use Config\Database;
 use CodeIgniter\Database\Exceptions\DatabaseException;
+use Config\Database;
 use InvalidArgumentException;
 use Throwable;
 
@@ -141,8 +141,8 @@ final class EntityService
         $row    = ['entity_id' => $entityId, 'valid_from' => $validFrom];
 
         foreach (EntityInput::VERSION_FIELDS as $field) {
-            $value        = $version[$field] ?? null;
-            $row[$field]  = $value === '' ? null : $value;
+            $value       = $version[$field] ?? null;
+            $row[$field] = $value === '' ? null : $value;
         }
 
         $row['created_at'] = $now;
@@ -160,7 +160,7 @@ final class EntityService
             $afterFields[$field] = $row[$field] === null ? null : (string) $row[$field];
         }
 
-        [$before, $after] = AuditLogger::diff($beforeFields, $afterFields);
+        [$before, $after]    = AuditLogger::diff($beforeFields, $afterFields);
         $after['valid_from'] = $validFrom;
         $after['entity_id']  = $entityId;
 

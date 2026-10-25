@@ -118,16 +118,55 @@ final class Entities extends BaseController
             $status = 'statusActive';
         }
 
+        $history = (new EntityVersionResolver())->history($id, $today);
+
+        foreach ($history as &$item) {
+            $item['from_label'] = $this->formatDate($item['valid_from']);
+        }
+        unset($item);
+
         return view('settings/entities/show', [
-            'title'      => lang('Entities.detailTitle'),
-            'entity'     => $entity,
-            'version'    => $version,
-            'country'    => $country,
-            'status'     => $status,
-            'validFrom'  => $this->formatDate((string) $version['valid_from']),
-            'activeFrom' => $this->formatDate($from),
-            'activeTo'   => $to === null ? null : $this->formatDate($to),
+            'history'     => $history,
+            'fieldLabels' => $this->fieldLabels($country),
+            'title'       => lang('Entities.detailTitle'),
+            'entity'      => $entity,
+            'version'     => $version,
+            'country'     => $country,
+            'status'      => $status,
+            'validFrom'   => $this->formatDate((string) $version['valid_from']),
+            'activeFrom'  => $this->formatDate($from),
+            'activeTo'    => $to === null ? null : $this->formatDate($to),
         ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function fieldLabels(Country $country): array
+    {
+        $labels = [];
+
+        foreach (EntityInput::VERSION_FIELDS as $field) {
+            $labels[$field] = match ($field) {
+                'trade_name'    => lang('Entities.tradeName'),
+                'address_line1' => lang('Entities.addressLine1'),
+                'address_line2' => lang('Entities.addressLine2'),
+                'postal_code'   => lang('Entities.postalCode'),
+                'city'          => lang('Entities.city'),
+                'company_id'    => $country === Country::PL ? lang('Entities.companyIdPl') : lang('Entities.companyIdSk'),
+                'regon'         => lang('Entities.regon'),
+                'tax_id'        => lang('Entities.taxId'),
+                'vat_id'        => lang('Entities.vatId'),
+                'registry_note' => lang('Entities.registryNote'),
+                'email'         => lang('Entities.email'),
+                'phone'         => lang('Entities.phone'),
+                'doc_language'  => lang('Entities.docLanguage'),
+                'vat_regime'    => lang('Entities.vatRegime'),
+                'due_days'      => lang('Entities.dueDays'),
+            };
+        }
+
+        return $labels;
     }
 
     /**
