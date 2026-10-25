@@ -55,9 +55,9 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **TSK-01**: Používateľ vytvorí úlohu: klient (predvolený posledný použitý), URL, názov, nacenené hodiny, sadzba (predvyplnená z klienta, dá sa prepísať), poznámka. Nacenená suma sa prepočítava hneď pri písaní.
 - [x] **TSK-02**: Používateľ upraví a zmaže úlohu. Zmazať sa dá len úloha bez zamknutých častí.
 - [x] **TSK-03**: Úloha má stav *V práci* / *Zapracovaná* (s dátumom). Fakturačný stav sa odvodzuje automaticky: *vyfakturovaná* = zapracovaná, bez nezamknutej časti a aspoň jedna časť zamknutá; *čiastočne* = aspoň jedna zamknutá časť, ale nie vyfakturovaná; inak *nevyfakturovaná*.
-- [ ] **TSK-04**: Zoznam „Aktuálne úlohy“ ukazuje úlohy, ktoré nie sú zapracované alebo majú nevyfakturované hodiny.
+- [x] **TSK-04**: Zoznam „Aktuálne úlohy“ ukazuje úlohy, ktoré nie sú zapracované alebo majú nevyfakturované hodiny.
 - [x] **TSK-05**: Úloha zobrazuje rozdiel medzi nacenenými a fakturovanými hodinami (napr. „+6 h“). Nič sa neblokuje.
-- [ ] **TSK-06**: Používateľ filtruje a vyhľadáva úlohy (klient, stav, mesiac, text).
+- [x] **TSK-06**: Používateľ filtruje a vyhľadáva úlohy (klient, stav, mesiac, text).
 
 ### Fakturačné časti (E5)
 
@@ -110,7 +110,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 
 ### Prehľady, exporty a limity (E10)
 
-- [ ] **DSH-01**: Dashboard (mobil, variant B): aktuálny fakturačný mesiac a klient; dlaždice *Na fakturáciu tento mesiac* a *V práci*; úlohy zoskupené podľa stavu; ukazovateľ priebehu pri čiastočnej fakturácii; tlačidlo „+“; spodná lišta Prehľad / Úlohy / Faktúry / Viac.
+- [x] **DSH-01**: Dashboard (mobil, variant B): aktuálny fakturačný mesiac a klient; dlaždice *Na fakturáciu tento mesiac* a *V práci*; úlohy zoskupené podľa stavu; ukazovateľ priebehu pri čiastočnej fakturácii; tlačidlo „+“; spodná lišta Prehľad / Úlohy / Faktúry / Viac.
 - [ ] **RPT-01**: Mesačný a ročný prehľad: vyfakturované a uhradené, podľa klienta, v mene subjektu.
 - [ ] **RPT-02**: Export prehľadov a zoznamu faktúr do CSV a XLSX (s ochranou pred vložením vzorcov).
 - [ ] **RPT-03** [nové, M11]: Export balíka pre účtovníčku za obdobie (ZIP: PDF dokladov a CSV zoznam).
@@ -225,14 +225,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TSK-01 | Phase 4 | Complete |
 | TSK-02 | Phase 4 | Complete |
 | TSK-03 | Phase 4 | Complete |
-| TSK-04 | Phase 4 | Pending |
+| TSK-04 | Phase 4 | Complete |
 | TSK-05 | Phase 4 | Complete |
-| TSK-06 | Phase 4 | Pending |
+| TSK-06 | Phase 4 | Complete |
 | ALC-01 | Phase 4 | Complete |
 | ALC-02 | Phase 4 | Complete |
 | ALC-04 | Phase 4 | Pending |
 | ALC-05 | Phase 4 | Complete |
-| DSH-01 | Phase 4 | Pending |
+| DSH-01 | Phase 4 | Complete |
 | IMP-01 | Phase 4 | Complete |
 | INV-01 | Phase 5 | Pending |
 | INV-02 | Phase 5 | Pending |
