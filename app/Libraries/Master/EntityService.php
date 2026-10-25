@@ -7,6 +7,8 @@ namespace App\Libraries\Master;
 use App\Libraries\Audit\AuditLogger;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
+use CodeIgniter\Database\Exceptions\DatabaseException;
+use InvalidArgumentException;
 use Throwable;
 
 /**
@@ -95,6 +97,99 @@ final class EntityService
         }
 
         return $entityId;
+    }
+
+    /**
+     * Nová verzia údajov subjektu s dátumom „platné od“ (D-04). Iba INSERT, audit v tej istej transakcii.
+     *
+     * @param array<string, string|null> $version normalizovaná a validovaná VERSION_FIELDS
+     *
+     * @throws VersionRejected
+     */
+    public function newVersion(int $entityId, string $validFrom, array $version): int
+    {
+        $entity = $this->find($entityId);
+
+        if ($entity === null) {
+            throw new InvalidArgumentException('Entity ' . $entityId . ' not found');
+        }
+
+        $clock = service('clock');
+        $max   = ($clock->parseDate($clock->today()) ?? $clock->now())->modify('+366 days')->format('Y-m-d');
+
+        if ($validFrom < (string) $entity['active_from'] || $validFrom > $max) {
+            throw VersionRejected::outOfRange();
+        }
+
+        $exists = $this->db->query(
+            'SELECT 1 FROM entity_versions WHERE entity_id = :e: AND valid_from = :d:',
+            ['e' => $entityId, 'd' => $validFrom],
+        )->getRowArray();
+
+        if ($exists !== null) {
+            throw VersionRejected::duplicateDate();
+        }
+
+        $previous = (new EntityVersionResolver($this->db))->atDate($entityId, $validFrom);
+
+        if (VersionDiff::changedFields($previous, $version) === []) {
+            throw VersionRejected::noChange();
+        }
+
+        $now    = $clock->now()->format('Y-m-d H:i:sP');
+        $userId = auth()->id();
+        $row    = ['entity_id' => $entityId, 'valid_from' => $validFrom];
+
+        foreach (EntityInput::VERSION_FIELDS as $field) {
+            $value        = $version[$field] ?? null;
+            $row[$field]  = $value === '' ? null : $value;
+        }
+
+        $row['created_at'] = $now;
+        $row['created_by'] = is_numeric($userId) ? (int) $userId : null;
+
+        $beforeFields = [];
+
+        foreach (EntityInput::VERSION_FIELDS as $field) {
+            $beforeFields[$field] = $previous[$field] === null ? null : (string) $previous[$field];
+        }
+
+        $afterFields = [];
+
+        foreach (EntityInput::VERSION_FIELDS as $field) {
+            $afterFields[$field] = $row[$field] === null ? null : (string) $row[$field];
+        }
+
+        [$before, $after] = AuditLogger::diff($beforeFields, $afterFields);
+        $after['valid_from'] = $validFrom;
+        $after['entity_id']  = $entityId;
+
+        $versionId = 0;
+
+        try {
+            $this->db->transException(true)->transStart();
+
+            try {
+                $versionId = $this->insert('entity_versions', $row);
+                $this->audit->record('entity_version', $versionId, 'create', $before, $after);
+                $this->db->transComplete();
+            } catch (Throwable $e) {
+                $this->db->transRollback();
+                $this->db->resetTransStatus();
+
+                throw $e;
+            } finally {
+                $this->db->transException(false);
+            }
+        } catch (DatabaseException $e) {
+            if (str_contains($e->getMessage(), 'entity_versions_entity_id_valid_from_key') || str_contains($e->getMessage(), '23505')) {
+                throw VersionRejected::duplicateDate();
+            }
+
+            throw $e;
+        }
+
+        return $versionId;
     }
 
     /**
