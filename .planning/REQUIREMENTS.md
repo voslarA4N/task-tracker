@@ -65,7 +65,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **ALC-02**: Nezamknutú časť možno upraviť, presunúť do iného mesiaca alebo zmazať.
 - [ ] **ALC-03**: Časť na vystavenej faktúre je zamknutá a odkazuje na faktúru. Pokus o jej úpravu odmietne server (nielen UI).
 - [ ] **ALC-04**: Pri „Označiť ako zapracovanú“ sa zobrazí panel: mesiac (Aktuálny / Ďalší / Iný), hodiny (predvolený zostatok nacenených hodín) a živý prepočet sumy. Po potvrdení sa vytvorí časť.
-- [ ] **ALC-05**: Časť sa dá pridať aj k nezapracovanej úlohe (čiastočná fakturácia veľkej úlohy). Detail úlohy ukazuje vyfakturované, naplánované a zostávajúce hodiny.
+- [x] **ALC-05**: Časť sa dá pridať aj k nezapracovanej úlohe (čiastočná fakturácia veľkej úlohy). Detail úlohy ukazuje vyfakturované, naplánované a zostávajúce hodiny.
 
 ### Faktúry (E6)
 
@@ -231,7 +231,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ALC-01 | Phase 4 | Complete |
 | ALC-02 | Phase 4 | Complete |
 | ALC-04 | Phase 4 | Pending |
-| ALC-05 | Phase 4 | Pending |
+| ALC-05 | Phase 4 | Complete |
 | DSH-01 | Phase 4 | Pending |
 | IMP-01 | Phase 4 | Complete |
 | INV-01 | Phase 5 | Pending |
