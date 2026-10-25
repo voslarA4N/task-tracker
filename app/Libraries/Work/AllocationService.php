@@ -11,6 +11,7 @@ use CodeIgniter\Database\BaseConnection;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Database;
 use InvalidArgumentException;
+use Throwable;
 
 /**
  * Fakturacne casti ulohy (ALC-01, ALC-02, ALC-05). Nezamknutu cast mozno pridat, upravit, presunut a zmazat;
@@ -193,7 +194,7 @@ final class AllocationService
         return $this->hydrate($row);
     }
 
-    private function translate(DatabaseException $e, int $id): \Throwable
+    private function translate(DatabaseException $e, int $id): Throwable
     {
         return str_contains($e->getMessage(), 'is locked') ? new AllocationLocked($id) : $e;
     }

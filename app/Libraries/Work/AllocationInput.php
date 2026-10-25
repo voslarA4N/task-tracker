@@ -65,8 +65,8 @@ final class AllocationInput
         $month = trim((string) ($v['billing_month'] ?? ''));
 
         if (BillingMonth::parse($month) === null || ! BillingMonth::inRange($month)) {
-            $bounds                 = BillingMonth::rangeBounds();
-            $locale                 = service('request')->getLocale();
+            $bounds                  = BillingMonth::rangeBounds();
+            $locale                  = service('request')->getLocale();
             $errors['billing_month'] = lang('Allocations.errorMonth', [
                 BillingMonth::label($bounds['min'], $locale),
                 BillingMonth::label($bounds['max'], $locale),

@@ -98,7 +98,7 @@ final class AllocationInputTest extends CIUnitTestCase
     public function testFromPostIgnoresForbiddenFields(): void
     {
         $v = AllocationInput::fromPost($this->request([
-            'hours' => '2', 'billing_month' => '2026-10', 'rate' => '10',
+            'hours'  => '2', 'billing_month' => '2026-10', 'rate' => '10',
             'amount' => '999', 'currency' => 'USD', 'invoice_id' => '5', 'task_id' => '9',
         ]));
         $this->assertSame(['hours', 'billing_month', 'rate'], array_keys($v));
