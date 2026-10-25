@@ -45,7 +45,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **CLI-01**: Používateľ pridá, upraví a archivuje klienta (klient sa nemaže).
 - [x] **CLI-02**: Klient má názov, adresu, krajinu, IČO, DIČ, IČ DPH/VAT ID, e-mail na faktúry a e-maily v kópii.
 - [x] **CLI-03**: Klient má hodinovú sadzbu a menu (EUR, PLN, CZK), jazyk dokladov (prebije jazyk subjektu) a splatnosť (prebije predvolenú).
-- [ ] **CLI-04**: Klient má názov a vzor odkazu na portál úloh (napr. Taskman).
+- [x] **CLI-04**: Klient má názov a vzor odkazu na portál úloh (napr. Taskman).
 - [x] **CLI-05**: Klient má režim fakturácie tuzemský / EÚ B2B / mimo EÚ, ktorý určuje text zákonnej poznámky na faktúre.
 - [x] **CLI-06**: Klient má príznak „započítavať do limitu obratu“ (predvolene áno).
 - [x] **CLI-07** [nové, M3]: Identifikátor klienta má typ (IČO/NIP, EÚ VAT ID s prefixom krajiny, iné ID, žiadne), aby bol neskorší export FA(3) možný.
@@ -216,7 +216,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLI-01 | Phase 3 | Complete |
 | CLI-02 | Phase 3 | Complete |
 | CLI-03 | Phase 3 | Complete |
-| CLI-04 | Phase 3 | Pending |
+| CLI-04 | Phase 3 | Complete |
 | CLI-05 | Phase 3 | Complete |
 | CLI-06 | Phase 3 | Complete |
 | CLI-07 | Phase 3 | Complete |

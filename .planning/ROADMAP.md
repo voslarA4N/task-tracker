@@ -178,7 +178,7 @@ Plans:
 **Wave 5** *(blocked on Wave 4 completion)*
 
 - [x] 03-06-PLAN.md — Upraviť a ukončiť subjekt, odmietnutie zmeny krajiny/meny, súhrnný test oprávnení (vlna 5)
-- [ ] 03-07-PLAN.md — Archivácia klienta a vzor odkazu na portál úloh so živou ukážkou (vlna 5)
+- [x] 03-07-PLAN.md — Archivácia klienta a vzor odkazu na portál úloh so živou ukážkou (vlna 5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
@@ -359,7 +359,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
-| 3. Master dáta (subjekty a klienti) | 6/10 | In Progress|  |
+| 3. Master dáta (subjekty a klienti) | 7/10 | In Progress|  |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
