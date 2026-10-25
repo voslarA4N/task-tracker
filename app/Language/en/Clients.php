@@ -78,4 +78,5 @@ return [
     'unarchiveButton'      => 'Restore client',
     'archivedFlash'        => 'Client archived.',
     'unarchivedFlash'      => 'Client restored.',
+    'errorCurrencyLocked'  => 'The client currency cannot be changed while the client has billing parts.',
 ];

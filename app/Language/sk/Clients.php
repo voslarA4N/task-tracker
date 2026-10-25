@@ -78,4 +78,5 @@ return [
     'unarchiveButton'      => 'Obnoviť klienta',
     'archivedFlash'        => 'Klient bol archivovaný.',
     'unarchivedFlash'      => 'Klient bol obnovený.',
+    'errorCurrencyLocked'  => 'Menu klienta nemožno zmeniť, kým má klient fakturačné časti.',
 ];

@@ -114,7 +114,7 @@ final class TaskServiceTest extends PgTestCase
         $this->assertSame('30.00', $task['rate']);
         $this->assertSame('27.00', (string) $this->owner()->query('SELECT rate FROM billing_allocations WHERE id = ?', [$alloc])->getRow()->rate);
 
-        $row = $this->owner()->query("SELECT before_data, after_data FROM audit_log WHERE entity_type = 'task' AND action = 'update'")->getRow();
+        $row     = $this->owner()->query("SELECT before_data, after_data FROM audit_log WHERE entity_type = 'task' AND action = 'update'")->getRow();
         $changed = array_keys(json_decode((string) $row->after_data, true));
         sort($changed);
         $this->assertSame(['rate', 'title'], $changed);
@@ -150,8 +150,8 @@ final class TaskServiceTest extends PgTestCase
 
     public function testUpdateRejectsArchivedTargetClient(): void
     {
-        $a  = $this->createClient();
-        $b  = $this->createClient(['name' => 'Iný']);
+        $a = $this->createClient();
+        $b = $this->createClient(['name' => 'Iný']);
         $this->owner()->query('UPDATE clients SET archived_at = now() WHERE id = ?', [$b]);
         $id = $this->service()->create($this->values($a));
 

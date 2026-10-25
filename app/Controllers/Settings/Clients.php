@@ -6,6 +6,7 @@ namespace App\Controllers\Settings;
 
 use App\Controllers\BaseController;
 use App\Libraries\Master\BillingMode;
+use App\Libraries\Master\ClientCurrencyLocked;
 use App\Libraries\Master\ClientInput;
 use App\Libraries\Master\ClientService;
 use App\Libraries\Platform\MoneyFormat;
@@ -85,7 +86,14 @@ final class Clients extends BaseController
             return $this->response->setStatusCode(422)->setBody(view('settings/clients/form', $this->formData($id, $values, $errors)));
         }
 
-        $service->update($id, ClientInput::normalize($values));
+        try {
+            $service->update($id, ClientInput::normalize($values));
+        } catch (ClientCurrencyLocked) {
+            $errors = ['currency' => lang('Clients.errorCurrencyLocked')];
+
+            return $this->response->setStatusCode(422)->setBody(view('settings/clients/form', $this->formData($id, $values, $errors)));
+        }
+
         session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang('Clients.saved')]);
 
         return redirect()->to('/settings/clients');

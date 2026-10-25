@@ -115,8 +115,8 @@ final class TaskInputTest extends CIUnitTestCase
     public function testFromPostIgnoresForgedFields(): void
     {
         $values = TaskInput::fromPost($this->request([
-            'client_id'  => '3', 'title' => ' T ', 'hours' => '1', 'rate' => '2', 'url' => '', 'note' => '',
-            'amount'     => '999', 'status' => 'done', 'invoice_id' => '5', 'done_at' => '2026-01-01', 'import_key' => 'x',
+            'client_id' => '3', 'title' => ' T ', 'hours' => '1', 'rate' => '2', 'url' => '', 'note' => '',
+            'amount'    => '999', 'status' => 'done', 'invoice_id' => '5', 'done_at' => '2026-01-01', 'import_key' => 'x',
         ]));
 
         $this->assertSame(['client_id', 'url', 'title', 'hours', 'rate', 'note'], array_keys($values));

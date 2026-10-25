@@ -77,6 +77,18 @@ final class ClientService
                 return false;
             }
 
+            // Mena klienta sa nemeni, kym ma klient akukolvek fakturacnu cast (zamknutu aj nezamknutu).
+            if (trim((string) $row['currency']) !== (string) $data['currency']) {
+                $allocation = $this->db->query(
+                    'SELECT 1 FROM billing_allocations a JOIN tasks t ON t.id = a.task_id WHERE t.client_id = :id: LIMIT 1',
+                    ['id' => $id],
+                )->getRow();
+
+                if ($allocation !== null) {
+                    throw new ClientCurrencyLocked($id);
+                }
+            }
+
             $this->db->query(
                 'UPDATE clients SET ' . implode(', ', $assigns) . ', updated_at = :now: WHERE id = :id:',
                 $data + ['now' => $now, 'id' => $id],
