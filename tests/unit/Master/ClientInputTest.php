@@ -149,7 +149,7 @@ final class ClientInputTest extends CIUnitTestCase
         $this->assertArrayNotHasKey('archived_at', $values);
         $this->assertArrayNotHasKey('created_at', $values);
         $this->assertSame('0', $values['counts_toward_limit']);
-        $this->assertFalse(ClientInput::normalize($values)['counts_toward_limit']);
+        $this->assertFalse(ClientInput::normalize(array_merge($values, ['hourly_rate' => '1']))['counts_toward_limit']);
 
         $values = ClientInput::fromPost($this->request(['counts_toward_limit' => '1']));
         $this->assertSame('1', $values['counts_toward_limit']);
