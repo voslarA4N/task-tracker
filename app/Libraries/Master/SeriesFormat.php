@@ -78,6 +78,8 @@ final class SeriesFormat
             }
         }
 
+        self::assertUnambiguous($tokens);
+
         if ($years === 0) {
             throw new InvalidSeriesFormat('no_year');
         }
@@ -113,6 +115,32 @@ final class SeriesFormat
         }
 
         return new self($format, $tokens, $digits, $months === 1);
+    }
+
+    /**
+     * Pevný text sa neescapuje, preto písmeno tesne pri tokene RR, RRRR alebo MM znamená, že parser mohol
+     * zobrať časť zamýšľaného textu ako dátum (COMM-RRRR### = CO + mesiac, ERR-... = E + rok). Formát sa po
+     * vystavení prvého dokladu zamkne (D-10), preto sa taký zápis odmietne a text sa musí oddeliť
+     * znakom - / _ . alebo číslicou (WR-06).
+     *
+     * @param list<array{string, string}> $tokens
+     */
+    private static function assertUnambiguous(array $tokens): void
+    {
+        $last = count($tokens) - 1;
+
+        foreach ($tokens as $i => [$type, $value]) {
+            if (! in_array($type, ['year4', 'year2', 'month'], true)) {
+                continue;
+            }
+
+            $before = $i > 0 && $tokens[$i - 1][0] === 'lit' ? substr($tokens[$i - 1][1], -1) : '';
+            $after  = $i < $last && $tokens[$i + 1][0] === 'lit' ? $tokens[$i + 1][1][0] : '';
+
+            if (ctype_alpha($before) || ctype_alpha($after)) {
+                throw new InvalidSeriesFormat('ambiguous_literal');
+            }
+        }
     }
 
     /**

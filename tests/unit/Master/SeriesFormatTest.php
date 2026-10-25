@@ -45,6 +45,10 @@ final class SeriesFormatTest extends TestCase
         yield 'nine digits' => ['RRRR#########', '2026-03-01', 1, '2026000000001'];
 
         yield 'dots underscores' => ['A.B_C-RRRR###', '2026-03-01', 1, 'A.B_C-2026001'];
+
+        yield 'separated letters' => ['FV-RRRR###', '2026-03-01', 1, 'FV-2026001'];
+
+        yield 'digit next to year' => ['FV1RRRR###', '2026-03-01', 1, 'FV12026001'];
     }
 
     #[DataProvider('provideInvalid')]
@@ -92,6 +96,18 @@ final class SeriesFormatTest extends TestCase
         yield 'empty' => ['', 'empty'];
 
         yield 'too long' => ['ABCDEFGHIJKLMNOPQRSTUVWXYZ-RRRR###', 'too_long'];
+
+        yield 'COMM literal eaten as month' => ['COMM-RRRR###', 'ambiguous_literal'];
+
+        yield 'ERR literal eaten as year' => ['ERR-RRRR###', 'ambiguous_literal'];
+
+        yield 'letters glued to year' => ['FVRRRR###', 'ambiguous_literal'];
+
+        yield 'letter after month' => ['RRRRMMA###', 'ambiguous_literal'];
+
+        yield 'five R' => ['RRRRR###', 'ambiguous_literal'];
+
+        yield 'lowercase glued' => ['fvRRRR###', 'ambiguous_literal'];
     }
 
     #[DataProvider('provideMayCollideWith')]

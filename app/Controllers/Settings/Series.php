@@ -46,8 +46,8 @@ final class Series extends BaseController
 
         try {
             (new SeriesService())->update($entityId, $kind, $values['format'], $values['initial_number']);
-        } catch (InvalidSeriesFormat) {
-            $errors['format'] = lang('Entities.errorSeriesFormat');
+        } catch (InvalidSeriesFormat $e) {
+            $errors['format'] = lang($e->reason === 'ambiguous_literal' ? 'Entities.errorSeriesAmbiguous' : 'Entities.errorSeriesFormat');
         } catch (SeriesRejected $e) {
             $errors += match ($e->reason) {
                 'same_as_other' => ['format' => lang('Entities.errorSeriesSame')],

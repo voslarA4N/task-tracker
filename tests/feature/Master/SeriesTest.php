@@ -159,6 +159,16 @@ final class SeriesTest extends AuthTestCase
         $this->assertSame('RRRRMM###', $this->owner()->query("SELECT format FROM invoice_series WHERE entity_id = ? AND kind = 'invoice'", [$id])->getRow()->format);
     }
 
+    public function testAmbiguousLiteralIs422WithSpecificMessage(): void
+    {
+        $id     = $this->createEntity('SK');
+        $result = $this->send('/settings/entities/' . $id . '/series/invoice', ['format' => 'COMM-RRRR###', 'initial_number' => '1']);
+
+        $result->assertStatus(422);
+        $this->assertStringContainsString(esc(lang('Entities.errorSeriesAmbiguous')), $this->body($result));
+        $this->assertSame('RRRRMM###', $this->owner()->query("SELECT format FROM invoice_series WHERE entity_id = ? AND kind = 'invoice'", [$id])->getRow()->format);
+    }
+
     public function testInvalidInitialIs422(): void
     {
         $id     = $this->createEntity('SK');
