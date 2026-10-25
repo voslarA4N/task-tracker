@@ -289,4 +289,16 @@ final class TotpVerifyTest extends AuthTestCase
         $this->assertSame((new TrustedDeviceService())->currentEpoch((int) $user->id), session('auth_epoch'));
         $this->assertNull(session('pending_epoch'));
     }
+
+    public function testPendingUserSeesStoredLocaleNotAcceptLanguage(): void
+    {
+        $user = $this->pending();
+        $this->owner()->query("UPDATE user_security SET locale = 'en' WHERE user_id = ?", [$user->id]);
+
+        $this->withSession();
+        $body = $this->body($this->withHeaders(['Accept-Language' => 'sk-SK,sk;q=0.9'])->get('/2fa/verify'));
+
+        $this->assertStringContainsString('<html lang="en"', $body);
+        $this->assertStringContainsString(esc(lang('TwoFactor.verifySubmit', [], 'en')), $body);
+    }
 }

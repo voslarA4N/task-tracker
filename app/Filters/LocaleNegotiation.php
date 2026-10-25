@@ -39,7 +39,10 @@ final class LocaleNegotiation implements FilterInterface
             return null;
         }
 
-        $user = $auth->user();
+        // Shield Auth::user() vracia pre pending relaciu null, pouzivatel je iba v getPendingUser() (WR-05).
+        $user = $auth->loggedIn()
+            ? $auth->user()
+            : ($authenticator instanceof Session ? $authenticator->getPendingUser() : null);
 
         if ($user === null) {
             return null;
