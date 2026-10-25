@@ -225,7 +225,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 04-07-PLAN.md — Formulár úlohy so živou sumou (BigInt), detail, zmazanie, aktívna navigácia Úlohy, CSS .work-* (vlna 3)
+- [x] 04-07-PLAN.md — Formulár úlohy so živou sumou (BigInt), detail, zmazanie, aktívna navigácia Úlohy, CSS .work-* (vlna 3)
 - [ ] 04-08-PLAN.md — TaskService::markDone a reopen v jednej transakcii (vlna 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
@@ -389,7 +389,7 @@ Plans:
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
-| 4. Úlohy, fakturačné časti a dashboard | 6/13 | In Progress|  |
+| 4. Úlohy, fakturačné časti a dashboard | 7/13 | In Progress|  |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
