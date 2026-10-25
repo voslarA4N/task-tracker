@@ -218,7 +218,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 04-03-PLAN.md — PhpSpreadsheet (require-dev, checkpoint legitimity), ExcelReader s hyperlinkmi, ImportPlanner (suchý beh) (vlna 2)
+- [x] 04-03-PLAN.md — PhpSpreadsheet (require-dev, checkpoint legitimity), ExcelReader s hyperlinkmi, ImportPlanner (suchý beh) (vlna 2)
 - [x] 04-04-PLAN.md — TaskInput, TaskService (atómové zmazanie, zámok klienta), LastClient, zámok meny klienta (vlna 2)
 - [ ] 04-05-PLAN.md — AllocationService s atómovou podmienkou invoice_id IS NULL, kritérium E5 (vlna 2)
 - [ ] 04-06-PLAN.md — TaskFilter a TaskQueries: zoznam bez N+1, detail, súčty dashboardu po menách (vlna 2)
@@ -389,7 +389,7 @@ Plans:
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
-| 4. Úlohy, fakturačné časti a dashboard | 3/13 | In Progress|  |
+| 4. Úlohy, fakturačné časti a dashboard | 4/13 | In Progress|  |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
