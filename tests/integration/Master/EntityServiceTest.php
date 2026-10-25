@@ -12,7 +12,6 @@ use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
-
 use Tests\Support\MasterFixtures;
 use Tests\Support\PgTestCase;
 
@@ -93,7 +92,7 @@ final class EntityServiceTest extends PgTestCase
                 [
                     'trade_name' => 'X', 'address_line1' => 'A', 'address_line2' => null, 'postal_code' => '81101', 'city' => 'B',
                     'company_id' => '12345678', 'regon' => null, 'tax_id' => null, 'vat_id' => null, 'registry_note' => null,
-                    'email' => 'x@example.test', 'phone' => null, 'doc_language' => 'sk', 'vat_regime' => 'sk_non_vat', 'due_days' => '14',
+                    'email'      => 'x@example.test', 'phone' => null, 'doc_language' => 'sk', 'vat_regime' => 'sk_non_vat', 'due_days' => '14',
                 ],
             );
             $this->fail('Expected exception');

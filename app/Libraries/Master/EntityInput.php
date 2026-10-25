@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Libraries\Master;
 
 use CodeIgniter\HTTP\IncomingRequest;
-use DateTimeImmutable;
 
 /**
  * Whitelist a validácia vstupu subjektu (ENT-02, ENT-05, ENT-07). Bez DB.
@@ -17,9 +16,7 @@ final class EntityInput
         'trade_name', 'address_line1', 'address_line2', 'postal_code', 'city', 'company_id', 'regon', 'tax_id',
         'vat_id', 'registry_note', 'email', 'phone', 'doc_language', 'vat_regime', 'due_days',
     ];
-
     private const MIN_DATE = '2000-01-01';
-
     private const OPTIONAL = ['address_line2', 'regon', 'tax_id', 'vat_id', 'registry_note', 'phone'];
 
     /**
@@ -81,9 +78,7 @@ final class EntityInput
 
     public static function parseDate(string $s): ?string
     {
-        $d = DateTimeImmutable::createFromFormat('!Y-m-d', $s);
-
-        return $d !== false && $d->format('Y-m-d') === $s ? $s : null;
+        return service('clock')->parseDate($s) === null ? null : $s;
     }
 
     /**
@@ -109,7 +104,7 @@ final class EntityInput
         }
 
         $from = self::parseDate((string) ($v['active_from'] ?? ''));
-        $max  = (DateTimeImmutable::createFromFormat('!Y-m-d', $today))->modify('+366 days')->format('Y-m-d');
+        $max  = (service('clock')->parseDate($today) ?? service('clock')->now())->modify('+366 days')->format('Y-m-d');
 
         if ($from === null || $from < self::MIN_DATE || $from > $max) {
             $errors['active_from'] = lang('Entities.errorDateRange', [self::fmt(self::MIN_DATE), self::fmt($max)]);
@@ -216,8 +211,8 @@ final class EntityInput
 
     private static function fmt(string $iso): string
     {
-        $d = DateTimeImmutable::createFromFormat('!Y-m-d', $iso);
+        $d = service('clock')->parseDate($iso);
 
-        return $d === false ? $iso : $d->format('j. n. Y');
+        return $d === null ? $iso : $d->format('j. n. Y');
     }
 }

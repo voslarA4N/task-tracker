@@ -21,6 +21,7 @@ final class EntityService
      * @var BaseConnection<mixed, mixed>
      */
     private readonly BaseConnection $db;
+
     private readonly AuditLogger $audit;
 
     /**

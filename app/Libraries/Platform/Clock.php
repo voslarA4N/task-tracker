@@ -30,6 +30,16 @@ class Clock
         return $this->now()->format('Y-m-d');
     }
 
+    /**
+     * Prísny parser kalendárneho dátumu YYYY-MM-DD (polnoc UTC), null pri neplatnom (aj 2026-02-30).
+     */
+    public function parseDate(string $iso): ?DateTimeImmutable
+    {
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $iso, new DateTimeZone('UTC'));
+
+        return $date !== false && $date->format('Y-m-d') === $iso ? $date : null;
+    }
+
     public function timezone(): DateTimeZone
     {
         return new DateTimeZone($this->timezoneName);

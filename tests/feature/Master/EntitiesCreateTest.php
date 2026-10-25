@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Master;
 
 use App\Libraries\Platform\FrozenClock;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -75,7 +76,7 @@ final class EntitiesCreateTest extends AuthTestCase
     /**
      * @param array<string, string> $data
      */
-    private function post(array $data, bool $csrf = true): TestResponse
+    private function submit(array $data, bool $csrf = true): TestResponse
     {
         $this->withSession();
 
@@ -114,12 +115,13 @@ final class EntitiesCreateTest extends AuthTestCase
 
     public function testCreateSlovakEntityRedirectsToDetail(): void
     {
-        $result = $this->post($this->skPost());
+        $result = $this->submit($this->skPost());
         $result->assertStatus(302);
 
         $id = (int) $this->owner()->query('SELECT id FROM entities')->getRow()->id;
         $this->assertStringEndsWith('/settings/entities/' . $id, $result->getRedirectUrl());
 
+        $this->withSession();
         $detail = $this->get('/settings/entities/' . $id);
         $detail->assertStatus(200);
         $html = $this->body($detail);
@@ -135,7 +137,7 @@ final class EntitiesCreateTest extends AuthTestCase
 
     public function testCreatePolishEntity(): void
     {
-        $result = $this->post($this->skPost([
+        $result = $this->submit($this->skPost([
             'country'      => 'PL',
             'currency'     => 'PLN',
             'company_id'   => '5260250274',
@@ -151,7 +153,7 @@ final class EntitiesCreateTest extends AuthTestCase
 
     public function testInvalidCountryRegimeCombinationReturns422(): void
     {
-        $result = $this->post($this->skPost(['vat_regime' => 'pl_exempt_113_1']));
+        $result = $this->submit($this->skPost(['vat_regime' => 'pl_exempt_113_1']));
 
         $result->assertStatus(422);
         $this->assertStringContainsString('is-invalid', $this->body($result));
@@ -161,12 +163,18 @@ final class EntitiesCreateTest extends AuthTestCase
 
     public function testPostWithoutCsrfIsForbidden(): void
     {
-        $this->post($this->skPost(), false)->assertStatus(403);
+        $this->submit($this->skPost(), false)->assertStatus(403);
         $this->assertSame(0, $this->rows('entities'));
     }
 
     public function testUnknownEntityIs404(): void
     {
-        $this->get('/settings/entities/999')->assertStatus(404);
+        // FeatureTestTrait prepúšťa PageNotFoundException (404 stránku renderuje handler výnimiek).
+        try {
+            $this->get('/settings/entities/999');
+            $this->fail('Expected PageNotFoundException');
+        } catch (PageNotFoundException $e) {
+            $this->assertSame(404, $e->getCode());
+        }
     }
 }
