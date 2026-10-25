@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Master\ClientService;
 use App\Libraries\Master\EntityService;
 
 /**
@@ -75,5 +76,36 @@ trait MasterFixtures
         }
 
         return (new EntityService($this->rw(), new AuditLogger($this->rw())))->create($base, $version);
+    }
+
+    /**
+     * Vytvori klienta cez ClientService (pod app_rw), vrati id.
+     *
+     * @param array<string, mixed> $overrides
+     */
+    protected function createClient(array $overrides = []): int
+    {
+        $values = $overrides + [
+            'name'                => 'All4Net',
+            'address_line1'       => 'Hlavna 1',
+            'address_line2'       => null,
+            'postal_code'         => '81101',
+            'city'                => 'Bratislava',
+            'country'             => 'SK',
+            'identifier_type'     => 'local_id',
+            'identifier_value'    => '12345678',
+            'tax_id'              => null,
+            'vat_id'              => null,
+            'invoice_email'       => 'fakturacia@all4net.example',
+            'cc_emails'           => [],
+            'hourly_rate'         => '27.00',
+            'currency'            => 'EUR',
+            'doc_language'        => null,
+            'due_days'            => null,
+            'billing_mode'        => 'domestic',
+            'counts_toward_limit' => true,
+        ];
+
+        return (new ClientService($this->rw(), new AuditLogger($this->rw())))->create($values);
     }
 }
