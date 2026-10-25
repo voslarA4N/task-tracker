@@ -173,7 +173,7 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [x] 03-04-PLAN.md — Nová verzia údajov „platné od“, história verzií so zmenami, Nová verzia z tejto (vlna 4)
-- [ ] 03-05-PLAN.md — Klienti: zoznam, pridanie, úprava, identifikátor, sadzba, režim fakturácie, e-maily v kópii (vlna 4)
+- [x] 03-05-PLAN.md — Klienti: zoznam, pridanie, úprava, identifikátor, sadzba, režim fakturácie, e-maily v kópii (vlna 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -359,7 +359,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
-| 3. Master dáta (subjekty a klienti) | 4/10 | In Progress|  |
+| 3. Master dáta (subjekty a klienti) | 5/10 | In Progress|  |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
