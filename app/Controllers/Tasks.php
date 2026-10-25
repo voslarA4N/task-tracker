@@ -339,10 +339,11 @@ final class Tasks extends BaseController
         $locale  = service('request')->getLocale();
         $created = new IntlDateFormatter($locale, IntlDateFormatter::LONG, IntlDateFormatter::NONE, 'Europe/Bratislava');
         $dates   = [];
+        $clock   = service('clock');
 
         foreach (['created_at', 'done_at'] as $field) {
             $raw           = $task[$field] ?? null;
-            $dates[$field] = is_string($raw) && $raw !== '' ? (string) $created->format(strtotime($raw)) : '';
+            $dates[$field] = is_string($raw) && $raw !== '' ? (string) $created->format($clock->now()->modify($raw)) : '';
         }
 
         return [
