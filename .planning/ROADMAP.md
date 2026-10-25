@@ -160,7 +160,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — audit_log insert-only, AuditLogger v transakcii, stĺpcový grant grantUpdateColumns, DbBool, MasterFixtures (vlna 1)
+- [x] 03-01-PLAN.md — audit_log insert-only, AuditLogger v transakcii, stĺpcový grant grantUpdateColumns, DbBool, MasterFixtures (vlna 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -359,7 +359,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
-| 3. Master dáta (subjekty a klienti) | 0/0 | Not started | - |
+| 3. Master dáta (subjekty a klienti) | 1/10 | In Progress|  |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
