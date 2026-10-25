@@ -51,38 +51,38 @@ final class ImportPlannerTest extends TestCase
     {
         $plan = (new ImportPlanner())->plan(new ImportSheet('27.00', [$this->block($this->octRows(), 'F19:F22', '27.00')]), '27.00', 'EUR');
 
-        self::assertSame('324.00', $plan->months[0]['calc']['doneAmount']);
-        self::assertSame('27.00', $plan->months[0]['excel']['doneAmount']);
-        self::assertSame('82.00', $plan->months[0]['calc']['quotedHours']);
-        self::assertSame('12.00', $plan->months[0]['calc']['doneHours']);
-        self::assertStringContainsString('F19:F22', implode(' ', $plan->months[0]['formulaIssues']));
-        self::assertTrue($plan->hasDifferences());
+        $this->assertSame('324.00', $plan->months[0]['calc']['doneAmount']);
+        $this->assertSame('27.00', $plan->months[0]['excel']['doneAmount']);
+        $this->assertSame('82.00', $plan->months[0]['calc']['quotedHours']);
+        $this->assertSame('12.00', $plan->months[0]['calc']['doneHours']);
+        $this->assertStringContainsString('F19:F22', implode(' ', $plan->months[0]['formulaIssues']));
+        $this->assertTrue($plan->hasDifferences());
     }
 
     public function testCompleteRangeHasNoFormulaIssues(): void
     {
         $plan = (new ImportPlanner())->plan(new ImportSheet('27.00', [$this->block($this->octRows(), 'F19:F23', '324.00')]), '27.00', 'EUR');
 
-        self::assertSame([], $plan->months[0]['formulaIssues']);
-        self::assertSame([], $plan->rowIssues);
-        self::assertNull($plan->rateMismatch);
+        $this->assertSame([], $plan->months[0]['formulaIssues']);
+        $this->assertSame([], $plan->rowIssues);
+        $this->assertNull($plan->rateMismatch);
     }
 
     public function testIncompleteRangeWithEqualValuesStillReported(): void
     {
         $plan = (new ImportPlanner())->plan(new ImportSheet('27.00', [$this->block($this->octRows(), 'F19:F22', '324.00')]), '27.00', 'EUR');
 
-        self::assertNotSame([], $plan->months[0]['formulaIssues']);
-        self::assertTrue($plan->hasDifferences());
+        $this->assertNotSame([], $plan->months[0]['formulaIssues']);
+        $this->assertTrue($plan->hasDifferences());
     }
 
     public function testRowAmountMismatch(): void
     {
-        $rows    = [$this->row(5, '3.00', false, '100.00')];
-        $block   = new ImportBlock('2026-10', 5, 5, $rows, []);
-        $plan    = (new ImportPlanner())->plan(new ImportSheet('27.00', [$block]), '27.00', 'EUR');
+        $rows  = [$this->row(5, '3.00', false, '100.00')];
+        $block = new ImportBlock('2026-10', 5, 5, $rows, []);
+        $plan  = (new ImportPlanner())->plan(new ImportSheet('27.00', [$block]), '27.00', 'EUR');
 
-        self::assertSame(5, $plan->rowIssues[0]['row']);
+        $this->assertSame(5, $plan->rowIssues[0]['row']);
     }
 
     public function testRateMismatchUsesClientRate(): void
@@ -90,22 +90,22 @@ final class ImportPlannerTest extends TestCase
         $block = new ImportBlock('2026-10', 5, 5, [$this->row(5, '2.00', false, '54.00')], []);
         $plan  = (new ImportPlanner())->plan(new ImportSheet('27.00', [$block]), '30.00', 'EUR');
 
-        self::assertSame(['excel' => '27.00', 'client' => '30.00'], $plan->rateMismatch);
-        self::assertSame('60.00', $plan->items[0]['quotedAmount']);
-        self::assertSame([], $plan->rowIssues);
+        $this->assertSame(['excel' => '27.00', 'client' => '30.00'], $plan->rateMismatch);
+        $this->assertSame('60.00', $plan->items[0]['quotedAmount']);
+        $this->assertSame([], $plan->rowIssues);
     }
 
     public function testPartHours(): void
     {
         $plan = (new ImportPlanner())->plan(new ImportSheet('27.00', [$this->block($this->octRows(), 'F19:F23', '324.00')]), '27.00', 'EUR');
 
-        self::assertNull($plan->items[0]['partHours']);
-        self::assertSame('1.00', $plan->items[3]['partHours']);
+        $this->assertNull($plan->items[0]['partHours']);
+        $this->assertSame('1.00', $plan->items[3]['partHours']);
     }
 
     public function testImportKeyStableAndOrdinalDistinguishesDuplicates(): void
     {
-        $rows  = [
+        $rows = [
             $this->row(5, '2.00', false, null, true, 'Same  Title'),
             $this->row(6, '2.00', false, null, true, ' same title '),
         ];
@@ -116,17 +116,17 @@ final class ImportPlannerTest extends TestCase
         $a       = $planner->plan($sheet, '27.00', 'EUR');
         $b       = $planner->plan($sheet, '27.00', 'EUR');
 
-        self::assertNotSame($a->items[0]['importKey'], $a->items[1]['importKey']);
-        self::assertSame($a->items[0]['importKey'], $b->items[0]['importKey']);
-        self::assertSame($a->items[1]['importKey'], $b->items[1]['importKey']);
-        self::assertMatchesRegularExpression('/^[0-9a-f]{64}$/D', $a->items[0]['importKey']);
+        $this->assertNotSame($a->items[0]['importKey'], $a->items[1]['importKey']);
+        $this->assertSame($a->items[0]['importKey'], $b->items[0]['importKey']);
+        $this->assertSame($a->items[1]['importKey'], $b->items[1]['importKey']);
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/D', $a->items[0]['importKey']);
     }
 
     public function testGenericLinkRows(): void
     {
-        $rows  = [$this->row(5, '1.00', false, null, false), $this->row(6, '1.00', false, null, true), $this->row(7, '1.00', false, null, false)];
-        $plan  = (new ImportPlanner())->plan(new ImportSheet(null, [new ImportBlock('2026-10', 5, 7, $rows, [])]), '27.00', 'EUR');
+        $rows = [$this->row(5, '1.00', false, null, false), $this->row(6, '1.00', false, null, true), $this->row(7, '1.00', false, null, false)];
+        $plan = (new ImportPlanner())->plan(new ImportSheet(null, [new ImportBlock('2026-10', 5, 7, $rows, [])]), '27.00', 'EUR');
 
-        self::assertSame(2, $plan->genericLinkRows);
+        $this->assertSame(2, $plan->genericLinkRows);
     }
 }
