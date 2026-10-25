@@ -13,8 +13,7 @@ use OverflowException;
  */
 final class SeriesFormat
 {
-    public const MAX_OUTPUT = 30;
-
+    public const MAX_OUTPUT  = 30;
     private const MAX_DIGITS = 9;
 
     /**
@@ -34,42 +33,30 @@ final class SeriesFormat
             throw new InvalidSeriesFormat('empty');
         }
 
-        $tokens  = [];
-        $years   = 0;
-        $months  = 0;
-        $seqs    = 0;
-        $digits  = 0;
-        $length  = strlen($format);
-        $literal = '';
-
-        $flush = static function () use (&$tokens, &$literal): void {
-            if ($literal !== '') {
-                $tokens[] = ['lit', $literal];
-                $literal  = '';
-            }
-        };
+        $tokens = [];
+        $years  = 0;
+        $months = 0;
+        $seqs   = 0;
+        $digits = 0;
+        $length = strlen($format);
 
         for ($i = 0; $i < $length;) {
             $rest = substr($format, $i);
 
             if (str_starts_with($rest, 'RRRR')) {
-                $flush();
                 $tokens[] = ['year4', 'RRRR'];
                 $years++;
                 $i += 4;
             } elseif (str_starts_with($rest, 'RR')) {
-                $flush();
                 $tokens[] = ['year2', 'RR'];
                 $years++;
                 $i += 2;
             } elseif (str_starts_with($rest, 'MM')) {
-                $flush();
                 $tokens[] = ['month', 'MM'];
                 $months++;
                 $i += 2;
             } elseif ($rest[0] === '#') {
-                $flush();
-                $run = strspn($rest, '#');
+                $run      = strspn($rest, '#');
                 $tokens[] = ['seq', str_repeat('#', $run)];
                 $seqs++;
                 $digits = $run;
@@ -79,12 +66,17 @@ final class SeriesFormat
                     throw new InvalidSeriesFormat('bad_char');
                 }
 
-                $literal .= $rest[0];
+                $last = array_key_last($tokens);
+
+                if ($last !== null && $tokens[$last][0] === 'lit') {
+                    $tokens[$last][1] .= $rest[0];
+                } else {
+                    $tokens[] = ['lit', $rest[0]];
+                }
+
                 $i++;
             }
         }
-
-        $flush();
 
         if ($years === 0) {
             throw new InvalidSeriesFormat('no_year');
@@ -172,7 +164,7 @@ final class SeriesFormat
 
     public function maxSequence(): int
     {
-        return 10 ** $this->digits - 1;
+        return (int) str_repeat('9', $this->digits);
     }
 
     public function format(): string

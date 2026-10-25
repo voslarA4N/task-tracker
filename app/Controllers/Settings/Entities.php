@@ -11,6 +11,7 @@ use App\Libraries\Master\EntityDirectory;
 use App\Libraries\Master\EntityInput;
 use App\Libraries\Master\EntityService;
 use App\Libraries\Master\EntityVersionResolver;
+use App\Libraries\Master\SeriesService;
 use App\Libraries\Master\VatRegime;
 use App\Libraries\Master\VersionNotFound;
 use CodeIgniter\Exceptions\PageNotFoundException;
@@ -122,12 +123,16 @@ final class Entities extends BaseController
         }
         unset($item);
 
-        $bank         = new BankAccountService();
-        $archivedList = $bank->listFor($id, true);
-        $openArchived = $this->request->getGet('archived') === '1';
+        $bank          = new BankAccountService();
+        $seriesService = new SeriesService();
+        $series        = $seriesService->listFor($id);
+        $archivedList  = $bank->listFor($id, true);
+        $openArchived  = $this->request->getGet('archived') === '1';
 
         return view('settings/entities/show', [
             'bankAccounts' => $bank->listFor($id, false),
+            'series'       => $series,
+            'seriesLocked' => array_map(static fn (array $row): bool => $seriesService->isFormatLocked((int) $row['id']), $series),
             'archivedList' => $archivedList,
             'openArchived' => $openArchived,
             'endError'     => $endError,

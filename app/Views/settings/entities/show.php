@@ -87,6 +87,7 @@ $rows[] = [lang('Entities.dueDays'), $show($version['due_days'])];
     </dl>
 </section>
 <?= $this->include('settings/entities/_bank_accounts') ?>
+<?= $this->include('settings/entities/_series') ?>
 <?= $this->include('settings/entities/_history') ?>
 <?php if ($canEnd) : ?>
     <?= $this->include('settings/entities/_end_modal') ?>

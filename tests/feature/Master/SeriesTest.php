@@ -123,10 +123,10 @@ final class SeriesTest extends AuthTestCase
 
     public function testUpdateValidRedirectsWithFlash(): void
     {
-        $id = $this->createEntity('SK');
-        $this->send('/settings/entities/' . $id . '/series/invoice', ['format' => 'FA-RRRR-####', 'initial_number' => '5'])
-            ->assertStatus(302)
-            ->assertRedirectTo('/settings/entities/' . $id);
+        $id     = $this->createEntity('SK');
+        $result = $this->send('/settings/entities/' . $id . '/series/invoice', ['format' => 'FA-RRRR-####', 'initial_number' => '5']);
+        $result->assertStatus(302);
+        $result->assertRedirectTo('/settings/entities/' . $id);
 
         $row = $this->owner()->query("SELECT format, initial_number FROM invoice_series WHERE entity_id = ? AND kind = 'invoice'", [$id])->getRow();
         $this->assertSame('FA-RRRR-####', $row->format);
@@ -155,7 +155,7 @@ final class SeriesTest extends AuthTestCase
         $result->assertStatus(422);
         $html = $this->body($result);
         $this->assertStringContainsString(esc(lang('Entities.errorSeriesFormat')), $html);
-        $this->assertStringContainsString('value="FA###"', $html);
+        $this->assertStringContainsString('value="' . esc('FA###', 'attr') . '"', $html);
         $this->assertSame('RRRRMM###', $this->owner()->query("SELECT format FROM invoice_series WHERE entity_id = ? AND kind = 'invoice'", [$id])->getRow()->format);
     }
 

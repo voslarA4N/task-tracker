@@ -22,3 +22,6 @@ $routes->get('settings/entities/(:num)/bank-accounts/(:num)/edit', 'Settings\Ban
 $routes->post('settings/entities/(:num)/bank-accounts/(:num)', 'Settings\BankAccounts::update/$1/$2');
 $routes->post('settings/entities/(:num)/bank-accounts/(:num)/default', 'Settings\BankAccounts::setDefault/$1/$2');
 $routes->post('settings/entities/(:num)/bank-accounts/(:num)/archive', 'Settings\BankAccounts::archive/$1/$2');
+$routes->get('settings/entities/(:num)/series/(:segment)/edit', 'Settings\Series::edit/$1/$2');
+$routes->get('settings/entities/(:num)/series/(:segment)/preview', 'Settings\Series::preview/$1/$2');
+$routes->post('settings/entities/(:num)/series/(:segment)', 'Settings\Series::update/$1/$2');
