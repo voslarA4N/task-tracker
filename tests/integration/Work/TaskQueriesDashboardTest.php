@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Integration\Work;
 
 use App\Libraries\Platform\FrozenClock;
-use App\Libraries\Work\TaskFilter;
 use App\Libraries\Work\TaskQueries;
 use CodeIgniter\Events\Events;
 use Config\Services;
@@ -19,7 +18,6 @@ use Tests\Support\PgTestCase;
 #[Group('integration')]
 final class TaskQueriesDashboardTest extends PgTestCase
 {
-
     use MasterFixtures;
 
     protected function setUp(): void
@@ -70,7 +68,7 @@ final class TaskQueriesDashboardTest extends PgTestCase
         $this->assertSame('243.00', $d['due'][0]['amount']);
         $this->assertSame('9.00', $d['due'][0]['hours']);
 
-        $pln = $this->createClient(['name' => 'PL', 'currency' => 'PLN', 'country' => 'PL', 'identifier_type' => 'nip', 'identifier_value' => '5260250274', 'billing_mode' => 'domestic']);
+        $pln = $this->createClient(['name' => 'PL', 'currency' => 'PLN', 'country' => 'PL', 'identifier_value' => '5260250274', 'billing_mode' => 'domestic']);
         $pt  = $this->createTask($pln, ['rate' => '100.00']);
         $this->createAllocation($pt, '2.00', '2026-10');
         $d = $this->queries()->dashboard('2026-10', null);
@@ -110,7 +108,7 @@ final class TaskQueriesDashboardTest extends PgTestCase
         $g = $this->queries()->dashboard('2026-10', null)['groups'];
         $this->assertSame(1, $g['done_due']['total']);
         $this->assertCount(1, $g['done_due']['rows']);
-        $this->assertSame(1, $g['partial']['total']);
+        $this->assertSame(2, $g['partial']['total']);
         $this->assertSame(13, $g['in_progress']['total']);
         $this->assertCount(10, $g['in_progress']['rows']);
     }

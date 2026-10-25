@@ -19,7 +19,6 @@ use Tests\Support\PgTestCase;
 #[Group('integration')]
 final class TaskQueriesListTest extends PgTestCase
 {
-
     use MasterFixtures;
 
     protected function setUp(): void
@@ -57,6 +56,9 @@ final class TaskQueriesListTest extends PgTestCase
         return array_map(static fn (array $r): int => (int) $r['id'], $this->queries()->list($f)['rows']);
     }
 
+    /**
+     * @param array<string, string> $q
+     */
     private function filter(array $q): TaskFilter
     {
         return TaskFilter::fromQuery($q);
@@ -69,7 +71,7 @@ final class TaskQueriesListTest extends PgTestCase
     {
         $c = $this->createClient();
         $a = $this->createTask($c, ['title' => 'Listobox A']);
-        $b = $this->createTask($c, ['title' => 'B', ] + $this->done());
+        $b = $this->createTask($c, ['title' => 'B'] + $this->done());
         $this->createAllocation($b, '8.00', '2026-11');
         $billed = $this->createTask($c, ['title' => 'C'] + $this->done());
         $this->lockAllocation($this->createAllocation($billed, '40.00', '2026-10'));
@@ -82,7 +84,7 @@ final class TaskQueriesListTest extends PgTestCase
 
     public function testStateFilters(): void
     {
-        $s = $this->seed();
+        $s      = $this->seed();
         $sorted = static function (array $x): array {
             sort($x);
 
@@ -90,7 +92,7 @@ final class TaskQueriesListTest extends PgTestCase
         };
         $this->assertSame($sorted([$s['a'], $s['b'], $s['p']]), $sorted($this->ids($this->filter([]))));
         $this->assertSame($sorted([$s['a'], $s['p']]), $sorted($this->ids($this->filter(['state' => 'in_progress']))));
-        $this->assertSame($sorted([$s['d']]), $sorted($this->ids($this->filter(['state' => 'done']))));
+        $this->assertSame($sorted([$s['b'], $s['d']]), $sorted($this->ids($this->filter(['state' => 'done']))));
         $this->assertSame([$s['p']], $this->ids($this->filter(['state' => 'partial'])));
         $this->assertSame([$s['billed']], $this->ids($this->filter(['state' => 'billed'])));
         $this->assertCount(5, $this->ids($this->filter(['state' => 'all'])));

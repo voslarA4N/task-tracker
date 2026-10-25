@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Work;
 
 use App\Libraries\Platform\FrozenClock;
-use App\Libraries\Work\TaskFilter;
 use App\Libraries\Work\TaskQueries;
-use CodeIgniter\Events\Events;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\MasterFixtures;
@@ -19,7 +17,6 @@ use Tests\Support\PgTestCase;
 #[Group('integration')]
 final class TaskQueriesDetailTest extends PgTestCase
 {
-
     use MasterFixtures;
 
     protected function setUp(): void
@@ -39,14 +36,6 @@ final class TaskQueriesDetailTest extends PgTestCase
     private function queries(): TaskQueries
     {
         return new TaskQueries($this->rw());
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function done(): array
-    {
-        return ['status' => 'done', 'done_at' => '2026-10-25 10:00:00+02'];
     }
 
     public function testPartialTask(): void
