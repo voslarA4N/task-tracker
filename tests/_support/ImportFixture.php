@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use RuntimeException;
 
@@ -40,7 +41,7 @@ final class ImportFixture
             [5, 'link', 'Úloha B', '8,5', 'ANO', 'NIE'],
             [6, 'link', 'Úloha C', "1\u{00A0}000", "áno\u{00A0}", 'NIE'],
             [7, 'text', 'Úloha D', 2, "A\u{0301}NO", 'NIE'],
-            [8, 'js', 'Úloha E', 1.5, 'NIE', 'NIE'],
+            [8, 'js', 'Úloha E', '1.5', 'NIE', 'NIE'],
         ];
 
         foreach ($sep as [$r, $mode, $title, $hours, $done, $billed]) {
@@ -56,7 +57,7 @@ final class ImportFixture
             [14, 'link', 'Úloha F', 4, 'NIE'],
             [15, 'text', 'Úloha G', 2, 'NIE'],
             [16, 'text', 'Úloha H', 1, 'ÁNO'],
-            [17, 'text', 'Úloha I', 1.5, 'ÁNO'],
+            [17, 'text', 'Úloha I', '1.5', 'ÁNO'],
             [18, 'text', 'Úloha J', 3, 'ÁNO'],
         ];
 
@@ -77,7 +78,7 @@ final class ImportFixture
         $book->disconnectWorksheets();
     }
 
-    private static function header(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet, int $row, string $month): void
+    private static function header(Worksheet $sheet, int $row, string $month): void
     {
         $sheet->setCellValue('A' . $row, 'Ulohy na fakturovanie:');
         $sheet->setCellValue('A' . ($row + 1), $month);
@@ -86,11 +87,11 @@ final class ImportFixture
     }
 
     private static function task(
-        \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet,
+        Worksheet $sheet,
         int $r,
         string $mode,
         string $title,
-        int|float|string $hours,
+        int|string $hours,
         string $done,
         string $billed,
         int $todo,
@@ -106,11 +107,11 @@ final class ImportFixture
         }
 
         $sheet->setCellValue('B' . $r, $title);
-        $sheet->setCellValueExplicit('C' . $r, $hours, is_string($hours) ? 's' : 'n');
+        $sheet->setCellValueExplicit('C' . $r, $hours, is_int($hours) || is_numeric($hours) ? 'n' : 's');
         $sheet->setCellValue('G' . $r, $done);
         $sheet->setCellValue('H' . $r, $billed);
 
-        if (is_string($hours)) {
+        if (! is_int($hours) && ! is_numeric($hours)) {
             return; // text hours cannot be multiplied, leave amounts empty
         }
 
@@ -124,7 +125,7 @@ final class ImportFixture
         $sheet->setCellValue('F' . $r, '=E' . $r . '*$J$40');
     }
 
-    private static function sumRow(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet, int $r, string $c, string $d, string $e, string $f): void
+    private static function sumRow(Worksheet $sheet, int $r, string $c, string $d, string $e, string $f): void
     {
         $sheet->setCellValue('A' . $r, 'Sumar za mesiac:');
         $sheet->setCellValue('C' . $r, '=SUM(' . $c . ')');

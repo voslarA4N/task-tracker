@@ -10,8 +10,8 @@ namespace App\Libraries\Work\Import;
 final readonly class ImportBlock
 {
     /**
-     * @param list<ImportRow>                                                $rows
-     * @param array<string, array{value: ?string, formula: ?string}>        $sums
+     * @param list<ImportRow>                                        $rows
+     * @param array<string, array{value: ?string, formula: ?string}> $sums
      */
     public function __construct(
         public string $month,
