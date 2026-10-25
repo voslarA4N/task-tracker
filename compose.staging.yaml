@@ -1,8 +1,13 @@
 # Staging (a buduca produkcia, D-03): spusta sa v /opt/work-tracker cez
 #   docker compose -f compose.staging.yaml up -d
-# Obrazy php a nginx idu z GHCR podla IMAGE_PREFIX a IMAGE_TAG. .env je mimo gitu
-# a do obrazu sa nedostane, preto sa mountuje read-only. writable/ je na volume.
+# Obrazy php a nginx idu z GHCR podla IMAGE_PREFIX a IMAGE_TAG. writable/ je na volume.
 # Bez Mailpitu, bez build, bez bind mountov kodu. DB nema publikovane porty.
+#
+# Tajomstva su rozdelene podla toho, kto ich potrebuje (WR-06, docs/ops/staging.md sekcia 15):
+#   .env         iba interpolacia compose a deploy.sh (domena, TLS, IMAGE_PREFIX), bez hesiel
+#   app.env      CI4 runtime pre php-fpm: iba app_rw, mail, encryption.key, pepper
+#   migrate.env  app.env + database.owner.* (app_owner), iba jednorazovy kontajner migrate
+#   secrets/db_*_password  hesla roli pre inicializaciu DB (Docker secrets, *_FILE)
 name: task-tracker
 
 services:
@@ -12,7 +17,7 @@ services:
     environment:
       TZ: Europe/Bratislava
     volumes:
-      - ./.env:/var/www/html/.env:ro
+      - ./app.env:/var/www/html/.env:ro
       - writable:/var/www/html/writable
     depends_on:
       db:
@@ -43,9 +48,10 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_PASSWORD: ${DB_SUPERUSER_PASSWORD:?}
-      DB_OWNER_PASSWORD: ${DB_OWNER_PASSWORD:?}
-      DB_RW_PASSWORD: ${DB_RW_PASSWORD:?}
+      # Hesla iba ako subory (Docker secrets); pouziju sa len pri inicializacii prazdneho volume.
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_superuser_password
+      DB_OWNER_PASSWORD_FILE: /run/secrets/db_owner_password
+      DB_RW_PASSWORD_FILE: /run/secrets/db_rw_password
       TZ: Europe/Bratislava
       PGTZ: Europe/Bratislava
     command: >
@@ -61,11 +67,30 @@ services:
       - pgdata:/var/lib/postgresql
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
       - ./docker/postgres:/opt/provision:ro
+    secrets:
+      - db_superuser_password
+      - db_owner_password
+      - db_rw_password
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # Iba na vyziadanie z deploy.sh: migracie ako app_owner. Heslo app_owner vidi iba tento
+  # jednorazovy kontajner, nie php-fpm (WR-06).
+  migrate:
+    image: ${IMAGE_PREFIX:?}-php:${IMAGE_TAG:?}
+    profiles: ["migrate"]
+    environment:
+      TZ: Europe/Bratislava
+    volumes:
+      - ./migrate.env:/var/www/html/.env:ro
+      - writable:/var/www/html/writable
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["php", "spark", "migrate", "-g", "owner", "--all"]
 
   # Iba na vyziadanie: docker compose -f compose.staging.yaml run --rm certbot ...
   certbot:
@@ -78,3 +103,11 @@ services:
 volumes:
   pgdata:
   writable:
+
+secrets:
+  db_superuser_password:
+    file: ./secrets/db_superuser_password
+  db_owner_password:
+    file: ./secrets/db_owner_password
+  db_rw_password:
+    file: ./secrets/db_rw_password

@@ -100,4 +100,4 @@ echo
 echo "Hotovo. Odtlacok SSH host kluca servera (posli ho spat na overenie known_hosts):"
 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 echo
-echo "Dalsie kroky: docs/ops/staging.md, sekcia 6 (/opt/work-tracker/.env) a sekcia 7 (zaloha tajomstiev)."
+echo "Dalsie kroky: docs/ops/staging.md, sekcia 6 (.env, app.env, migrate.env, secrets/db_*_password) a sekcia 7 (zaloha tajomstiev)."

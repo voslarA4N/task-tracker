@@ -48,7 +48,7 @@ final class DeployGuardTest extends CIUnitTestCase
         parent::setUp();
         $this->dir = sys_get_temp_dir() . '/deploy-guard-' . bin2hex(random_bytes(6));
 
-        foreach (['', '/bin', '/certs', '/backups'] as $sub) {
+        foreach (['', '/bin', '/certs', '/backups', '/secrets'] as $sub) {
             if (! mkdir($this->dir . $sub, 0o700, true)) {
                 throw new RuntimeException('mkdir failed');
             }
@@ -56,6 +56,14 @@ final class DeployGuardTest extends CIUnitTestCase
         copy(ROOTPATH . 'scripts/deploy.sh', $this->dir . '/deploy.sh');
         file_put_contents($this->dir . '/.env', "TLS_MODE = origin-ca\nAPP_DOMAIN = test.example\n");
         file_put_contents($this->dir . '/certs/origin.pem', '');
+
+        // Rozlozenie tajomstiev podla WR-06 (falosne hodnoty).
+        $this->writePrivate('/app.env', "CI_ENVIRONMENT = production\ndatabase.default.username = app_rw\ndatabase.default.password = fake-rw\n");
+        $this->writePrivate('/migrate.env', "CI_ENVIRONMENT = production\ndatabase.default.password = fake-rw\ndatabase.owner.username = app_owner\ndatabase.owner.password = fake-owner\n");
+
+        foreach (['db_superuser_password', 'db_owner_password', 'db_rw_password'] as $name) {
+            $this->writePrivate('/secrets/' . $name, 'fake-' . $name);
+        }
         file_put_contents($this->dir . '/bin/docker', self::FAKE_DOCKER . "\n");
         file_put_contents($this->dir . '/bin/crontab', self::FAKE_CRONTAB . "\n");
         chmod($this->dir . '/bin/docker', 0o700);
@@ -74,6 +82,57 @@ final class DeployGuardTest extends CIUnitTestCase
 
         $this->assertNotSame(0, $code);
         $this->assertSame('', $this->log());
+    }
+
+    public function testOldSecretLayoutFailsBeforeAnyDockerCall(): void
+    {
+        unlink($this->dir . '/app.env');
+        unlink($this->dir . '/secrets/db_superuser_password');
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertNotSame(0, $code);
+        // Iba odhlasenie z GHCR (trap), ziadne volanie compose.
+        $this->assertSame("logout ghcr.io\n", $this->log());
+        $this->assertStringContainsString('app.env', $err);
+        $this->assertStringContainsString('secrets/db_superuser_password', $err);
+        $this->assertStringContainsString('sekcia 15', $err);
+    }
+
+    public function testPasswordsInComposeEnvFailBeforeAnyDockerCall(): void
+    {
+        file_put_contents($this->dir . '/.env', "DB_SUPERUSER_PASSWORD = fake\n", FILE_APPEND);
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertNotSame(0, $code);
+        // Iba odhlasenie z GHCR (trap), ziadne volanie compose.
+        $this->assertSame("logout ghcr.io\n", $this->log());
+        $this->assertStringContainsString('.env obsahuje', $err);
+    }
+
+    public function testOwnerCredentialsInAppEnvFailBeforeAnyDockerCall(): void
+    {
+        $this->writePrivate('/app.env', "database.default.password = fake-rw\ndatabase.owner.password = fake-owner\n");
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertNotSame(0, $code);
+        // Iba odhlasenie z GHCR (trap), ziadne volanie compose.
+        $this->assertSame("logout ghcr.io\n", $this->log());
+        $this->assertStringContainsString('app.env obsahuje', $err);
+    }
+
+    public function testWorldReadableSecretFailsBeforeAnyDockerCall(): void
+    {
+        chmod($this->dir . '/migrate.env', 0o644);
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertNotSame(0, $code);
+        // Iba odhlasenie z GHCR (trap), ziadne volanie compose.
+        $this->assertSame("logout ghcr.io\n", $this->log());
+        $this->assertStringContainsString('migrate.env je citatelny', $err);
     }
 
     public function testEmptyDumpBlocksMigration(): void
@@ -119,7 +178,7 @@ final class DeployGuardTest extends CIUnitTestCase
         $log      = $this->log();
         $previous = -1;
 
-        foreach (['pull', 'up -d --wait db', 'pg_dump', 'pg_restore -l', 'migrate -g owner --all', 'up -d --wait --remove-orphans'] as $step) {
+        foreach (['pull', 'up -d --wait db', 'pg_dump', 'pg_restore -l', 'run --rm --no-deps -T migrate php spark migrate -g owner --all', 'up -d --wait --remove-orphans'] as $step) {
             $pos = strpos($log, $step);
             $this->assertNotFalse($pos, "chyba krok: {$step}");
             $this->assertGreaterThan($previous, $pos, "zle poradie kroku: {$step}");
@@ -159,6 +218,12 @@ final class DeployGuardTest extends CIUnitTestCase
         fclose($pipes[2]);
 
         return [proc_close($proc), $err];
+    }
+
+    private function writePrivate(string $relative, string $content): void
+    {
+        file_put_contents($this->dir . $relative, $content);
+        chmod($this->dir . $relative, 0o600);
     }
 
     private function log(): string

@@ -69,19 +69,33 @@ ssh root@2.31.74.48 "DEPLOY_PUBKEY='$(cat ~/.ssh/work_tracker_deploy.pub)' sh -s
 
 Skript je idempotentný. Nainštaluje Docker Engine a compose plugin z oficiálneho apt repozitára, vytvorí používateľa `deploy`, vypne SSH heslá, vytvorí adresáre a na konci vypíše odtlačok host kľúča `SHA256:...`. Ten pošli späť, použije sa na overenie `known_hosts`.
 
-## 6. Serverový `.env`
+## 6. Serverové `.env`, `app.env`, `migrate.env` a `secrets/`
 
-Súbor `/opt/work-tracker/.env` vytvor ako `deploy` priamo na serveri, tajomstvá generuj tam (nikdy ich nepíš do gitu ani chatu):
+Tajomstvá sú rozdelené podľa toho, kto ich potrebuje (WR-06). Bežiaci php-fpm vidí iba heslo `app_rw`, heslo `app_owner` má iba jednorazový kontajner `migrate` a heslo superusera iba DB pri inicializácii.
+
+| Súbor v `/opt/work-tracker` | Obsah | Kto ho číta | Práva |
+|------------------------------|-------|-------------|-------|
+| `.env` | interpolácia compose a `deploy.sh`: domény, TLS, `IMAGE_PREFIX`, **žiadne heslá** | `docker compose`, `deploy.sh`, `cert-renew.sh` | 0640 `deploy` |
+| `app.env` | CI4 runtime: `CI_ENVIRONMENT`, `app.baseURL`, `database.default.*` (app_rw), `email.*`, `encryption.key`, `auth.backupCodePepper` | php-fpm (mount ako `/var/www/html/.env`) | 0640 `deploy:82` |
+| `migrate.env` | obsah `app.env` + `database.owner.*` (app_owner) | iba `docker compose run migrate` v `deploy.sh` | 0600 `deploy` |
+| `secrets/db_superuser_password`, `secrets/db_owner_password`, `secrets/db_rw_password` | jedno heslo bez nového riadku | kontajner `db` (`*_PASSWORD_FILE`), použité iba pri inicializácii prázdneho volume | 0640 `deploy:70` |
+
+`deploy.sh` pred prvým volaním dockeru overí, že súbory existujú, nie sú čitateľné pre všetkých, `.env` neobsahuje heslá ani CI4 kľúče a `app.env` neobsahuje `database.owner.*`. Inak skončí so správou a predošlý stack beží ďalej.
+
+Nová inštalácia: vytvor súbory ako `deploy` priamo na serveri, tajomstvá generuj tam (nikdy ich nepíš do gitu ani chatu):
 
 ```
+cd /opt/work-tracker
+umask 077
 DBPW_SU=$(openssl rand -hex 24)
 DBPW_OWNER=$(openssl rand -hex 24)
 DBPW_RW=$(openssl rand -hex 24)
 ENC=$(openssl rand -hex 32)
 PEPPER=$(openssl rand -hex 32)
-cat > /opt/work-tracker/.env <<ENV
-CI_ENVIRONMENT = production
-app.baseURL = 'https://work-tracker.vostack.dev/'
+printf '%s' "$DBPW_SU" > secrets/db_superuser_password
+printf '%s' "$DBPW_OWNER" > secrets/db_owner_password
+printf '%s' "$DBPW_RW" > secrets/db_rw_password
+cat > .env <<ENV
 APP_DOMAIN = work-tracker.vostack.dev
 NGINX_HSTS_VALUE = max-age=31536000
 
@@ -91,10 +105,10 @@ SSL_KEY = /etc/letsencrypt/live/work-tracker.vostack.dev/privkey.pem
 LE_EMAIL = <tvoj e-mail>
 
 IMAGE_PREFIX = ghcr.io/voslara4n/task-tracker
-
-DB_SUPERUSER_PASSWORD = $DBPW_SU
-DB_OWNER_PASSWORD = $DBPW_OWNER
-DB_RW_PASSWORD = $DBPW_RW
+ENV
+cat > app.env <<ENV
+CI_ENVIRONMENT = production
+app.baseURL = 'https://work-tracker.vostack.dev/'
 
 database.default.hostname = db
 database.default.database = task_tracker
@@ -102,13 +116,6 @@ database.default.username = app_rw
 database.default.password = $DBPW_RW
 database.default.DBDriver = Postgre
 database.default.port = 5432
-
-database.owner.hostname = db
-database.owner.database = task_tracker
-database.owner.username = app_owner
-database.owner.password = $DBPW_OWNER
-database.owner.DBDriver = Postgre
-database.owner.port = 5432
 
 email.protocol = smtp
 email.transport = log
@@ -118,16 +125,30 @@ email.fromName = 'Work Tracker'
 encryption.key = hex2bin:$ENC
 auth.backupCodePepper = $PEPPER
 ENV
+{ cat app.env; cat <<ENV
+
+database.owner.hostname = db
+database.owner.database = task_tracker
+database.owner.username = app_owner
+database.owner.password = $DBPW_OWNER
+database.owner.DBDriver = Postgre
+database.owner.port = 5432
+ENV
+} > migrate.env
 unset DBPW_SU DBPW_OWNER DBPW_RW ENC PEPPER
-chown deploy:82 /opt/work-tracker/.env   # vyzaduje root (deploy nie je v skupine 82)
-chmod 0640 /opt/work-tracker/.env
+chmod 0640 .env
+chmod 0600 migrate.env
+# ako root (deploy nie je v skupinach 82 ani 70):
+chown deploy:82 app.env && chmod 0640 app.env
+chown deploy:70 secrets/db_superuser_password secrets/db_owner_password secrets/db_rw_password
+chmod 0640 secrets/db_superuser_password secrets/db_owner_password secrets/db_rw_password
 ```
 
-Poznámky: `IMAGE_TAG` nastavuje `scripts/deploy.sh`, nepatrí do `.env`. `chown ... :82` môže vyžadovať root (spusti ako root: `chown deploy:82 /opt/work-tracker/.env`). GID 82 je `www-data` v alpine php obraze. `email.transport = log` znamená, že e-maily sa neodosielajú, do logu idú iba metadáta.
+Poznámky: `IMAGE_TAG` nastavuje `scripts/deploy.sh`, nepatrí do `.env`. GID 82 je `www-data` v alpine php obraze, GID 70 je `postgres` v `postgres:18-alpine` (init skript číta heslá rolí ako používateľ `postgres`). `email.transport = log` znamená, že e-maily sa neodosielajú, do logu idú iba metadáta. Pri zmene SMTP alebo kľúča uprav `app.env` **aj** `migrate.env` (migrácie kľúče nepotrebujú, ale CI4 sa s nimi musí spustiť rovnako).
 
 ## 7. Tajomstvá mimo servera
 
-Ulož do správcu hesiel: `encryption.key`, `auth.backupCodePepper`, tri DB heslá a Cloudflare API token (`cat /opt/work-tracker/.env` na serveri, iba pre tieto riadky). Strata `encryption.key` znamená, že TOTP tajomstvá sa nedajú dešifrovať, obnova je cez `spark user:reset-2fa` (plán 02-18). Strata `auth.backupCodePepper` zneplatní záložné kódy.
+Ulož do správcu hesiel: `encryption.key`, `auth.backupCodePepper` (z `app.env`), tri DB heslá (`secrets/db_*_password`, čitateľné ako root) a Cloudflare API token. Strata `encryption.key` znamená, že TOTP tajomstvá sa nedajú dešifrovať, obnova je cez `spark user:reset-2fa` (plán 02-18). Strata `auth.backupCodePepper` zneplatní záložné kódy.
 
 ## 8. GitHub
 
@@ -207,3 +228,63 @@ Dočasné smoke účty `smoke+*@work-tracker.invalid` boli po každom behu zmaza
 Poznámka k príkazom: `docker compose -f compose.staging.yaml` na serveri vyžaduje `IMAGE_TAG` (napr. `export IMAGE_TAG=$(cat /opt/work-tracker/.last-good-tag)`), inak zlyhá na interpolácii.
 
 Ďalší krok: UAT na iPhone podľa `docs/ops/iphone-uat.md`.
+
+## 15. Oddelenie tajomstiev na existujúcom serveri (WR-06, vykoná vlastník)
+
+Dôvod: do 2026-10-25 bol jediný `.env` (0640 `deploy:82`) mountovaný do php kontajnera, takže každý PHP-FPM worker videl heslo superusera `postgres` aj `app_owner` (vlastník schémy môže meniť insert-only `auth_events`). Od commitu s opravou WR-06 `compose.staging.yaml` mountuje do php iba `app.env`, migrácie bežia v kontajneri `migrate` s `migrate.env` a DB dostáva heslá ako súbory. **Kým tieto kroky nie sú hotové, `deploy.sh` skončí hneď na začiatku** (`Stare rozlozenie tajomstiev ...`), nič nenasadí a bežiaci stack sa nezmení. Obnova certifikátu (`cert-renew.sh`) funguje aj medzitým.
+
+Kroky ako `deploy` na serveri, nič z nich nevypisuje hodnoty. Heslá sa nemenia, iba presúvajú, preto netreba meniť roly v DB.
+
+```
+cd /opt/work-tracker
+umask 077
+cp -p .env .env.pre-wr06
+
+# 1. Heslá rolí do secrets/ (bez nového riadku, bez úvodzoviek)
+for k in SUPERUSER OWNER RW; do
+  f=secrets/db_$(echo "$k" | tr 'A-Z' 'a-z')_password
+  sed -n "s/^DB_${k}_PASSWORD *= *//p" .env.pre-wr06 | head -n1 | tr -d "'\"\r\n" > "$f"
+done
+
+# 2. app.env: CI4 kľúče bez database.owner.* a bez DB_*_PASSWORD
+grep -E '^(CI_ENVIRONMENT|app\.|database\.default\.|email\.|encryption\.|auth\.)' .env.pre-wr06 > app.env
+
+# 3. migrate.env: app.env + database.owner.*
+{ cat app.env; grep -E '^database\.owner\.' .env.pre-wr06; } > migrate.env
+
+# 4. .env: iba kľúče pre compose a deploy.sh
+grep -Ev '^(DB_[A-Z_]*PASSWORD|database\.|encryption\.|auth\.|email\.|CI_ENVIRONMENT|app\.)' .env.pre-wr06 > .env
+
+# 5. Kontrola bez výpisu hodnôt: názvy kľúčov, dĺžky súborov a zhoda hesiel
+for f in .env app.env migrate.env; do echo "== $f"; grep -Ev '^(#|$)' "$f" | sed 's/ *=.*//'; done
+wc -c secrets/db_superuser_password secrets/db_owner_password secrets/db_rw_password   # po 48 bajtov
+v() { sed -n "s/^$1 *= *//p" "$2" | head -n1 | tr -d "'\"\r"; }
+[ "$(v database.default.password app.env)" = "$(cat secrets/db_rw_password)" ] && echo 'rw OK'
+[ "$(v database.owner.password migrate.env)" = "$(cat secrets/db_owner_password)" ] && echo 'owner OK'
+grep -c 'database\.owner\.' app.env   # musí byť 0
+
+# 6. Práva (ako root)
+chmod 0640 .env
+chmod 0600 migrate.env
+chown deploy:82 app.env && chmod 0640 app.env
+chown deploy:70 secrets/db_superuser_password secrets/db_owner_password secrets/db_rw_password
+chmod 0640 secrets/db_superuser_password secrets/db_owner_password secrets/db_rw_password
+```
+
+Očakávané kľúče po kroku 5:
+
+- `.env`: `APP_DOMAIN`, `NGINX_HSTS_VALUE`, `TLS_MODE`, `SSL_CERT`, `SSL_KEY`, `LE_EMAIL`, `IMAGE_PREFIX`.
+- `app.env`: `CI_ENVIRONMENT`, `app.baseURL`, šesť `database.default.*`, štyri `email.*`, `encryption.key`, `auth.backupCodePepper`.
+- `migrate.env`: to isté ako `app.env` + šesť `database.owner.*`.
+
+Potom spusti nasadenie (push na `main` alebo opätovné spustenie workflow). `deploy.sh` prejde kontrolou, migrácia pobeží v `migrate`, php sa reštartuje s `app.env`. Overenie po nasadení (vypíše iba počty):
+
+```
+export IMAGE_TAG=$(cat .last-good-tag)
+docker compose -f compose.staging.yaml exec -T php sh -c "grep -c 'owner\|SUPERUSER' /var/www/html/.env; env | grep -ci password"   # 0 a 0
+docker compose -f compose.staging.yaml exec -T db sh -c 'env | grep -c "^POSTGRES_PASSWORD="'                                      # 0
+```
+
+Keď je staging po nasadení v poriadku (smoke OK, prihlásenie funguje), zmaž zálohu `rm .env.pre-wr06`. Návrat pred dokončením: `mv .env.pre-wr06 .env` a nasadiť commit pred WR-06 (`app.env`, `migrate.env` a `secrets/db_*` môžu zostať, starý compose ich nepoužíva).
+
+Na DB volume sa nič nemení: `POSTGRES_PASSWORD_FILE` a `DB_*_PASSWORD_FILE` sa použijú iba pri inicializácii prázdneho volume. Pri obnove servera od nuly stačí sekcia 6.
