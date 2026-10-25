@@ -378,13 +378,15 @@ $valid = $rem === 1;
 | A7 | `isFormatLocked` je v tejto fáze konštantne `false` a Phase 5 ho nahradí | Pattern 8 | ak sa Phase 5 zabudne, formát sa dá meniť aj po vystavení |
 | A8 | UI-SPEC pre Phase 3 neexistuje; použiť `02-UI-SPEC.md` a existujúce views | Pattern 9 | rozloženie obrazoviek sa môže líšiť od očakávaní |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Má Phase 3 obsahovať UI na úpravu `exemption_code`?**
    - Čo vieme: SET-02 vyžaduje štruktúrované pole v právnom profile; UI editácie textov je Phase 6 (SET-01).
    - Čo je nejasné: či sa kód edituje už tu.
    - Odporúčanie: nie. Seed + zobrazenie read-only + `LegalProfileResolver`; úprava až v Phase 6 spolu s textami (voliteľne stĺpcový grant, pozri Pattern 7).
+   - RESOLVED: nie. V Phase 3 je `exemption_code` iba read-only (seed + zobrazenie + `LegalProfileResolver`, plán 03-10); úprava patrí do Phase 6 (SET-01).
 2. **Otázky pre účtovníčku (SUMMARY.md body 1-10)** sú akcia pri štarte fázy, neblokujú implementáciu; seed zostáva predbežný.
+   - RESOLVED: neblokujúca akcia vlastníka pri štarte fázy, nie kód; sleduje sa mimo plánov (seed právnych profilov zostáva predbežný a opraví sa dátami).
 
 ## Environment Availability
 

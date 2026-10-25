@@ -23,10 +23,10 @@ Všetky cesty sú relatívne ku koreňu repozitára `/mnt/c/personal-projects/ta
 | `app/Libraries/Master/{VatRegime,BillingMode,IdentifierType,Country,DocLanguage}.php` | enum | n/a | `app/Libraries/Auth/AuthEvent.php` (backed enum) | role-match |
 | `app/Controllers/Settings/Entities.php` (+ podstránky verzie, účty, rad, ukončenie) | controller | request-response, PRG + 422 | `app/Controllers/Settings/Security.php` + `app/Controllers/Demo.php` | exact |
 | `app/Controllers/Settings/Clients.php` | controller | request-response, PRG + 422 | `Settings/Security.php` + `Demo.php` | exact |
-| `app/Config/Routes/master.php` | route | n/a | `app/Config/Routes/settings.php` | exact |
+| `app/Config/Routes/entities.php`, `app/Config/Routes/clients.php` | route | n/a | `app/Config/Routes/settings.php` | exact |
 | `app/Views/settings/entities/*.php`, `settings/clients/*.php` (zoznam, detail, formuláre, `_history`, `_bank_accounts`, `_series`, `_regime_fields` fragment) | view | request-response | `app/Views/settings/security.php` + `_password.php` + `_devices.php`; `demo/_calculator.php` (htmx fragment + invalid-feedback) | exact |
 | `app/Views/more/index.php` (úprava) | view | n/a | ten istý súbor | exact |
-| `app/Language/{sk,en}/{Entities,Clients,Audit}.php` | config (i18n) | n/a | `app/Language/sk/Account.php`, `Demo.php` | exact |
+| `app/Language/{sk,en}/{Entities,Clients}.php` | config (i18n) | n/a | `app/Language/sk/Account.php`, `Demo.php` | exact |
 | `public/assets/css/app.css` (úprava, `.master-*`) | config (CSS) | n/a | ten istý súbor | exact |
 | `app/Database/Seeds/DevSeeder.php` (úprava) | seeder | batch | ten istý súbor | exact |
 | `tests/integration/Master/*` (oprávnenia, rollback auditu, verzie, výber účtu, legal resolver) | test | CRUD | `tests/integration/DbRolesTest.php`, `tests/integration/Auth/AuditLogTest.php` | exact |
@@ -280,9 +280,9 @@ return $this->response->setStatusCode(422)
 
 ---
 
-### `app/Config/Routes/master.php` (route)
+### `app/Config/Routes/entities.php` a `app/Config/Routes/clients.php` (route)
 
-**Analóg:** `app/Config/Routes/settings.php` (riadky 1-13). Súbory v `Config/Routes/` sa načítavajú globom (`app/Config/Routes.php` riadok 12), netreba registrovať.
+**Analóg:** `app/Config/Routes/settings.php` (riadky 1-13). Súbory v `Config/Routes/` sa načítavajú globom (`app/Config/Routes.php` riadok 12), netreba registrovať. Plány používajú dva súbory: `entities.php` (subjekty, verzie, účty, rady; 03-02, 03-03, 03-04, 03-06, 03-08, 03-09) a `clients.php` (klienti; 03-05, 03-07). Súbor `master.php` sa nevytvára.
 
 ```php
 <?php
@@ -333,9 +333,11 @@ Všetky zmeny len `post` (CSRF cez `HtmxCsrf`). Poradie: statické cesty (`setti
 
 ---
 
-### `app/Language/{sk,en}/{Entities,Clients,Audit}.php` (i18n)
+### `app/Language/{sk,en}/{Entities,Clients}.php` (i18n)
 
-**Analóg:** `app/Language/sk/Demo.php` / `Account.php`: `return [ 'key' => 'text', ... ];` s `declare(strict_types=1)`, zástupné `{0}`. `LangKeysTest` (regex `lang\(\s*'([A-Z][A-Za-z]+)\.([A-Za-z0-9_.]+)'`) vyžaduje, aby každý použitý kľúč existoval v `sk`; kľúče musia byť literály v `lang('X.y')` (dynamické `'event_' . $x` ako v Security riadok 318 testom nie sú pokryté). Súbory `Entities`, `Clients`, `Audit` nekolidujú s existujúcimi (`Account, App, Demo, Login, Notify, PasswordReset, Pwa, TwoFactor, Validation`).
+Pozn.: súbor `Audit.php` sa v Phase 3 nevytvára, `AuditLogger` nezobrazuje žiadny preložený text (iba zapisuje do `audit_log`).
+
+**Analóg:** `app/Language/sk/Demo.php` / `Account.php`: `return [ 'key' => 'text', ... ];` s `declare(strict_types=1)`, zástupné `{0}`. `LangKeysTest` (regex `lang\(\s*'([A-Z][A-Za-z]+)\.([A-Za-z0-9_.]+)'`) vyžaduje, aby každý použitý kľúč existoval v `sk`; kľúče musia byť literály v `lang('X.y')` (dynamické `'event_' . $x` ako v Security riadok 318 testom nie sú pokryté). Súbory `Entities` a `Clients` nekolidujú s existujúcimi (`Account, App, Demo, Login, Notify, PasswordReset, Pwa, TwoFactor, Validation`).
 
 ---
 

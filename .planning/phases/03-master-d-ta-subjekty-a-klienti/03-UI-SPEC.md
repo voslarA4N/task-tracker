@@ -142,7 +142,7 @@ Jeden formulár v troch skupinách (nadpisy `h2` 20px v rámci jednej karty, ods
 1. **Základ (nemenné po vytvorení)**: Krajina (`select`: Slovensko, Poľsko, Česko), Mena (`select`: EUR, PLN, CZK), DPH režim (`select`, možnosti podľa krajiny). Výber krajiny obnoví Menu a DPH režim cez `hx-get` fragment (`hx-trigger="change"`, `hx-target="#entity-regime-fields"`, `hx-swap="innerHTML"`), predvyplní EUR/PLN/CZK a režim (SK: „Neplatiteľ DPH“; PL: „Zwolnienie podmiotowe, art. 113 ust. 1“ a „... ust. 9“; CZ: „Neplatiteľ DPH“). Bez JS: stránka funguje s predvolenou kombináciou a serverová validácia odmietne neplatnú kombináciu krajina/mena/režim (422).
    Nad skupinou `alert alert-info` (12px): „Krajinu a menu už nebude možné zmeniť. Pre inú krajinu alebo menu vytvorte nový subjekt.“
 2. **Identita (verzované údaje)**: Interný názov (povinné, nie je súčasťou verzie, mení sa len cez stránku „Upraviť subjekt“, obrazovka 3a), Obchodné meno, Adresa sídla (`address_line1`, `address_line2`, `postal_code`, `city`), IČO (SK, CZ) alebo NIP a REGON (PL) podľa krajiny, DIČ, IČ DPH / VAT-UE (voliteľné), Zápis v registri (SK: „Živnostenský register, okresný úrad, číslo“, PL: „CEIDG“, textarea 3 riadky), E-mail, Telefón, Jazyk dokladov (`select`: SK, PL, CZ, EN; predvolený podľa krajiny), Predvolená splatnosť v dňoch (`inputmode=numeric`, predvolené 14).
-3. **Obdobie pôsobenia**: „Aktívny od“ (`type=date`, predvolene dnes, povinné), „Aktívny do“ (`type=date`, voliteľné). Pod poľom 12px hint: „Prvá verzia údajov platí od tohto dátumu.“
+3. **Obdobie pôsobenia**: „Aktívny od“ (`type=date`, predvolene dnes, povinné), „Aktívny do“ (`type=date`, voliteľné). Pod poľom 12px hint: „Prvá verzia údajov platí od tohto dátumu.“ a druhý 12px hint „Dátum možno neskôr len posunúť na neskorší.“ (`Entities.activeFromLaterHint`).
 
 Po úspechu PRG na detail subjektu a `alert-success` „Subjekt bol vytvorený. Vytvorili sa aj číselné rady faktúr a dobropisov.“ Tlačidlo „Vytvoriť subjekt“ je v sticky lište (mobil).
 
@@ -162,9 +162,9 @@ Karty `.app-card` zhora nadol, medzera 32px medzi sekciami:
 
 ### 3a. Upraviť subjekt (`/settings/entities/{id}/edit`)
 
-- Upravuje **iba neverzované polia**: Interný názov (povinné), Aktívny od (`type=date`, povinné), Aktívny do (`type=date`, voliteľné; prázdne = subjekt neukončený, takto sa ukončenie aj zruší).
+- Upravuje **iba neverzované polia**: Interný názov (povinné), Aktívny od (`type=date`, povinné, pod poľom 12px hint „Dátum možno neskôr len posunúť na neskorší.“), Aktívny do (`type=date`, voliteľné; prázdne = subjekt neukončený, takto sa ukončenie aj zruší).
 - Krajina a mena hore ako `.master-fixed` s hintom „Nedá sa zmeniť“; verzované údaje (obchodné meno, adresa, IČO…) sa tu **nevykreslia** a 12px hint pod formulárom odkáže: „Obchodné meno, adresu a ďalšie údaje dokladov meníte cez Nová verzia údajov.“
-- Validácia (422, `invalid-feedback`): „Aktívny do“ nesmie byť skôr ako „Aktívny od“ (existujúci text v Copywriting); „Aktívny od“ nesmie byť neskôr ako „Platné od“ prvej verzie: „Dátum „Aktívny od“ nemôže byť neskôr ako začiatok platnosti prvej verzie ({dátum}).“
+- Validácia (422, `invalid-feedback`): „Aktívny do“ nesmie byť skôr ako „Aktívny od“ (existujúci text v Copywriting); „Aktívny od“ nesmie byť **skôr** ako „Platné od“ prvej verzie (inak by vzniklo obdobie bez verzie; RESEARCH Pattern 2 bod 1, plán 03-06): „Dátum „Aktívny od“ nemôže byť skôr ako začiatok platnosti prvej verzie ({dátum}).“
 - Sticky lišta: „Uložiť subjekt“ (`btn-primary`), „Späť na detail“ (`btn-outline-secondary`, odkaz). Po úspechu PRG na detail a `alert-success` „Subjekt bol uložený.“
 - Zmena sa zapíše do audit logu (AUD-01) rovnako ako ostatné zápisy.
 
@@ -251,6 +251,8 @@ Neutrálne vety bez oslovenia, tón vecný (rovnako ako Phase 2). Dátumy cez `I
 | Error (zmena krajiny/meny, podvrhnutý POST) | Krajinu a menu subjektu nemožno zmeniť. Vytvorte nový subjekt. (422, bez zmeny údajov) |
 | Error (účet bez zhody v mene) | Subjekt nemá účet v mene {mena}. Použije sa predvolený účet. (len informačný riadok pri výbere v budúcich fázach, tu iba kľúč v lang) |
 | Error (zhoda dátumov subjektu) | Dátum „Aktívny do“ nesmie byť skôr ako „Aktívny od“. |
+| Error (Aktívny od pred prvou verziou, 3a) | Dátum „Aktívny od“ nemôže byť skôr ako začiatok platnosti prvej verzie ({dátum}). |
+| Hint (Aktívny od, Nový subjekt aj 3a) | Dátum možno neskôr len posunúť na neskorší. |
 | Error (neexistujúci záznam, 404) | Záznam sa nenašiel. Vráťte sa na zoznam. |
 | Error (sieť / server / CSRF) | existujúce `App.errorNetwork`, `App.errorServer`, `errors/csrf_403.php` (nemeniť) |
 | Success flashe | „Subjekt bol vytvorený. Vytvorili sa aj číselné rady faktúr a dobropisov.“ · „Nová verzia platná od {dátum} bola uložená.“ · „Subjekt bol ukončený k {dátum}.“ · „Bankový účet bol uložený.“ · „Predvolený účet bol zmenený.“ · „Bankový účet bol archivovaný.“ · „Číselný rad bol uložený.“ · „Klient bol uložený.“ · „Klient bol archivovaný.“ · „Klient bol obnovený.“ |
