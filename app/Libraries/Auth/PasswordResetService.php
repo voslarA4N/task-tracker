@@ -31,7 +31,9 @@ final class PasswordResetService
     }
 
     /**
-     * Vrati otvoreny token iba pre existujuci aktivny ucet, inak null; null aj po prekroceni limitu.
+     * Vrati otvoreny token iba pre existujuci aktivny ucet s aktivnym TOTP, inak null; null aj po prekroceni limitu.
+     * Ucet bez 2FA by po resete presiel rovno na nastavenie noveho autentifikatora, teda by e-mail
+     * stacil na prevzatie uctu (WR-04); takyto ucet obnovi admin cez `spark user:password` (D-14).
      * Platne skorsie tokeny ostavaju platne (WR-03: cudzia poziadavka nezneplatni odkaz vlastnika),
      * vsetky nepouzite zmaze az uspesna zmena hesla (AccountRecovery::setPassword).
      */
@@ -43,6 +45,7 @@ final class PasswordResetService
         $user = $db->query(
             "SELECT u.id FROM users u
              JOIN auth_identities i ON i.user_id = u.id AND i.type = 'email_password'
+             JOIN user_security s ON s.user_id = u.id AND s.totp_enabled_at IS NOT NULL
              WHERE i.secret = :e: AND u.active = 1 AND u.deleted_at IS NULL",
             ['e' => $email],
         )->getRow();
@@ -98,6 +101,7 @@ final class PasswordResetService
         $row = $this->db()->query(
             'SELECT r.user_id FROM password_resets r
              JOIN users u ON u.id = r.user_id
+             JOIN user_security s ON s.user_id = r.user_id AND s.totp_enabled_at IS NOT NULL
              WHERE r.token_hash = :h: AND r.used_at IS NULL AND r.expires_at > :now:
                AND u.active = 1 AND u.deleted_at IS NULL',
             ['h' => hash('sha256', $token), 'now' => $now->format(self::FORMAT)],
@@ -118,6 +122,7 @@ final class PasswordResetService
         $row = $this->db()->query(
             'UPDATE password_resets SET used_at = :now:
              WHERE token_hash = :h: AND used_at IS NULL AND expires_at > :now:
+               AND EXISTS (SELECT 1 FROM user_security s WHERE s.user_id = password_resets.user_id AND s.totp_enabled_at IS NOT NULL)
              RETURNING user_id',
             ['h' => hash('sha256', $token), 'now' => $now->format(self::FORMAT)],
         )->getRow();

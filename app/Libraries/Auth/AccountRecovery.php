@@ -125,6 +125,8 @@ final class AccountRecovery
             $this->devices->revokeAll($userId, 'totp_reset', $now);
             $this->devices->bumpEpoch($userId, $now);
             model(UserIdentityModel::class)->deleteIdentitiesByType($user, TotpAction::TYPE);
+            // Bez 2FA sa reset hesla e-mailom nepouziva (WR-04).
+            $db->query('DELETE FROM password_resets WHERE user_id = :u: AND used_at IS NULL', ['u' => $userId]);
             $this->audit->record(AuthEvent::TotpResetCli, true, $userId);
             $db->transComplete();
         } catch (Throwable $e) {

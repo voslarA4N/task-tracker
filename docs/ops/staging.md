@@ -175,7 +175,9 @@ ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag
 ```
 
 - `user:password`: skrytý prompt, minimálne 12 znakov, heslo nesmie obsahovať časť e-mailu pred `@`. Odvolá všetky dôveryhodné zariadenia.
-- `user:reset-2fa`: zruší TOTP aj záložné kódy, 2FA sa nastaví znova pri ďalšom prihlásení (`--yes` preskočí potvrdenie).
+- `user:reset-2fa`: zruší TOTP aj záložné kódy, 2FA sa nastaví znova pri ďalšom prihlásení (`--yes` preskočí potvrdenie). Zmaže aj nepoužité tokeny obnovy hesla.
+- Reset hesla e-mailom (`/password/forgot`) funguje iba pre účet s aktívnym TOTP (WR-04). Účet bez 2FA (nový z `user:create` pred prvým prihlásením alebo po `user:reset-2fa`) token nedostane, odpoveď stránky je rovnaká. Heslo takého účtu nastaví admin cez `user:password`.
+- Limit obnovy hesla: najviac 3 e-maily za hodinu na účet a 5 na IP (WR-03), ďalšie žiadosti sa ticho zahodia (log `password_reset.throttled`).
 
 ## 13. Prvé nasadenie
 
