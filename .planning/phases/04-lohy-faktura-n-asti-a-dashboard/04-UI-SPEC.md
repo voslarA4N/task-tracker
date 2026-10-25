@@ -1,10 +1,11 @@
 ---
 phase: 4
 slug: lohy-faktura-n-asti-a-dashboard
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-10-25
+reviewed_at: 2026-10-25
 ---
 
 # Phase 4 — UI Design Contract
