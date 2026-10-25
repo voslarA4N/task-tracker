@@ -104,4 +104,23 @@ final class ClientArchiveTest extends PgTestCase
         $this->assertContains($id, $this->ids($this->service()->listAll(false)));
         $this->assertNull($this->owner()->query('SELECT archived_at FROM clients WHERE id = ?', [$id])->getRow()->archived_at);
     }
+
+    public function testUnarchiveAuditKeepsRealArchivedTimestamp(): void
+    {
+        $id = $this->createClient();
+        $this->service()->archive($id);
+
+        Services::injectMock('clock', new FrozenClock('2026-10-27T09:30:00+01:00'));
+        $this->assertTrue($this->service()->unarchive($id));
+
+        // Pôvodný okamih archivácie, nie čas odarchivovania (porovnanie ako timestamptz, offset závisí od TimeZone session).
+        $audit = $this->owner()->query(
+            "SELECT (before_data->>'archived_at')::timestamptz = '2026-10-25T10:00:00+02:00'::timestamptz AS same,
+                    after_data->>'archived_at' AS a
+               FROM audit_log WHERE entity_type = 'client' AND action = 'unarchive'",
+        )->getRow();
+
+        $this->assertSame('t', $audit->same);
+        $this->assertNull($audit->a);
+    }
 }

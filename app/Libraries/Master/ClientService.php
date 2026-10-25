@@ -101,24 +101,31 @@ final class ClientService
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
         return Transaction::run($this->db, function () use ($id, $archive, $now): bool {
-            $changed = false;
-            $sql     = $archive
+            // Skutočná pôvodná hodnota z uzamknutého riadku (WR-03), v rovnakom formáte ako $now.
+            $row = $this->db->query(
+                "SELECT to_char(archived_at, 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AS archived_at FROM clients WHERE id = :id: FOR UPDATE",
+                ['id' => $id],
+            )->getRow();
+
+            if ($row === null || ($row->archived_at === null) !== $archive) {
+                return false;
+            }
+
+            $previous = $row->archived_at === null ? null : (string) $row->archived_at;
+            $sql      = $archive
                 ? 'UPDATE clients SET archived_at = :now:, updated_at = :now: WHERE id = :id: AND archived_at IS NULL'
                 : 'UPDATE clients SET archived_at = NULL, updated_at = :now: WHERE id = :id: AND archived_at IS NOT NULL';
             $this->db->query($sql, ['now' => $now, 'id' => $id]);
 
-            if ($this->db->affectedRows() > 0) {
-                $changed = true;
-                $this->audit->record(
-                    'client',
-                    $id,
-                    $archive ? 'archive' : 'unarchive',
-                    ['archived_at' => $archive ? null : $now],
-                    ['archived_at' => $archive ? $now : null],
-                );
-            }
+            $this->audit->record(
+                'client',
+                $id,
+                $archive ? 'archive' : 'unarchive',
+                ['archived_at' => $previous],
+                ['archived_at' => $archive ? $now : null],
+            );
 
-            return $changed;
+            return true;
         });
     }
 
