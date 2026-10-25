@@ -86,7 +86,7 @@ final class SeriesServiceTest extends PgTestCase
         $this->assertSame(5, (int) $row['initial_number']);
         $this->assertSame(1, $this->auditCount());
 
-        $audit = $this->owner()->query("SELECT before_data, after_data FROM audit_log WHERE entity_type = 'invoice_series'")->getRow();
+        $audit = $this->owner()->query("SELECT before_data, after_data FROM audit_log WHERE entity_type = 'invoice_series' AND action = 'update'")->getRow();
         $this->assertSame('RRRRMM###', json_decode((string) $audit->before_data, true)['format']);
         $this->assertSame('FA-RRRR-####', json_decode((string) $audit->after_data, true)['format']);
         $this->assertSame('5', (string) json_decode((string) $audit->after_data, true)['initial_number']);
