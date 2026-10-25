@@ -105,7 +105,7 @@ final class TaskServiceTest extends PgTestCase
     {
         $client = $this->createClient();
         $id     = $this->service()->create($this->values($client));
-        $alloc  = $this->createAllocation($id, '10.00', '2026-10-01');
+        $alloc  = $this->createAllocation($id, '10.00', '2026-10');
 
         $this->assertTrue($this->service()->update($id, $this->values($client, ['title' => 'Nový názov', 'rate' => '30.00'])));
 
@@ -115,8 +115,9 @@ final class TaskServiceTest extends PgTestCase
         $this->assertSame('27.00', (string) $this->owner()->query('SELECT rate FROM billing_allocations WHERE id = ?', [$alloc])->getRow()->rate);
 
         $row = $this->owner()->query("SELECT before_data, after_data FROM audit_log WHERE entity_type = 'task' AND action = 'update'")->getRow();
-        $this->assertSame(['title', 'rate'], array_keys(array_intersect_key(json_decode((string) $row->after_data, true), ['title' => 1, 'rate' => 1])));
-        $this->assertArrayNotHasKey('hours', json_decode((string) $row->after_data, true));
+        $changed = array_keys(json_decode((string) $row->after_data, true));
+        sort($changed);
+        $this->assertSame(['rate', 'title'], $changed);
     }
 
     public function testUpdateChangesClientWithoutAllocations(): void
@@ -135,7 +136,7 @@ final class TaskServiceTest extends PgTestCase
         $a  = $this->createClient();
         $b  = $this->createClient(['name' => 'Iný']);
         $id = $this->service()->create($this->values($a));
-        $this->createAllocation($id, '10.00', '2026-10-01');
+        $this->createAllocation($id, '10.00', '2026-10');
 
         try {
             $this->service()->update($id, $this->values($b));

@@ -78,7 +78,7 @@ final class ClientCurrencyLockTest extends PgTestCase
     public function testChangeRejectedWithUnlockedAllocation(): void
     {
         $id = $this->createClient();
-        $this->createAllocation($this->createTask($id), '5.00', '2026-10-01');
+        $this->createAllocation($this->createTask($id), '5.00', '2026-10');
 
         $this->expectException(ClientCurrencyLocked::class);
 
@@ -92,7 +92,7 @@ final class ClientCurrencyLockTest extends PgTestCase
     public function testChangeRejectedWithLockedAllocation(): void
     {
         $id    = $this->createClient();
-        $alloc = $this->createAllocation($this->createTask($id), '5.00', '2026-10-01');
+        $alloc = $this->createAllocation($this->createTask($id), '5.00', '2026-10');
         $this->lockAllocation($alloc);
 
         $this->expectException(ClientCurrencyLocked::class);
@@ -102,7 +102,7 @@ final class ClientCurrencyLockTest extends PgTestCase
     public function testOtherChangeAllowedWithAllocations(): void
     {
         $id = $this->createClient();
-        $this->createAllocation($this->createTask($id), '5.00', '2026-10-01');
+        $this->createAllocation($this->createTask($id), '5.00', '2026-10');
 
         $this->assertTrue($this->service()->update($id, $this->changed($id, ['name' => 'Nový názov'])));
     }

@@ -46,7 +46,7 @@ final class TaskDeleteTest extends PgTestCase
         return (int) $this->owner()->query('SELECT count(*) AS c FROM audit_log WHERE entity_type = ? AND action = ?', [$type, $action])->getRow()->c;
     }
 
-    private function count(string $table): int
+    private function rows(string $table): int
     {
         return (int) $this->owner()->query('SELECT count(*) AS c FROM ' . $table)->getRow()->c;
     }
@@ -57,20 +57,20 @@ final class TaskDeleteTest extends PgTestCase
 
         $this->service()->delete($task);
 
-        $this->assertSame(0, $this->count('tasks'));
+        $this->assertSame(0, $this->rows('tasks'));
         $this->assertSame(1, $this->audits('task', 'delete'));
     }
 
     public function testDeleteRemovesUnlockedAllocationsWithAudit(): void
     {
         $task = $this->createTask($this->createClient());
-        $this->createAllocation($task, '10.00', '2026-10-01');
-        $this->createAllocation($task, '5.00', '2026-11-01');
+        $this->createAllocation($task, '10.00', '2026-10');
+        $this->createAllocation($task, '5.00', '2026-11');
 
         $this->service()->delete($task);
 
-        $this->assertSame(0, $this->count('tasks'));
-        $this->assertSame(0, $this->count('billing_allocations'));
+        $this->assertSame(0, $this->rows('tasks'));
+        $this->assertSame(0, $this->rows('billing_allocations'));
         $this->assertSame(2, $this->audits('billing_allocation', 'delete'));
         $this->assertSame(1, $this->audits('task', 'delete'));
     }
@@ -78,8 +78,8 @@ final class TaskDeleteTest extends PgTestCase
     public function testDeleteWithLockedAllocationRollsBack(): void
     {
         $task   = $this->createTask($this->createClient());
-        $locked = $this->createAllocation($task, '10.00', '2026-10-01');
-        $this->createAllocation($task, '5.00', '2026-11-01');
+        $locked = $this->createAllocation($task, '10.00', '2026-10');
+        $this->createAllocation($task, '5.00', '2026-11');
         $this->lockAllocation($locked);
 
         try {
@@ -89,9 +89,9 @@ final class TaskDeleteTest extends PgTestCase
             $this->assertSame($task, $e->taskId);
         }
 
-        $this->assertSame(1, $this->count('tasks'));
-        $this->assertSame(2, $this->count('billing_allocations'));
-        $this->assertSame(0, $this->count('audit_log'));
+        $this->assertSame(1, $this->rows('tasks'));
+        $this->assertSame(2, $this->rows('billing_allocations'));
+        $this->assertSame(0, $this->rows("audit_log WHERE entity_type IN ('task', 'billing_allocation')"));
     }
 
     public function testDeleteUnknownTask(): void
