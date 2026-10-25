@@ -205,6 +205,7 @@ final class ClientInput
             $errors['cc_emails'] = $ccError;
         }
 
+        // Zámerný strop 8 celých číslic pre hodinovú sadzbu; stĺpec je numeric(12,2) ako všetky peniaze (IN-02).
         if (preg_match('/^\d{1,8}([.,]\d{1,2})?$/D', (string) preg_replace('/\s+/u', '', $get('hourly_rate'))) !== 1) {
             $errors['hourly_rate'] = lang('Clients.errorRate');
         }

@@ -69,6 +69,19 @@ final class MasterRolesTest extends PgTestCase
         $this->assertSame('x', $this->owner()->query('SELECT name FROM clients')->getRow()->name);
     }
 
+    public function testClientsHourlyRateIsMoneyNumericAndStillUpdatable(): void
+    {
+        // IN-02: peniaze numeric(12,2), stĺpcový grant prežije ALTER TYPE.
+        $col = $this->owner()->query(
+            "SELECT numeric_precision AS p, numeric_scale AS s FROM information_schema.columns WHERE table_name = 'clients' AND column_name = 'hourly_rate'",
+        )->getRow();
+        $this->assertSame(12, (int) $col->p);
+        $this->assertSame(2, (int) $col->s);
+
+        $this->rw()->query("UPDATE clients SET hourly_rate = '9999999999.99'");
+        $this->assertSame('9999999999.99', $this->owner()->query('SELECT hourly_rate FROM clients')->getRow()->hourly_rate);
+    }
+
     public function testAuditLogIsInsertOnly(): void
     {
         $this->assertPermissionDenied(fn () => $this->rw()->query("UPDATE audit_log SET ip = 'x'"));
