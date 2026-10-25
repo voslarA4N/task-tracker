@@ -82,7 +82,7 @@ final class EntitiesCreateTest extends AuthTestCase
         return $this->call('post', '/settings/entities', $csrf ? $data + [csrf_token() => csrf_hash()] : $data);
     }
 
-    private function count(string $table): int
+    private function rows(string $table): int
     {
         return (int) $this->owner()->query("SELECT count(*) AS c FROM {$table}")->getRow()->c;
     }
@@ -146,7 +146,7 @@ final class EntitiesCreateTest extends AuthTestCase
         ]));
 
         $result->assertStatus(302);
-        $this->assertSame(1, $this->count('entities'));
+        $this->assertSame(1, $this->rows('entities'));
     }
 
     public function testInvalidCountryRegimeCombinationReturns422(): void
@@ -155,14 +155,14 @@ final class EntitiesCreateTest extends AuthTestCase
 
         $result->assertStatus(422);
         $this->assertStringContainsString('is-invalid', $this->body($result));
-        $this->assertSame(0, $this->count('entities'));
-        $this->assertSame(0, $this->count('entity_versions'));
+        $this->assertSame(0, $this->rows('entities'));
+        $this->assertSame(0, $this->rows('entity_versions'));
     }
 
     public function testPostWithoutCsrfIsForbidden(): void
     {
         $this->post($this->skPost(), false)->assertStatus(403);
-        $this->assertSame(0, $this->count('entities'));
+        $this->assertSame(0, $this->rows('entities'));
     }
 
     public function testUnknownEntityIs404(): void
