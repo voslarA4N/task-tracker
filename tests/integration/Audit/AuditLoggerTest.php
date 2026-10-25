@@ -84,7 +84,7 @@ final class AuditLoggerTest extends PgTestCase
         $rw->transException(true)->transStart();
 
         try {
-            $rw->query("INSERT INTO demo_calculations (hours, rate, amount, created_at) VALUES (1.00, 2.00, 2.00, now())");
+            $rw->query('INSERT INTO demo_calculations (hours, rate, amount, created_at) VALUES (1.00, 2.00, 2.00, now())');
             (new AuditLogger($rw))->record('entity', 1, 'create', null, ['x' => '1']);
 
             throw new RuntimeException('boom');

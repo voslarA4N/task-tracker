@@ -13,10 +13,16 @@ use PHPUnit\Framework\Attributes\DataProvider;
  */
 final class DbBoolTest extends CIUnitTestCase
 {
+    #[DataProvider('provideOf')]
+    public function testOf(mixed $in, bool $expected): void
+    {
+        $this->assertSame($expected, DbBool::of($in));
+    }
+
     /**
      * @return iterable<string, array{mixed, bool}>
      */
-    public static function provideValues(): iterable
+    public static function provideOf(): iterable
     {
         yield 'true' => [true, true];
 
@@ -39,12 +45,6 @@ final class DbBoolTest extends CIUnitTestCase
         yield 'int 0' => [0, false];
 
         yield 'null' => [null, false];
-    }
-
-    #[DataProvider('provideValues')]
-    public function testOf(mixed $in, bool $expected): void
-    {
-        $this->assertSame($expected, DbBool::of($in));
     }
 
     public function testToDb(): void
