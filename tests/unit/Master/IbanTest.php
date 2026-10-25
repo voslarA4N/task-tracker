@@ -15,10 +15,16 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('unit')]
 final class IbanTest extends CIUnitTestCase
 {
+    #[DataProvider('provideValidIbans')]
+    public function testValidIbans(string $iban): void
+    {
+        $this->assertTrue(Iban::isValid($iban));
+    }
+
     /**
      * @return iterable<string, array{string}>
      */
-    public static function validProvider(): iterable
+    public static function provideValidIbans(): iterable
     {
         yield 'SK' => ['SK3112000000198742637541'];
 
@@ -27,12 +33,6 @@ final class IbanTest extends CIUnitTestCase
         yield 'CZ' => ['CZ6508000000192000145399'];
 
         yield 'DE' => ['DE89370400440532013000'];
-    }
-
-    #[DataProvider('validProvider')]
-    public function testValidIbans(string $iban): void
-    {
-        $this->assertTrue(Iban::isValid($iban));
     }
 
     public function testNormalizeStripsSpacesAndUppercases(): void
