@@ -167,7 +167,7 @@ return [
     'seriesTokenText'                   => 'other characters are printed as is',
     'seriesExamples'                    => 'Examples',
     'errorSeriesFormat'                 => 'Invalid format. Use one year (RRRR or RR), one sequence number (# up to 9 characters), optionally MM and text of letters, digits and / _ . - (resulting number at most 30 characters).',
-    'errorSeriesSame'                   => 'Invoices and credit notes must not share the same number format.',
+    'errorSeriesSame'                   => 'Invoices and credit notes could get the same number. Add fixed text that tells them apart (for example the DB- prefix for credit notes).',
     'errorSeriesLocked'                 => 'The format cannot be changed while the series contains issued documents.',
     'errorSeriesInitial'                => 'The starting number must be a whole number from 1 up to the highest number that fits the format.',
     'legalTitle'                        => 'Legal profile',

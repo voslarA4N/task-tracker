@@ -94,6 +94,48 @@ final class SeriesFormatTest extends TestCase
         yield 'too long' => ['ABCDEFGHIJKLMNOPQRSTUVWXYZ-RRRR###', 'too_long'];
     }
 
+    #[DataProvider('provideMayCollideWith')]
+    public function testMayCollideWith(string $a, string $b, bool $expected): void
+    {
+        $this->assertSame($expected, SeriesFormat::parse($a)->mayCollideWith(SeriesFormat::parse($b)));
+        $this->assertSame($expected, SeriesFormat::parse($b)->mayCollideWith(SeriesFormat::parse($a)));
+    }
+
+    /**
+     * @return iterable<string, array{string, string, bool}>
+     */
+    public static function provideMayCollideWith(): iterable
+    {
+        yield 'identical' => ['RRRRMM###', 'RRRRMM###', true];
+
+        yield 'yearly vs monthly same width' => ['RRRR####', 'RRRRMM##', true];
+
+        yield 'literal zero vs digit' => ['RRRR0###', 'RRRR####', true];
+
+        yield 'letter case' => ['db-RRRR###', 'DB-RRRR###', true];
+
+        yield 'default pair' => ['RRRRMM###', 'DB-RRRRMM###', false];
+
+        yield 'different width' => ['RRRR###', 'RRRR####', false];
+
+        yield 'different letter' => ['FA-RRRR###', 'DB-RRRR###', false];
+
+        yield 'separator vs digit' => ['RRRR-###', 'RRRR####', false];
+    }
+
+    public function testCollisionExamplesRenderEqualNumbers(): void
+    {
+        // Príklady z WR-05: rôzne reťazce formátu, rovnaké číslo dokladu.
+        $this->assertSame(
+            SeriesFormat::parse('RRRR####')->render('2026-10-25', 1001),
+            SeriesFormat::parse('RRRRMM##')->render('2026-10-25', 1),
+        );
+        $this->assertSame(
+            SeriesFormat::parse('RRRR0###')->render('2026-10-25', 1),
+            SeriesFormat::parse('RRRR####')->render('2026-10-25', 1),
+        );
+    }
+
     public function testThirtyCharsOutputIsAllowed(): void
     {
         $format = 'ABCDEFGHIJKLMNOPQRSTUVWXY-RR##';

@@ -167,7 +167,7 @@ return [
     'seriesTokenText'                   => 'ostatné znaky sa vypíšu doslova',
     'seriesExamples'                    => 'Príklady',
     'errorSeriesFormat'                 => 'Neplatný formát. Použite jeden rok (RRRR alebo RR), jedno poradové číslo (# až 9 znakov), voliteľne MM a text z písmen, číslic a znakov / _ . - (výsledné číslo najviac 30 znakov).',
-    'errorSeriesSame'                   => 'Faktúry a dobropisy nesmú mať rovnaký formát čísla.',
+    'errorSeriesSame'                   => 'Faktúry a dobropisy by mohli dostať rovnaké číslo. Doplňte pevný text, ktorý ich odlíši (napríklad predponu DB- pri dobropisoch).',
     'errorSeriesLocked'                 => 'Formát sa nedá zmeniť, kým rad obsahuje vystavené doklady.',
     'errorSeriesInitial'                => 'Počiatočné číslo musí byť celé číslo od 1 po najvyššie číslo, ktoré sa zmestí do formátu.',
     'legalTitle'                        => 'Právny profil',

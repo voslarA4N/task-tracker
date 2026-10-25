@@ -108,6 +108,19 @@ final class SeriesServiceTest extends PgTestCase
         $this->assertSame('RRRRMM###', $this->service()->find($id, 'invoice')['format']);
     }
 
+    public function testFormatThatCanRenderSameNumberAsOtherKindRejected(): void
+    {
+        $id = $this->createEntity('SK');
+        $this->service()->update($id, 'credit_note', 'RRRR####', '1');
+
+        $this->assertSame('same_as_other', $this->rejectedReason(fn () => $this->service()->update($id, 'invoice', 'RRRRMM##', '1')));
+        $this->assertSame('same_as_other', $this->rejectedReason(fn () => $this->service()->update($id, 'invoice', 'RRRR0###', '1')));
+        $this->assertSame('RRRRMM###', $this->service()->find($id, 'invoice')['format']);
+
+        $this->service()->update($id, 'invoice', 'FA-RRRR####', '1');
+        $this->assertSame('FA-RRRR####', $this->service()->find($id, 'invoice')['format']);
+    }
+
     public function testInitialNumberOutOfRange(): void
     {
         $id = $this->createEntity('SK');

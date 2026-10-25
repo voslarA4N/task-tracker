@@ -110,7 +110,7 @@ class SeriesService
             foreach ($rows as $row) {
                 if ($row['kind'] === $kind) {
                     $series = $row;
-                } elseif ($row['format'] === $parsed->format()) {
+                } elseif ($this->collides((string) $row['format'], $parsed)) {
                     throw new SeriesRejected('same_as_other');
                 }
             }
@@ -138,6 +138,19 @@ class SeriesService
             );
             $this->audit->recordChange('invoice_series', $seriesId, 'update', $old, $new);
         });
+    }
+
+    /**
+     * Faktúry a dobropisy subjektu nesmú nikdy dostať rovnaké číslo (WR-05), nestačí rozdielny reťazec formátu.
+     */
+    private function collides(string $otherFormat, SeriesFormat $parsed): bool
+    {
+        try {
+            return SeriesFormat::parse($otherFormat)->mayCollideWith($parsed);
+        } catch (InvalidSeriesFormat) {
+            // Uložený formát, ktorý dnešné pravidlá už neprijímajú: aspoň zhoda reťazca.
+            return strcasecmp($otherFormat, $parsed->format()) === 0;
+        }
     }
 
     /**

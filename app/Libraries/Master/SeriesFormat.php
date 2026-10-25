@@ -173,6 +173,73 @@ final class SeriesFormat
     }
 
     /**
+     * Môžu dva formáty pre nejaký dátum a poradie vytvoriť rovnaké číslo (WR-05)?
+     *
+     * Všetky tokeny majú pevnú šírku, preto každý výstup má pevnú dĺžku a na každej pozícii buď
+     * pevný znak, alebo číslicu. Odhad je konzervatívny: číslicové pozície (rok, mesiac, poradie)
+     * sa berú ako ľubovoľná číslica, takže výsledok "nie" znamená istotu, že sa čísla nikdy nezhodnú.
+     * Písmená sa porovnávajú bez ohľadu na veľkosť (variabilný symbol a ľudia ich nerozlišujú).
+     */
+    public function mayCollideWith(self $other): bool
+    {
+        $mine   = $this->shape();
+        $theirs = $other->shape();
+
+        if (count($mine) !== count($theirs)) {
+            return false;
+        }
+
+        foreach ($mine as $i => $char) {
+            $that = $theirs[$i];
+
+            if ($char === null && $that === null) {
+                continue;
+            }
+
+            if ($char === null || $that === null) {
+                // Pevný znak oproti číslici: zhoda len vtedy, ak je pevný znak sám číslicou.
+                if (ctype_digit($char ?? $that)) {
+                    continue;
+                }
+
+                return false;
+            }
+
+            if ($char !== $that) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Tvar výstupu po znakoch: null = číslica z roku, mesiaca alebo poradia, inak pevný znak (veľké písmeno).
+     *
+     * @return list<string|null>
+     */
+    private function shape(): array
+    {
+        $shape = [];
+
+        foreach ($this->tokens as [$type, $value]) {
+            if ($type === 'lit') {
+                foreach (str_split(strtoupper($value)) as $char) {
+                    $shape[] = $char;
+                }
+
+                continue;
+            }
+
+            for ($n = strlen($value); $n > 0; $n--) {
+                $shape[] = null;
+            }
+        }
+
+        return $shape;
+    }
+
+    /**
      * @return array{string, string}
      */
     private function dateParts(string $date): array
