@@ -41,6 +41,8 @@ final class BankAccountService
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
         return Transaction::run($this->db, function () use ($entityId, $v, $now): int {
+            $this->lockEntity($entityId);
+
             $active = (int) $this->db->query(
                 'SELECT count(*) AS c FROM entity_bank_accounts WHERE entity_id = :e: AND archived_at IS NULL',
                 ['e' => $entityId],
@@ -87,23 +89,22 @@ final class BankAccountService
      */
     public function update(int $entityId, int $accountId, array $v): bool
     {
-        $before = $this->findOrFail($entityId, $accountId);
-
         $new = [
             'label' => (string) $v['label'],
             'iban'  => (string) $v['iban'],
             'swift' => ($v['swift'] ?? '') === '' ? null : (string) $v['swift'],
         ];
-        $old = [
-            'label' => (string) $before['label'],
-            'iban'  => (string) $before['iban'],
-            'swift' => $before['swift'] === null ? null : (string) $before['swift'],
-        ];
+        $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        $now     = service('clock')->now()->format('Y-m-d H:i:sP');
-        $promote = (bool) ($v['is_default'] ?? false) && ! $before['is_default'] && $before['archived_at'] === null;
-
-        return Transaction::run($this->db, function () use ($entityId, $accountId, $old, $new, $now, $promote): bool {
+        return Transaction::run($this->db, function () use ($entityId, $accountId, $v, $new, $now): bool {
+            // Rozhodnutia aj audit "before" nad uzamknutým stavom v tej istej transakcii (WR-02).
+            $before = $this->lockOrFail($entityId, $accountId);
+            $old    = [
+                'label' => (string) $before['label'],
+                'iban'  => (string) $before['iban'],
+                'swift' => $before['swift'] === null ? null : (string) $before['swift'],
+            ];
+            $promote = (bool) ($v['is_default'] ?? false) && ! $before['is_default'] && $before['archived_at'] === null;
             $changed = false;
 
             if ($old !== $new) {
@@ -125,34 +126,34 @@ final class BankAccountService
 
     public function setDefault(int $entityId, int $accountId): void
     {
-        $account = $this->findOrFail($entityId, $accountId);
-
-        if ($account['archived_at'] !== null) {
-            throw new InvalidArgumentException('Archived account cannot be default');
-        }
-
-        if ($account['is_default']) {
-            return;
-        }
-
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
         Transaction::run($this->db, function () use ($entityId, $accountId, $now): void {
+            $account = $this->lockOrFail($entityId, $accountId);
+
+            if ($account['archived_at'] !== null) {
+                throw new InvalidArgumentException('Archived account cannot be default');
+            }
+
+            if ($account['is_default']) {
+                return;
+            }
+
             $this->applyDefault($entityId, $accountId, $now);
         });
     }
 
     public function archive(int $entityId, int $accountId): void
     {
-        $account = $this->findOrFail($entityId, $accountId);
-
-        if ($account['archived_at'] !== null) {
-            return;
-        }
-
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        Transaction::run($this->db, function () use ($entityId, $accountId, $now, $account): void {
+        Transaction::run($this->db, function () use ($entityId, $accountId, $now): void {
+            $account = $this->lockOrFail($entityId, $accountId);
+
+            if ($account['archived_at'] !== null) {
+                return;
+            }
+
             $this->db->query(
                 'UPDATE entity_bank_accounts SET archived_at = :now:, is_default = false, updated_at = :now: WHERE id = :a: AND entity_id = :e: AND archived_at IS NULL',
                 ['now' => $now, 'a' => $accountId, 'e' => $entityId],
@@ -201,12 +202,33 @@ final class BankAccountService
     }
 
     /**
+     * Zámok riadku subjektu serializuje všetky zmeny jeho účtov (predvolený účet závisí od ostatných riadkov).
+     * FOR NO KEY UPDATE nekoliduje s FK kontrolou pri INSERT účtu.
+     */
+    private function lockEntity(int $entityId): void
+    {
+        $this->db->query('SELECT id FROM entities WHERE id = :e: FOR NO KEY UPDATE', ['e' => $entityId]);
+    }
+
+    /**
+     * Účet načítaný v transakcii po zámku subjektu, teda aktuálny stav pre rozhodnutia aj audit.
+     *
      * @return array<string, mixed>
      */
-    private function findOrFail(int $entityId, int $accountId): array
+    private function lockOrFail(int $entityId, int $accountId): array
     {
-        return $this->find($entityId, $accountId)
-            ?? throw new InvalidArgumentException('Bank account ' . $accountId . ' not found for entity ' . $entityId);
+        $this->lockEntity($entityId);
+
+        $row = $this->db->query(
+            'SELECT * FROM entity_bank_accounts WHERE id = :a: AND entity_id = :e: FOR UPDATE',
+            ['a' => $accountId, 'e' => $entityId],
+        )->getRowArray();
+
+        if ($row === null) {
+            throw new InvalidArgumentException('Bank account ' . $accountId . ' not found for entity ' . $entityId);
+        }
+
+        return $this->hydrate($row);
     }
 
     private function clearDefault(int $entityId, string $now): void

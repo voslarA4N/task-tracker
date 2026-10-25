@@ -58,29 +58,31 @@ final class ClientService
      */
     public function update(int $id, array $values): bool
     {
-        $before = $this->find($id);
-
-        if ($before === null) {
-            throw new InvalidArgumentException('Client ' . $id . ' not found');
-        }
-
-        $after = $this->auditValues($values);
-
-        if ($after === $this->auditValues($before)) {
-            return false;
-        }
-
+        $after   = $this->auditValues($values);
         $data    = $this->dbValues($values);
         $now     = service('clock')->now()->format('Y-m-d H:i:sP');
         $assigns = array_map(static fn (string $c): string => $c . ' = ' . self::placeholder($c), array_keys($data));
 
-        return Transaction::run($this->db, function () use ($id, $data, $assigns, $now, $before, $after): bool {
+        return Transaction::run($this->db, function () use ($id, $data, $assigns, $now, $after): bool {
+            // Audit "before" z uzamknutého riadku v tej istej transakcii (WR-02).
+            $row = $this->db->query('SELECT * FROM clients WHERE id = :id: FOR UPDATE', ['id' => $id])->getRowArray();
+
+            if ($row === null) {
+                throw new InvalidArgumentException('Client ' . $id . ' not found');
+            }
+
+            $before = $this->auditValues($this->hydrate($row));
+
+            if ($after === $before) {
+                return false;
+            }
+
             $this->db->query(
                 'UPDATE clients SET ' . implode(', ', $assigns) . ', updated_at = :now: WHERE id = :id:',
                 $data + ['now' => $now, 'id' => $id],
             );
 
-            return $this->audit->recordChange('client', $id, 'update', $this->auditValues($before), $after);
+            return $this->audit->recordChange('client', $id, 'update', $before, $after);
         });
     }
 

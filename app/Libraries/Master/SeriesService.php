@@ -91,34 +91,47 @@ class SeriesService
             throw new SeriesRejected('initial_out_of_range');
         }
 
-        $series = $this->find($entityId, $kind);
-
-        if ($series === null) {
+        if (! in_array($kind, self::KINDS, true)) {
             throw new SeriesRejected('initial_out_of_range');
-        }
-
-        foreach ($this->listFor($entityId) as $otherKind => $other) {
-            if ($otherKind !== $kind && $other['format'] === $parsed->format()) {
-                throw new SeriesRejected('same_as_other');
-            }
-        }
-
-        $seriesId = (int) $series['id'];
-
-        if ($series['format'] !== $parsed->format() && $this->isFormatLocked($seriesId)) {
-            throw new SeriesRejected('locked');
-        }
-
-        $old = ['format' => (string) $series['format'], 'initial_number' => (string) $series['initial_number']];
-        $new = ['format' => $parsed->format(), 'initial_number' => (string) $initial];
-
-        if ($old === $new) {
-            return;
         }
 
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        Transaction::run($this->db, function () use ($entityId, $seriesId, $initial, $now, $old, $new): void {
+        Transaction::run($this->db, function () use ($entityId, $kind, $parsed, $initial, $now): void {
+            // Oba rady subjektu uzamknuté (v poradí id): kontroly, audit "before" aj UPDATE vidia ten istý stav
+            // a sú serializované s pridelením čísla v Phase 5 (WR-02).
+            $rows = $this->db->query(
+                'SELECT * FROM invoice_series WHERE entity_id = :e: ORDER BY id FOR UPDATE',
+                ['e' => $entityId],
+            )->getResultArray();
+
+            $series = null;
+
+            foreach ($rows as $row) {
+                if ($row['kind'] === $kind) {
+                    $series = $row;
+                } elseif ($row['format'] === $parsed->format()) {
+                    throw new SeriesRejected('same_as_other');
+                }
+            }
+
+            if ($series === null) {
+                throw new SeriesRejected('initial_out_of_range');
+            }
+
+            $seriesId = (int) $series['id'];
+
+            if ($series['format'] !== $parsed->format() && $this->isFormatLocked($seriesId)) {
+                throw new SeriesRejected('locked');
+            }
+
+            $old = ['format' => (string) $series['format'], 'initial_number' => (string) $series['initial_number']];
+            $new = ['format' => $parsed->format(), 'initial_number' => (string) $initial];
+
+            if ($old === $new) {
+                return;
+            }
+
             $this->db->query(
                 'UPDATE invoice_series SET format = :f:, initial_number = :n:, updated_at = :now: WHERE id = :id: AND entity_id = :e:',
                 ['f' => $new['format'], 'n' => $initial, 'now' => $now, 'id' => $seriesId, 'e' => $entityId],

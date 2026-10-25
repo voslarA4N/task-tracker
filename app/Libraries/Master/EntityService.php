@@ -96,64 +96,61 @@ final class EntityService
      */
     public function newVersion(int $entityId, string $validFrom, array $version): int
     {
-        $entity = $this->find($entityId);
-
-        if ($entity === null) {
-            throw new InvalidArgumentException('Entity ' . $entityId . ' not found');
-        }
-
-        $clock = service('clock');
-        $max   = ($clock->parseDate($clock->today()) ?? $clock->now())->modify('+366 days')->format('Y-m-d');
-
-        if ($validFrom < (string) $entity['active_from'] || $validFrom > $max) {
-            throw VersionRejected::outOfRange();
-        }
-
-        $exists = $this->db->query(
-            'SELECT 1 FROM entity_versions WHERE entity_id = :e: AND valid_from = :d:',
-            ['e' => $entityId, 'd' => $validFrom],
-        )->getRowArray();
-
-        if ($exists !== null) {
-            throw VersionRejected::duplicateDate();
-        }
-
-        $previous = (new EntityVersionResolver($this->db))->atDate($entityId, $validFrom);
-
-        if (VersionDiff::changedFields($previous, $version) === []) {
-            throw VersionRejected::noChange();
-        }
-
-        $now    = $clock->now()->format('Y-m-d H:i:sP');
-        $userId = auth()->id();
-        $row    = ['entity_id' => $entityId, 'valid_from' => $validFrom];
-
-        foreach (EntityInput::VERSION_FIELDS as $field) {
-            $value       = $version[$field] ?? null;
-            $row[$field] = $value === '' ? null : $value;
-        }
-
-        $row['created_at'] = $now;
-        $row['created_by'] = is_numeric($userId) ? (int) $userId : null;
-
-        $beforeFields = [];
-
-        foreach (EntityInput::VERSION_FIELDS as $field) {
-            $beforeFields[$field] = $previous[$field] === null ? null : (string) $previous[$field];
-        }
-
-        $afterFields = [];
-
-        foreach (EntityInput::VERSION_FIELDS as $field) {
-            $afterFields[$field] = $row[$field] === null ? null : (string) $row[$field];
-        }
-
-        [$before, $after]    = AuditLogger::diff($beforeFields, $afterFields);
-        $after['valid_from'] = $validFrom;
-        $after['entity_id']  = $entityId;
-
         try {
-            $versionId = Transaction::run($this->db, function () use ($row, $before, $after): int {
+            return Transaction::run($this->db, function () use ($entityId, $validFrom, $version): int {
+                // Kontroly aj audit "before" nad uzamknutým riadkom v tej istej transakcii (WR-02).
+                $entity = $this->lockOrFail($entityId);
+
+                $clock = service('clock');
+                $max   = ($clock->parseDate($clock->today()) ?? $clock->now())->modify('+366 days')->format('Y-m-d');
+
+                if ($validFrom < (string) $entity['active_from'] || $validFrom > $max) {
+                    throw VersionRejected::outOfRange();
+                }
+
+                $exists = $this->db->query(
+                    'SELECT 1 FROM entity_versions WHERE entity_id = :e: AND valid_from = :d:',
+                    ['e' => $entityId, 'd' => $validFrom],
+                )->getRowArray();
+
+                if ($exists !== null) {
+                    throw VersionRejected::duplicateDate();
+                }
+
+                $previous = (new EntityVersionResolver($this->db))->atDate($entityId, $validFrom);
+
+                if (VersionDiff::changedFields($previous, $version) === []) {
+                    throw VersionRejected::noChange();
+                }
+
+                $now    = $clock->now()->format('Y-m-d H:i:sP');
+                $userId = auth()->id();
+                $row    = ['entity_id' => $entityId, 'valid_from' => $validFrom];
+
+                foreach (EntityInput::VERSION_FIELDS as $field) {
+                    $value       = $version[$field] ?? null;
+                    $row[$field] = $value === '' ? null : $value;
+                }
+
+                $row['created_at'] = $now;
+                $row['created_by'] = is_numeric($userId) ? (int) $userId : null;
+
+                $beforeFields = [];
+
+                foreach (EntityInput::VERSION_FIELDS as $field) {
+                    $beforeFields[$field] = $previous[$field] === null ? null : (string) $previous[$field];
+                }
+
+                $afterFields = [];
+
+                foreach (EntityInput::VERSION_FIELDS as $field) {
+                    $afterFields[$field] = $row[$field] === null ? null : (string) $row[$field];
+                }
+
+                [$before, $after]    = AuditLogger::diff($beforeFields, $afterFields);
+                $after['valid_from'] = $validFrom;
+                $after['entity_id']  = $entityId;
+
                 $versionId = $this->insert('entity_versions', $row);
                 $this->audit->record('entity_version', $versionId, 'create', $before, $after);
 
@@ -166,8 +163,6 @@ final class EntityService
 
             throw $e;
         }
-
-        return $versionId;
     }
 
     /**
@@ -179,30 +174,25 @@ final class EntityService
      */
     public function updateBase(int $id, array $values): bool
     {
-        $entity = $this->find($id);
-
-        if ($entity === null) {
-            throw new InvalidArgumentException('Entity ' . $id . ' not found');
-        }
-
         $new = [
             'name_internal' => (string) $values['name_internal'],
             'active_from'   => (string) $values['active_from'],
             'active_to'     => ($values['active_to'] ?? '') === '' ? null : (string) $values['active_to'],
         ];
-        $old = [
-            'name_internal' => (string) $entity['name_internal'],
-            'active_from'   => (string) $entity['active_from'],
-            'active_to'     => $entity['active_to'] === null ? null : (string) $entity['active_to'],
-        ];
-
-        if ($old === $new) {
-            return false;
-        }
-
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        return Transaction::run($this->db, function () use ($id, $old, $new, $now): bool {
+        return Transaction::run($this->db, function () use ($id, $new, $now): bool {
+            $entity = $this->lockOrFail($id);
+            $old    = [
+                'name_internal' => (string) $entity['name_internal'],
+                'active_from'   => (string) $entity['active_from'],
+                'active_to'     => $entity['active_to'] === null ? null : (string) $entity['active_to'],
+            ];
+
+            if ($old === $new) {
+                return false;
+            }
+
             $this->db->query(
                 'UPDATE entities SET name_internal = :n:, active_from = :f:, active_to = :t:, updated_at = :now: WHERE id = :id:',
                 ['n' => $new['name_internal'], 'f' => $new['active_from'], 't' => $new['active_to'], 'now' => $now, 'id' => $id],
@@ -217,19 +207,15 @@ final class EntityService
      */
     public function end(int $id, string $activeTo): void
     {
-        $entity = $this->find($id);
-
-        if ($entity === null) {
-            throw new InvalidArgumentException('Entity ' . $id . ' not found');
-        }
-
-        if ($activeTo < (string) $entity['active_from']) {
-            throw new InvalidArgumentException('active_to is before active_from');
-        }
-
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        Transaction::run($this->db, function () use ($id, $activeTo, $now, $entity): void {
+        Transaction::run($this->db, function () use ($id, $activeTo, $now): void {
+            $entity = $this->lockOrFail($id);
+
+            if ($activeTo < (string) $entity['active_from']) {
+                throw new InvalidArgumentException('active_to is before active_from');
+            }
+
             $this->db->query(
                 'UPDATE entities SET active_to = :t:, updated_at = :now: WHERE id = :id:',
                 ['t' => $activeTo, 'now' => $now, 'id' => $id],
@@ -250,6 +236,17 @@ final class EntityService
     public function find(int $id): ?array
     {
         return $this->db->query('SELECT * FROM entities WHERE id = :id:', ['id' => $id])->getRowArray();
+    }
+
+    /**
+     * Riadok subjektu uzamknutý do konca transakcie (FOR NO KEY UPDATE nekoliduje s FK kontrolami podriadených tabuliek).
+     *
+     * @return array<string, mixed>
+     */
+    private function lockOrFail(int $id): array
+    {
+        return $this->db->query('SELECT * FROM entities WHERE id = :id: FOR NO KEY UPDATE', ['id' => $id])->getRowArray()
+            ?? throw new InvalidArgumentException('Entity ' . $id . ' not found');
     }
 
     /**
