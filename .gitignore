@@ -12,3 +12,8 @@
 /_tmp/
 .phpunit.cache/
 .php-cs-fixer.cache
+
+# Lokálne nainštalovaný GSD a nastavenia Claude Code (preinštalovateľné)
+/.claude/
+# Starý výstup spiku mPDF (spike teraz píše do writable/mpdf/)
+/spike-output.pdf
