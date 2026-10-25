@@ -230,7 +230,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 04-09-PLAN.md — spark import:excel: suchý beh, idempotentný ostrý beh, runbook (vlna 4)
+- [ ] 04-09-PLAN.md — spark import:excel: suchý beh, idempotentný ostrý beh, runbook, checkpoint ostrého importu reálneho súboru (vlna 4)
 - [ ] 04-10-PLAN.md — Panel časti zospodu (pridať, upraviť, presunúť, zmazať), súhrn vyfakturované/naplánované/zostáva, 409 (vlna 4)
 - [ ] 04-12-PLAN.md — Zoznam Aktuálne úlohy s htmx filtrami a stavom v URL (vlna 4)
 

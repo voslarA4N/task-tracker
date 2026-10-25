@@ -455,16 +455,21 @@ $cached = $sheet->getCell('D25')->getOldCalculatedValue(); // uložená hodnota 
 | A5 | slopcheck nespustené, `phpoffice/phpspreadsheet` schválené vlastníkom v STACK.md | Package Legitimacy Audit | Nízke (balík je dokumentované rozhodnutie a overený na Packagist) |
 | A6 | `created_at` importovaných úloh = čas importu, `done_at` = čas importu (skutočné dátumy nie sú v Exceli) | Open Questions | Kozmetické, ovplyvní zoradenie a „posledný klient“ |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Definícia dlaždice „V práci“ voči makete**
    - What we know: maketa `mobile-home.html` ukazuje „V práci 2 214 € · 82 h nacenených“, čo je súčet všetkých úloh októbrového bloku vrátane zapracovanej Listobox (1 h), pričom skupina „V práci“ má 4 úlohy (81 h = 2 187 €). CONTEXT D-14: nezapracované úlohy.
    - What's unclear: či odpočítať hodiny už rozdelené do častí.
    - Recommendation: držať D-14 (nacenené hodiny a suma nezapracovaných úloh, per mena), v UI-SPEC to explicitne popísať; maketa je v tomto čísle nekonzistentná.
+   - **RESOLVED:** drží sa D-14: dlaždica „V práci“ = nacenené hodiny a suma úloh v stave `in_progress`, zvlášť pre každú menu, bez odpočtu rozdelených hodín (04-06 `TaskQueries::dashboard` `wip`, zobrazenie 04-13).
 2. **Dôkaz „rozdielu proti Excelu“ pri reálnom súbore**: rozdiel hodnôt je 0 (Pitfall 4). Planner nech to zohľadní v akceptácii: „suchý beh vypíše tabuľku porovnania a upozornenie na neúplný rozsah vzorca E25/F25“.
+   - **RESOLVED:** suchý beh vypisuje porovnanie súčtov po mesiacoch a samostatné upozornenie na neúplný rozsah vzorca (`formulaIssues`) aj pri rozdiele hodnôt 0 (04-03 `ImportPlanner`, 04-09 `ImportReportFormatter`, fixture s pokazeným rozsahom; overenie nad reálnym súborom v checkpointe 04-09 Task 3).
 3. **Zmena meny klienta pri zamknutých častiach**: odporúčam rozšíriť odmietnutie aj na zamknuté (Pitfall 9). Potvrdiť, inak implementovať presne podľa Discretion.
+   - **RESOLVED:** zámok meny klienta sa rozširuje na akúkoľvek fakturačnú časť (zamknutú aj nezamknutú), prísnejšie než text Discretion; zapísané v 04-04 (`ClientCurrencyLocked`, `ClientCurrencyLockTest`) a SUMMARY 04-04 to uvedie ako rozhodnutie.
 4. **`done_at`/`created_at` importu**: A6.
+   - **RESOLVED:** podľa A6 `created_at` aj `done_at` importovaných úloh = čas importu (cez `Clock`), skutočné dátumy v Exceli nie sú (04-09 `ImportRunner`).
 5. **Stránkovanie zoznamu úloh**: zoznam „Aktuálne“ je malý; pre „Všetky“ odporúčam `LIMIT 100` a poznámku, plnohodnotné stránkovanie nie je v rozsahu.
+   - **RESOLVED:** zoznam má `LIMIT 200` (dotaz načíta 201 riadkov a nastaví `truncated`), pri orezaní UI ukáže `Tasks.truncatedHint`; stránkovanie nie je v rozsahu fázy (04-06 `TaskQueries::list`, 04-12 zoznam).
 
 ## Environment Availability
 
