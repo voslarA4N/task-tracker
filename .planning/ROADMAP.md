@@ -164,7 +164,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 03-02-PLAN.md — Vytvorenie SK/PL subjektu cez UI: entities, entity_versions, invoice_series, EntityService, verzia k dátumu, detail (vlna 2)
+- [x] 03-02-PLAN.md — Vytvorenie SK/PL subjektu cez UI: entities, entity_versions, invoice_series, EntityService, verzia k dátumu, detail (vlna 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -359,7 +359,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
-| 3. Master dáta (subjekty a klienti) | 1/10 | In Progress|  |
+| 3. Master dáta (subjekty a klienti) | 2/10 | In Progress|  |
 | 4. Úlohy, fakturačné časti a dashboard | 0/0 | Not started | - |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |

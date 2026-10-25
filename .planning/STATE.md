@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-10-25T15:39:53.522Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-10-25T15:55:30.978Z"
 last_activity: 2026-10-25
 progress:
   total_phases: 12
   completed_phases: 2
   total_plans: 40
-  completed_plans: 31
+  completed_plans: 32
   percent: 17
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 3 (master-d-ta-subjekty-a-klienti) — EXECUTING
-Plan: 2 of 10
+Plan: 3 of 10
 Status: Ready to execute
 Last activity: 2026-10-25
 
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P19 | 35min | 3 tasks | 11 files |
 | Phase 02 P09 | 60min | 2 tasks | 7 files |
 | Phase 03 P01 | 20min | 2 tasks | 9 files |
+| Phase 03 P02 | 45min | 3 tasks | 24 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,7 @@ Recent decisions affecting current work:
 - [Phase 02-01]: O-5 = yes (zapamätanie zariadenia aj pri prvom nastavení 2FA, TOTP bol práve zadaný)
 - [Phase 02-01]: O-6 = followup (7- a 30-dňová kontrola iPhone ako sledované úlohy)
 - [Phase 02]: 02-03: Shield spike passed; TOTP as Shield login action (totp_gateway), array-only Settings handler
+- [Phase 03]: country/currency excluded from app_rw column grants (DB-enforced immutability); Clock::parseDate for strict dates
 
 ### Pending Todos
 
@@ -117,6 +119,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-25T15:39:53.495Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-10-25T15:55:30.950Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
