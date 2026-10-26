@@ -236,7 +236,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 04-11-PLAN.md — Panel Označiť ako zapracovanú a návrat do V práci (vlna 5)
+- [x] 04-11-PLAN.md — Panel Označiť ako zapracovanú a návrat do V práci (vlna 5)
 - [ ] 04-13-PLAN.md — Dashboard variant B: dlaždice po menách, skupiny úloh, prepínač mesiaca a klienta (vlna 5)
 
 **UI hint**: yes
@@ -389,7 +389,7 @@ Plans:
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
-| 4. Úlohy, fakturačné časti a dashboard | 10/13 | In Progress|  |
+| 4. Úlohy, fakturačné časti a dashboard | 11/13 | In Progress|  |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
