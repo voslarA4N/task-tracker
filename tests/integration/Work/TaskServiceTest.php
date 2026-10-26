@@ -112,6 +112,23 @@ final class TaskServiceTest extends PgTestCase
         $this->assertSame('https://taskman.example/?todo=81252', $this->service()->find($id)['url']);
     }
 
+    public function testUpdateExpandsDigitsUrlWithClientTemplate(): void
+    {
+        // WR-05: uprava rozvinie cislo tiketu rovnako ako vytvorenie (aj po zmene klienta na klienta so sablonou).
+        $client = $this->createClient(['portal_url_template' => 'https://taskman.example/?todo={id}']);
+        $id     = $this->service()->create($this->values($client));
+
+        $this->assertTrue($this->service()->update($id, $this->values($client, ['url' => '81252'])));
+        $this->assertSame('https://taskman.example/?todo=81252', $this->service()->find($id)['url']);
+
+        // Rovnaky tiket znova: po rozvinuti sa nic nemeni.
+        $this->assertFalse($this->service()->update($id, $this->values($client, ['url' => '81252'])));
+
+        $other = $this->createClient(['name' => 'Iny', 'identifier_value' => '777', 'portal_url_template' => 'https://other.example/t/{id}']);
+        $this->service()->update($id, $this->values($other, ['url' => '5']));
+        $this->assertSame('https://other.example/t/5', $this->service()->find($id)['url']);
+    }
+
     public function testUpdateAuditsOnlyChangedFieldsAndKeepsAllocationRate(): void
     {
         $client = $this->createClient();

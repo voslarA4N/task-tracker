@@ -6,6 +6,7 @@ namespace App\Libraries\Work;
 
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Master\PortalUrlTemplate;
+use App\Libraries\Platform\DbBool;
 use App\Libraries\Platform\Hours;
 use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
@@ -96,9 +97,21 @@ final class TaskService
             $row = $this->lock($id);
 
             $clientId = (int) $values['client_id'];
+            // Vlastny klient ulohy moze byt archivovany (WR-04), novo zvoleny nie.
+            $client = $this->db->query(
+                'SELECT id, portal_url_template, (archived_at IS NOT NULL) AS archived FROM clients WHERE id = :id: FOR SHARE',
+                ['id' => $clientId],
+            )->getRow();
+
+            if ($client === null || ($clientId !== (int) $row['client_id'] && DbBool::of($client->archived))) {
+                throw new TaskRejected('client_unavailable');
+            }
+
+            // WR-05: samotne cislo tiketu sa rozvinie sablonou portalu rovnako ako pri vytvoreni.
+            $template = $client->portal_url_template === null ? null : (string) $client->portal_url_template;
             $after    = [
                 'client_id' => $clientId,
-                'url'       => $this->nullable($values['url'] ?? null),
+                'url'       => $this->expandUrl($values['url'] ?? null, $template),
                 'title'     => (string) $values['title'],
                 'hours'     => (string) $values['hours'],
                 'rate'      => (string) $values['rate'],
@@ -108,17 +121,6 @@ final class TaskService
 
             if ($after === $before) {
                 return false;
-            }
-
-            if ($clientId !== (int) $row['client_id']) {
-                $client = $this->db->query(
-                    'SELECT id FROM clients WHERE id = :id: AND archived_at IS NULL FOR SHARE',
-                    ['id' => $clientId],
-                )->getRow();
-
-                if ($client === null) {
-                    throw new TaskRejected('client_unavailable');
-                }
             }
 
             // Kontrola casti je v tom istom UPDATE (klient sa nezmeni, ak uloha ma akukolvek cast).
