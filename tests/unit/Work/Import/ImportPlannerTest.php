@@ -103,6 +103,25 @@ final class ImportPlannerTest extends TestCase
         $this->assertSame('1.00', $plan->items[3]['partHours']);
     }
 
+    public function testBilledDoneRowsAreSummarizedPerMonth(): void
+    {
+        // WR-07: riadky Fakturovane = ANO so zapracovanim sa importuju ako nezamknute casti, plan ich spocita.
+        $sep = [
+            new ImportRow(4, '2026-09', 'https://t.example/?todo=4', true, 'A', '2.00', null, true, true),
+            new ImportRow(5, '2026-09', 'https://t.example/?todo=5', true, 'B', '1.50', null, true, true),
+            new ImportRow(6, '2026-09', 'https://t.example/?todo=6', true, 'C', '3.00', null, true, false),
+            // ANO bez zapracovania: cast nevznikne, nie je co znova fakturovat.
+            new ImportRow(7, '2026-09', 'https://t.example/?todo=7', true, 'D', '5.00', null, false, true),
+        ];
+        $plan = (new ImportPlanner())->plan(new ImportSheet('27.00', [
+            $this->block($sep, 'F4:F7', '0.00', 4, 7, '2026-09'),
+            $this->block($this->octRows(), 'F19:F23', '324.00'),
+        ]), '27.00', 'EUR');
+
+        $this->assertSame([['month' => '2026-09', 'rows' => 2, 'hours' => '3.50', 'amount' => '94.50']], $plan->billedParts);
+        $this->assertSame(2, $plan->billedPartRows());
+    }
+
     public function testImportKeyStableAndOrdinalDistinguishesDuplicates(): void
     {
         $rows = [

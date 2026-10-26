@@ -89,6 +89,12 @@ final class ImportExcel extends BaseCommand
 
         CLI::write('Vytvorené: ' . $result->created . ', preskočené (už importované): ' . $result->skipped . ', časti: ' . $result->parts, 'green');
 
+        $warning = (new ImportReportFormatter())->billedWarning($plan, (string) $client['currency'], 'sk');
+
+        if ($warning !== null) {
+            CLI::write($warning, 'yellow');
+        }
+
         return EXIT_SUCCESS;
     }
 }

@@ -32,12 +32,16 @@ final class ImportPlanner
         $rowIssues = [];
         $generic   = 0;
         $seen      = [];
+        $billed    = [];
 
         foreach ($sheet->blocks as $block) {
             $quotedHours  = '0.00';
             $doneHours    = '0.00';
             $quotedAmount = Money::zero();
             $doneAmount   = Money::zero();
+            $billedRows   = 0;
+            $billedHours  = '0.00';
+            $billedAmount = Money::zero();
 
             foreach ($block->rows as $row) {
                 $amount = $clientMoney->timesHours($row->hours);
@@ -61,6 +65,14 @@ final class ImportPlanner
                 if ($row->done) {
                     $doneHours  = Hours::plus($doneHours, $row->hours);
                     $doneAmount = $doneAmount->plus($amount);
+                }
+
+                // WR-07: uz fakturovany riadok (ANO) so zapracovanim sa importuje ako nezamknuta cast,
+                // teda sa da fakturovat znova. Import to nemeni (IMP-01), iba to vypise ako varovanie.
+                if ($row->billed && $row->done) {
+                    $billedRows++;
+                    $billedHours  = Hours::plus($billedHours, $row->hours);
+                    $billedAmount = $billedAmount->plus($amount);
                 }
 
                 $base        = $this->baseKey($row);
@@ -91,6 +103,10 @@ final class ImportPlanner
                 ],
                 'formulaIssues' => $this->formulaIssues($block),
             ];
+
+            if ($billedRows > 0) {
+                $billed[] = ['month' => $block->month, 'rows' => $billedRows, 'hours' => $billedHours, 'amount' => $billedAmount->toDecimalString()];
+            }
         }
 
         $mismatch = null;
@@ -99,7 +115,7 @@ final class ImportPlanner
             $mismatch = ['excel' => Money::of($excelRate)->toDecimalString(), 'client' => $clientMoney->toDecimalString()];
         }
 
-        return new ImportPlan($items, $months, $rowIssues, $mismatch, $generic);
+        return new ImportPlan($items, $months, $rowIssues, $mismatch, $generic, $billed);
     }
 
     /**

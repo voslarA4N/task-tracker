@@ -17,6 +17,7 @@ final readonly class ImportPlan
      * @param list<array{month: string, excel: array{quotedHours: ?string, quotedAmount: ?string, doneHours: ?string, doneAmount: ?string}, calc: array{quotedHours: string, quotedAmount: string, doneHours: string, doneAmount: string}, formulaIssues: list<string>}> $months
      * @param list<array{row: int, message: string}>                                                                                                                                                                                                                     $rowIssues
      * @param array{excel: string, client: string}|null                                                                                                                                                                                                                  $rateMismatch
+     * @param list<array{month: string, rows: int, hours: string, amount: string}>                                                                                                                                                                                       $billedParts  WR-07: riadky "Fakturovane = ANO", z ktorych vznikne nezamknuta (fakturovatelna) cast, po mesiacoch
      */
     public function __construct(
         public array $items,
@@ -24,7 +25,16 @@ final readonly class ImportPlan
         public array $rowIssues,
         public ?array $rateMismatch,
         public int $genericLinkRows,
+        public array $billedParts = [],
     ) {
+    }
+
+    /**
+     * Pocet riadkov oznacenych v Exceli ako fakturovane, ktore sa importuju ako nezamknute casti.
+     */
+    public function billedPartRows(): int
+    {
+        return array_sum(array_column($this->billedParts, 'rows'));
     }
 
     public function hasDifferences(): bool

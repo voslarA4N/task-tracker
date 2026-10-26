@@ -54,4 +54,8 @@ importované úlohy. Zmena názvu, URL alebo hodín v Exceli znamená novú úlo
 ## Čo import nerobí
 
 - Nevytvára zamknuté časti ani faktúry (aj riadky s "Fakturované = ÁNO" sa importujú len ako nezamknuté časti).
+  Suchý aj ostrý beh preto vypíše po mesiacoch, koľko riadkov s "Fakturované = ÁNO" a zapracovaním (hodiny a suma)
+  bude po importe nezamknutými časťami na fakturáciu, a súhrnný riadok `POZOR: ...`. Tieto časti by sa inak mohli
+  vyfakturovať druhýkrát. Ako ich ošetriť (napr. nevytvárať časť alebo ich zamknúť historickou faktúrou vo fáze 5),
+  rozhodne vlastník (review fázy 4, WR-07).
 - Neprepisuje ani nemaže existujúce úlohy.
