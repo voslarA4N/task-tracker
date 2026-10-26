@@ -478,14 +478,17 @@ Nie je rename/refactor fáza, ale dotýka sa existujúcich dát:
 | A5 | Phase 7/9 pridajú stav cez nové tabuľky a pohľad, nie UPDATE na `invoices` | Pattern 3 | `immutable_guard` by bolo treba upraviť |
 | A6 | Pre dev DB platí očakávanie 11 častí / 89 h / 2 403,00 € (z CONTEXT/import docs), zvolený guard `--expect-*` | WR-07 | iný stav dát = príkaz zlyhá bezpečne a planner/vlastník upraví očakávanie |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Zahrnúť `immutable_guard` triggery na `invoices*` (nad rámec GRANT)?**
    - Čo vieme: ARCHITECTURE odporúča GRANT, triggery len pre podmienené výnimky; PITFALLS 4 odporúča trigger.
-   - Odporúčanie: zahrnúť (lacné, chráni pred chybou ownera a budúcim chybným GRANT); planner potvrdí, že Phase 7/9 nepotrebujú UPDATE na `invoices`.
+   - RESOLVED: triggery `immutable_guard` na `invoices`, `invoice_lines` a `invoice_documents` sú zahrnuté v 05-01 popri GRANT (insert-only pre `app_rw`); úhrady (Phase 7) a dobropisy (Phase 9) sa evidujú v samostatných tabuľkách, UPDATE na `invoices*` nepotrebujú.
 2. **Presný zoznam kódov DPH a ich potvrdenie** (A1) — nezablokuje kód, len seed hodnoty.
+   - RESOLVED: 05-01 pridá `legal_profiles.vat_code` s PREDBEŽNÝMI hodnotami (`zw` / `np`), riziko R1 zdokumentované v docbloku migrácie a v `COMMENT ON COLUMN`; oprava po potvrdení účtovníčkou novou migráciou.
 3. **Trvalý príznak `tasks.import_billed`?** — odporúčané bez; planner môže zmeniť, ak vlastník chce.
+   - RESOLVED: bez príznaku. 05-04 vyberá importované časti podľa mesiaca a `tasks.import_key IS NOT NULL`; nadmerné zamknutie bráni povinný suchý beh a `--expect-parts/hours/amount` brané z riadku „Fakturované = ÁNO“ správy importu (postup v `docs/ops/import-excel.md`).
 4. **Číslo externej faktúry:** `external_ref` je voľný text (max 300 znakov), URL sa nezobrazuje ako aktívny odkaz bez validácie schémy `http(s)` (XSS/`javascript:`).
+   - RESOLVED: 05-01 obmedzí dĺžku v schéme (`CHECK char_length BETWEEN 1 AND 300`), 05-04 validuje `--ref` regexom (bez riadiacich znakov, 1 až 300 znakov), 05-07 vykreslí odkaz „Otvoriť doklad“ len pri `^https?://` s `esc($x, 'attr')` a `rel="noopener noreferrer"`, inak escapovaný text (test s `javascript:alert(1)`, hrozba T-05-36).
 
 ## Environment Availability
 
