@@ -256,7 +256,17 @@ Plans:
   4. Po vystavení zmena subjektu, klienta, sadzby alebo meny faktúru nezmení (kópia údajov v JSONB aj štruktúrované stĺpce), pokus o úpravu zamknutej časti je odmietnutý serverom aj databázou a zobrazenie uloženého PDF vráti presne tie isté bajty (zhodný sha256).
   5. Automatické testy (PHPUnit, vrátane testov pod rolou `app_rw`) potvrdzujú zhodu súčtov na obrazovke, vo faktúre a v exporte, číslovanie, zamykanie častí, kópiu údajov a test „zmeň všetko po vystavení a porovnaj bajty“.
 
-**Plans**: TBD
+**Plans**: 9 plans (5 vĺn)
+Plans:
+- [ ] 05-01-PLAN.md — Schéma invoices/lines/documents/counters, nemennosť v DB, FK zámku + lock_allocations(), invoice_status_v, vat_code, prestavba fixtures (vlna 1)
+- [ ] 05-02-PLAN.md — InvoiceCalculator (TDD), PdfFormat, popisky InvoicePdf (sk/en/pl/cs), mPDF renderer inv-1, testovacie dvojníky (vlna 1)
+- [ ] 05-03-PLAN.md — SnapshotBuilder, NumberAllocator (upsert), DocumentStore (bytea), InvoiceIssuer v jednej transakcii, rollback a idempotencia (vlna 2)
+- [ ] 05-04-PLAN.md — WR-07: spark invoices:lock-historical + beh na dev DB; scripts/backup.sh a docs/ops/backup.md (vlna 2)
+- [ ] 05-05-PLAN.md — Serverové kontroly (mena, ukončený subjekt, spätný dátum), InvoiceDraftService (náhľad), isFormatLocked (vlna 3)
+- [ ] 05-06-PLAN.md — Test súbehu 50 vystavení na 2 procesoch, test zámku čítača, test „zmeň všetko a porovnaj bajty“ (vlna 3)
+- [ ] 05-07-PLAN.md — Zoznam a detail faktúr, uložené PDF endpoint, navigácia Faktúry, CSS .inv-*, číslo faktúry pri zamknutej časti (vlna 3)
+- [ ] 05-08-PLAN.md — Obrazovka Fakturácia mesiaca: výber, náhľad, varovanie spätného dátumu, presun časti (vlna 4)
+- [ ] 05-09-PLAN.md — Vystavenie z náhľadu: potvrdzovací panel, POST /invoices/issue, 409/422, zhoda súčtov obrazovka = faktúra = snapshot = PDF (vlna 5)
 **UI hint**: yes
 **Poznámky**: Najrizikovejšia fáza, izolovaná bez kurzov. **Potrebuje /gsd-research-phase** (zámky a atómové vystavenie, PDF v `bytea` vs súbor, render vo vnútri vs po transakcii, `transException` v CI4 4.7, determinizmus mPDF). Číslovanie jedným príkazom `INSERT … ON CONFLICT DO UPDATE … RETURNING`, nikdy `SEQUENCE` ani `MAX()+1`. Schéma musí byť od začiatku pripravená na dobropis (M6) a obsahovať všetky polia M1–M16. PDF je v tejto fáze funkčné minimum, finálne právne profily prídu vo Phase 6. NFR-06 sa priebežne dopĺňa aj v ďalších fázach (kurzy, limity). Skript zálohy sa začína už tu. Vlastník potvrdil: PDF je autoritatívny, spätný dátum povolený s varovaním. **WR-07 z Phase 4 (voľba C, 2026-10-26):** časti importované z riadkov „Fakturované = ÁNO“ sa zamknú na historickú externú faktúru (fakturované cez tretiu osobu), ktorá nespotrebuje číslo z vlastného radu; schéma faktúr to musí umožniť.
 
