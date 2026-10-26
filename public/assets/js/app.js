@@ -43,6 +43,46 @@
     body.addEventListener('htmx:beforeRequest', hide);
   });
 
+  /* Panel casti zospodu (Bootstrap Offcanvas): otvorenie po swape do #sheet, zatvorenie po allocationChanged. */
+  function offcanvasApi() {
+    return window.bootstrap && window.bootstrap.Offcanvas ? window.bootstrap.Offcanvas : null;
+  }
+
+  function cleanupSheet() {
+    if (document.querySelector('.offcanvas.show')) { return; }
+    var backdrops = document.querySelectorAll('.offcanvas-backdrop');
+    for (var i = 0; i < backdrops.length; i++) { backdrops[i].parentNode.removeChild(backdrops[i]); }
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var body = document.body;
+    body.addEventListener('htmx:afterSwap', function (e) {
+      var api = offcanvasApi();
+      var target = e && e.detail && e.detail.target;
+      if (!api || !target || target.id !== 'sheet') { return; }
+      var el = target.querySelector('.offcanvas');
+      if (!el) { return; }
+      el.addEventListener('shown.bs.offcanvas', function () {
+        var first = el.querySelector('input:not([type=hidden]):not([type=radio]), select, textarea, button');
+        if (first && first.focus) { first.focus(); }
+      }, { once: true });
+      api.getOrCreateInstance(el).show();
+    });
+    body.addEventListener('allocationChanged', function () {
+      var api = offcanvasApi();
+      var open = document.querySelectorAll('.offcanvas.show');
+      if (!api) { return; }
+      for (var i = 0; i < open.length; i++) {
+        var inst = api.getInstance(open[i]);
+        if (inst) { inst.hide(); }
+      }
+    });
+    /* Po HX-Location swape tela mohol ostat backdrop a zamknuty scroll. */
+    body.addEventListener('htmx:afterSettle', cleanupSheet);
+  });
+
   /* Jedno odoslanie: po submite zablokovat tlacidlo a ukazat spinner (formular funguje aj bez JS). */
   document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('submit', function (e) {
@@ -140,6 +180,37 @@
           this.rate = d.rate || '';
           this.readFormat(d);
         },
+        get sumText() {
+          var amount = calcAmount(this.hours, this.rate);
+          if (amount === '') { return '—'; }
+          return formatAmount(amount, this.decimal, this.group, this.currency, this.symbolBefore);
+        }
+      };
+    });
+    /* Formular fakturacnej casti: volba mesiaca a zivy prepocet sumy (server pocita vzdy sam). */
+    window.Alpine.data('allocForm', function () {
+      return {
+        hours: '',
+        rate: '',
+        monthChoice: 'current',
+        currency: '',
+        decimal: ',',
+        group: ' ',
+        symbolBefore: false,
+        init: function () {
+          var d = this.$el.dataset;
+          this.hours = d.hours || '';
+          this.rate = d.rate || '';
+          this.monthChoice = d.monthChoice || 'current';
+          this.currency = d.currencySymbol || '';
+          this.decimal = d.decimal || ',';
+          this.group = d.group === undefined ? ' ' : d.group;
+          this.symbolBefore = !!d.symbolBefore;
+        },
+        setHours: function () { this.hours = this.$event.target.value; },
+        setRate: function () { this.rate = this.$event.target.value; },
+        setMonthChoice: function () { this.monthChoice = this.$event.target.value; },
+        get otherMonth() { return this.monthChoice === 'other'; },
         get sumText() {
           var amount = calcAmount(this.hours, this.rate);
           if (amount === '') { return '—'; }
