@@ -19,9 +19,9 @@ final class ImportReportFormatterTest extends CIUnitTestCase
     private function plan(array $issues, ?string $excelHours = '89.00'): ImportPlan
     {
         $months = [[
-            'month' => '2026-09',
-            'excel' => ['quotedHours' => $excelHours, 'quotedAmount' => '2403.00', 'doneHours' => '89.00', 'doneAmount' => '2403.00'],
-            'calc'  => ['quotedHours' => '89.00', 'quotedAmount' => '2403.00', 'doneHours' => '89.00', 'doneAmount' => '2403.00'],
+            'month'         => '2026-09',
+            'excel'         => ['quotedHours' => $excelHours, 'quotedAmount' => '2403.00', 'doneHours' => '89.00', 'doneAmount' => '2403.00'],
+            'calc'          => ['quotedHours' => '89.00', 'quotedAmount' => '2403.00', 'doneHours' => '89.00', 'doneAmount' => '2403.00'],
             'formulaIssues' => $issues,
         ]];
 
