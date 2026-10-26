@@ -3,7 +3,7 @@ status: partial
 phase: 04-lohy-faktura-n-asti-a-dashboard
 source: [04-VERIFICATION.md]
 started: 2026-10-26T12:30:00Z
-updated: 2026-10-26T12:30:00Z
+updated: 2026-10-26T13:30:00Z
 ---
 
 ## Current Test
@@ -14,15 +14,15 @@ updated: 2026-10-26T12:30:00Z
 
 ### 1. iPhone PWA: nová úloha jednou rukou → „Označiť ako zapracovanú“ → „Aktuálny“ → potvrdiť
 expected: celý tok cca 30 s jednou rukou; panel sa vysunie zospodu, suma sa živo prepočíta, panel sa zavrie a detail ukáže novú nezamknutú časť
-result: [pending]
+result: passed (vlastník na produkcii work-tracker.vostack.dev, 2026-10-26)
 
 ### 2. iPhone: /tasks filtre, FAB, bez horizontálneho posúvania
 expected: filtre sa zbalia/rozbalia, FAB nie je prekrytý spodnou lištou, na /, /tasks a /tasks/{id} nie je horizontálne posúvanie
-result: [pending]
+result: passed (vlastník na produkcii work-tracker.vostack.dev, 2026-10-26)
 
 ### 3. iPhone: dashboard, prepínač mesiaca a klienta
 expected: výber mesiaca/klienta zmení URL aj obsah; dlaždice „Na fakturáciu“ a „V práci“, skupiny, progress bar a spodná lišta sa zobrazia správne
-result: [pending]
+result: passed (vlastník na produkcii work-tracker.vostack.dev, 2026-10-26)
 
 ### 4. Otvoriť importovanú úlohu /tasks/{id}
 expected: detail sa zobrazí bez chyby, odkaz na portál funguje, súhrn hodín a zoznam častí sedí
@@ -35,9 +35,9 @@ result: [pending]
 ## Summary
 
 total: 5
-passed: 0
+passed: 3
 issues: 0
-pending: 5
+pending: 2
 skipped: 0
 blocked: 0
 

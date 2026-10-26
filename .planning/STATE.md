@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: verifying
 stopped_at: Completed 04-09-PLAN.md
-last_updated: "2026-10-26T08:48:33.887Z"
+last_updated: "2026-10-26T10:48:29.873Z"
 last_activity: 2026-10-26
 progress:
   total_phases: 12
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 04 — lohy-faktura-n-asti-a-dashboard
+**Current focus:** Phase 5 — fakturačné jadro
 
 ## Current Position
 
-Phase: 04 (lohy-faktura-n-asti-a-dashboard) — EXECUTING
-Plan: 13 of 13
-Status: Phase complete — ready for verification
+Phase: 5
+Plan: Not started
+Status: Ready to plan (Phase 4 complete; open: WR-07 decision, 04-REVIEW fixes, secure-phase 4)
 Last activity: 2026-10-26
 
 Progress: [░░░░░░░░░░] 0%
@@ -36,7 +36,7 @@ Progress: [░░░░░░░░░░] 0%
 
 **Velocity:**
 
-- Total plans completed: 30
+- Total plans completed: 43
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -46,6 +46,7 @@ Progress: [░░░░░░░░░░] 0%
 |-------|-------|-------|----------|
 | 02 | 20 | - | - |
 | 3 | 10 | - | - |
+| 04 | 13 | - | - |
 
 **Recent Trend:**
 
