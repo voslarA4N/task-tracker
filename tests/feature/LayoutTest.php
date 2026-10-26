@@ -70,13 +70,14 @@ final class LayoutTest extends AuthTestCase
         $this->assertSame(0, $cfg['historyCacheSize']);
 
         $codes = array_column($cfg['responseHandling'], 'code');
-        $this->assertSame(['204', '[23]..', '422', '403', '[45]..', '...'], $codes);
+        $this->assertSame(['204', '[23]..', '422', '403', '409', '[45]..', '...'], $codes);
 
         $by = array_column($cfg['responseHandling'], null, 'code');
         $this->assertTrue($by['422']['swap']);
         $this->assertFalse($by['422']['error']);
         $this->assertTrue($by['403']['swap']);
         $this->assertTrue($by['403']['error']);
+        $this->assertTrue($by['409']['swap']);
     }
 
     public function testBodyHasCsrfHxHeaders(): void
