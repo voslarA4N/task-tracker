@@ -63,7 +63,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 
 - [x] **ALC-01**: Úloha má 0 až N fakturačných častí: hodiny, fakturačný mesiac (RRRR-MM), sadzba, suma. Mena sa preberá z klienta.
 - [x] **ALC-02**: Nezamknutú časť možno upraviť, presunúť do iného mesiaca alebo zmazať.
-- [ ] **ALC-03**: Časť na vystavenej faktúre je zamknutá a odkazuje na faktúru. Pokus o jej úpravu odmietne server (nielen UI).
+- [x] **ALC-03**: Časť na vystavenej faktúre je zamknutá a odkazuje na faktúru. Pokus o jej úpravu odmietne server (nielen UI).
 - [x] **ALC-04**: Pri „Označiť ako zapracovanú“ sa zobrazí panel: mesiac (Aktuálny / Ďalší / Iný), hodiny (predvolený zostatok nacenených hodín) a živý prepočet sumy. Po potvrdení sa vytvorí časť.
 - [x] **ALC-05**: Časť sa dá pridať aj k nezapracovanej úlohe (čiastočná fakturácia veľkej úlohy). Detail úlohy ukazuje vyfakturované, naplánované a zostávajúce hodiny.
 
@@ -71,17 +71,17 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 
 - [ ] **INV-01**: Fakturácia mesiaca: používateľ vyberie klienta a mesiac, vidí náhľad nezamknutých častí, môže vyradiť časť (presunúť do iného mesiaca) a vybrať subjekt (predvolený podľa dátumu vystavenia). Náhľad nemá pridelené číslo.
 - [ ] **INV-02**: Faktúra má jednu položku za každú časť (názov úlohy, hodiny, sadzba, suma), dátum vystavenia, dátum dodania (predvolene posledný deň mesiaca) a splatnosť. Variabilný symbol je číslo faktúry.
-- [ ] **INV-03**: Pri vystavení sa do JSONB uloží kópia údajov: verzia subjektu, klient, mena, jazyk, DPH režim, režim fakturácie, zákonné texty, preložené popisky, URL portálu, kurz. Faktúra je odvtedy nemenná (vynútené aj DB oprávneniami/triggermi).
+- [x] **INV-03**: Pri vystavení sa do JSONB uloží kópia údajov: verzia subjektu, klient, mena, jazyk, DPH režim, režim fakturácie, zákonné texty, preložené popisky, URL portálu, kurz. Faktúra je odvtedy nemenná (vynútené aj DB oprávneniami/triggermi).
 - [ ] **INV-04**: Číslovanie podľa nastaviteľného formátu s tokenmi `RRRR`, `RR`, `MM`, `#…` a pevným textom (predvolene `RRRRMM###`). Rad patrí subjektu. Poradie sa vynuluje každý mesiac, ak formát obsahuje `MM`, inak každý rok. Počiatočné číslo sa dá nastaviť. Čísla idú bez medzier a pridelenie je bezpečné voči súbehu (prvá faktúra 10/2026 = `202610001`, druhá `202610002`, prvá v 11/2026 = `202611001`).
 - [ ] **INV-05**: PDF faktúry vzniká z kópie údajov, má jednoduchý dizajn a len zákonné náležitosti podľa právneho profilu krajiny, DPH režimu a režimu fakturácie (SK neplatiteľ s textom „Nie som platiteľ DPH.“ a údajom o zápise, PL art. 113, EÚ B2B). Jazyk podľa klienta alebo subjektu.
 - [ ] **INV-06**: Faktúra má stavy vystavená → odoslaná → uhradená. „Po splatnosti“ sa odvodzuje. „Stornovaná“ nastane po dobropise.
 - [ ] **INV-07**: Dobropis je celé storno pôvodnej faktúry so zápornými položkami, s vlastným radom alebo prefixom. Uvoľní zamknuté časti, aby sa dali fakturovať znova.
-- [ ] **INV-08**: Všetky údaje faktúry sú uložené štruktúrovane (nielen v PDF a JSONB), aby bol neskôr možný export do KSeF FA(3).
-- [ ] **INV-09** [nové, M1]: Každá položka má kód DPH (napr. `zw`, `np`, `0`, sadzba) s predvolenou hodnotou podľa právneho profilu. Výpočty pre platiteľa DPH sa neimplementujú.
+- [x] **INV-08**: Všetky údaje faktúry sú uložené štruktúrovane (nielen v PDF a JSONB), aby bol neskôr možný export do KSeF FA(3).
+- [x] **INV-09** [nové, M1]: Každá položka má kód DPH (napr. `zw`, `np`, `0`, sadzba) s predvolenou hodnotou podľa právneho profilu. Výpočty pre platiteľa DPH sa neimplementujú.
 - [ ] **INV-10** [nové, M6]: Dobropis má povinný dôvod, odkaz na číslo a dátum pôvodnej faktúry, vlastný dátum vystavenia a typ opravy.
 - [ ] **INV-11** [nové, M8, rozhodnutie]: PDF faktúry obsahuje QR kód na platbu (SK: PAY by square; PL/CZ: zodpovedajúci štandard) zo snapshotu.
 - [ ] **INV-12** [nové, M13]: Faktúra má formu úhrady (predvolene prevod) a voliteľnú poznámku (napr. o úrokoch z omeškania).
-- [ ] **INV-13** [nové, M14, rozhodnutie]: PDF faktúry aj výkazu sa vygeneruje raz pri vystavení a uloží sa ako autoritatívny doklad so `sha256` a verziou šablóny. Zobrazenie a opätovné odoslanie použijú uložené bajty, nikdy sa neregenerujú.
+- [x] **INV-13** [nové, M14, rozhodnutie]: PDF faktúry aj výkazu sa vygeneruje raz pri vystavení a uloží sa ako autoritatívny doklad so `sha256` a verziou šablóny. Zobrazenie a opätovné odoslanie použijú uložené bajty, nikdy sa neregenerujú.
 - [ ] **INV-14** [nové, M16]: Vystavenie (zamknutie častí, výpočet, kópia údajov, pridelenie čísla, zápis faktúry a dokladov) prebehne v jednej transakcii. Zlyhanie neskoršieho kroku (napr. e-mail) nepreskočí ani neuvoľní číslo. Dva súbežné pokusy nikdy nevytvoria rovnaké ani preskočené číslo.
 - [ ] **INV-15** [nové, rozhodnutie]: Dátum vystavenia môže byť v minulosti. Ak je skorší ako dátum poslednej faktúry v rade, aplikácia pred vystavením upozorní.
 
@@ -142,7 +142,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **NFR-03**: HTTPS (Let's Encrypt), CSP, HSTS a ďalšie hlavičky, CSRF (aj pre htmx), secure a httpOnly cookies, tajomstvá v `.env` mimo gitu, šifrované TOTP tajomstvá.
 - [x] **NFR-04**: Peniaze `numeric(12,2)`, hodiny `numeric(7,2)`, žiadny float. Jedna trieda na výpočet súm. Súčty na obrazovkách, vo výkaze, na faktúre a v exportoch sa vždy zhodujú (automatické testy).
 - [ ] **NFR-05**: Denný šifrovaný `pg_dump` a PDF dokladov mimo servera, rotácia 14 denných / 8 týždenných / 12 mesačných, zdokumentovaná a otestovaná obnova.
-- [ ] **NFR-06**: PHPUnit testy pre výpočty súm, číslovanie (vrátane súbehu), zamykanie častí, kópiu údajov, kurzy a limity.
+- [x] **NFR-06**: PHPUnit testy pre výpočty súm, číslovanie (vrátane súbehu), zamykanie častí, kópiu údajov, kurzy a limity.
 - [x] **NFR-07**: Rovnaké Docker obrazy pre vývoj (WSL2) aj produkciu, vo vývoji Mailpit.
 - [x] **NFR-08**: Staging na HTTPS je k dispozícii skoro (spolu s prihlásením), aby sa PWA a cookies dali otestovať na reálnom iPhone.
 - [ ] **NFR-09** [nové, M12]: Doklady sa nedajú zmazať (ani DB oprávneniami) a raz ročne vzniká archív dokladov, ktorý pokryje zákonnú dobu uchovávania (SK 10 rokov, PL podľa účtovníčky).
@@ -236,15 +236,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMP-01 | Phase 4 | Complete |
 | INV-01 | Phase 5 | Pending |
 | INV-02 | Phase 5 | Pending |
-| INV-03 | Phase 5 | Pending |
+| INV-03 | Phase 5 | Complete |
 | INV-04 | Phase 5 | Pending |
-| INV-08 | Phase 5 | Pending |
-| INV-09 | Phase 5 | Pending |
-| INV-13 | Phase 5 | Pending |
+| INV-08 | Phase 5 | Complete |
+| INV-09 | Phase 5 | Complete |
+| INV-13 | Phase 5 | Complete |
 | INV-14 | Phase 5 | Pending |
 | INV-15 | Phase 5 | Pending |
-| ALC-03 | Phase 5 | Pending |
-| NFR-06 | Phase 5 | Pending |
+| ALC-03 | Phase 5 | Complete |
+| NFR-06 | Phase 5 | Complete |
 | INV-05 | Phase 6 | Pending |
 | INV-11 | Phase 6 | Pending |
 | INV-12 | Phase 6 | Pending |

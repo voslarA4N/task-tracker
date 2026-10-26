@@ -259,7 +259,7 @@ Plans:
 **Plans**: 9 plans (5 vĺn)Plans:
 **Wave 1**
 
-- [ ] 05-01-PLAN.md — Schéma invoices/lines/documents/counters, nemennosť v DB, FK zámku + lock_allocations(), invoice_status_v, vat_code, prestavba fixtures (vlna 1)
+- [x] 05-01-PLAN.md — Schéma invoices/lines/documents/counters, nemennosť v DB, FK zámku + lock_allocations(), invoice_status_v, vat_code, prestavba fixtures (vlna 1)
 - [ ] 05-02-PLAN.md — InvoiceCalculator (TDD), PdfFormat, popisky InvoicePdf (sk/en/pl/cs), mPDF renderer inv-1, testovacie dvojníky (vlna 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -414,7 +414,7 @@ Plans:
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
-| 5. Fakturačné jadro | 0/0 | Not started | - |
+| 5. Fakturačné jadro | 1/9 | In Progress|  |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
 | 8. Meny a kurzy | 0/0 | Not started | - |
