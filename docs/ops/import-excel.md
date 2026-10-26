@@ -32,8 +32,8 @@ Jednorazový import úloh za 09 a 10/2026 pre klienta All4Net (sadzba 27 €) zo
 | 09/2026 | 89 h / 2 403,00 € | 89 h / 2 403,00 € |
 | 10/2026 | 82 h / 2 214,00 € | 1 h / 27,00 € |
 
-- Upozornenie na neúplný rozsah vzorca súčtu E a F v októbri (rozsah súčtu nepokrýva všetky riadky
-  bloku). Súčet z Excelu sa zhoduje s prepočtom, no vzorec v Exceli je potrebné opraviť; toto upozornenie
+- Upozornenie na neúplný rozsah vzorca súčtu E a F v októbri (súčty E19:E22 a F19:F22 nepokrývajú riadky bloku 20 až 24).
+  Súčet z Excelu sa zhoduje s prepočtom, no vzorec v Exceli je potrebné opraviť; toto upozornenie
   sa zobrazí aj pri nulovom rozdiele.
 - Riadky bez špecifického odkazu: 11 (úlohy dostanú bez odkazu alebo so všeobecným odkazom, doplnia sa v UI).
 - Hodnoty súčtov, ktoré sa nepodarí načítať (napr. viac ako 2 desatinné miesta), report vypíše ako
