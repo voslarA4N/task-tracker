@@ -11,7 +11,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 - [x] **Phase 1: Základ a infraštruktúra** - Docker/WSL2, CI4, PostgreSQL roly, Money, Clock, htmx/CSP/CSRF vzory, spike mPDF (completed 2026-10-23)
 - [x] **Phase 2: Identita a skoré nasadenie** - Prihlásenie s povinnou TOTP, PWA kostra a HTTPS staging otestovaný na reálnom iPhone (completed 2026-10-25)
 - [x] **Phase 3: Master dáta (subjekty a klienti)** - Verziované subjekty, klienti, právny dôvod oslobodenia, audit zmien (completed 2026-10-25)
-- [ ] **Phase 4: Úlohy, fakturačné časti a dashboard** - Evidencia úloh, rozdelenie na časti po mesiacoch, dashboard, import z Excelu
+- [x] **Phase 4: Úlohy, fakturačné časti a dashboard** - Evidencia úloh, rozdelenie na časti po mesiacoch, dashboard, import z Excelu (completed 2026-10-26)
 - [ ] **Phase 5: Fakturačné jadro** - Atómové vystavenie nemennej faktúry, číslovanie, kópia údajov, uložené PDF so sha256
 - [ ] **Phase 6: Dokumenty faktúry a výkazu** - Právne profily, PDF faktúra a výkaz, QR platba, editovateľné zákonné texty
 - [ ] **Phase 7: Doručenie, úhrady a upomienky** - E-mail s PDF, opätovné odoslanie, úhrady, po splatnosti, upomienka
@@ -230,7 +230,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 04-09-PLAN.md — spark import:excel: suchý beh, idempotentný ostrý beh, runbook, checkpoint ostrého importu reálneho súboru (vlna 4)
+- [x] 04-09-PLAN.md — spark import:excel: suchý beh, idempotentný ostrý beh, runbook, checkpoint ostrého importu reálneho súboru (vlna 4)
 - [x] 04-10-PLAN.md — Panel časti zospodu (pridať, upraviť, presunúť, zmazať), súhrn vyfakturované/naplánované/zostáva, 409 (vlna 4)
 - [x] 04-12-PLAN.md — Zoznam Aktuálne úlohy s htmx filtrami a stavom v URL (vlna 4)
 
@@ -389,7 +389,7 @@ Plans:
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
-| 4. Úlohy, fakturačné časti a dashboard | 12/13 | In Progress|  |
+| 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete   | 2026-10-26 |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
