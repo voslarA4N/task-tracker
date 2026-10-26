@@ -155,6 +155,25 @@ final class TaskFormTest extends AuthTestCase
         $this->assertStringContainsString(esc(lang('Tasks.errorClient')), $this->body($result));
     }
 
+    public function testTaskOfArchivedClientCanBeEdited(): void
+    {
+        // WR-04: uloha archivovaneho klienta sa da upravit (s castou aj bez nej), novy archivovany klient nie.
+        $client = $this->createClient(['name' => 'Stary']);
+        $task   = $this->createTask($client);
+        $this->createAllocation($task, '8.00', '2026-10');
+        $other = $this->createClient(['name' => 'Iny archivovany']);
+        $this->owner()->query('UPDATE clients SET archived_at = now() WHERE id IN (:a:, :b:)', ['a' => $client, 'b' => $other]);
+
+        $this->submit('/tasks/' . $task, $this->taskPost($client, ['title' => 'Novy nazov']))->assertStatus(302);
+        $this->assertSame('Novy nazov', (string) $this->owner()->query('SELECT title FROM tasks WHERE id = ?', [$task])->getRow()->title);
+
+        $free = $this->createTask($this->createClient(['name' => 'Aktivny']));
+        $this->owner()->query('UPDATE tasks SET client_id = :c: WHERE id = :id:', ['c' => $client, 'id' => $free]);
+        $result = $this->submit('/tasks/' . $free, $this->taskPost($other));
+        $result->assertStatus(422);
+        $this->assertStringContainsString(esc(lang('Tasks.errorClient')), $this->body($result));
+    }
+
     public function testClientDefaultsFragment(): void
     {
         $client = $this->createClient(['hourly_rate' => '31.50']);

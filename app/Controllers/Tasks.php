@@ -138,8 +138,11 @@ final class Tasks extends BaseController
 
         $values  = TaskInput::fromPost($request);
         $service = new ClientService();
-        $client  = $this->activeClient($service, $values['client_id']);
-        $errors  = TaskInput::validate($values, $this->template($client));
+        // WR-04: vlastny (aj archivovany) klient ulohy ostava platny, archivovany klient sa neda iba novo zvolit.
+        $client = $values['client_id'] === (string) $task['client_id']
+            ? $service->find((int) $task['client_id'])
+            : $this->activeClient($service, $values['client_id']);
+        $errors = TaskInput::validate($values, $this->template($client));
 
         if ($client === null && ! isset($errors['client_id'])) {
             $errors['client_id'] = lang('Tasks.errorClient');
