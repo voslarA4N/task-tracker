@@ -8,6 +8,7 @@ use App\Libraries\Master\ClientService;
 use App\Libraries\Master\PortalUrlTemplate;
 use App\Libraries\Platform\Money;
 use App\Libraries\Work\LastClient;
+use App\Libraries\Work\TaskFilter;
 use App\Libraries\Work\TaskHasLockedAllocations;
 use App\Libraries\Work\TaskInput;
 use App\Libraries\Work\TaskQueries;
@@ -21,6 +22,31 @@ use NumberFormatter;
 
 final class Tasks extends BaseController
 {
+    public function index(): ResponseInterface
+    {
+        $request = $this->request;
+        assert($request instanceof IncomingRequest);
+
+        $filter  = TaskFilter::fromQuery($request->getGet());
+        $result  = (new TaskQueries())->list($filter);
+        $service = new ClientService();
+        $clients = array_merge(
+            array_map(static fn (array $c): array => $c + ['is_archived' => false], $service->listAll(false)),
+            array_map(static fn (array $c): array => $c + ['is_archived' => true], $service->listAll(true)),
+        );
+
+        usort($clients, static fn (array $a, array $b): int => strcmp((string) $a['name'], (string) $b['name']));
+
+        $body = htmx_view('tasks/_list', [
+            'filter'    => $filter,
+            'rows'      => $result['rows'],
+            'truncated' => $result['truncated'],
+            'clients'   => $clients,
+        ], 'tasks/index');
+
+        return $this->response->setHeader('Vary', 'HX-Request')->setBody($body);
+    }
+
     public function new(): string
     {
         $clients = (new ClientService())->listAll(false);

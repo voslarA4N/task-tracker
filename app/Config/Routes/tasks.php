@@ -3,7 +3,8 @@
 use CodeIgniter\Router\RouteCollection;
 
 /** @var RouteCollection $routes */
-// Statické cesty pred (:num). Zoznam `GET tasks` pridáva plán 04-12.
+// Statické cesty pred (:num).
+$routes->get('tasks', 'Tasks::index');
 $routes->get('tasks/new', 'Tasks::new');
 $routes->post('tasks', 'Tasks::create');
 $routes->get('tasks/client-defaults', 'Tasks::clientDefaults');
