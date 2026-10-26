@@ -18,12 +18,13 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 - [x] Klienti so sadzbou, menou, jazykom, splatnosťou, režimom fakturácie a príznakom započítania do limitu (E3). Validated in Phase 3: Master dáta (subjekty a klienti)
 
+- [x] Úlohy s nacenením, stavmi V práci / Zapracovaná a odvodeným fakturačným stavom (E4). Validated in Phase 4: Úlohy, fakturačné časti a dashboard (nasadené na https://work-tracker.vostack.dev 2026-10-26, UAT na iPhone)
+
 ### Active
 
 Úplný zoznam s ID je v `.planning/REQUIREMENTS.md` (prevzatý z `docs/PRD.md`, epiky E1–E12, priority P0 + P1 + P2).
 
-- [ ] Úlohy s nacenením, stavmi V práci / Zapracovaná a odvodeným fakturačným stavom (E4)
-- [ ] Fakturačné časti po mesiacoch, zamykanie po vystavení (kontrolované na serveri) (E5)
+- [ ] Fakturačné časti po mesiacoch, zamykanie po vystavení (kontrolované na serveri) (E5). Phase 4: časti po mesiacoch a DB poistka zámku hotové; zamknutie vystavením faktúry (ALC-03) príde v Phase 5
 - [ ] Faktúry za klienta a mesiac s kópiou údajov v JSONB, transakčným číslovaním `RRRRMM###`, PDF podľa právneho profilu a dobropisom (E6)
 - [ ] PDF výkaz práce ku každej faktúre, rovnako nemenný (E7)
 - [ ] Odoslanie e-mailom, opätovné odoslanie, ručné úhrady, faktúry po splatnosti, upomienky (E8)
@@ -113,4 +114,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-25 after Phase 3 (Master dáta – subjekty a klienti)*
+*Last updated: 2026-10-26 after Phase 4 (Úlohy, fakturačné časti a dashboard)*
