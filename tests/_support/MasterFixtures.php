@@ -8,6 +8,7 @@ use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Master\ClientService;
 use App\Libraries\Master\EntityService;
 use App\Libraries\Platform\Money;
+use App\Libraries\Platform\Transaction;
 
 /**
  * Pre triedy odvodene od PgTestCase. Vyprazdni master tabulky Phase 3.
@@ -21,7 +22,7 @@ trait MasterFixtures
     {
         $existing = [];
 
-        foreach (['audit_log', 'entity_bank_accounts', 'invoice_series', 'entity_versions', 'entities', 'billing_allocations', 'tasks', 'clients'] as $t) {
+        foreach (['audit_log', 'entity_bank_accounts', 'invoice_documents', 'invoice_lines', 'invoices', 'invoice_counters', 'invoice_series', 'entity_versions', 'entities', 'billing_allocations', 'tasks', 'clients'] as $t) {
             $row = $this->owner()->query('SELECT to_regclass(:t:) AS r', ['t' => $t])->getRow();
 
             if ($row !== null && $row->r !== null) {
@@ -182,8 +183,41 @@ trait MasterFixtures
         return (int) $this->owner()->query('SELECT max(id) AS id FROM billing_allocations')->getRow()->id;
     }
 
-    protected function lockAllocation(int $allocationId, int $invoiceId = 1): void
+    /**
+     * Zamkne cast skutocnou externou fakturou (D-22, Pitfall 1), vrati id faktury.
+     */
+    protected function lockAllocation(int $allocationId): int
     {
-        $this->owner()->query('UPDATE billing_allocations SET invoice_id = :inv: WHERE id = :id:', ['inv' => $invoiceId, 'id' => $allocationId]);
+        $db = $this->owner();
+        $a  = $db->query(
+            'SELECT a.*, t.client_id, t.title FROM billing_allocations a JOIN tasks t ON t.id = a.task_id WHERE a.id = :id:',
+            ['id' => $allocationId],
+        )->getRow();
+
+
+        return Transaction::run($db, function () use ($db, $a, $allocationId): int {
+            $db->query(
+                "INSERT INTO invoices (origin, type, external_ref, client_id, billing_month, currency, total, counts_toward_limit, line_count, snapshot, snapshot_schema, created_at)
+                 VALUES ('external', 'invoice', :ref:, :client:, :month:, :ccy:, :total:, false, 1, '{\"schema\":1,\"origin\":\"external\"}', 1, :now:)",
+                [
+                    'ref'    => 'fixture-' . $allocationId,
+                    'client' => $a->client_id,
+                    'month'  => $a->billing_month,
+                    'ccy'    => trim((string) $a->currency),
+                    'total'  => $a->amount,
+                    'now'    => service('clock')->now()->format('Y-m-d H:i:sP'),
+                ],
+            );
+            $invoiceId = (int) $db->query('SELECT max(id) AS id FROM invoices')->getRow()->id;
+            $db->query(
+                'INSERT INTO invoice_lines (invoice_id, position, source_allocation_id, source_task_id, title, hours, rate, amount)
+                 VALUES (:inv:, 1, :alloc:, :task:, :title:, :hours:, :rate:, :amount:)',
+                ['inv' => $invoiceId, 'alloc' => $a->id, 'task' => $a->task_id, 'title' => $a->title, 'hours' => $a->hours, 'rate' => $a->rate, 'amount' => $a->amount],
+            );
+            $db->query('UPDATE billing_allocations SET invoice_id = :inv: WHERE id = :id:', ['inv' => $invoiceId, 'id' => $allocationId]);
+            $db->query('SET CONSTRAINTS ALL IMMEDIATE');
+
+            return $invoiceId;
+        });
     }
 }

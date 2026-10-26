@@ -77,8 +77,8 @@ final class AllocationGuardTest extends PgTestCase
     {
         $task  = $this->createTask($this->createClient());
         $alloc = $this->createAllocation($task, '8.00', '2026-10');
-        $this->owner()->query('UPDATE billing_allocations SET invoice_id = 5 WHERE id = ?', [$alloc]);
-        $this->assertSame('5', (string) $this->owner()->query('SELECT invoice_id FROM billing_allocations WHERE id = ?', [$alloc])->getRow()->invoice_id);
+        $invoice = $this->lockAllocation($alloc);
+        $this->assertSame((string) $invoice, (string) $this->owner()->query('SELECT invoice_id FROM billing_allocations WHERE id = ?', [$alloc])->getRow()->invoice_id);
     }
 
     public function testRwCannotTouchProtectedAllocationColumns(): void
