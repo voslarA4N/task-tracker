@@ -41,6 +41,21 @@ final class LegalProfileTest extends PgTestCase
         $this->assertNull($r->exemptionCode('SK', 'sk_non_vat', 'domestic'));
     }
 
+    public function testVatCodes(): void
+    {
+        $r = $this->resolver();
+        $this->assertSame('zw', $r->profile('PL', 'pl_exempt_113_1', 'domestic')['vat_code']);
+        $this->assertSame('zw', $r->profile('PL', 'pl_exempt_113_9', 'non_eu')['vat_code']);
+        $this->assertSame('np', $r->profile('PL', 'pl_exempt_113_1', 'eu_b2b')['vat_code']);
+        $this->assertSame('np', $r->profile('SK', 'sk_non_vat', 'domestic')['vat_code']);
+        $this->assertSame('np', $r->profile('CZ', 'cz_non_vat', 'eu_b2b')['vat_code']);
+    }
+
+    public function testVatCodeReadOnlyForRw(): void
+    {
+        $this->assertPermissionDenied(fn () => $this->rw()->query("UPDATE legal_profiles SET vat_code = 'x'"));
+    }
+
     public function testTextExactAndProvisional(): void
     {
         $t = $this->resolver()->text('SK', 'sk_non_vat', 'domestic', 'sk', 'vat_note');

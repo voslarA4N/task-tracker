@@ -94,8 +94,8 @@ final class InvoiceDocumentTest extends PgTestCase
     public function testBinaryRoundTripAndHash(): void
     {
         [$entity, $client, $alloc] = $this->setUpPart();
-        $bytes = "\0\\'\"\xFF";
-        $id    = $this->insertIssuedInvoiceRaw($client, $entity, '2026-10', [$alloc], $bytes);
+        $bytes                     = "\0\\'\"\xFF";
+        $id                        = $this->insertIssuedInvoiceRaw($client, $entity, '2026-10', [$alloc], $bytes);
 
         $row = $this->rw()->query("SELECT content, sha256, encode(sha256(content), 'hex') AS h FROM invoice_documents WHERE invoice_id = ?", [$id])->getRow();
         $this->assertSame($bytes, pg_unescape_bytea((string) $row->content));
@@ -106,7 +106,7 @@ final class InvoiceDocumentTest extends PgTestCase
     public function testCannotAddLineToCommittedInvoice(): void
     {
         [$entity, $client, $alloc] = $this->setUpPart();
-        $id = $this->insertIssuedInvoiceRaw($client, $entity, '2026-10', [$alloc]);
+        $id                        = $this->insertIssuedInvoiceRaw($client, $entity, '2026-10', [$alloc]);
 
         $this->assertDbError('/is incomplete/', function () use ($id): void {
             $db = $this->owner();

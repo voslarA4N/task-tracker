@@ -52,7 +52,7 @@ trait InvoiceFixtures
 
     /**
      * @param list<int>            $allocationIds
-     * @param array<string, mixed> $overrides number, series_id, total, line_count, vat_code, sha256, without_document
+     * @param array<string, mixed> $overrides     number, series_id, total, line_count, vat_code, sha256, without_document
      */
     protected function insertIssuedInvoiceRaw(int $clientId, int $entityId, string $month, array $allocationIds, string $pdfBytes = '%PDF-1.4 test', array $overrides = []): int
     {
@@ -116,11 +116,9 @@ trait InvoiceFixtures
      */
     private function fixtureAllocations(array $ids): array
     {
-        $rows = $this->owner()->query(
+        return $this->owner()->query(
             'SELECT a.*, t.title FROM billing_allocations a JOIN tasks t ON t.id = a.task_id WHERE a.id IN (' . implode(',', array_map('intval', $ids)) . ') ORDER BY a.id',
         )->getResult();
-
-        return array_values($rows);
     }
 
     /**
@@ -128,13 +126,9 @@ trait InvoiceFixtures
      */
     private function fixtureSum(array $allocs): string
     {
-        $sum = '0.00';
+        $ids = array_map(static fn (object $a): int => (int) $a->id, $allocs);
 
-        foreach ($allocs as $a) {
-            $sum = bcadd($sum, (string) $a->amount, 2);
-        }
-
-        return $sum;
+        return (string) $this->owner()->query('SELECT coalesce(sum(amount), 0)::numeric(12,2)::text AS s FROM billing_allocations WHERE id IN (' . implode(',', $ids) . ')')->getRow()->s;
     }
 
     /**

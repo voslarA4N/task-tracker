@@ -95,11 +95,11 @@ final class InvoiceSchemaTest extends PgTestCase
     public function testExternalShapeRules(): void
     {
         [, $client, $alloc] = $this->setUpPart();
-        $now = '2026-10-27 10:00:00+01';
-        $ins = static fn (string $extra, string $vals, bool $limit = false): string => "INSERT INTO invoices (origin, client_id, billing_month, currency, total, counts_toward_limit, line_count, snapshot, snapshot_schema, created_at{$extra})
+        $now                = '2026-10-27 10:00:00+01';
+        $ins                = static fn (string $extra, string $vals, bool $limit = false): string => "INSERT INTO invoices (origin, client_id, billing_month, currency, total, counts_toward_limit, line_count, snapshot, snapshot_schema, created_at{$extra})
             VALUES ('external', {$client}, '2026-10', 'EUR', 216.00, " . ($limit ? 'true' : 'false') . ", 1, '{}', 1, '{$now}'{$vals})";
 
-        $this->assertDbError('/invoices_origin_shape/', fn () => $this->owner()->query($ins(", number", ", '1'")));
+        $this->assertDbError('/invoices_origin_shape/', fn () => $this->owner()->query($ins(', number', ", '1'")));
         $this->assertDbError('/invoices_origin_shape/', fn () => $this->owner()->query($ins('', '', true)));
 
         $id = $this->insertExternalInvoice($client, '2026-10', [$alloc], 'ref-1');
@@ -112,8 +112,8 @@ final class InvoiceSchemaTest extends PgTestCase
     public function testDuplicateSeriesNumberFails(): void
     {
         [$entity, $client, $alloc] = $this->setUpPart();
-        $task   = $this->createTask($client);
-        $alloc2 = $this->createAllocation($task, '2.00', '2026-10');
+        $task                      = $this->createTask($client);
+        $alloc2                    = $this->createAllocation($task, '2.00', '2026-10');
         $this->insertIssuedInvoiceRaw($client, $entity, '2026-10', [$alloc]);
         $this->assertDbError('/duplicate key|unique/i', fn () => $this->insertIssuedInvoiceRaw($client, $entity, '2026-10', [$alloc2]));
     }
@@ -121,7 +121,7 @@ final class InvoiceSchemaTest extends PgTestCase
     public function testCreditNoteNeedsCorrectedInvoice(): void
     {
         [$entity, $client, $alloc] = $this->setUpPart();
-        $this->assertDbError('/check constraint|violates/i', function () use ($client, $entity, $alloc): void {
+        $this->assertDbError('/check constraint|violates/i', function () use ($client, $entity): void {
             $this->owner()->transException(true)->transBegin();
 
             try {
@@ -142,7 +142,7 @@ final class InvoiceSchemaTest extends PgTestCase
     public function testLineAmountMustMatchHoursTimesRate(): void
     {
         [$entity, $client, $alloc] = $this->setUpPart();
-        $id = $this->insertExternalInvoice($client, '2026-10', [$alloc], 'r');
+        $id                        = $this->insertExternalInvoice($client, '2026-10', [$alloc], 'r');
         $this->assertDbError('/check constraint/i', function () use ($id): void {
             $this->owner()->transException(true)->transBegin();
 

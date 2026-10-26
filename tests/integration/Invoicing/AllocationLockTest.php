@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Invoicing;
 
 use App\Libraries\Platform\FrozenClock;
+use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -164,7 +165,7 @@ final class AllocationLockTest extends PgTestCase
     private function insertExternalInvoiceNoLock(int $client, int $alloc): void
     {
         $a = $this->owner()->query('SELECT a.*, t.title FROM billing_allocations a JOIN tasks t ON t.id = a.task_id WHERE a.id = ?', [$alloc])->getRow();
-        \App\Libraries\Platform\Transaction::run($this->owner(), function () use ($client, $a): void {
+        Transaction::run($this->owner(), function () use ($client, $a): void {
             $db = $this->owner();
             $db->query(
                 "INSERT INTO invoices (origin, client_id, billing_month, currency, total, counts_toward_limit, line_count, snapshot, snapshot_schema, created_at)

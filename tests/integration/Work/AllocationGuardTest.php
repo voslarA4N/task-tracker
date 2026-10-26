@@ -75,8 +75,8 @@ final class AllocationGuardTest extends PgTestCase
 
     public function testOwnerCanLockUnlockedAllocation(): void
     {
-        $task  = $this->createTask($this->createClient());
-        $alloc = $this->createAllocation($task, '8.00', '2026-10');
+        $task    = $this->createTask($this->createClient());
+        $alloc   = $this->createAllocation($task, '8.00', '2026-10');
         $invoice = $this->lockAllocation($alloc);
         $this->assertSame((string) $invoice, (string) $this->owner()->query('SELECT invoice_id FROM billing_allocations WHERE id = ?', [$alloc])->getRow()->invoice_id);
     }

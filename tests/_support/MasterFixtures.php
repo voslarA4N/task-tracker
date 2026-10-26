@@ -194,8 +194,7 @@ trait MasterFixtures
             ['id' => $allocationId],
         )->getRow();
 
-
-        return Transaction::run($db, function () use ($db, $a, $allocationId): int {
+        return Transaction::run($db, static function () use ($db, $a, $allocationId): int {
             $db->query(
                 "INSERT INTO invoices (origin, type, external_ref, client_id, billing_month, currency, total, counts_toward_limit, line_count, snapshot, snapshot_schema, created_at)
                  VALUES ('external', 'invoice', :ref:, :client:, :month:, :ccy:, :total:, false, 1, '{\"schema\":1,\"origin\":\"external\"}', 1, :now:)",

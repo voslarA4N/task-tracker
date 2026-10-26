@@ -29,13 +29,13 @@ final class LegalProfileResolver
     /**
      * Presna zhoda, potom billing_mode IS NULL, inak LegalTextMissing.
      *
-     * @return array{country: string, vat_regime: string, billing_mode: ?string, exemption_code: ?string}
+     * @return array{country: string, vat_regime: string, billing_mode: ?string, exemption_code: ?string, vat_code: ?string}
      */
     public function profile(string $country, string $vatRegime, string $billingMode): array
     {
         foreach ([$billingMode, null] as $mode) {
             $row = $this->db->query(
-                'SELECT country, vat_regime, billing_mode, exemption_code FROM legal_profiles '
+                'SELECT country, vat_regime, billing_mode, exemption_code, vat_code FROM legal_profiles '
                 . 'WHERE country = :c: AND vat_regime = :r: AND billing_mode IS NOT DISTINCT FROM CAST(:m: AS text)',
                 ['c' => $country, 'r' => $vatRegime, 'm' => $mode],
             )->getRowArray();
@@ -46,6 +46,7 @@ final class LegalProfileResolver
                     'vat_regime'     => (string) $row['vat_regime'],
                     'billing_mode'   => $row['billing_mode'] === null ? null : (string) $row['billing_mode'],
                     'exemption_code' => $row['exemption_code'] === null ? null : (string) $row['exemption_code'],
+                    'vat_code'       => $row['vat_code'] === null ? null : (string) $row['vat_code'],
                 ];
             }
         }

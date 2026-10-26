@@ -21,7 +21,6 @@ final class InvoiceImmutabilityTest extends PgTestCase
     use InvoiceFixtures;
     use MasterFixtures;
 
-    private int $invoice;
     private int $series;
 
     protected function setUp(): void
@@ -30,11 +29,11 @@ final class InvoiceImmutabilityTest extends PgTestCase
         Services::injectMock('clock', new FrozenClock('2026-10-27T10:00:00+01:00'));
         $this->resetMasterTables();
 
-        $entity        = $this->createEntity('SK');
-        $client        = $this->createClient();
-        $alloc         = $this->createAllocation($this->createTask($client), '8.00', '2026-10');
-        $this->invoice = $this->insertIssuedInvoiceRaw($client, $entity, '2026-10', [$alloc]);
-        $this->series  = (int) $this->owner()->query("SELECT id FROM invoice_series WHERE entity_id = {$entity} AND kind = 'invoice'")->getRow()->id;
+        $entity = $this->createEntity('SK');
+        $client = $this->createClient();
+        $alloc  = $this->createAllocation($this->createTask($client), '8.00', '2026-10');
+        $this->insertIssuedInvoiceRaw($client, $entity, '2026-10', [$alloc]);
+        $this->series = (int) $this->owner()->query("SELECT id FROM invoice_series WHERE entity_id = {$entity} AND kind = 'invoice'")->getRow()->id;
     }
 
     protected function tearDown(): void
