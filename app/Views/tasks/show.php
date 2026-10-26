@@ -48,6 +48,11 @@ $plannedCount = (int) $task['unlocked_count'];
         <?php endif ?>
 
         <div class="master-actions">
+            <?php if ($task['status'] === 'in_progress') : ?>
+                <a class="btn btn-primary btn-touch" href="/tasks/<?= $id ?>/done" hx-get="/tasks/<?= $id ?>/done" hx-target="#sheet"><?= esc(lang('Allocations.doneOpen')) ?></a>
+            <?php elseif ($task['status'] === 'done') : ?>
+                <button type="button" class="btn btn-outline-secondary btn-touch" data-bs-toggle="modal" data-bs-target="#reopen-task"><?= esc(lang('Allocations.reopenOpen')) ?></button>
+            <?php endif ?>
             <a class="btn btn-outline-secondary btn-touch" href="/tasks/<?= $id ?>/edit"><?= esc(lang('Tasks.edit')) ?></a>
             <?php if (! $task['has_locked']) : ?>
                 <button type="button" class="btn btn-outline-danger btn-touch" data-bs-toggle="modal" data-bs-target="#delete-task"><?= esc(lang('Tasks.delete')) ?></button>
@@ -81,6 +86,28 @@ $plannedCount = (int) $task['unlocked_count'];
 </div>
 
 <div id="sheet"></div>
+
+<?php if ($task['status'] === 'done') : ?>
+    <div class="modal fade" id="reopen-task" tabindex="-1" aria-labelledby="reopen-task-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title h5" id="reopen-task-title"><?= esc(lang('Allocations.reopenTitle')) ?></h3>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0"><?= esc(lang('Allocations.reopenConfirm', [(string) $task['title']])) ?></p>
+                </div>
+                <div class="modal-footer flex-column flex-sm-row">
+                    <form method="post" action="/tasks/<?= $id ?>/reopen" class="w-100 w-sm-auto m-0" data-submit-once>
+                        <?= csrf_field() ?>
+                        <button type="submit" class="btn btn-primary w-100"><?= esc(lang('Allocations.reopenOpen')) ?></button>
+                    </form>
+                    <button type="button" class="btn btn-outline-secondary w-100 w-sm-auto" data-bs-dismiss="modal"><?= esc(lang('Allocations.cancel')) ?></button>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif ?>
 
 <?php if (! $task['has_locked']) : ?>
     <div class="modal fade" id="delete-task" tabindex="-1" aria-labelledby="delete-task-title" aria-hidden="true">

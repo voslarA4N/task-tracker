@@ -7,7 +7,12 @@
  * @var string               $mode
  * @var string               $inner
  */
-$titleKey = $mode === 'add' ? 'Allocations.sheetAddTitle' : ($mode === 'edit' ? 'Allocations.sheetEditTitle' : 'Allocations.deleteTitle');
+$titleKey = match ($mode) {
+    'add'   => 'Allocations.sheetAddTitle',
+    'edit'  => 'Allocations.sheetEditTitle',
+    'done'  => 'Allocations.doneTitle',
+    default => 'Allocations.deleteTitle',
+};
 ?>
 <div class="offcanvas offcanvas-bottom work-sheet" tabindex="-1" id="work-sheet" aria-labelledby="work-sheet-title">
     <div class="offcanvas-header px-0 pt-0">

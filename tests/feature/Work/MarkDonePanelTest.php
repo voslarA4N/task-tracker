@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Work;
 
 use App\Libraries\Platform\FrozenClock;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -68,7 +69,7 @@ final class MarkDonePanelTest extends AuthTestCase
         return $task;
     }
 
-    private function status(int $task): string
+    private function taskStatus(int $task): string
     {
         return (string) $this->owner()->query('SELECT status FROM tasks WHERE id = ' . $task)->getRow()->status;
     }
@@ -163,8 +164,7 @@ final class MarkDonePanelTest extends AuthTestCase
         $this->assertSame('2026-10', trim((string) $part->billing_month));
         $this->assertSame(2, $this->partCount($task));
 
-        $detail = $this->body($this->get('/tasks/' . $task));
-        $this->assertStringContainsString(esc(lang('Allocations.doneFlash', ['24', 'október 2026'])), $detail);
+        $this->assertSame(lang('Allocations.doneFlash', ['24', 'október 2026']), session()->getFlashdata('app_notice')['message']);
     }
 
     public function testMarkDoneZeroHoursCreatesNoPart(): void
@@ -173,11 +173,10 @@ final class MarkDonePanelTest extends AuthTestCase
         $result = $this->submit('/tasks/' . $task . '/done', ['month_choice' => 'current', 'hours' => '0']);
 
         $result->assertStatus(200);
-        $this->assertSame('done', $this->status($task));
+        $this->assertSame('done', $this->taskStatus($task));
         $this->assertSame(1, $this->partCount($task));
 
-        $detail = $this->body($this->get('/tasks/' . $task));
-        $this->assertStringContainsString(esc(lang('Allocations.doneFlashNoPart')), $detail);
+        $this->assertSame('Úloha je zapracovaná.', session()->getFlashdata('app_notice')['message']);
     }
 
     public function testSecondSubmitIsConflict(): void
@@ -199,7 +198,7 @@ final class MarkDonePanelTest extends AuthTestCase
 
         $result->assertStatus(422);
         $this->assertStringContainsString(esc(lang('Allocations.errorHours')), $this->body($result));
-        $this->assertSame('in_progress', $this->status($task));
+        $this->assertSame('in_progress', $this->taskStatus($task));
         $this->assertSame(1, $this->partCount($task));
     }
 
@@ -217,7 +216,12 @@ final class MarkDonePanelTest extends AuthTestCase
         $task = $this->createTask($this->createClient(), ['status' => 'done', 'done_at' => '2026-10-20 10:00:00+02']);
 
         $this->fragment('/tasks/' . $task . '/done')->assertStatus(409);
-        $this->fragment('/tasks/999999/done')->assertStatus(404);
+    }
+
+    public function testMissingTaskIs404(): void
+    {
+        $this->expectException(PageNotFoundException::class);
+        $this->fragment('/tasks/999999/done');
     }
 
     public function testReopenKeepsParts(): void
@@ -229,11 +233,10 @@ final class MarkDonePanelTest extends AuthTestCase
 
         $result->assertStatus(302);
         $this->assertStringEndsWith('/tasks/' . $task, $result->getRedirectUrl());
-        $this->assertSame('in_progress', $this->status($task));
+        $this->assertSame('in_progress', $this->taskStatus($task));
         $this->assertSame(1, $this->partCount($task));
 
-        $detail = $this->body($this->get('/tasks/' . $task));
-        $this->assertStringContainsString('Úloha je opäť v stave V práci.', $detail);
+        $this->assertSame('Úloha je opäť v stave V práci.', session()->getFlashdata('app_notice')['message']);
     }
 
     public function testReopenOfInProgressIs409(): void

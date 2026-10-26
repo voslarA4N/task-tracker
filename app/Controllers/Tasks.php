@@ -360,7 +360,7 @@ final class Tasks extends BaseController
      *
      * @return array<string, mixed>
      */
-    private function showData(array $task, ?string $error): array
+    public function showData(array $task, ?string $error): array
     {
         $locale  = service('request')->getLocale();
         $created = new IntlDateFormatter($locale, IntlDateFormatter::LONG, IntlDateFormatter::NONE, 'Europe/Bratislava');

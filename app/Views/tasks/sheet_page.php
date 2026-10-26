@@ -7,7 +7,12 @@
  * @var string               $mode
  * @var string               $inner
  */
-$titleKey = $mode === 'add' ? 'Allocations.sheetAddTitle' : ($mode === 'edit' ? 'Allocations.sheetEditTitle' : 'Allocations.deleteTitle');
+$titleKey = match ($mode) {
+    'add'   => 'Allocations.sheetAddTitle',
+    'edit'  => 'Allocations.sheetEditTitle',
+    'done'  => 'Allocations.doneTitle',
+    default => 'Allocations.deleteTitle',
+};
 ?>
 <?= $this->extend('layouts/app') ?>
 
