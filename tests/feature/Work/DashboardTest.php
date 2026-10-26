@@ -157,6 +157,25 @@ final class DashboardTest extends AuthTestCase
         $this->assertStringContainsString('54,00', $html);
     }
 
+    public function testMonthSwitchCanReturnFromCustomMonthToPreset(): void
+    {
+        // WR-03: predvyplneny month_other nesmie prebit zvoleny predvoleny mesiac.
+        $this->seedEur();
+
+        $custom = $this->body($this->get('/?month=other&month_other=2026-05&client=all'));
+        $this->assertStringContainsString('Máj 2026', $custom);
+        $this->assertMatchesRegularExpression('#id="dm-other-choice" value="other" checked#', $custom);
+        $this->assertStringContainsString('value="2026-05"', $custom);
+
+        $back = $this->body($this->get('/?month=2026-10&month_other=2026-05&client=all'));
+        $this->assertStringContainsString('243,00', $back);
+        $this->assertMatchesRegularExpression('#id="dm-2026-10" value="2026-10" checked#', $back);
+        $this->assertDoesNotMatchRegularExpression('#id="dm-other-choice" value="other" checked#', $back);
+
+        // Stary odkaz bez volby mesiaca stale funguje.
+        $this->assertStringContainsString('November 2026', $this->body($this->get('/?month_other=2026-11&client=all')));
+    }
+
     public function testClientParameterScopesData(): void
     {
         $this->seedEur();

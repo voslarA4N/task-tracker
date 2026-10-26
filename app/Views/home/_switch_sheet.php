@@ -33,8 +33,12 @@ $isPreset = isset($options[$filter->month]);
                         <label class="form-check-label" for="dm-<?= esc($value, 'attr') ?>"><?= esc(lang($key)) ?> (<?= esc(BillingMonth::label($value, $locale)) ?>)</label>
                     </div>
                 <?php endforeach ?>
-                <label class="form-label mt-2" for="dm-other"><?= esc(lang('Dashboard.monthOther')) ?></label>
-                <input class="form-control" type="month" id="dm-other" name="month_other" value="<?= $isPreset ? '' : esc($filter->month, 'attr') ?>">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="month" id="dm-other-choice" value="other"<?= $isPreset ? '' : ' checked' ?>>
+                    <label class="form-check-label" for="dm-other-choice"><?= esc(lang('Dashboard.monthOther')) ?></label>
+                </div>
+                <label class="visually-hidden" for="dm-other"><?= esc(lang('Dashboard.monthOther')) ?></label>
+                <input class="form-control mt-2" type="month" id="dm-other" name="month_other" value="<?= $isPreset ? '' : esc($filter->month, 'attr') ?>">
             </fieldset>
             <div class="mb-3">
                 <label class="form-label" for="dm-client"><?= esc(lang('Dashboard.clientLabel')) ?></label>

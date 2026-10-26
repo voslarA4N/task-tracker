@@ -38,8 +38,11 @@ final class Home extends BaseController
         $service = new ClientService();
         $get     = $request->getGet();
         $other   = $get['month_other'] ?? null;
+        $month   = $get['month'] ?? null;
 
-        if (is_string($other) && $other !== '') {
+        // WR-03: vlastny mesiac plati iba pri explicitnej volbe "Iny" (alebo ak predvolba vobec nebola poslana),
+        // inak by predvyplneny month_other prebil zvoleny predvoleny mesiac a navrat by nebol mozny.
+        if (($month === 'other' || $month === null) && is_string($other) && $other !== '') {
             $get['month'] = $other;
         }
 
