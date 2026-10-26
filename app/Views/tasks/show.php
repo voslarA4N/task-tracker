@@ -58,7 +58,8 @@ $plannedCount = (int) $task['unlocked_count'];
         <?php endif ?>
     </section>
 
-    <!-- 04-10: summary + allocations -->
+    <?= $this->include('tasks/_summary') ?>
+    <?= $this->include('tasks/_allocations') ?>
 
     <section class="app-card" id="task-data" aria-labelledby="task-data-title">
         <h2 class="h5 mb-3" id="task-data-title"><?= esc(lang('Tasks.sectionData')) ?></h2>
@@ -78,6 +79,8 @@ $plannedCount = (int) $task['unlocked_count'];
         </dl>
     </section>
 </div>
+
+<div id="sheet"></div>
 
 <?php if (! $task['has_locked']) : ?>
     <div class="modal fade" id="delete-task" tabindex="-1" aria-labelledby="delete-task-title" aria-hidden="true">

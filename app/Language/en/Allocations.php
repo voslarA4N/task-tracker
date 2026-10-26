@@ -46,4 +46,5 @@ return [
     'savedFlash'     => 'The part was saved.',
     'deletedFlash'   => 'The part was deleted.',
     'hoursValue'     => '{0} h',
+    'editLink'       => 'Edit',
 ];

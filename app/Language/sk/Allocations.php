@@ -46,4 +46,5 @@ return [
     'savedFlash'     => 'Časť bola uložená.',
     'deletedFlash'   => 'Časť bola zmazaná.',
     'hoursValue'     => '{0} h',
+    'editLink'       => 'Upraviť',
 ];

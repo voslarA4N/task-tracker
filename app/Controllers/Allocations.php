@@ -14,6 +14,7 @@ use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\ResponseInterface;
 use InvalidArgumentException;
+use NumberFormatter;
 
 /**
  * Fakturacne casti ulohy v paneli zospodu (ALC-02, ALC-05). Zamknutu cast server nikdy nezmeni (409, D-09).
@@ -146,19 +147,26 @@ final class Allocations extends BaseController
             'errors'      => $errors,
             'mode'        => $mode,
             'lockedError' => $lockedError,
+            'inner'       => $mode === 'delete' ? 'tasks/_alloc_delete' : 'tasks/_alloc_form',
+            'format'      => $this->numberFormat((string) $task['currency']),
             'months'      => [
                 'current'      => $month,
                 'next'         => $next,
-                'currentLabel' => BillingMonth::label($month, $locale),
-                'nextLabel'    => BillingMonth::label($next, $locale),
+                'currentLabel' => mb_strtolower(BillingMonth::label($month, $locale)),
+                'nextLabel'    => mb_strtolower(BillingMonth::label($next, $locale)),
                 'min'          => $bounds['min'],
                 'max'          => $bounds['max'],
             ],
         ];
 
+        // Formular a potvrdenie cielia #sheet-body (innerHTML), tam patri iba vnutorny obsah panelu.
+        $fragment = is_htmx_fragment_request() && service('request')->getHeaderLine('HX-Target') === 'sheet-body'
+            ? $data['inner']
+            : 'tasks/_sheet';
+
         return $this->response->setStatusCode($status)
             ->setHeader('Vary', 'HX-Request')
-            ->setBody(htmx_view('tasks/_sheet', $data, 'tasks/sheet_page'));
+            ->setBody(htmx_view($fragment, $data, 'tasks/sheet_page'));
     }
 
     /**
@@ -210,6 +218,26 @@ final class Allocations extends BaseController
         }
 
         return [$allocation, $this->task((int) $allocation['task_id'])];
+    }
+
+    /**
+     * Oddelovace a symbol meny pre zivy prepocet v prehliadaci (rovnake ako MoneyFormat).
+     *
+     * @return array{symbol: string, decimal: string, group: string, symbolBefore: bool}
+     */
+    private function numberFormat(string $currency): array
+    {
+        $locale    = $this->locale();
+        $decimal   = new NumberFormatter($locale, NumberFormatter::DECIMAL);
+        $formatter = new NumberFormatter($locale, NumberFormatter::CURRENCY);
+        $formatter->setTextAttribute(NumberFormatter::CURRENCY_CODE, $currency);
+
+        return [
+            'symbol'       => $formatter->getSymbol(NumberFormatter::CURRENCY_SYMBOL),
+            'decimal'      => $decimal->getSymbol(NumberFormatter::DECIMAL_SEPARATOR_SYMBOL),
+            'group'        => $decimal->getSymbol(NumberFormatter::GROUPING_SEPARATOR_SYMBOL),
+            'symbolBefore' => str_starts_with($formatter->getPattern(), '¤'),
+        ];
     }
 
     private function locale(): string

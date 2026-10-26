@@ -148,7 +148,7 @@ final class AllocationPanelTest extends AuthTestCase
         $result = $this->submit('/tasks/' . $task . '/allocations', ['month_choice' => 'other', 'billing_month_other' => '2030-01', 'hours' => '8', 'rate' => '27']);
 
         $result->assertStatus(422);
-        $this->assertStringContainsString('október 2025', $this->body($result));
+        $this->assertStringContainsString('Október 2025', $this->body($result));
     }
 
     public function testCreateIgnoresForgedAmount(): void
