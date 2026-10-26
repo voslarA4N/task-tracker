@@ -8,6 +8,7 @@ use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Work\AllocationLocked;
 use App\Libraries\Work\AllocationService;
+use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Services;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
@@ -61,6 +62,26 @@ final class AllocationServiceTest extends PgTestCase
         $this->assertNull($row['invoice_id']);
         $this->assertSame($task, $row['task_id']);
         $this->assertSame(1, $this->audits('create'));
+    }
+
+    public function testAddHoldsShareLockOnClient(): void
+    {
+        // WR-06: kym transakcia pridania casti bezi, ina session nezamkne klienta na zmenu meny.
+        $client = $this->createClient();
+        $task   = $this->createTask($client);
+
+        $this->rw()->transStart();
+
+        try {
+            $this->service()->add($task, ['hours' => '1.00', 'billing_month' => '2026-10']);
+            $this->owner()->query('SELECT id FROM clients WHERE id = :id: FOR UPDATE NOWAIT', ['id' => $client]);
+            $this->fail('Client row is not share-locked by AllocationService::add.');
+        } catch (DatabaseException $e) {
+            $this->assertMatchesRegularExpression('/could not obtain lock|55P03/i', $e->getMessage());
+        } finally {
+            $this->rw()->transRollback();
+            $this->rw()->resetTransStatus();
+        }
     }
 
     public function testAddWithRateOverride(): void

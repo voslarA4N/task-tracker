@@ -43,8 +43,10 @@ final class AllocationService
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
         return Transaction::run($this->db, function () use ($taskId, $values, $now): int {
+            // WR-06: FOR SHARE na klienta blokuje subeznu zmenu meny (ClientService::update drzi FOR UPDATE),
+            // takze cast sa nikdy neulozi v mene, ktoru klient prave opusta.
             $task = $this->db->query(
-                'SELECT t.id, t.rate, c.currency FROM tasks t JOIN clients c ON c.id = t.client_id WHERE t.id = :id: FOR UPDATE OF t',
+                'SELECT t.id, t.rate, c.currency FROM tasks t JOIN clients c ON c.id = t.client_id WHERE t.id = :id: FOR UPDATE OF t FOR SHARE OF c',
                 ['id' => $taskId],
             )->getRowArray();
 
