@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 5 context gathered
-last_updated: "2026-10-26T19:01:30.010Z"
+stopped_at: Phase 5 UI-SPEC approved
+last_updated: "2026-10-26T22:43:23.787Z"
 last_activity: 2026-10-26
 progress:
   total_phases: 12
@@ -136,6 +136,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-26T19:01:29.974Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-faktura-n-jadro/05-CONTEXT.md
+Last session: 2026-10-26T22:43:23.751Z
+Stopped at: Phase 5 UI-SPEC approved
+Resume file: .planning/phases/05-faktura-n-jadro/05-UI-SPEC.md
