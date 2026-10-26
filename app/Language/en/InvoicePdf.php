@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Popisky PDF faktury (en). Kopiruju sa do snapshotu pri vystaveni (D-18), render ich necita z lang().
+ * Preklady pl a cs su predbezne, finalne znenie urci Phase 6.
+ */
+return [
+    'invoice'         => 'Invoice',
+    'number'          => 'Invoice number',
+    'variableSymbol'  => 'Payment reference',
+    'supplier'        => 'Supplier',
+    'customer'        => 'Customer',
+    'issueDate'       => 'Issue date',
+    'deliveryDate'    => 'Delivery date',
+    'dueDate'         => 'Due date',
+    'paymentMethod'   => 'Payment method',
+    'paymentTransfer' => 'Bank transfer',
+    'bankAccount'     => 'IBAN',
+    'swift'           => 'SWIFT',
+    'item'            => 'Item',
+    'hours'           => 'Hours',
+    'rate'            => 'Rate',
+    'amount'          => 'Amount',
+    'vatCode'         => 'VAT',
+    'total'           => 'Total due',
+    'companyId'       => 'Company ID',
+    'taxId'           => 'Tax ID',
+    'vatId'           => 'VAT ID',
+    'regon'           => 'REGON',
+    'identifier'      => 'Identifier',
+];
