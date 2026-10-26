@@ -11,13 +11,26 @@ final readonly class TaskFilter
 {
     public const STATES        = ['current', 'in_progress', 'done', 'partial', 'billed', 'all'];
     public const DEFAULT_STATE = 'current';
-    private const MAX_Q        = 100;
+
+    /**
+     * WR-02: prechod z dlazdice alebo skupiny dashboardu. Zoznam pouzije presne tu istu podmienku ako dashboard
+     * (TaskQueries::groupCondition), preto pocet a mnozina uloh sedia s dlazdicou aj so skupinou.
+     */
+    public const GROUPS = ['due', 'done_due', 'partial', 'in_progress'];
+
+    /**
+     * Skupiny, ktorych podmienka zavisi od vybraneho mesiaca (bez mesiaca sa skupina ignoruje).
+     */
+    public const MONTH_GROUPS = ['due', 'done_due', 'partial'];
+
+    private const MAX_Q = 100;
 
     public function __construct(
         public ?int $clientId = null,
         public string $state = self::DEFAULT_STATE,
         public ?string $month = null,
         public ?string $q = null,
+        public ?string $group = null,
     ) {
     }
 
@@ -30,6 +43,7 @@ final readonly class TaskFilter
         $state  = $get['state'] ?? null;
         $month  = $get['month'] ?? null;
         $q      = $get['q'] ?? null;
+        $group  = $get['group'] ?? null;
 
         $clientId = is_string($client) && preg_match('/^\d{1,18}$/D', $client) === 1 ? (int) $client : null;
         $state    = is_string($state) && in_array($state, self::STATES, true) ? $state : self::DEFAULT_STATE;
@@ -41,7 +55,13 @@ final readonly class TaskFilter
             $text = $text === '' ? null : $text;
         }
 
-        return new self($clientId, $state, $month, $text);
+        $group = is_string($group) && in_array($group, self::GROUPS, true) ? $group : null;
+
+        if ($group !== null && $month === null && in_array($group, self::MONTH_GROUPS, true)) {
+            $group = null;
+        }
+
+        return new self($clientId, $group === null ? $state : self::DEFAULT_STATE, $month, $text, $group);
     }
 
     /**
@@ -61,6 +81,10 @@ final readonly class TaskFilter
 
         if ($this->month !== null) {
             $out['month'] = $this->month;
+        }
+
+        if ($this->group !== null) {
+            $out['group'] = $this->group;
         }
 
         if ($this->q !== null) {

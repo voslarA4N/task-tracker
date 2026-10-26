@@ -44,6 +44,20 @@ final class TaskFilterTest extends TestCase
         $this->assertSame(['client' => '3', 'state' => 'done', 'month' => '2026-10', 'q' => 'faktúra'], $f->toQuery());
     }
 
+    public function testDashboardGroup(): void
+    {
+        $f = TaskFilter::fromQuery(['group' => 'due', 'month' => '2026-10', 'state' => 'billed']);
+        $this->assertSame('due', $f->group);
+        $this->assertSame('current', $f->state);
+        $this->assertSame(['month' => '2026-10', 'group' => 'due'], $f->toQuery());
+
+        // Skupina zavisla od mesiaca bez mesiaca sa ignoruje, neznama skupina tiez.
+        $this->assertNull(TaskFilter::fromQuery(['group' => 'done_due'])->group);
+        $this->assertNull(TaskFilter::fromQuery(['group' => 'evil', 'month' => '2026-10'])->group);
+        $this->assertNull(TaskFilter::fromQuery(['group' => ['due'], 'month' => '2026-10'])->group);
+        $this->assertSame('in_progress', TaskFilter::fromQuery(['group' => 'in_progress'])->group);
+    }
+
     public function testToQueryOmitsDefaults(): void
     {
         $f = TaskFilter::fromQuery(['state' => 'current', 'q' => 'a']);

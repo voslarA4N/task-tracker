@@ -20,10 +20,12 @@ $multiWip = count($wip) > 1;
 $query    = $filter->toQuery();
 $clientQs = $filter->clientId !== null ? '&client=' . $filter->clientId : '';
 $hours    = static fn (string $h): string => Hours::format($h, $locale);
+// WR-02: odkazy vedu na zoznam s tou istou podmienkou ako dlazdica/skupina (TaskFilter::GROUPS).
+$drill     = static fn (string $group): string => '/tasks?group=' . $group . '&month=' . $filter->month . $clientQs;
 $groupDefs = [
-    'done_due'    => ['Dashboard.groupDoneDue', '/tasks?month=' . $filter->month . '&state=done' . $clientQs, $filter->month],
-    'partial'     => ['Dashboard.groupPartial', '/tasks?state=partial' . $clientQs, null],
-    'in_progress' => ['Dashboard.groupInProgress', '/tasks?state=in_progress' . $clientQs, null],
+    'done_due'    => ['Dashboard.groupDoneDue', $drill('done_due'), $filter->month],
+    'partial'     => ['Dashboard.groupPartial', $drill('partial'), null],
+    'in_progress' => ['Dashboard.groupInProgress', $drill('in_progress'), null],
 ];
 $hasGroups = false;
 
@@ -42,7 +44,7 @@ foreach ($groups as $g) {
     <?php if ($due !== [] || $wip !== []) : ?>
         <div class="work-tiles">
             <?php foreach ($due as $row) : ?>
-                <a class="work-tile" href="<?= htmlspecialchars('/tasks?month=' . $filter->month . '&state=done' . $clientQs, ENT_QUOTES) ?>">
+                <a class="work-tile" href="<?= htmlspecialchars($drill('due'), ENT_QUOTES) ?>">
                     <span class="work-tile-label"><?= esc($multiDue ? lang('Dashboard.tileDueCurrency', [$row['currency']]) : lang('Dashboard.tileDue')) ?></span>
                     <span class="work-tile-amount"><?= esc(MoneyFormat::format($row['amount'], $row['currency'])) ?></span>
                     <span class="work-tile-hours"><?= esc(lang('Dashboard.tileDueHours', [$hours($row['hours'])])) ?></span>

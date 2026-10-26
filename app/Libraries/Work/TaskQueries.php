@@ -53,7 +53,7 @@ final class TaskQueries
         $where  = [];
         $params = ['limit' => $limit + 1];
 
-        $where[] = match ($f->state) {
+        $where[] = $f->group !== null ? self::groupCondition($f->group) : match ($f->state) {
             'current'     => "(t.status <> 'done' OR v.unlocked_count > 0)",
             'in_progress' => "t.status = 'in_progress'",
             'done'        => "(t.status = 'done' AND v.locked_count = 0)",
@@ -68,7 +68,11 @@ final class TaskQueries
         }
 
         if ($f->month !== null) {
-            $where[]         = 'EXISTS (SELECT 1 FROM billing_allocations a WHERE a.task_id = t.id AND a.billing_month = :month:)';
+            // Pri prechode z dashboardu je mesiac sucastou podmienky skupiny, nie samostatny filter.
+            if ($f->group === null) {
+                $where[] = 'EXISTS (SELECT 1 FROM billing_allocations a WHERE a.task_id = t.id AND a.billing_month = :month:)';
+            }
+
             $params['month'] = $f->month;
         }
 

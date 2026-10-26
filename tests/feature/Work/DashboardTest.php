@@ -86,9 +86,11 @@ final class DashboardTest extends AuthTestCase
         $this->assertStringContainsString('Na fakturáciu tento mesiac', $html);
         $this->assertStringContainsString('243,00', $html);
         $this->assertStringContainsString('9 h zapracovaných', $html);
-        $this->assertStringContainsString('/tasks?month=2026-10&amp;state=done', $html);
+        // WR-02: dlazdica Na fakturaciu vedie na zoznam s rovnakou podmienkou (group=due), WIP na vsetky in_progress.
+        $this->assertStringContainsString('/tasks?group=due&amp;month=2026-10', $html);
+        $this->assertStringNotContainsString('state=done', $html);
         $this->assertStringContainsString('nacenených', $html);
-        $this->assertStringContainsString('state=in_progress', $html);
+        $this->assertStringContainsString('/tasks?state=in_progress', $html);
 
         $done    = strpos($html, 'Zapracované, do faktúry');
         $partial = strpos($html, 'Čiastočne vyfakturované');
@@ -101,6 +103,22 @@ final class DashboardTest extends AuthTestCase
         $this->assertStringContainsString('work-progress', $html);
         $this->assertStringContainsString('Okt', $html);
         $this->assertStringContainsString('Zapracovana A', $html);
+    }
+
+    public function testShowAllLinksUseGroupDrillDown(): void
+    {
+        $client = $this->createClient();
+
+        for ($i = 0; $i < 11; $i++) {
+            $this->createTask($client, ['title' => 'W' . $i]);
+        }
+
+        $html = $this->body($this->get('/?client=' . $client));
+        $this->assertStringContainsString('/tasks?group=in_progress&amp;month=2026-10&amp;client=' . $client, $html);
+
+        $list = $this->body($this->get('/tasks?group=in_progress&month=2026-10&client=' . $client));
+        $this->assertStringContainsString(esc(lang('Tasks.listMeta', [11])), $list);
+        $this->assertStringContainsString(esc(lang('Tasks.groupFilter', [lang('Dashboard.groupInProgress')])), $list);
     }
 
     public function testEmptyGroupsAreNotRendered(): void

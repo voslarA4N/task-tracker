@@ -1,5 +1,6 @@
 <?php
 
+use App\Libraries\Work\BillingMonth;
 use App\Libraries\Work\TaskFilter;
 
 /**
@@ -9,9 +10,26 @@ use App\Libraries\Work\TaskFilter;
  * @var list<array<string, mixed>>       $rows
  * @var bool                             $truncated
  */
-$count = count($rows);
+$count       = count($rows);
+$groupLabels = [
+    'due'         => 'Tasks.groupDue',
+    'done_due'    => 'Dashboard.groupDoneDue',
+    'partial'     => 'Dashboard.groupPartial',
+    'in_progress' => 'Dashboard.groupInProgress',
+];
+$groupNote = '';
+
+if ($filter->group !== null) {
+    $groupLabel = lang($groupLabels[$filter->group]);
+    $groupNote  = $filter->month !== null && in_array($filter->group, TaskFilter::MONTH_GROUPS, true)
+        ? lang('Tasks.groupFilterMonth', [$groupLabel, mb_strtolower(BillingMonth::label($filter->month, service('request')->getLocale()))])
+        : lang('Tasks.groupFilter', [$groupLabel]);
+}
 ?>
 <div id="task-list">
+    <?php if ($groupNote !== '') : ?>
+        <p class="small mb-2"><?= esc($groupNote) ?> · <a href="/tasks"><?= esc(lang('Tasks.filterClear')) ?></a></p>
+    <?php endif ?>
     <p class="small text-body-secondary mb-2"><?= esc(lang('Tasks.listMeta', [$count])) ?></p>
     <?php if ($rows === []) : ?>
         <section class="app-card">

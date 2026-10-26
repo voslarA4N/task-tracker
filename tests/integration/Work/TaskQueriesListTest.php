@@ -107,6 +107,42 @@ final class TaskQueriesListTest extends PgTestCase
         $this->assertSame([$s['b']], $this->ids($this->filter(['month' => '2026-11', 'state' => 'all'])));
     }
 
+    public function testGroupDrillDownMatchesDashboard(): void
+    {
+        // WR-02: zoznam z dlazdice/skupiny dashboardu ma presne tie iste ulohy ako dashboard.
+        $c = $this->createClient();
+        $a = $this->createTask($c, ['title' => 'A'] + $this->done());
+        $this->createAllocation($a, '2.00', '2026-10');
+        $b = $this->createTask($c, ['title' => 'B'] + $this->done());
+        $this->lockAllocation($this->createAllocation($b, '1.00', '2026-09'));
+        $this->createAllocation($b, '1.00', '2026-10');
+        $p = $this->createTask($c, ['title' => 'P']);
+        $this->lockAllocation($this->createAllocation($p, '1.00', '2026-09'));
+        $w = $this->createTask($c, ['title' => 'W']);
+        $this->createAllocation($w, '1.00', '2026-10');
+        $x = $this->createTask($c, ['title' => 'X'] + $this->done());
+        $this->createAllocation($x, '1.00', '2026-11');
+
+        $sorted = static function (array $ids): array {
+            sort($ids);
+
+            return $ids;
+        };
+        $groups = $this->queries()->dashboard('2026-10', null)['groups'];
+
+        foreach (['done_due', 'partial', 'in_progress'] as $group) {
+            $expected = array_map(static fn (array $r): int => (int) $r['id'], $groups[$group]['rows']);
+            $listed   = $this->ids($this->filter(['group' => $group, 'month' => '2026-10']));
+            $this->assertSame($sorted($expected), $sorted($listed), $group);
+            $this->assertCount($groups[$group]['total'], $listed, $group);
+        }
+
+        // Dlazdica Na fakturaciu: kazda uloha s nezamknutou castou v mesiaci, aj nezapracovana (ALC-05).
+        $this->assertSame($sorted([$a, $b, $w]), $sorted($this->ids($this->filter(['group' => 'due', 'month' => '2026-10']))));
+        $this->assertSame([$x], $this->ids($this->filter(['group' => 'due', 'month' => '2026-11'])));
+        $this->assertSame([$w], $this->ids($this->filter(['group' => 'due', 'month' => '2026-10', 'client' => (string) $c, 'q' => 'W'])));
+    }
+
     public function testTextSearchCaseInsensitiveOverTitleUrlNote(): void
     {
         $c = $this->createClient();
