@@ -7,12 +7,18 @@ namespace App\Libraries\Work;
 use App\Libraries\Platform\Hours;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
+use InvalidArgumentException;
 
 /**
  * Citacia vrstva uloh: zoznam, detail, dashboard. Agregacie v SQL nad task_billing_v, bez N+1.
  */
 final class TaskQueries
 {
+    /**
+     * Poradie je zaroven priorita skupin (WR-01).
+     */
+    public const DASHBOARD_GROUPS = ['done_due', 'partial', 'in_progress'];
+
     private const GROUP_LIMIT = 10;
     private const ROW_COLUMNS = <<<'SQL'
         t.id, t.title, t.url, t.client_id, c.name AS client_name, c.currency,
@@ -160,15 +166,11 @@ final class TaskQueries
             $clientParams,
         )->getResultArray();
 
-        $groups = [
-            'done_due' => $this->group(
-                "t.status = 'done' AND EXISTS (SELECT 1 FROM billing_allocations a WHERE a.task_id = t.id AND a.invoice_id IS NULL AND a.billing_month = :month:)",
-                ['month' => $month] + $clientParams,
-                $clientSql,
-            ),
-            'partial'     => $this->group("v.billing_state = 'partial'", $clientParams, $clientSql),
-            'in_progress' => $this->group("t.status = 'in_progress'", $clientParams, $clientSql),
-        ];
+        $groups = [];
+
+        foreach (self::DASHBOARD_GROUPS as $key) {
+            $groups[$key] = $this->group(self::groupCondition($key), ['month' => $month] + $clientParams, $clientSql);
+        }
 
         $money = static fn (array $r): array => [
             'currency' => trim((string) $r['currency']),
@@ -177,6 +179,26 @@ final class TaskQueries
         ];
 
         return ['due' => array_map($money, $due), 'wip' => array_map($money, $wip), 'groups' => $groups];
+    }
+
+    /**
+     * WR-01: skupiny dashboardu su disjunktne s pevnou prioritou (kazda uloha je v najviac jednej skupine):
+     * 1. Zapracovane, do faktury (done s nezamknutou castou vybraneho mesiaca :month:),
+     * 2. Ciastocne vyfakturovane (partial, ktora nie je v skupine 1),
+     * 3. V praci (in_progress, ktora nie je ciastocne vyfakturovana).
+     * 'due' je mnozina uloh za dlazdicou Na fakturaciu (nezamknuta cast v mesiaci, bez ohladu na stav).
+     */
+    public static function groupCondition(string $group): string
+    {
+        $due = 'EXISTS (SELECT 1 FROM billing_allocations a WHERE a.task_id = t.id AND a.invoice_id IS NULL AND a.billing_month = :month:)';
+
+        return match ($group) {
+            'due'         => $due,
+            'done_due'    => "t.status = 'done' AND " . $due,
+            'partial'     => "v.billing_state = 'partial' AND NOT (t.status = 'done' AND " . $due . ')',
+            'in_progress' => "t.status = 'in_progress' AND v.billing_state <> 'partial'",
+            default       => throw new InvalidArgumentException('Unknown dashboard group ' . $group),
+        };
     }
 
     /**

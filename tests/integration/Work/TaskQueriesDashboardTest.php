@@ -106,11 +106,46 @@ final class TaskQueriesDashboardTest extends PgTestCase
         $this->lockAllocation($this->createAllocation($p, '8.00', '2026-09'));
 
         $g = $this->queries()->dashboard('2026-10', null)['groups'];
+        // WR-01: skupiny su disjunktne. 'E' (done, zamknuta + nezamknuta cast v 10/2026) je iba v done_due,
+        // 'Part' (in_progress so zamknutou castou) iba v partial, 12 x 'W' v in_progress. Spolu 14 uloh.
         $this->assertSame(1, $g['done_due']['total']);
         $this->assertCount(1, $g['done_due']['rows']);
-        $this->assertSame(2, $g['partial']['total']);
-        $this->assertSame(13, $g['in_progress']['total']);
+        $this->assertSame(1, $g['partial']['total']);
+        $this->assertSame('Part', $g['partial']['rows'][0]['title']);
+        $this->assertSame(12, $g['in_progress']['total']);
         $this->assertCount(10, $g['in_progress']['rows']);
+        $this->assertSame(14, $g['done_due']['total'] + $g['partial']['total'] + $g['in_progress']['total']);
+
+        // Iny mesiac: 'E' uz nema nezamknutu cast v 2026-12, preto pada do partial (priorita 2).
+        $g = $this->queries()->dashboard('2026-12', null)['groups'];
+        $this->assertSame(0, $g['done_due']['total']);
+        $this->assertSame(2, $g['partial']['total']);
+        $this->assertSame(12, $g['in_progress']['total']);
+    }
+
+    public function testGroupsAreDisjoint(): void
+    {
+        $c = $this->createClient();
+        // done bez zamknutej casti, s nezamknutou castou v mesiaci -> done_due
+        $a = $this->createTask($c, ['title' => 'A'] + $this->done());
+        $this->createAllocation($a, '2.00', '2026-10');
+        // done so zamknutou aj nezamknutou castou v mesiaci -> iba done_due (nie partial)
+        $b = $this->createTask($c, ['title' => 'B'] + $this->done());
+        $this->lockAllocation($this->createAllocation($b, '1.00', '2026-09'));
+        $this->createAllocation($b, '1.00', '2026-10');
+        // in_progress so zamknutou castou -> iba partial (nie in_progress)
+        $p = $this->createTask($c, ['title' => 'P']);
+        $this->lockAllocation($this->createAllocation($p, '1.00', '2026-09'));
+        // in_progress s nezamknutou castou v mesiaci -> in_progress
+        $w = $this->createTask($c, ['title' => 'W']);
+        $this->createAllocation($w, '1.00', '2026-10');
+
+        $g      = $this->queries()->dashboard('2026-10', null)['groups'];
+        $titles = static fn (array $group): array => array_map(static fn (array $r): string => (string) $r['title'], $group['rows']);
+
+        $this->assertSame(['B', 'A'], $titles($g['done_due']));
+        $this->assertSame(['P'], $titles($g['partial']));
+        $this->assertSame(['W'], $titles($g['in_progress']));
     }
 
     public function testConstantQueryCount(): void
