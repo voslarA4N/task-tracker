@@ -51,6 +51,14 @@ final class AllocationInputTest extends CIUnitTestCase
         $this->assertSame('27.00', $n['rate']);
     }
 
+    public function testAmountOverflowIsRejected(): void
+    {
+        // CR-01: suma casti musi ist do numeric(12,2), inak 422 namiesto OverflowException (500).
+        $errors = AllocationInput::validate($this->valid(['hours' => '10000', 'rate' => '1000000']));
+        $this->assertSame(lang('Allocations.errorAmount'), $errors['rate'] ?? null);
+        $this->assertSame([], AllocationInput::validate($this->valid(['hours' => '99999,99', 'rate' => '99999,99'])));
+    }
+
     public function testMonthChoiceCurrent(): void
     {
         $v = AllocationInput::fromPost($this->request(['hours' => '1', 'rate' => '1', 'month_choice' => 'current']));

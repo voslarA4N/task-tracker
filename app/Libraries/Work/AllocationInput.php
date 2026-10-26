@@ -75,6 +75,8 @@ final class AllocationInput
 
         if (preg_match('/^\d{1,8}([.,]\d{1,2})?$/D', $plain('rate')) !== 1) {
             $errors['rate'] = lang('Allocations.errorRate');
+        } elseif (! isset($errors['hours']) && ! TaskInput::amountFits($hours, $plain('rate'))) {
+            $errors['rate'] = lang('Allocations.errorAmount');
         }
 
         return $errors;

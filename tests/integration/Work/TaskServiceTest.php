@@ -9,6 +9,7 @@ use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Work\LastClient;
 use App\Libraries\Work\TaskRejected;
 use App\Libraries\Work\TaskService;
+use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\MasterFixtures;
@@ -76,6 +77,16 @@ final class TaskServiceTest extends PgTestCase
         $this->assertSame('27.00', $task['rate']);
         $this->assertSame($client, $task['client_id']);
         $this->assertSame(1, $this->audits('task', 'create'));
+    }
+
+    public function testDbRejectsQuotedAmountOverflow(): void
+    {
+        // CR-01: posledna linia v DB (migracia AddTasksQuotedAmountCheck).
+        $client = $this->createClient();
+
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessageMatches('/tasks_quoted_amount_fits/');
+        $this->service()->create($this->values($client, ['hours' => '10000.00', 'rate' => '1000000.00']));
     }
 
     public function testCreateRejectsArchivedClient(): void

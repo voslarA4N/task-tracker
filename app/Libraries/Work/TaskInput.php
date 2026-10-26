@@ -7,6 +7,7 @@ namespace App\Libraries\Work;
 use App\Libraries\Platform\Hours;
 use App\Libraries\Platform\Money;
 use CodeIgniter\HTTP\IncomingRequest;
+use OverflowException;
 
 /**
  * Whitelist, validacia a normalizacia vstupu ulohy (TSK-01). Bez DB.
@@ -60,6 +61,8 @@ final class TaskInput
 
         if (preg_match('/^\d{1,8}([.,]\d{1,2})?$/D', $plain('rate')) !== 1) {
             $errors['rate'] = lang('Tasks.errorRate');
+        } elseif (! isset($errors['hours']) && ! self::amountFits($hours, $plain('rate'))) {
+            $errors['rate'] = lang('Tasks.errorAmountTooLarge');
         }
 
         if (! self::urlIsValid($get('url'), $portalTemplate)) {
@@ -91,6 +94,22 @@ final class TaskInput
             'rate'      => Money::of($rate)->toDecimalString(),
             'note'      => $get('note') === '' ? null : $get('note'),
         ];
+    }
+
+    /**
+     * CR-01: hodiny x sadzba sa musia zmestit do numeric(12,2), inak by kazde citanie sumy ulohy skoncilo chybou.
+     * Vstupy uz presli regexom (hodiny max 5 cifier, sadzba max 8 cifier pred desatinnou ciarkou).
+     */
+    public static function amountFits(string $hours, string $rate): bool
+    {
+        try {
+            $plainRate = str_replace(',', '.', (string) preg_replace('/[\s\x{00A0}]+/u', '', $rate));
+            Money::of($plainRate)->timesHours(Hours::of($hours));
+        } catch (OverflowException) {
+            return false;
+        }
+
+        return true;
     }
 
     private static function urlIsValid(string $url, ?string $portalTemplate): bool

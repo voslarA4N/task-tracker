@@ -317,7 +317,8 @@ final class Tasks extends BaseController
         $sum = '';
 
         if (preg_match('/^\d{1,5}([.,]\d{1,2})?$/D', str_replace(["\u{00A0}", ' '], '', $values['hours'])) === 1
-            && preg_match('/^\d{1,8}([.,]\d{1,2})?$/D', str_replace(["\u{00A0}", ' '], '', $values['rate'])) === 1) {
+            && preg_match('/^\d{1,8}([.,]\d{1,2})?$/D', str_replace(["\u{00A0}", ' '], '', $values['rate'])) === 1
+            && TaskInput::amountFits($values['hours'], str_replace(["\u{00A0}", ' '], '', $values['rate']))) {
             $sum = Money::of(str_replace(',', '.', str_replace(["\u{00A0}", ' '], '', $values['rate'])))
                 ->timesHours(str_replace(',', '.', str_replace(["\u{00A0}", ' '], '', $values['hours'])))
                 ->toDecimalString();

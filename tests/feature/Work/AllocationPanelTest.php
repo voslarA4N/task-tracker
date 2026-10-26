@@ -142,6 +142,17 @@ final class AllocationPanelTest extends AuthTestCase
         $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM billing_allocations')->getRow()->c);
     }
 
+    public function testCreateAmountOverflowIs422(): void
+    {
+        // CR-01: predtym OverflowException v AllocationService (500) aj pri prekresleni formulara.
+        $task   = $this->createTask($this->createClient());
+        $result = $this->submit('/tasks/' . $task . '/allocations', ['month_choice' => 'current', 'hours' => '10000', 'rate' => '1000000']);
+
+        $result->assertStatus(422);
+        $this->assertStringContainsString(esc(lang('Allocations.errorAmount')), $this->body($result));
+        $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM billing_allocations')->getRow()->c);
+    }
+
     public function testCreateMonthOutOfRange(): void
     {
         $task   = $this->createTask($this->createClient());

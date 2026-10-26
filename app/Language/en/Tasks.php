@@ -8,6 +8,7 @@ return [
     'errorTitle'              => 'Enter the task title.',
     'errorHours'              => 'Enter hours as a number greater than 0 with at most 2 decimals, e.g. 8 or 8.5.',
     'errorRate'               => 'Enter the rate as a number, e.g. 27 or 27.50.',
+    'errorAmountTooLarge'     => 'The amount (hours × rate) is too large, at most 9,999,999,999.99. Check the hours and the rate.',
     'errorUrl'                => 'The link must start with http:// or https://.',
     'errorNote'               => 'The note can have at most 2000 characters.',
     'errorClientLocked'       => 'The client cannot be changed while the task has billing parts.',

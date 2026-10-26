@@ -134,6 +134,17 @@ final class TaskFormTest extends AuthTestCase
         $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM tasks')->getRow()->c);
     }
 
+    public function testAmountOverflowIs422(): void
+    {
+        // CR-01: nezmyselna suma nesmie skoncit 500 ani sa ulozit (zoznam a detail by potom padali).
+        $client = $this->createClient();
+        $result = $this->submit('/tasks', $this->taskPost($client, ['hours' => '10000', 'rate' => '1000000']));
+        $result->assertStatus(422);
+
+        $this->assertStringContainsString(esc(lang('Tasks.errorAmountTooLarge')), $this->body($result));
+        $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM tasks')->getRow()->c);
+    }
+
     public function testArchivedClientIs422(): void
     {
         $client = $this->createClient();

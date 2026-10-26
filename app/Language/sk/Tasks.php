@@ -8,6 +8,7 @@ return [
     'errorTitle'              => 'Zadajte názov úlohy.',
     'errorHours'              => 'Zadajte hodiny ako číslo väčšie ako 0, najviac na 2 desatinné miesta, napr. 8 alebo 8,5.',
     'errorRate'               => 'Zadajte sadzbu ako číslo, napr. 27 alebo 27,50.',
+    'errorAmountTooLarge'     => 'Suma (hodiny × sadzba) je príliš veľká, najviac 9 999 999 999,99. Skontrolujte hodiny a sadzbu.',
     'errorUrl'                => 'Odkaz musí začínať http:// alebo https://.',
     'errorNote'               => 'Poznámka môže mať najviac 2000 znakov.',
     'errorClientLocked'       => 'Klienta nemožno zmeniť, kým má úloha fakturačné časti.',

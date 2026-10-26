@@ -36,6 +36,18 @@ final class TaskInputTest extends CIUnitTestCase
         ];
     }
 
+    public function testAmountOverflowIsRejected(): void
+    {
+        // CR-01: 10 000 h x 1 000 000 = 10^10 sa nezmesti do numeric(12,2).
+        $errors = TaskInput::validate($this->valid(['hours' => '10000', 'rate' => '1000000']));
+        $this->assertSame(lang('Tasks.errorAmountTooLarge'), $errors['rate'] ?? null);
+
+        // Hranica: 99 999,99 h x 99 999,99 = 9 999 998 000,00 este prejde.
+        $this->assertSame([], TaskInput::validate($this->valid(['hours' => '99999,99', 'rate' => '99999,99'])));
+        $this->assertTrue(TaskInput::amountFits('1 000', '9 999 999,99'));
+        $this->assertFalse(TaskInput::amountFits('1000,01', '9999999,99'));
+    }
+
     public function testValidInputNormalizes(): void
     {
         $this->assertSame([], TaskInput::validate($this->valid()));

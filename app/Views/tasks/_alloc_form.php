@@ -2,6 +2,7 @@
 
 use App\Libraries\Platform\Money;
 use App\Libraries\Platform\MoneyFormat;
+use App\Libraries\Work\TaskInput;
 
 /**
  * Formular fakturacnej casti: pridanie, uprava, presun (D-08, D-09, D-15).
@@ -32,7 +33,8 @@ $invalid = static fn (string $name): string => isset($errors[$name]) ? ' is-inva
 $sum = '';
 
 if (preg_match('/^\d{1,5}([.,]\d{1,2})?$/D', str_replace(["\u{00A0}", ' '], '', $v('hours'))) === 1
-    && preg_match('/^\d{1,8}([.,]\d{1,2})?$/D', str_replace(["\u{00A0}", ' '], '', $v('rate'))) === 1) {
+    && preg_match('/^\d{1,8}([.,]\d{1,2})?$/D', str_replace(["\u{00A0}", ' '], '', $v('rate'))) === 1
+    && TaskInput::amountFits($v('hours'), str_replace(["\u{00A0}", ' '], '', $v('rate')))) {
     $sum = MoneyFormat::format(
         Money::of(str_replace(',', '.', str_replace(["\u{00A0}", ' '], '', $v('rate'))))
             ->timesHours(str_replace(',', '.', str_replace(["\u{00A0}", ' '], '', $v('hours'))))
