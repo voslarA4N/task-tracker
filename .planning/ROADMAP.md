@@ -258,7 +258,7 @@ Plans:
 
 **Plans**: TBD
 **UI hint**: yes
-**Poznámky**: Najrizikovejšia fáza, izolovaná bez kurzov. **Potrebuje /gsd-research-phase** (zámky a atómové vystavenie, PDF v `bytea` vs súbor, render vo vnútri vs po transakcii, `transException` v CI4 4.7, determinizmus mPDF). Číslovanie jedným príkazom `INSERT … ON CONFLICT DO UPDATE … RETURNING`, nikdy `SEQUENCE` ani `MAX()+1`. Schéma musí byť od začiatku pripravená na dobropis (M6) a obsahovať všetky polia M1–M16. PDF je v tejto fáze funkčné minimum, finálne právne profily prídu vo Phase 6. NFR-06 sa priebežne dopĺňa aj v ďalších fázach (kurzy, limity). Skript zálohy sa začína už tu. Vlastník potvrdil: PDF je autoritatívny, spätný dátum povolený s varovaním.
+**Poznámky**: Najrizikovejšia fáza, izolovaná bez kurzov. **Potrebuje /gsd-research-phase** (zámky a atómové vystavenie, PDF v `bytea` vs súbor, render vo vnútri vs po transakcii, `transException` v CI4 4.7, determinizmus mPDF). Číslovanie jedným príkazom `INSERT … ON CONFLICT DO UPDATE … RETURNING`, nikdy `SEQUENCE` ani `MAX()+1`. Schéma musí byť od začiatku pripravená na dobropis (M6) a obsahovať všetky polia M1–M16. PDF je v tejto fáze funkčné minimum, finálne právne profily prídu vo Phase 6. NFR-06 sa priebežne dopĺňa aj v ďalších fázach (kurzy, limity). Skript zálohy sa začína už tu. Vlastník potvrdil: PDF je autoritatívny, spätný dátum povolený s varovaním. **WR-07 z Phase 4 (voľba C, 2026-10-26):** časti importované z riadkov „Fakturované = ÁNO“ sa zamknú na historickú externú faktúru (fakturované cez tretiu osobu), ktorá nespotrebuje číslo z vlastného radu; schéma faktúr to musí umožniť.
 
 ### Phase 6: Dokumenty faktúry a výkazu
 

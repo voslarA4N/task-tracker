@@ -110,9 +110,11 @@ Recent decisions affecting current work:
 - [Phase 03]: 03-05: ClientInput validates raw post then normalizes; rate display formatted without float
 - [Phase 03]: 03-07: portal URL template accepts only http/https with host and {id} once; preview is text only
 - [Phase 04]: 04-04: client currency lock applies to any billing allocation (locked or unlocked), stricter than Discretion text; RESEARCH Pitfall 9
+- [Phase 04]: WR-07 (vlastník 2026-10-26, voľba C): importované riadky „Fakturované = ÁNO“ ostávajú zatiaľ nezamknuté časti; vo Phase 5 sa zamknú na historickú (externú) faktúru, aby sa nedali znova fakturovať. Historická faktúra nesmie spotrebovať číslo z radu `RRRRMM###`.
 
 ### Pending Todos
 
+- [Phase 5] WR-07 (voľba C): zamknúť importované časti z riadkov „Fakturované = ÁNO“ (dev DB: 09/2026, 11 častí, 89 h, 2 403,00 €) na historickú externú faktúru; bez čísla z vlastného radu; pred prvým ostrým vystavením a pred importom reálnych dát na produkciu
 - [Phase 2 follow-up] iPhone: po 7 dňoch od zapamätania zariadenia overiť, že PWA nežiada prihlásenie (cieľ: 2026-11-01; zariadenie zapamätané pri UAT 2026-10-25)
 - [Phase 2 follow-up] iPhone: po 30 dňoch overiť, že sa vyžaduje heslo aj TOTP (D-17) a že predtým nebolo žiadne prihlásenie (kritérium 5) (cieľ: 2026-11-24)
 

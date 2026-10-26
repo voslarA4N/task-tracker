@@ -3,7 +3,7 @@ status: partial
 phase: 04-lohy-faktura-n-asti-a-dashboard
 source: [04-VERIFICATION.md]
 started: 2026-10-26T12:30:00Z
-updated: 2026-10-26T13:30:00Z
+updated: 2026-10-26T15:00:00Z
 ---
 
 ## Current Test
@@ -30,14 +30,14 @@ result: [pending]
 
 ### 5. Rozhodnutie vlastníka k WR-07 (riadky „Fakturované = ÁNO“)
 expected: vlastník potvrdí „importovať ako nezamknuté“ (podľa textu špecifikácie), alebo požiada, aby sa už fakturované riadky (napr. 09/2026: 11 častí, 89 h, 2 403,00 €) neimportovali ako fakturovateľné časti pred začiatkom Phase 5
-result: [pending]
+result: resolved: vlastník zvolil C (2026-10-26). Časti sa vo Phase 5 zamknú na historickú externú faktúru; zaznamenané v STATE.md (Decisions, Pending Todos) a v ROADMAP Phase 5
 
 ## Summary
 
 total: 5
-passed: 3
+passed: 4
 issues: 0
-pending: 2
+pending: 1
 skipped: 0
 blocked: 0
 

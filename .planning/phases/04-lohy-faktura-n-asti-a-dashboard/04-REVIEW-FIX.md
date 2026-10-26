@@ -126,3 +126,7 @@ status: partial
 _Fixed: 2026-10-26T14:30:00Z_
 _Fixer: Claude (gsd-code-fixer)_
 _Iteration: 1_
+
+## Owner decision WR-07 (2026-10-26)
+
+Voľba **C**: import ostáva bez zmeny (nezamknuté časti + varovanie v reporte); vo Phase 5 sa tieto časti zamknú na historickú externú faktúru bez čísla z vlastného radu. Sledované v STATE.md a ROADMAP Phase 5.
