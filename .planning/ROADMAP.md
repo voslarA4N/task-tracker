@@ -232,7 +232,7 @@ Plans:
 
 - [ ] 04-09-PLAN.md — spark import:excel: suchý beh, idempotentný ostrý beh, runbook, checkpoint ostrého importu reálneho súboru (vlna 4)
 - [x] 04-10-PLAN.md — Panel časti zospodu (pridať, upraviť, presunúť, zmazať), súhrn vyfakturované/naplánované/zostáva, 409 (vlna 4)
-- [ ] 04-12-PLAN.md — Zoznam Aktuálne úlohy s htmx filtrami a stavom v URL (vlna 4)
+- [x] 04-12-PLAN.md — Zoznam Aktuálne úlohy s htmx filtrami a stavom v URL (vlna 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -389,7 +389,7 @@ Plans:
 | 1. Základ a infraštruktúra | 10/10 | Complete   | 2026-10-23 |
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
-| 4. Úlohy, fakturačné časti a dashboard | 9/13 | In Progress|  |
+| 4. Úlohy, fakturačné časti a dashboard | 10/13 | In Progress|  |
 | 5. Fakturačné jadro | 0/0 | Not started | - |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
