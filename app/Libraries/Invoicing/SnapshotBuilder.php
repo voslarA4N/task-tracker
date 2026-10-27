@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Invoicing\Qr\QrPaymentBuilder;
+use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use App\Libraries\Master\BankAccountSelector;
 use App\Libraries\Master\EntityVersionResolver;
 use App\Libraries\Master\LegalProfileResolver;
@@ -20,22 +22,24 @@ use Config\Database;
  */
 final class SnapshotBuilder
 {
-    public const LABEL_KEYS    = ['invoice', 'number', 'variableSymbol', 'supplier', 'customer', 'issueDate', 'deliveryDate', 'dueDate', 'paymentMethod', 'paymentTransfer', 'bankAccount', 'swift', 'item', 'hours', 'rate', 'amount', 'vatCode', 'total', 'companyId', 'taxId', 'vatId', 'regon', 'identifier', 'paymentCash', 'paymentCard', 'paymentOther', 'paymentTitle', 'unitHours', 'vatNoteHeading', 'note', 'page', 'nip', 'bankName'];
+    public const LABEL_KEYS    = ['invoice', 'number', 'variableSymbol', 'supplier', 'customer', 'issueDate', 'deliveryDate', 'dueDate', 'paymentMethod', 'paymentTransfer', 'bankAccount', 'swift', 'item', 'hours', 'rate', 'amount', 'vatCode', 'total', 'companyId', 'taxId', 'vatId', 'regon', 'identifier', 'paymentCash', 'paymentCard', 'paymentOther', 'paymentTitle', 'unitHours', 'vatNoteHeading', 'note', 'page', 'nip', 'bankName', 'qrPayBySquare', 'qrSpayd', 'qrZbp', 'qrCaption'];
     public const VS_MAX_DIGITS = 10;
 
     private readonly EntityVersionResolver $versions;
     private readonly LegalProfileResolver $legal;
     private readonly BankAccountSelector $banks;
+    private readonly QrPaymentBuilder $qr;
 
     /**
      * @param BaseConnection<mixed, mixed>|null $db
      */
-    public function __construct(?BaseConnection $db = null, ?EntityVersionResolver $versions = null, ?LegalProfileResolver $legal = null, ?BankAccountSelector $banks = null)
+    public function __construct(?BaseConnection $db = null, ?EntityVersionResolver $versions = null, ?LegalProfileResolver $legal = null, ?BankAccountSelector $banks = null, ?QrPaymentBuilder $qr = null)
     {
         $db ??= Database::connect();
         $this->versions = $versions ?? new EntityVersionResolver($db);
         $this->legal    = $legal ?? new LegalProfileResolver($db);
         $this->banks    = $banks ?? new BankAccountSelector($db);
+        $this->qr       = $qr ?? new QrPaymentBuilder();
     }
 
     /**
@@ -175,11 +179,14 @@ final class SnapshotBuilder
      * @param array<string, mixed> $snapshot
      *
      * @return array<string, mixed>
+     *
+     * @throws QrPaymentFailed
      */
     public function withNumber(array $snapshot, string $number): array
     {
         $snapshot['number']          = $number;
         $snapshot['variable_symbol'] = self::variableSymbol($number);
+        $snapshot['payment']['qr']   = $this->qr->build($snapshot);
 
         return $snapshot;
     }

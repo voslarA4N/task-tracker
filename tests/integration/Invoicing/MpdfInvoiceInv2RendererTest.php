@@ -123,4 +123,29 @@ final class MpdfInvoiceInv2RendererTest extends CIUnitTestCase
 
         $this->assertSame(0, preg_match('/lang\(|service\(|db_connect|<style|style=/', $src));
     }
+
+    public function testQrIsVectorWithCaption(): void
+    {
+        $s     = SampleSnapshots::invoice('sk');
+        $bytes = (new MpdfInvoiceInv2Renderer())->render($s)->bytes;
+
+        $this->assertNotNull($s['payment']['qr']);
+        $this->assertStringContainsString('/Subtype /Form', $bytes);
+        $this->assertStringNotContainsString('/Subtype /Image', $bytes);
+
+        $text = $this->text($s);
+        $this->assertStringContainsString('PAY', $text);
+        $this->assertStringContainsString('by square', $text);
+        $this->assertStringContainsString('Platba QR kódom', $text);
+    }
+
+    public function testCashHasNoQr(): void
+    {
+        $s            = SampleSnapshots::invoice('sk');
+        $s['payment'] = ['method' => 'cash', 'note' => null, 'qr' => $s['payment']['qr']];
+        $bytes        = (new MpdfInvoiceInv2Renderer())->render($s)->bytes;
+
+        $this->assertStringNotContainsString('/Subtype /Form', $bytes);
+        $this->assertStringNotContainsString('Platba QR kódom', $this->text($s));
+    }
 }

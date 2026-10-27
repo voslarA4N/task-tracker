@@ -8,6 +8,7 @@ use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Invoicing\LegalProfile;
+use App\Libraries\Invoicing\Qr\PayBySquare;
 use App\Libraries\Invoicing\ReportRows;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Master\EntityService;
@@ -17,6 +18,7 @@ use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
+use Tests\Support\PayBySquareDecoder;
 use Tests\Support\PgTestCase;
 
 /**
@@ -248,5 +250,30 @@ final class SnapshotBuilderTest extends PgTestCase
 
         $this->assertSame(['method' => 'cash', 'note' => 'Poznamka', 'qr' => null], $snap['payment']);
         $this->assertSame(['key' => 'invoice_note', 'body' => 'Vzor', 'language' => 'sk', 'provisional' => false], $snap['legal']['texts']['invoice_note']);
+    }
+
+    public function testQrOnlyAfterNumberForSkTransfer(): void
+    {
+        $s        = $this->issueSetup();
+        $built    = $this->build($s);
+        $numbered = (new SnapshotBuilder($this->rw()))->withNumber($built, '202610001');
+
+        $this->assertNull($built['payment']['qr']);
+        $this->assertSame('pay_by_square', $numbered['payment']['qr']['standard']);
+        $this->assertMatchesRegularExpression('/^[0-9A-V]+$/', $numbered['payment']['qr']['payload']);
+
+        $decoded = PayBySquareDecoder::decode($numbered['payment']['qr']['payload']);
+        $this->assertTrue($decoded['crc_ok']);
+        $this->assertContains($numbered['bank']['iban'], $decoded['fields']);
+        $this->assertContains((new PayBySquare())->tabFields($numbered)[3], $decoded['fields']);
+    }
+
+    public function testNoQrForCash(): void
+    {
+        $s                         = $this->issueSetup();
+        $snap                      = $this->build($s);
+        $snap['payment']['method'] = 'cash';
+
+        $this->assertNull((new SnapshotBuilder($this->rw()))->withNumber($snap, '202610001')['payment']['qr']);
     }
 }

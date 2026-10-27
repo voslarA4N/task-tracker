@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Invoicing;
 
+use App\Libraries\Invoicing\InvoiceIssuer;
+use App\Libraries\Invoicing\Qr\Lzma;
+use App\Libraries\Invoicing\Qr\PayBySquare;
+use App\Libraries\Invoicing\Qr\QrPaymentBuilder;
+use App\Libraries\Invoicing\Qr\QrPaymentFailed;
+use App\Libraries\Invoicing\RendererRegistry;
+use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\AuthTestCase;
+use Tests\Support\FakePdfRenderer;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
@@ -272,5 +280,26 @@ final class InvoicingIssueTest extends AuthTestCase
         $form = $this->previewForm($s['client']);
         $this->submit(['payment_method' => 'card', 'payment_note' => 'Ina poznamka'] + $form)->assertStatus(200);
         $this->assertSame(1, $this->invoiceCount());
+    }
+
+    public function testQrFailureIs500WithMessageAndNothingWritten(): void
+    {
+        $this->login();
+        $s    = $this->issueSetup();
+        $lzma = new class () implements Lzma {
+            public function compress(string $raw): string
+            {
+                throw new QrPaymentFailed('boom');
+            }
+        };
+        $issuer = new InvoiceIssuer($this->rw(), null, new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2'), 'rep-1' => new FakePdfRenderer('rep-1')]), new SnapshotBuilder($this->rw(), null, null, null, new QrPaymentBuilder(new PayBySquare($lzma))));
+        Services::injectMock('invoiceIssuer', $issuer);
+
+        $form   = $this->previewForm($s['client']);
+        $result = $this->submit($form);
+
+        $result->assertStatus(500);
+        $this->assertStringContainsString('QR kód pre platbu sa nepodarilo vytvoriť', $this->body($result));
+        $this->assertSame(0, $this->invoiceCount());
     }
 }

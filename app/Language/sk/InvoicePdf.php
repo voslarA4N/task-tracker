@@ -37,4 +37,8 @@ return [
     'page'            => 'Strana',
     'nip'             => 'NIP',
     'bankName'        => 'Banka',
+    'qrPayBySquare'   => 'PAY by square',
+    'qrSpayd'         => 'QR Platba',
+    'qrZbp'           => 'Kod QR ZBP',
+    'qrCaption'       => 'Platba QR kódom',
 ];

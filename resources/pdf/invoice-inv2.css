@@ -15,3 +15,8 @@ table.totals td { background-color: #f0f0f0; padding: 1.5mm; font-size: 12pt; fo
 .r { text-align: right; }
 .note { margin-top: 6mm; }
 .note-heading { font-weight: bold; }
+table.payblock { width: 100%; }
+td.payleft { vertical-align: top; }
+td.payleft.full { width: 100%; }
+td.payqr { vertical-align: top; text-align: right; width: 40mm; }
+.qr-caption { font-size: 7pt; text-align: right; white-space: nowrap; }

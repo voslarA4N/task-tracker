@@ -161,4 +161,14 @@ final class PreviewTokenScopeTest extends PgTestCase
             $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
         }
     }
+
+    public function testRealQrDoesNotChangeToken(): void
+    {
+        $s      = $this->issueSetup();
+        $token  = $this->previewTokenFor($s['client'], '2026-10', $s['entity'], $s['parts']);
+        $issued = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts'], ['previewToken' => $token]));
+
+        $qr = $this->owner()->query("SELECT snapshot->'payment'->'qr'->>'standard' AS st FROM invoices WHERE number = :n:", ['n' => $issued->number])->getRow();
+        $this->assertSame('pay_by_square', $qr->st);
+    }
 }

@@ -45,6 +45,7 @@ return [
     'errorLegalText'         => 'Chýba zákonný text pre {0}. Doplňte ho v Nastavenia, Subjekty a vystavte znova.',
     'errorNoBank'            => 'Subjekt nemá aktívny bankový účet v mene {0}. Doplňte ho v Nastavenia, Subjekty.',
     'errorVatCode'           => 'Pre právny profil subjektu chýba kód DPH. Faktúru nemožno vystaviť.',
+    'errorQrFailed'          => 'QR kód pre platbu sa nepodarilo vytvoriť. Faktúra sa nevystavila a číslo ostáva voľné. Skontrolujte IBAN subjektu a skúste to znova.',
     'errorReportFailed'      => 'PDF výkazu sa nepodarilo vytvoriť. Nič sa nezapísalo a číslo ostáva voľné. Skúste to znova.',
     'errorVersion'           => 'K dátumu vystavenia neexistuje platná verzia subjektu. Zmeňte dátum vystavenia.',
     'errorAmountMismatch'    => 'Suma časti nesedí s hodinami a sadzbou. Upravte časť a skúste znova.',

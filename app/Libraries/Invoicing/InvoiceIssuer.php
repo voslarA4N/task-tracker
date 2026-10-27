@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries\Invoicing;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use App\Libraries\Platform\DbBool;
 use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
@@ -191,7 +192,14 @@ final class InvoiceIssuer
 
         // 8. cislo
         $allocated = $this->numbers->next($series, $cmd->issueDate);
-        $snapshot  = $this->builder->withNumber($snapshot, $allocated->number);
+
+        try {
+            $snapshot = $this->builder->withNumber($snapshot, $allocated->number);
+        } catch (QrPaymentFailed $e) {
+            log_message('error', 'QR payment failed: ' . $e->getMessage());
+
+            throw new IssueRejected('qr_failed');
+        }
 
         // 9. PDF vnutri transakcie
         $pdf = $this->renderers->for((string) $snapshot['template_version'])->render($snapshot);

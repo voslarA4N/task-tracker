@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries\Invoicing\Samples;
 
 use App\Libraries\Invoicing\LegalProfile;
+use App\Libraries\Invoicing\Qr\QrPaymentBuilder;
 use App\Libraries\Invoicing\ReportRows;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use InvalidArgumentException;
@@ -112,7 +113,8 @@ final class SampleSnapshots
             'totals' => ['total' => '1309.50', 'hours' => '48.50', 'line_count' => 2],
         ];
 
-        $base['report'] = self::report($base['lines'], $reportLabels, $lang, $base['billing_month']);
+        $base['payment']['qr'] = (new QrPaymentBuilder())->build($base);
+        $base['report']        = self::report($base['lines'], $reportLabels, $lang, $base['billing_month']);
 
         return array_replace($base, $overrides);
     }

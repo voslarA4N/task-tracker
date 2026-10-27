@@ -7,7 +7,8 @@ use App\Libraries\Invoicing\PdfFormat;
 /**
  * Sablona inv-2. Dostava iba snapshot $s; iba udaje zo snapshotu, polia podla legal.print.
  *
- * @var array<string, mixed> $s
+ * @var array<string, mixed>                              $s
+ * @var array{uri: string, standard: string, caption: string}|null $qr
  */
 $l     = $s['labels'];
 $lg    = (string) $s['doc_language'];
@@ -84,6 +85,7 @@ $unit        = $print['line_unit'] ? ' ' . $l['unitHours'] : '';
         </td>
     </tr>
 </table>
+<table class="payblock"><tr><td class="payleft<?= $qr === null ? ' full' : '' ?>">
 <table class="meta">
     <?php foreach ($print['meta'] as $key) : ?>
         <?php if ($key === 'issue_date') : ?>
@@ -102,6 +104,11 @@ $unit        = $print['line_unit'] ? ' ' . $l['unitHours'] : '';
         <?php if (! empty($b['label'])) : ?><tr><td><?= esc($l['bankName']) ?>: <?= esc($b['label']) ?></td></tr><?php endif; ?>
     <?php endif; ?>
 </table>
+</td>
+<?php if ($qr !== null) : ?>
+    <td class="payqr"><img src="<?= esc($qr['uri']) ?>" width="32mm" height="32mm"><div class="qr-caption"><?= esc($qr['standard']) ?><br><?= esc($qr['caption']) ?></div></td>
+<?php endif; ?>
+</tr></table>
 <table class="items">
     <thead>
         <tr><th>#</th><th><?= esc($l['item']) ?></th><th class="r"><?= esc($l['hours']) ?></th><th class="r"><?= esc($l['rate']) ?></th><th class="r"><?= esc($l['amount']) ?></th><?php if ($hasVatCol) : ?><th><?= esc($l['vatCode']) ?></th><?php endif; ?></tr>

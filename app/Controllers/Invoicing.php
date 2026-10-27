@@ -180,6 +180,9 @@ final class Invoicing extends BaseController
 
                 return $this->renderPreview(false, $raw, 422, [['message' => lang('Invoicing.errorSequence', [$format])]]);
 
+            case 'qr_failed':
+                return $this->renderPreview(false, $raw, 500, [['message' => lang('Invoicing.errorQrFailed')]]);
+
             case 'report_failed':
                 return $this->renderPreview(false, $raw, 500, [['message' => lang('Invoicing.errorReportFailed')]]);
 

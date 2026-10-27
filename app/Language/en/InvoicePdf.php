@@ -37,4 +37,8 @@ return [
     'page'            => 'Page',
     'nip'             => 'NIP',
     'bankName'        => 'Bank',
+    'qrPayBySquare'   => 'PAY by square',
+    'qrSpayd'         => 'QR Platba',
+    'qrZbp'           => 'Kod QR ZBP',
+    'qrCaption'       => 'Pay by QR code',
 ];
