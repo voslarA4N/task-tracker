@@ -308,7 +308,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 06-03-PLAN.md — Výkaz pri vystavení v tej istej transakcii, povinný report v DB (trigger), nemennosť oboch PDF, tlačidlá Faktúra PDF a Výkaz PDF na detaile (vlna 3)
+- [x] 06-03-PLAN.md — Výkaz pri vystavení v tej istej transakcii, povinný report v DB (trigger), nemennosť oboch PDF, tlačidlá Faktúra PDF a Výkaz PDF na detaile (vlna 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -451,7 +451,7 @@ Plans:
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
-| 6. Dokumenty faktúry a výkazu | 2/9 | In Progress|  |
+| 6. Dokumenty faktúry a výkazu | 3/9 | In Progress|  |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
 | 8. Meny a kurzy | 0/0 | Not started | - |
 | 9. Dobropisy | 0/0 | Not started | - |
