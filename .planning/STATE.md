@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 Phase: 5 (faktura-n-jadro) — EXECUTING
 Plan: 9 of 9
 Status: Phase complete — ready for verification
-Last activity: 2026-10-27
+Last activity: 2026-10-27 - Completed quick task 261027-elv: import:excel --month
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -128,6 +128,12 @@ Recent decisions affecting current work:
 - [Phase 3 -> 6, 8, 10]: Otázky pre účtovníčku (limity SK/PL, zákonné texty, kurz, dobropis, retencia) blokujú finálne znenie textov a limity
 - [Phase 7]: Vlastník musí zvoliť SMTP poskytovateľa a nastaviť DNS (SPF/DKIM/DMARC)
 - [Phase 2]: vlastník musí pripraviť Cloudflare, firewall a server podľa plánu 02-02
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 261027-elv | import:excel --month RRRR-MM (import len jedného mesiaca) | 2026-10-27 | 7d884a4 | [261027-elv-import-excel-month-filter](./quick/261027-elv-import-excel-month-filter/) |
 
 ## Deferred Items
 
