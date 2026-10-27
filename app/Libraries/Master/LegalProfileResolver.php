@@ -64,7 +64,7 @@ final class LegalProfileResolver
      * (presná zhoda, inak NULL) a text sa hľadá len pre tento mód. Poradie: (jazyk, mód) -> (en, mód) -> výnimka.
      * Kód ART_28B_RC sa tak nikdy nespáruje so všeobecným znením "zwolniony ... art. 113".
      *
-     * @return array{body: string, language: string, provisional: bool}
+     * @return array{body: string, language: string, provisional: bool, revision: int}
      */
     public function text(string $country, string $vatRegime, string $billingMode, string $language, string $key): array
     {
@@ -73,7 +73,7 @@ final class LegalProfileResolver
 
         foreach ($attempts as [$lang, $mode]) {
             $row = $this->db->query(
-                'SELECT body, language, provisional FROM legal_texts '
+                'SELECT body, language, provisional, revision FROM legal_texts '
                 . 'WHERE country = :c: AND vat_regime = :r: AND language = :l: AND key = :k: '
                 . 'AND billing_mode IS NOT DISTINCT FROM CAST(:m: AS text)',
                 ['c' => $country, 'r' => $vatRegime, 'l' => $lang, 'k' => $key, 'm' => $mode],
@@ -84,6 +84,7 @@ final class LegalProfileResolver
                     'body'        => (string) $row['body'],
                     'language'    => (string) $row['language'],
                     'provisional' => DbBool::of($row['provisional']),
+                    'revision'    => (int) $row['revision'],
                 ];
             }
         }
@@ -94,7 +95,7 @@ final class LegalProfileResolver
     /**
      * Ako text(), ale chybajuci text nie je chyba (napr. predvoleny invoice_note je volitelny, D-12).
      *
-     * @return array{body: string, language: string, provisional: bool}|null
+     * @return array{body: string, language: string, provisional: bool, revision: int}|null
      */
     public function optionalText(string $country, string $vatRegime, string $billingMode, string $language, string $key): ?array
     {
@@ -106,7 +107,7 @@ final class LegalProfileResolver
 
         foreach ([[$language, $mode], ['en', $mode]] as [$lang, $m]) {
             $row = $this->db->query(
-                'SELECT body, language, provisional FROM legal_texts '
+                'SELECT body, language, provisional, revision FROM legal_texts '
                 . 'WHERE country = :c: AND vat_regime = :r: AND language = :l: AND key = :k: '
                 . 'AND billing_mode IS NOT DISTINCT FROM CAST(:m: AS text)',
                 ['c' => $country, 'r' => $vatRegime, 'l' => $lang, 'k' => $key, 'm' => $m],
@@ -117,6 +118,7 @@ final class LegalProfileResolver
                     'body'        => (string) $row['body'],
                     'language'    => (string) $row['language'],
                     'provisional' => DbBool::of($row['provisional']),
+                    'revision'    => (int) $row['revision'],
                 ];
             }
         }

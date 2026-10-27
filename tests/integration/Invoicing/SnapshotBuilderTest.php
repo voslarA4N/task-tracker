@@ -76,6 +76,15 @@ final class SnapshotBuilderTest extends PgTestCase
         $this->assertSame('EUR', $snap['currency']);
     }
 
+    public function testSampleSnapshotLegalTextHasResolverShape(): void
+    {
+        $snap   = $this->build($this->issueSetup());
+        $sample = \App\Libraries\Invoicing\Samples\SampleSnapshots::invoice('sk');
+
+        $this->assertSame(array_keys($snap['legal']['texts']['vat_note']), array_keys($sample['legal']['texts']['vat_note']));
+        $this->assertSame(1, $sample['legal']['texts']['vat_note']['revision']);
+    }
+
     public function testSnapshotIsSchemaTwoWithPrintRules(): void
     {
         $snap = $this->build($this->issueSetup());
@@ -249,7 +258,7 @@ final class SnapshotBuilderTest extends PgTestCase
         }
 
         $this->assertSame(['method' => 'cash', 'note' => 'Poznamka', 'qr' => null], $snap['payment']);
-        $this->assertSame(['key' => 'invoice_note', 'body' => 'Vzor', 'language' => 'sk', 'provisional' => false], $snap['legal']['texts']['invoice_note']);
+        $this->assertSame(['key' => 'invoice_note', 'body' => 'Vzor', 'language' => 'sk', 'provisional' => false, 'revision' => 1], $snap['legal']['texts']['invoice_note']);
     }
 
     public function testQrOnlyAfterNumberForSkTransfer(): void

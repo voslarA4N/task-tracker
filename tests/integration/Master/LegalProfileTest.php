@@ -113,14 +113,19 @@ final class LegalProfileTest extends PgTestCase
         $this->resolver()->profile('CZ', 'pl_exempt_113_1', 'domestic');
     }
 
-    public function testAppRwIsReadOnly(): void
+    public function testAppRwCannotWriteProfilesOrDeleteTexts(): void
     {
         $this->assertSame(16, (int) $this->rw()->query('SELECT count(*) AS c FROM legal_texts')->getRow()->c);
-        $this->assertPermissionDenied(fn () => $this->rw()->query(
-            "INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, updated_at) VALUES ('SK','sk_non_vat',NULL,'sk','x_y_z','x', now())",
-        ));
         $this->assertPermissionDenied(fn () => $this->rw()->query("UPDATE legal_profiles SET exemption_code = 'X_Y_Z'"));
+        $this->assertPermissionDenied(fn () => $this->rw()->query(
+            "INSERT INTO legal_profiles (country, vat_regime, billing_mode, exemption_code, updated_at) VALUES ('SK','sk_non_vat','eu_b2b',NULL, now())",
+        ));
         $this->assertPermissionDenied(fn () => $this->rw()->query('DELETE FROM legal_texts'));
+    }
+
+    public function testTextResolverReturnsRevision(): void
+    {
+        $this->assertSame(1, $this->resolver()->text('SK', 'sk_non_vat', 'domestic', 'sk', 'vat_note')['revision']);
     }
 
     public function testNullBillingModeIsUnique(): void
@@ -137,7 +142,7 @@ final class LegalProfileTest extends PgTestCase
         $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK', 'sk_non_vat', NULL, 'sk', 'invoice_note', 'Predvolena poznamka', true, now())");
 
         try {
-            $this->assertSame(['body' => 'Predvolena poznamka', 'language' => 'sk', 'provisional' => true], $this->resolver()->optionalText('SK', 'sk_non_vat', 'domestic', 'sk', 'invoice_note'));
+            $this->assertSame(['body' => 'Predvolena poznamka', 'language' => 'sk', 'provisional' => true, 'revision' => 1], $this->resolver()->optionalText('SK', 'sk_non_vat', 'domestic', 'sk', 'invoice_note'));
         } finally {
             $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
         }
