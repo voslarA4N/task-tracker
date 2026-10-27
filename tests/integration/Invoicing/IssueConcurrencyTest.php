@@ -52,7 +52,7 @@ final class IssueConcurrencyTest extends PgTestCase
         $this->owner()->query('SELECT pg_advisory_lock(777)');
 
         $procs  = [];
-        $chunks = array_chunk($clients, (int) (self::COUNT / 2));
+        $chunks = array_chunk($clients, intdiv(self::COUNT, 2));
 
         foreach ($chunks as $i => $chunk) {
             $proc = proc_open(
@@ -64,10 +64,9 @@ final class IssueConcurrencyTest extends PgTestCase
             $procs[] = [$proc, $pipes];
         }
 
-        $deadline = microtime(true) + 10;
-        $waiting  = 0;
+        $waiting = 0;
 
-        while (microtime(true) < $deadline) {
+        for ($attempt = 0; $attempt < 200; $attempt++) {
             $waiting = (int) $this->owner()->query("SELECT count(*) AS c FROM pg_locks WHERE locktype = 'advisory' AND NOT granted")->getRow()->c;
 
             if ($waiting === 2) {

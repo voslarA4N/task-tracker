@@ -25,7 +25,7 @@ $_SERVER['CI_ENVIRONMENT'] = 'testing';
 
 require 'vendor/codeigniter4/framework/system/Test/bootstrap.php';
 
-[, $index, $clientCsv, $month, $issueDate, $entityId] = $argv + [null, '0', '', '', '', '0'];
+[, $index, $clientCsv, $month, $issueDate, $entityId] = ($_SERVER['argv'] ?? []) + [null, '0', '', '', '', '0'];
 
 Services::injectMock('clock', new FrozenClock('2026-10-27T10:00:00+01:00'));
 
