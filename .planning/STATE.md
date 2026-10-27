@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-10-27T22:31:14.739Z"
+stopped_at: Completed 06-04-PLAN.md
+last_updated: "2026-10-27T22:48:11.090Z"
 last_activity: 2026-10-27
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 71
-  completed_plans: 65
+  completed_plans: 66
   percent: 42
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 06 (dokumenty-fakt-ry-a-v-kazu) — EXECUTING
-Plan: 4 of 9
+Plan: 5 of 9
 Status: Ready to execute
 Last activity: 2026-10-27
 
@@ -115,6 +115,7 @@ Recent decisions affecting current work:
 - [Phase 03]: 03-07: portal URL template accepts only http/https with host and {id} once; preview is text only
 - [Phase 04]: 04-04: client currency lock applies to any billing allocation (locked or unlocked), stricter than Discretion text; RESEARCH Pitfall 9
 - [Phase 04]: WR-07 (vlastník 2026-10-26, voľba C): importované riadky „Fakturované = ÁNO“ ostávajú zatiaľ nezamknuté časti; vo Phase 5 sa zamknú na historickú (externú) faktúru, aby sa nedali znova fakturovať. Historická faktúra nesmie spotrebovať číslo z radu `RRRRMM###`.
+- [Phase 06]: previewToken omits whole payment section; legal.texts.invoice_note stays in token
 
 ### Pending Todos
 
@@ -147,6 +148,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-27T22:31:14.697Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-10-27T22:48:10.467Z
+Stopped at: Completed 06-04-PLAN.md
 Resume file: None
