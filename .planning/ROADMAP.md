@@ -320,7 +320,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 06-06-PLAN.md — QR Platba (SPAYD) pre CZ a ZBP pre PL klientov, upozornenie v náhľade pri príliš dlhom čísle pre ZBP (vlna 6)
+- [x] 06-06-PLAN.md — QR Platba (SPAYD) pre CZ a ZBP pre PL klientov, upozornenie v náhľade pri príliš dlhom čísle pre ZBP (vlna 6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
@@ -451,7 +451,7 @@ Plans:
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
-| 6. Dokumenty faktúry a výkazu | 5/9 | In Progress|  |
+| 6. Dokumenty faktúry a výkazu | 6/9 | In Progress|  |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
 | 8. Meny a kurzy | 0/0 | Not started | - |
 | 9. Dobropisy | 0/0 | Not started | - |
