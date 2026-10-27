@@ -52,33 +52,56 @@ final class Invoices extends BaseController
      */
     public function pdf(int $id): ResponseInterface
     {
-        $row = db_connect()->query('SELECT origin, number FROM invoices WHERE id = :id:', ['id' => $id])->getRowArray();
+        return $this->serve($id, 'invoice');
+    }
+
+    /**
+     * D-21: PDF vykaz z ulozenych bajtov (INV-13, ziadna regeneracia).
+     */
+    public function report(int $id): ResponseInterface
+    {
+        return $this->serve($id, 'report');
+    }
+
+    private function serve(int $id, string $kind): ResponseInterface
+    {
+        $row = db_connect()->query('SELECT origin, number, doc_language, snapshot_schema FROM invoices WHERE id = :id:', ['id' => $id])->getRowArray();
 
         if ($row === null || $row['origin'] !== 'issued') {
             throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
         }
 
-        try {
-            $doc = (new DocumentStore())->read($id);
-        } catch (DocumentIntegrityError $e) {
-            log_message('critical', 'Invoice {id} PDF failed integrity check: {message}', ['id' => $id, 'message' => $e->getMessage()]);
+        $errorKey = $kind === 'report' ? 'Invoices.errorReport' : 'Invoices.errorPdf';
 
-            return $this->response->setStatusCode(500)->setBody(lang('Invoices.errorPdf'));
+        try {
+            $doc = (new DocumentStore())->read($id, $kind);
+        } catch (DocumentIntegrityError $e) {
+            log_message('critical', 'Invoice {id} {kind} PDF failed integrity check: {message}', ['id' => $id, 'kind' => $kind, 'message' => $e->getMessage()]);
+
+            return $this->response->setStatusCode(500)->setBody(lang($errorKey));
         }
 
         if ($doc === null) {
-            log_message('critical', 'Invoice {id} has no stored PDF.', ['id' => $id]);
+            if ($kind === 'report' && (int) $row['snapshot_schema'] < 2) {
+                throw PageNotFoundException::forPageNotFound(lang('Invoices.reportMissing'));
+            }
 
-            return $this->response->setStatusCode(500)->setBody(lang('Invoices.errorPdf'));
+            log_message('critical', 'Invoice {id} has no stored {kind} PDF.', ['id' => $id, 'kind' => $kind]);
+
+            return $this->response->setStatusCode(500)->setBody(lang($errorKey));
         }
 
+        $prefixes = $kind === 'report'
+            ? ['sk' => 'vykaz-', 'cs' => 'vykaz-', 'pl' => 'wykaz-', 'en' => 'report-']
+            : ['sk' => 'faktura-', 'cs' => 'faktura-', 'pl' => 'faktura-', 'en' => 'invoice-'];
+        $prefix      = $prefixes[trim((string) $row['doc_language'])] ?? ($kind === 'report' ? 'vykaz-' : 'faktura-');
         $name        = preg_replace('/[^A-Za-z0-9._-]/', '_', (string) $row['number']);
         $disposition = $this->request->getGet('download') === '1' ? 'attachment' : 'inline';
 
         return $this->response
             ->setStatusCode(200)
             ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', $disposition . '; filename="faktura-' . $name . '.pdf"')
+            ->setHeader('Content-Disposition', $disposition . '; filename="' . $prefix . $name . '.pdf"')
             ->setHeader('Cache-Control', 'private, no-store')
             ->setHeader('ETag', '"' . $doc->sha256 . '"')
             ->setHeader('X-Content-Type-Options', 'nosniff')

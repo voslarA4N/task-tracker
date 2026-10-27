@@ -425,9 +425,9 @@ img, table { max-width: 100%; }
 .inv-row .inv-row-meta { font-size: 12px; color: var(--app-muted); }
 .inv-row .inv-row-amount { font-size: 16px; font-weight: 400; font-variant-numeric: tabular-nums; }
 
-.inv-pdf-actions { display: flex; flex-direction: column; gap: 8px; }
-.inv-pdf-actions .btn { width: 100%; }
+.inv-docs { display: flex; flex-direction: column; gap: 8px; }
+.inv-docs .btn { width: 100%; min-height: 44px; }
 @media (min-width: 768px) {
-  .inv-pdf-actions { flex-direction: row; }
-  .inv-pdf-actions .btn { width: auto; }
+  .inv-docs { flex-direction: row; align-items: center; }
+  .inv-docs .btn { width: auto; }
 }

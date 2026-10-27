@@ -54,7 +54,7 @@ final class InvoiceQueries
         $invoice = $this->db->query(
             'SELECT i.id, i.origin, i.type, i.number, i.external_ref, i.client_id, i.billing_month, i.issue_date, i.delivery_date, i.due_date,
                     i.currency, i.total, i.line_count, i.doc_language, i.vat_regime, i.exemption_code, i.payment_method,
-                    i.template_version, i.snapshot, i.created_at, c.name AS client_name
+                    i.template_version, i.snapshot_schema, i.snapshot, i.created_at, c.name AS client_name
              FROM invoices i JOIN clients c ON c.id = i.client_id
              WHERE i.id = :id:',
             ['id' => $id],
@@ -81,7 +81,9 @@ final class InvoiceQueries
             return $l;
         }, $lines);
 
-        $invoice['document'] = (new DocumentStore($this->db))->meta($id);
+        $store                      = new DocumentStore($this->db);
+        $invoice['document']        = $store->meta($id);
+        $invoice['report_document'] = $store->meta($id, 'report');
 
         return $invoice;
     }
