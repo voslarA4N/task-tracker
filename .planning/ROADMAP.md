@@ -270,7 +270,7 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 05-05-PLAN.md — Serverové kontroly (mena, ukončený subjekt, spätný dátum), InvoiceDraftService (náhľad), isFormatLocked (vlna 3)
-- [ ] 05-06-PLAN.md — Test súbehu 50 vystavení na 2 procesoch, test zámku čítača, test „zmeň všetko a porovnaj bajty“ (vlna 3)
+- [x] 05-06-PLAN.md — Test súbehu 50 vystavení na 2 procesoch, test zámku čítača, test „zmeň všetko a porovnaj bajty“ (vlna 3)
 - [ ] 05-07-PLAN.md — Zoznam a detail faktúr, uložené PDF endpoint, navigácia Faktúry, CSS .inv-*, číslo faktúry pri zamknutej časti (vlna 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
@@ -414,7 +414,7 @@ Plans:
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
-| 5. Fakturačné jadro | 5/9 | In Progress|  |
+| 5. Fakturačné jadro | 6/9 | In Progress|  |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
 | 8. Meny a kurzy | 0/0 | Not started | - |
