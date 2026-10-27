@@ -72,7 +72,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [ ] **INV-01**: Fakturácia mesiaca: používateľ vyberie klienta a mesiac, vidí náhľad nezamknutých častí, môže vyradiť časť (presunúť do iného mesiaca) a vybrať subjekt (predvolený podľa dátumu vystavenia). Náhľad nemá pridelené číslo.
 - [x] **INV-02**: Faktúra má jednu položku za každú časť (názov úlohy, hodiny, sadzba, suma), dátum vystavenia, dátum dodania (predvolene posledný deň mesiaca) a splatnosť. Variabilný symbol je číslo faktúry.
 - [x] **INV-03**: Pri vystavení sa do JSONB uloží kópia údajov: verzia subjektu, klient, mena, jazyk, DPH režim, režim fakturácie, zákonné texty, preložené popisky, URL portálu, kurz. Faktúra je odvtedy nemenná (vynútené aj DB oprávneniami/triggermi).
-- [ ] **INV-04**: Číslovanie podľa nastaviteľného formátu s tokenmi `RRRR`, `RR`, `MM`, `#…` a pevným textom (predvolene `RRRRMM###`). Rad patrí subjektu. Poradie sa vynuluje každý mesiac, ak formát obsahuje `MM`, inak každý rok. Počiatočné číslo sa dá nastaviť. Čísla idú bez medzier a pridelenie je bezpečné voči súbehu (prvá faktúra 10/2026 = `202610001`, druhá `202610002`, prvá v 11/2026 = `202611001`).
+- [x] **INV-04**: Číslovanie podľa nastaviteľného formátu s tokenmi `RRRR`, `RR`, `MM`, `#…` a pevným textom (predvolene `RRRRMM###`). Rad patrí subjektu. Poradie sa vynuluje každý mesiac, ak formát obsahuje `MM`, inak každý rok. Počiatočné číslo sa dá nastaviť. Čísla idú bez medzier a pridelenie je bezpečné voči súbehu (prvá faktúra 10/2026 = `202610001`, druhá `202610002`, prvá v 11/2026 = `202611001`).
 - [ ] **INV-05**: PDF faktúry vzniká z kópie údajov, má jednoduchý dizajn a len zákonné náležitosti podľa právneho profilu krajiny, DPH režimu a režimu fakturácie (SK neplatiteľ s textom „Nie som platiteľ DPH.“ a údajom o zápise, PL art. 113, EÚ B2B). Jazyk podľa klienta alebo subjektu.
 - [ ] **INV-06**: Faktúra má stavy vystavená → odoslaná → uhradená. „Po splatnosti“ sa odvodzuje. „Stornovaná“ nastane po dobropise.
 - [ ] **INV-07**: Dobropis je celé storno pôvodnej faktúry so zápornými položkami, s vlastným radom alebo prefixom. Uvoľní zamknuté časti, aby sa dali fakturovať znova.
@@ -82,7 +82,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [ ] **INV-11** [nové, M8, rozhodnutie]: PDF faktúry obsahuje QR kód na platbu (SK: PAY by square; PL/CZ: zodpovedajúci štandard) zo snapshotu.
 - [ ] **INV-12** [nové, M13]: Faktúra má formu úhrady (predvolene prevod) a voliteľnú poznámku (napr. o úrokoch z omeškania).
 - [x] **INV-13** [nové, M14, rozhodnutie]: PDF faktúry aj výkazu sa vygeneruje raz pri vystavení a uloží sa ako autoritatívny doklad so `sha256` a verziou šablóny. Zobrazenie a opätovné odoslanie použijú uložené bajty, nikdy sa neregenerujú.
-- [ ] **INV-14** [nové, M16]: Vystavenie (zamknutie častí, výpočet, kópia údajov, pridelenie čísla, zápis faktúry a dokladov) prebehne v jednej transakcii. Zlyhanie neskoršieho kroku (napr. e-mail) nepreskočí ani neuvoľní číslo. Dva súbežné pokusy nikdy nevytvoria rovnaké ani preskočené číslo.
+- [x] **INV-14** [nové, M16]: Vystavenie (zamknutie častí, výpočet, kópia údajov, pridelenie čísla, zápis faktúry a dokladov) prebehne v jednej transakcii. Zlyhanie neskoršieho kroku (napr. e-mail) nepreskočí ani neuvoľní číslo. Dva súbežné pokusy nikdy nevytvoria rovnaké ani preskočené číslo.
 - [ ] **INV-15** [nové, rozhodnutie]: Dátum vystavenia môže byť v minulosti. Ak je skorší ako dátum poslednej faktúry v rade, aplikácia pred vystavením upozorní.
 
 ### Výkaz práce (E7)
@@ -237,11 +237,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INV-01 | Phase 5 | Pending |
 | INV-02 | Phase 5 | Complete |
 | INV-03 | Phase 5 | Complete |
-| INV-04 | Phase 5 | Pending |
+| INV-04 | Phase 5 | Complete |
 | INV-08 | Phase 5 | Complete |
 | INV-09 | Phase 5 | Complete |
 | INV-13 | Phase 5 | Complete |
-| INV-14 | Phase 5 | Pending |
+| INV-14 | Phase 5 | Complete |
 | INV-15 | Phase 5 | Pending |
 | ALC-03 | Phase 5 | Complete |
 | NFR-06 | Phase 5 | Complete |
