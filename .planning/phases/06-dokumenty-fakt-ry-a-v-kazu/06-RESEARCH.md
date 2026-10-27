@@ -480,18 +480,24 @@ Výnimka pri zlyhaní enkódera sa NECHYTÁ (D-19).
 | A8 | PL IBAN musí byť polský NRB pre ZBP QR | Pattern 3 | zbytočné vynechanie QR pre iný IBAN |
 | A9 | Česká banka akceptuje SPAYD s nečeskou IBAN a EUR | Pattern 2 | QR použiteľný len čiastočne |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Overenie QR v reálnych aplikáciách**
    - What we know: formáty sú overené proti zdrojom implementácií a vlastným round-trip testom.
    - What's unclear: či ich prijmú SK banky (Tatra, SLSP, VÚB, ČSOB…), CZ banka a PL banka.
    - Recommendation: **ručný UAT krok** v pláne (`human_verify_mode: end-of-phase`): vzorové PDF zo `spark documents:samples` naskenovať 2 SK, 1 CZ a 1 PL aplikáciou, a zdokumentovať výsledok.
+   - RESOLVED: ručný UAT `<human-check>` v záverečnom pláne 06-09 Task 2 (body 2 a 3: sken 2 SK, 1 CZ a 1 PL aplikáciou, výsledok do 06-09-SUMMARY.md alebo 06-HUMAN-UAT.md, zlyhanie = gap pre `/gsd-plan-phase 6 --gaps`); vzory generuje `spark documents:samples` (06-09 Task 1).
 2. **ZBP: veľké sumy a dĺžka názvu platby**
    - Recommendation: predvolené správanie „bez QR“ pre suma > 9 999,99 PLN? Navrhujem **nechať QR a upozorniť v UAT**, v prípade problému obmedziť v `PolishZbpQr`.
+   - RESOLVED: ZBP ponecháva QR aj pre veľké sumy (06-06, `PolishZbpQr` bez obmedzenia sumy); overí sa v UAT 06-09 Task 2 bod 3 (testovacia PL faktúra nad 9 999,99 PLN). Dĺžka názvu platby: číslo > 32 znakov → bez QR (null) s neblokujúcim upozornením v náhľade, chýbajúci NIP ostáva `qr_failed` (06-06, spresnenie D-19 podľa Pitfall 7).
 3. **PAY by square: verzia a EOPM** (A1, A2). Recommendation: implementovať s konštantou, UAT rozhodne.
+   - RESOLVED: jedna konštanta `PayBySquare::VERSION` v 06-05 Task 1; hodnotu potvrdí ručný UAT v 06-09 Task 2 (body 2 a 3b), prípadná zmena konštanty ide cez `--gaps`.
 4. **Právne texty** (otvorené otázky 1-7 z CONTEXT.md): predvolené hodnoty zostávajú, žiadny blokátor.
+   - RESOLVED: predvolené hodnoty ostávajú (`LegalProfile::print` 06-01, seed znenia s `provisional`); účtovníčka ich potvrdí na vzoroch podľa staging runbooku (06-09 Task 2) a znenia sa upravia v Nastavenia → Zákonné texty (06-07, 06-08).
 5. **Rozsah `invoice_note` (1000 vs 500 znakov)**. Recommendation: validovať ≤ 500 v `LegalTextService`.
+   - RESOLVED: `invoice_note` ≤ 500 znakov validované v `LegalTextService::update` (06-07) a `create` (06-08); `payment_note` ≤ 500 v `IssueInput`/`IssueCommand` (06-04).
 6. **Jednorazový príkaz na doplnenie výkazu pre staré vlastné faktúry `inv-1`**: predvolene sa nespúšťa (Claude's Discretion). Recommendation: nerobiť, kým o to vlastník nepožiada. Existuje len jedna externá faktúra (bez PDF), vlastné faktúry `inv-1` môžu byť len testovacie.
+   - RESOLVED: doplnenie výkazov pre staré faktúry (backfill) sa nestavia, odložené (06-09 `<objective>`); faktúry schema 1 výkaz nevyžadujú (trigger v 06-03) a detail ukáže informáciu namiesto tlačidla (06-03 Task 2).
 
 ## Environment Availability
 

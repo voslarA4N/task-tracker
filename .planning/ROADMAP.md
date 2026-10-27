@@ -297,7 +297,43 @@ Plans:
   3. Ku každej faktúre vznikne PDF výkaz s hlavičkou (subjekt, klient, obdobie), tabuľkou (odkaz na portál, názov, nacenené hodiny, „16 z 40 h“, suma), súčtami a poznámkou o DPH; obsahuje presne tie časti, ktoré sú na faktúre, a je uložený nemenne.
   4. Používateľ upraví zákonné texty a poznámky pre každú krajinu, DPH režim, režim fakturácie a jazyk v nastaveniach; nové znenie ovplyvní len doklady vystavené po zmene.
 
-**Plans**: TBD
+**Plans**: 9 plans (9 vĺn, sekvenčne)Plans:
+**Wave 1**
+
+- [ ] 06-01-PLAN.md — Faktúra inv-2 so zákonnými náležitosťami podľa profilu: LegalProfile, snapshot schema 2, RendererRegistry, inv-1 nedotknuté (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 06-02-PLAN.md — Obsah výkazu práce v snapshote (ReportRows, ReportPdf vo 4 jazykoch) a renderer rep-1 so šablónou (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 06-03-PLAN.md — Výkaz pri vystavení v tej istej transakcii, povinný report v DB (trigger), nemennosť oboch PDF, tlačidlá Faktúra PDF a Výkaz PDF na detaile (vlna 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 06-04-PLAN.md — Forma úhrady a poznámka faktúry v náhľade (predvyplnená z invoice_note), upozornenie na predbežné znenie (vlna 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 06-05-PLAN.md — QR PAY by square pre SK klientov (xz LZMA, bacon SVG), rollback pri zlyhaní QR (vlna 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 06-06-PLAN.md — QR Platba (SPAYD) pre CZ a ZBP pre PL klientov, upozornenie v náhľade pri príliš dlhom čísle pre ZBP (vlna 6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 06-07-PLAN.md — Nastavenia → Zákonné texty: zoznam a úprava znenia s revíziou, auditom a stĺpcovými oprávneniami (vlna 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 06-08-PLAN.md — Pridanie variantu znenia pre jazyk alebo režim fakturácie a zobrazenie použitého (náhradného) znenia (vlna 8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
+- [ ] 06-09-PLAN.md — spark documents:samples (vzorové PDF pre staging a účtovníčku), meranie výkonu (skupina performance), ručný UAT QR (vlna 9)
+
 **UI hint**: yes
 **Poznámky**: **Potrebuje /gsd-research-phase** (právne profily, SMTP, mPDF fonty a pamäť, PAY by square vyžaduje LZMA). **Závislosť od účtovníčky:** finálne znenie zákonných textov a náležitostí (§ 3a ObZ, art. 106e, art. 113 ust. 1 vs 9, reverse charge pri PL subjekt → SK B2B) sa potvrdzuje až s ňou; texty sú konfigurácia v DB, nie kód. Nasadiť na staging a posielať si vzorové PDF.
 
