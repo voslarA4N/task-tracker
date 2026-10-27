@@ -275,7 +275,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 05-08-PLAN.md — Obrazovka Fakturácia mesiaca: výber, náhľad, varovanie spätného dátumu, presun časti (vlna 4)
+- [x] 05-08-PLAN.md — Obrazovka Fakturácia mesiaca: výber, náhľad, varovanie spätného dátumu, presun časti (vlna 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -414,7 +414,7 @@ Plans:
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
-| 5. Fakturačné jadro | 7/9 | In Progress|  |
+| 5. Fakturačné jadro | 8/9 | In Progress|  |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
 | 8. Meny a kurzy | 0/0 | Not started | - |
