@@ -17,6 +17,21 @@ final class PreviewInput
     private const RANGE_FORWARD = 1;
 
     /**
+     * Horna hranica datumu vystavenia: dnes + N dni (preklep roku na iPhone nesmie vytvorit nemennu buducu fakturu).
+     */
+    public const ISSUE_MAX_AHEAD_DAYS = 7;
+
+    /**
+     * Datum dodania musi lezat v okne fakturacneho mesiaca +- N mesiacov.
+     */
+    public const DELIVERY_MONTH_SLACK = 1;
+
+    /**
+     * Splatnost najviac N mesiacov po datume vystavenia.
+     */
+    public const DUE_MAX_AHEAD_MONTHS = 12;
+
+    /**
      * @return array<string, string>
      */
     public static function fromGet(IncomingRequest $request): array
@@ -111,6 +126,48 @@ final class PreviewInput
             $errors['due_date'] = lang('Invoicing.errorDates');
         }
 
-        return $errors;
+        return $errors + self::boundErrors($v, $errors);
+    }
+
+    /**
+     * Horne a mesacne hranice datumov (WR-02). Kontroluje iba polia, ktore uz presli formatom.
+     *
+     * @param array<string, string> $v
+     * @param array<string, string> $errors
+     *
+     * @return array<string, string>
+     */
+    private static function boundErrors(array $v, array $errors): array
+    {
+        $clock  = service('clock');
+        $out    = [];
+        $issue  = ($v['issue_date'] ?? '') !== '' && ! isset($errors['issue_date']) ? $v['issue_date'] : null;
+        $due    = ($v['due_date'] ?? '') !== '' && ! isset($errors['due_date']) ? $v['due_date'] : null;
+        $deliv  = ($v['delivery_date'] ?? '') !== '' && ! isset($errors['delivery_date']) ? $v['delivery_date'] : null;
+        $month  = ($v['month'] ?? '') !== '' && ! isset($errors['month']) ? $v['month'] : null;
+        $maxDay = $clock->parseDate($clock->today())?->modify('+' . self::ISSUE_MAX_AHEAD_DAYS . ' days')->format('Y-m-d');
+
+        if ($issue !== null && $maxDay !== null && $issue > $maxDay) {
+            $out['issue_date'] = lang('Invoicing.errorIssueFuture', [self::ISSUE_MAX_AHEAD_DAYS]);
+        }
+
+        if ($deliv !== null && $month !== null) {
+            $from = BillingMonth::addMonths($month, -self::DELIVERY_MONTH_SLACK);
+            $to   = BillingMonth::addMonths($month, self::DELIVERY_MONTH_SLACK);
+
+            if (substr($deliv, 0, 7) < $from || substr($deliv, 0, 7) > $to) {
+                $out['delivery_date'] = lang('Invoicing.errorDeliveryRange');
+            }
+        }
+
+        if ($issue !== null && $due !== null) {
+            $limit = $clock->parseDate($issue)?->modify('+' . self::DUE_MAX_AHEAD_MONTHS . ' months')->format('Y-m-d');
+
+            if ($limit !== null && $due > $limit) {
+                $out['due_date'] = lang('Invoicing.errorDueFar');
+            }
+        }
+
+        return $out;
     }
 }

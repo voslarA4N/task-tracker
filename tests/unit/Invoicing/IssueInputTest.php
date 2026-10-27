@@ -53,6 +53,16 @@ final class IssueInputTest extends CIUnitTestCase
         $this->assertSame([], IssueInput::validate($this->valid()));
     }
 
+    public function testFarFutureDatesAreRejected(): void
+    {
+        $v = ['issue_date' => '2062-10-27', 'delivery_date' => '2062-10-31', 'due_date' => '2062-11-10'] + $this->valid();
+
+        $errors = IssueInput::validate($v);
+
+        $this->assertArrayHasKey('issue_date', $errors);
+        $this->assertArrayHasKey('delivery_date', $errors);
+    }
+
     public function testMissingPreviewTokenIsRejected(): void
     {
         $v = $this->valid();
