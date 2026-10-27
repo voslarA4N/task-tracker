@@ -25,6 +25,7 @@ $noteKeys = ['vat_note' => 'LegalTexts.keyVatNote', 'invoice_note' => 'LegalText
 <p class="mb-2"><a href="/more"><?= esc(lang('LegalTexts.backToMore')) ?></a></p>
 <h1 class="h4 mb-1"><?= esc(lang('LegalTexts.title')) ?></h1>
 <p class="small text-body-secondary"><?= esc(lang('LegalTexts.intro')) ?></p>
+<p><a class="btn btn-primary btn-touch w-100 w-md-auto" href="/settings/legal-texts/new"><?= esc(lang('LegalTexts.addVariant')) ?></a></p>
 
 <?php if ($provisionalCount > 0) : ?>
     <div class="alert alert-warning small" role="status"><?= esc(lang('LegalTexts.warnProvisional', [$provisionalCount])) ?></div>
@@ -66,6 +67,23 @@ $noteKeys = ['vat_note' => 'LegalTexts.keyVatNote', 'invoice_note' => 'LegalText
                     <span class="badge lt-badge text-bg-light border"><?= esc(lang('LegalTexts.badgeConfirmed')) ?></span>
                 <?php endif ?>
             </a>
+        <?php endforeach ?>
+
+        <?php if ($group['noteMissing'] === true) : ?>
+            <p class="small text-body-secondary mt-2 mb-0"><?= esc(lang('LegalTexts.noDefaultNote')) ?></p>
+        <?php endif ?>
+
+        <?php foreach ($group['effective'] as $row) : ?>
+            <div class="lt-effective mt-2">
+                <?php if ($row['effective'] === null) : ?>
+                    <span class="badge text-bg-danger"><?= esc(lang('LegalTexts.badgeMissing')) ?></span>
+                    <?= esc(lang('LegalTexts.missingLine', [$row['language'], lang($modeKeys[$row['mode']] ?? 'LegalTexts.modeGeneral')])) ?>
+                <?php else : ?>
+                    <span class="badge text-bg-secondary"><?= esc(lang('LegalTexts.badgeFallback')) ?></span>
+                    <?= esc(lang('LegalTexts.effectiveLine', [$row['language'], lang($modeKeys[$row['mode']] ?? 'LegalTexts.modeGeneral'), lang('LegalTexts.keyVatNote'), $row['effective']['language'], lang($modeKeys[(string) $row['effective']['billing_mode']] ?? 'LegalTexts.modeGeneral'), $row['effective']['revision']])) ?>
+                <?php endif ?>
+                <a href="<?= esc($row['newUrl'], 'attr') ?>"><?= esc(lang('LegalTexts.addVariantLink')) ?></a>
+            </div>
         <?php endforeach ?>
     </section>
 <?php endforeach ?>

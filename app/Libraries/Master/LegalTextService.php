@@ -20,7 +20,7 @@ class LegalTextService
 {
     public const MAX_BODY         = 2000;
     public const MAX_INVOICE_NOTE = 500;
-    private const KEYS            = ['vat_note', 'invoice_note'];
+    public const KEYS             = ['vat_note', 'invoice_note'];
     private const KEY_ORDER       = ['vat_note' => 0, 'invoice_note' => 1];
     private const LANGUAGE_ORDER  = ['sk' => 0, 'cs' => 1, 'pl' => 2, 'en' => 3];
     private const MODE_ORDER      = ['' => 0, 'eu_b2b' => 1, 'non_eu' => 2, 'domestic' => 3];

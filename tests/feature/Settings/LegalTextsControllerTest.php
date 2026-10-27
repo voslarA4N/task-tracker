@@ -33,6 +33,7 @@ final class LegalTextsControllerTest extends AuthTestCase
 
     private function restore(): void
     {
+        $this->owner()->query("DELETE FROM legal_texts WHERE revision = 1 AND ((country = 'SK' AND language = 'cs') OR billing_mode = 'non_eu')");
         $this->owner()->query("UPDATE legal_texts SET body = 'Nie som platiteľ DPH.', provisional = true, revision = 1 WHERE id = :id:", ['id' => $this->textId]);
     }
 
@@ -129,5 +130,74 @@ final class LegalTextsControllerTest extends AuthTestCase
         $stale->assertStatus(409);
         $this->assertStringContainsString(esc(lang('LegalTexts.errorStale')), $this->body($stale));
         $this->assertSame('Prvá', $this->owner()->query('SELECT body FROM legal_texts WHERE id = :id:', ['id' => $this->textId])->getRow()->body);
+    }
+
+    private function loginOwner(): void
+    {
+        $user = $this->createUser();
+        $this->enrollTotp($user);
+        $this->loginAs($user);
+    }
+
+    /**
+     * @param array<string, string> $data
+     */
+    private function create(array $data, bool $csrf = true): TestResponse
+    {
+        $this->withSession();
+
+        return $this->call('post', '/settings/legal-texts', $data + ($csrf ? [csrf_token() => csrf_hash()] : []));
+    }
+
+    public function testListShowsFallbackAndMissingRows(): void
+    {
+        $this->loginOwner();
+        $html = $this->body($this->get('/settings/legal-texts'));
+
+        $this->assertStringContainsString('lt-effective', $html);
+        $this->assertStringContainsString(esc(lang('LegalTexts.badgeFallback')), $html);
+        $this->assertStringContainsString(esc('/settings/legal-texts/new?', 'attr'), $html);
+        $this->assertStringContainsString(esc(lang('LegalTexts.effectiveLine', ['cs', lang('LegalTexts.modeGeneral'), lang('LegalTexts.keyVatNote'), 'en', lang('LegalTexts.modeGeneral'), 1])), $html);
+    }
+
+    public function testNewFormPrefillsFromQueryAndIgnoresInvalid(): void
+    {
+        $this->loginOwner();
+        $html = $this->body($this->get('/settings/legal-texts/new?country=SK&vat_regime=sk_non_vat&language=cs&key=vat_note&billing_mode=non_eu'));
+
+        $this->assertStringContainsString('value="' . esc('SK|sk_non_vat', 'attr') . '" selected', $html);
+        $this->assertStringContainsString('value="cs" selected', $html);
+        $this->assertStringContainsString('value="non_eu" selected', $html);
+        $this->assertStringContainsString('csrf', strtolower($html));
+
+        $bad = $this->body($this->get('/settings/legal-texts/new?country=%22%3E%3Cscript%3E&language=xx'));
+        $this->assertStringNotContainsString('<script>', $bad);
+        $this->assertStringNotContainsString('value="xx" selected', $bad);
+    }
+
+    public function testCreateValidRedirectsAndInserts(): void
+    {
+        $this->loginOwner();
+        $result = $this->create(['profile' => 'SK|sk_non_vat', 'key' => 'vat_note', 'language' => 'cs', 'billing_mode' => '', 'body' => 'Nejsem plátce DPH.']);
+
+        $result->assertStatus(302);
+        $this->assertStringEndsWith('/settings/legal-texts', $result->response()->getHeaderLine('Location'));
+        $this->assertSame(1, (int) $this->owner()->query("SELECT count(*) AS c FROM legal_texts WHERE country = 'SK' AND language = 'cs'")->getRow()->c);
+    }
+
+    public function testCreateDuplicateAndInvalidKeyAre422(): void
+    {
+        $this->loginOwner();
+        $dup = $this->create(['profile' => 'SK|sk_non_vat', 'key' => 'vat_note', 'language' => 'sk', 'billing_mode' => '', 'body' => 'Iné']);
+        $dup->assertStatus(422);
+        $this->assertStringContainsString(esc(lang('LegalTexts.errorExists')), $this->body($dup));
+
+        $this->create(['profile' => 'SK|sk_non_vat', 'key' => 'footer', 'language' => 'cs', 'billing_mode' => '', 'body' => 'x'])->assertStatus(422);
+    }
+
+    public function testCreateWithoutCsrfIs403(): void
+    {
+        $this->loginOwner();
+        $this->create(['profile' => 'SK|sk_non_vat', 'key' => 'vat_note', 'language' => 'cs', 'billing_mode' => '', 'body' => 'x'], false)->assertStatus(403);
     }
 }
