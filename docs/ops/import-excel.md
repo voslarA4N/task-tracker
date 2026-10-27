@@ -56,6 +56,50 @@ importované úlohy. Zmena názvu, URL alebo hodín v Exceli znamená novú úlo
 - Nevytvára zamknuté časti ani faktúry (aj riadky s "Fakturované = ÁNO" sa importujú len ako nezamknuté časti).
   Suchý aj ostrý beh preto vypíše po mesiacoch, koľko riadkov s "Fakturované = ÁNO" a zapracovaním (hodiny a suma)
   bude po importe nezamknutými časťami na fakturáciu, a súhrnný riadok `POZOR: ...`. Tieto časti by sa inak mohli
-  vyfakturovať druhýkrát. Ako ich ošetriť (napr. nevytvárať časť alebo ich zamknúť historickou faktúrou vo fáze 5),
-  rozhodne vlastník (review fázy 4, WR-07).
+  vyfakturovať druhýkrát. Tieto časti sa zamykajú historickou externou faktúrou, postup je v sekcii
+  "Zamknutie historicky vyfakturovaných častí (WR-07)" nižšie.
 - Neprepisuje ani nemaže existujúce úlohy.
+
+## Zamknutie historicky vyfakturovaných častí (WR-07)
+
+Príkaz `invoices:lock-historical` zamkne importované časti jedného klienta a mesiaca na jednu historickú externú
+faktúru. Tá nespotrebuje číslo z radu `RRRRMM###`, nemá PDF a nezapočítava sa do obratu ani limitov
+(`counts_toward_limit = false`).
+
+**Kedy:** po importe a pred prvým ostrým vystavením faktúry, v dev aj na produkcii. Časti z riadkov
+"Fakturované = ÁNO" sa tak už nedajú vyfakturovať druhýkrát. Príkaz nevyžaduje PhpSpreadsheet, beží aj v produkčnom
+obraze.
+
+**Obmedzenie výberu:** príkaz nevyberá podľa stĺpca "Fakturované = ÁNO" (ten sa v DB neuchováva, Q3 v 05-RESEARCH),
+ale podľa mesiaca a `tasks.import_key IS NOT NULL`. Zamkol by teda aj importované, no nevyfakturované časti toho
+mesiaca. Jedinou poistkou sú `--expect-*`.
+
+**Odkiaľ brať hodnoty `--expect-*`:** nikdy zo suchého behu `invoices:lock-historical`, ale z riadku správy importu
+`POZOR: N riadkov označených Fakturované = ÁNO (H h / A)` (`ImportReportFormatter::billedWarning`, súčty z
+`ImportPlan::billedParts`) pre daný mesiac.
+
+Postup:
+
+1. Uložiť výstup `spark import:excel` s riadkom `POZOR: ...`. Ak obsahuje viac mesiacov, rozpis podľa mesiaca
+   overiť v zdrojovom Exceli (filter Fakturované = ÁNO a mesiac) a zapísať sem pri behu.
+2. Suchý beh (predvolený, nič nezapíše):
+
+   ```sh
+   make spark ARGS="invoices:lock-historical --client <id> --month 2026-09"
+   ```
+
+3. Porovnať počet, hodiny a sumu suchého behu s riadkom správy importu.
+4. Ostrý beh iba pri zhode. Pri nezhode nič nespúšťať a riešiť ručne:
+
+   ```sh
+   make spark ARGS="invoices:lock-historical --client <id> --month 2026-09 --expect-parts 11 --expect-hours 89 --expect-amount 2403 --ref 'Historická faktúra 09/2026 (fakturované mimo aplikácie)' --commit"
+   ```
+
+S `--commit` sú povinné všetky tri `--expect-*`. Pri nezhode skutočnosti s očakávaním (`expectation_mismatch`) sa nič
+nezapíše.
+
+**Príklad pre vývojovú DB:** overené hodnoty pre 09/2026 sú 11 častí, 89 h, 2 403,00 EUR (zhoda správy importu so
+suchým behom). Takto bol príkaz spustený aj na dev DB (klient 1, externá faktúra id 1).
+
+**Idempotencia:** druhý beh skončí chybou `nothing_to_lock`, keďže už nie sú žiadne nezamknuté importované časti.
+Faktúra je insert-only, časti zamknuté faktúrou už nejde meniť ani mazať. Audit: `invoice/external_lock`.
