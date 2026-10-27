@@ -300,7 +300,7 @@ Plans:
 **Plans**: 9 plans (9 vĺn, sekvenčne)Plans:
 **Wave 1**
 
-- [ ] 06-01-PLAN.md — Faktúra inv-2 so zákonnými náležitosťami podľa profilu: LegalProfile, snapshot schema 2, RendererRegistry, inv-1 nedotknuté (vlna 1)
+- [x] 06-01-PLAN.md — Faktúra inv-2 so zákonnými náležitosťami podľa profilu: LegalProfile, snapshot schema 2, RendererRegistry, inv-1 nedotknuté (vlna 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -451,7 +451,7 @@ Plans:
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
-| 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
+| 6. Dokumenty faktúry a výkazu | 1/9 | In Progress|  |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
 | 8. Meny a kurzy | 0/0 | Not started | - |
 | 9. Dobropisy | 0/0 | Not started | - |

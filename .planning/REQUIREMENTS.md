@@ -73,7 +73,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **INV-02**: Faktúra má jednu položku za každú časť (názov úlohy, hodiny, sadzba, suma), dátum vystavenia, dátum dodania (predvolene posledný deň mesiaca) a splatnosť. Variabilný symbol je číslo faktúry.
 - [x] **INV-03**: Pri vystavení sa do JSONB uloží kópia údajov: verzia subjektu, klient, mena, jazyk, DPH režim, režim fakturácie, zákonné texty, preložené popisky, URL portálu, kurz. Faktúra je odvtedy nemenná (vynútené aj DB oprávneniami/triggermi).
 - [x] **INV-04**: Číslovanie podľa nastaviteľného formátu s tokenmi `RRRR`, `RR`, `MM`, `#…` a pevným textom (predvolene `RRRRMM###`). Rad patrí subjektu. Poradie sa vynuluje každý mesiac, ak formát obsahuje `MM`, inak každý rok. Počiatočné číslo sa dá nastaviť. Čísla idú bez medzier a pridelenie je bezpečné voči súbehu (prvá faktúra 10/2026 = `202610001`, druhá `202610002`, prvá v 11/2026 = `202611001`).
-- [ ] **INV-05**: PDF faktúry vzniká z kópie údajov, má jednoduchý dizajn a len zákonné náležitosti podľa právneho profilu krajiny, DPH režimu a režimu fakturácie (SK neplatiteľ s textom „Nie som platiteľ DPH.“ a údajom o zápise, PL art. 113, EÚ B2B). Jazyk podľa klienta alebo subjektu.
+- [x] **INV-05**: PDF faktúry vzniká z kópie údajov, má jednoduchý dizajn a len zákonné náležitosti podľa právneho profilu krajiny, DPH režimu a režimu fakturácie (SK neplatiteľ s textom „Nie som platiteľ DPH.“ a údajom o zápise, PL art. 113, EÚ B2B). Jazyk podľa klienta alebo subjektu.
 - [ ] **INV-06**: Faktúra má stavy vystavená → odoslaná → uhradená. „Po splatnosti“ sa odvodzuje. „Stornovaná“ nastane po dobropise.
 - [ ] **INV-07**: Dobropis je celé storno pôvodnej faktúry so zápornými položkami, s vlastným radom alebo prefixom. Uvoľní zamknuté časti, aby sa dali fakturovať znova.
 - [x] **INV-08**: Všetky údaje faktúry sú uložené štruktúrovane (nielen v PDF a JSONB), aby bol neskôr možný export do KSeF FA(3).
@@ -245,7 +245,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INV-15 | Phase 5 | Complete |
 | ALC-03 | Phase 5 | Complete |
 | NFR-06 | Phase 5 | Complete |
-| INV-05 | Phase 6 | Pending |
+| INV-05 | Phase 6 | Complete |
 | INV-11 | Phase 6 | Pending |
 | INV-12 | Phase 6 | Pending |
 | REP-01 | Phase 6 | Pending |
