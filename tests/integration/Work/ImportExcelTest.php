@@ -48,10 +48,10 @@ final class ImportExcelTest extends PgTestCase
         parent::tearDown();
     }
 
-    private function runCommand(int $client, bool $commit): string
+    private function runCommand(int $client, bool $commit, string $extra = ''): string
     {
         $this->resetStreamFilterBuffer();
-        command('import:excel ' . $this->file . ' --client ' . $client . ($commit ? ' --commit' : ''));
+        command('import:excel ' . $this->file . ' --client ' . $client . ($extra !== '' ? ' ' . $extra : '') . ($commit ? ' --commit' : ''));
 
         return $this->getStreamFilterBuffer();
     }
@@ -133,6 +133,103 @@ final class ImportExcelTest extends PgTestCase
         $this->runCommand($client, true);
         $row = $this->owner()->query('SELECT a.hours, a.amount FROM billing_allocations a ORDER BY a.id LIMIT 1')->getRow();
         $this->assertSame(Money::of('30.00')->timesHours((string) $row->hours)->toDecimalString(), $row->amount);
+    }
+
+    public function testMonthDryRunShowsOnlySeptemberAndWritesNothing(): void
+    {
+        $client = $this->createClient();
+        $out    = mb_strtolower($this->runCommand($client, false, '--month 2026-09'));
+
+        $this->assertStringContainsString('september', $out);
+        $this->assertStringNotContainsString('október', $out);
+        $this->assertStringNotContainsString('f14:f16', $out);
+        $this->assertStringNotContainsString('riadok 15', $out);
+        $this->assertSame(0, $this->rows('tasks'));
+        $this->assertSame(0, $this->rows('billing_allocations'));
+        $this->assertSame(0, $this->rows('audit_log WHERE entity_type = \'task\''));
+    }
+
+    public function testMonthCommitCreatesOnlySeptemberAndKeepsImportKeys(): void
+    {
+        $client = $this->createClient();
+        $out    = $this->runCommand($client, true, '--month 2026-09');
+
+        $this->assertStringContainsString('Vytvorené: 5', $out);
+        $this->assertSame(5, $this->rows('tasks'));
+        $this->assertSame(0, $this->rows("tasks WHERE title IN ('Úloha F', 'Úloha G', 'Úloha H', 'Úloha I', 'Úloha J')"));
+        $this->assertSame(4, $this->rows('billing_allocations'));
+        $this->assertSame(4, $this->rows("billing_allocations WHERE billing_month = '2026-09'"));
+
+        $full     = (new ImportPlanner())->plan((new ExcelReader())->read($this->file), '27.00', 'EUR');
+        $expected = [];
+
+        foreach ($full->items as $item) {
+            if ($item['row']->month === '2026-09') {
+                $expected[] = $item['importKey'];
+            }
+        }
+
+        $actual = array_column($this->owner()->query('SELECT import_key FROM tasks')->getResultArray(), 'import_key');
+        sort($expected);
+        sort($actual);
+        $this->assertSame($expected, $actual);
+
+        $again = $this->runCommand($client, true, '--month 2026-09');
+        $this->assertStringContainsString('Vytvorené: 0', $again);
+
+        $rest = $this->runCommand($client, true);
+        $this->assertStringContainsString('Vytvorené: 5, preskočené (už importované): 5', $rest);
+        $this->assertSame(10, $this->rows('tasks'));
+        $this->assertSame(7, $this->rows('billing_allocations'));
+    }
+
+    public function testInvalidOrMissingMonthWritesNothing(): void
+    {
+        $client = $this->createClient();
+
+        foreach (['--month 2026-9', '--month 2026-13', '--month sep', '--month', '--month 2026-11'] as $extra) {
+            $out = $this->runCommand($client, true, $extra);
+
+            $this->assertStringNotContainsString('Vytvorené', $out, $extra);
+            $this->assertTrue(
+                str_contains($out, 'Neplatný mesiac') || str_contains($out, '2026-11'),
+                $extra . ' => ' . $out,
+            );
+            $this->assertSame(0, $this->rows('tasks'), $extra);
+            $this->assertSame(0, $this->rows('billing_allocations'), $extra);
+            $this->assertSame(0, $this->rows('audit_log WHERE entity_type = \'task\''), $extra);
+        }
+    }
+
+    public function testRealFileSingleMonthImport(): void
+    {
+        $real = ROOTPATH . 'docs/All4net-fakturovanie-prace.xlsx';
+
+        if (! is_file($real)) {
+            $this->markTestSkipped('Zdrojový Excel nie je k dispozícii.');
+        }
+
+        $client     = $this->createClient();
+        $this->file = $real;
+
+        $dry = $this->runCommand($client, false, '--month 2026-09');
+        $this->assertStringContainsString('september', mb_strtolower($dry));
+        $this->assertStringNotContainsString('október', mb_strtolower($dry));
+        $this->assertSame(0, $this->rows('tasks'));
+
+        $this->runCommand($client, true, '--month 2026-09');
+        $this->assertSame(11, $this->rows('tasks'));
+        $this->assertSame(11, $this->rows("tasks WHERE status = 'done'"));
+        $this->assertSame(11, $this->rows("billing_allocations WHERE billing_month = '2026-09' AND invoice_id IS NULL"));
+        $this->assertSame(11, $this->rows('billing_allocations'));
+        $sum = $this->owner()->query('SELECT sum(hours)::text AS h, sum(amount)::text AS a FROM billing_allocations')->getRow();
+        $this->assertSame('89.00', $sum->h);
+        $this->assertSame('2403.00', $sum->a);
+        $this->assertSame(0, $this->rows('tasks t WHERE NOT EXISTS (SELECT 1 FROM billing_allocations a WHERE a.task_id = t.id)'));
+
+        $rest = $this->runCommand($client, true);
+        $this->assertStringContainsString('Vytvorené: 5, preskočené (už importované): 11', $rest);
+        $this->assertSame(12, $this->rows('billing_allocations'));
     }
 
     public function testMissingFileWritesNothing(): void

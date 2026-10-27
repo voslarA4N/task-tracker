@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Commands;
 
 use App\Libraries\Master\ClientService;
+use App\Libraries\Work\BillingMonth;
 use App\Libraries\Work\Import\ExcelReader;
 use App\Libraries\Work\Import\ImportPlanner;
 use App\Libraries\Work\Import\ImportReportFormatter;
@@ -26,10 +27,11 @@ final class ImportExcel extends BaseCommand
     protected $group       = 'Import';
     protected $name        = 'import:excel';
     protected $description = 'Import úloh z Excelu (predvolene suchý beh, zápis s --commit).';
-    protected $usage       = 'import:excel <path> --client <id> [--commit]';
+    protected $usage       = 'import:excel <path> --client <id> [--month <RRRR-MM>] [--commit]';
     protected $arguments   = ['path' => 'Cesta k XLSX súboru'];
     protected $options     = [
         '--client' => 'ID klienta (povinné), hodnota za medzerou',
+        '--month'  => 'Importovať len blok daného mesiaca RRRR-MM (voliteľné, hodnota za medzerou)',
         '--commit' => 'Skutočný zápis do databázy (zadať až za cestu a --client)',
     ];
 
@@ -45,6 +47,15 @@ final class ImportExcel extends BaseCommand
         $path     = $params[0] ?? null;
         $clientId = $params['client'] ?? CLI::getOption('client');
         $commit   = array_key_exists('commit', $params) || CLI::getOption('commit') !== null;
+
+        $monthGiven = array_key_exists('month', $params) || array_key_exists('month', CLI::getOptions());
+        $month      = $params['month'] ?? CLI::getOption('month');
+
+        if ($monthGiven && (! is_string($month) || BillingMonth::parse($month) === null)) {
+            CLI::error('Neplatný mesiac pre --month, očakávaný formát RRRR-MM.');
+
+            return EXIT_ERROR;
+        }
 
         if (! is_string($path) || $path === '' || ! is_string($clientId) || preg_match('/^\d{1,18}$/D', $clientId) !== 1) {
             CLI::error('Použitie: ' . $this->usage);
@@ -67,7 +78,14 @@ final class ImportExcel extends BaseCommand
                 return EXIT_ERROR;
             }
 
+            // ExcelReader parsuje celý súbor, takže neplatný riadok v inom mesiaci import stále zastaví (zámerne).
             $sheet = (new ExcelReader())->read($path);
+
+            if ($monthGiven && is_string($month)) {
+                $sheet = $sheet->forMonth($month);
+                CLI::write('Filter mesiaca: ' . BillingMonth::label($month, 'sk'), 'yellow');
+            }
+
             $plan  = (new ImportPlanner())->plan($sheet, (string) $client['hourly_rate'], (string) $client['currency']);
 
             foreach ((new ImportReportFormatter())->lines($plan, (string) $client['currency'], 'sk') as $line) {
