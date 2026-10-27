@@ -28,6 +28,7 @@ final class InvoiceIssuer
     private readonly SnapshotBuilder $builder;
     private readonly NumberAllocator $numbers;
     private readonly DocumentStore $documents;
+    private readonly InvoiceGuards $guards;
 
     /**
      * @param BaseConnection<mixed, mixed>|null $db
@@ -46,6 +47,7 @@ final class InvoiceIssuer
         $this->builder   = $builder ?? new SnapshotBuilder($this->db);
         $this->numbers   = $numbers ?? new NumberAllocator($this->db);
         $this->documents = $documents ?? new DocumentStore($this->db);
+        $this->guards    = new InvoiceGuards($this->db);
     }
 
     /**
@@ -124,9 +126,12 @@ final class InvoiceIssuer
         $template = ($client['portal_url_template'] ?? null) === null ? null : (string) $client['portal_url_template'];
         $parts    = array_map(static fn (array $r): array => InvoiceParts::toCalculatorInput($r, $template), $rows);
 
-        // 05-05: guards (pre-build)
+        // kontroly pred vyberom bankoveho uctu (inak by mena skoncila ako no_bank_account)
+        $this->guards->assertEntityActive($entity, $cmd->issueDate);
+        $this->guards->assertCurrency($entity, $this->guards->partsCurrency($parts));
+
         $snapshot = $this->builder->build($client, $entity, $parts, $cmd->billingMonth, $cmd->issueDate, $cmd->deliveryDate, $cmd->dueDate, null);
-        // 05-05: guards (post-build)
+        $this->guards->assertCurrency($entity, $snapshot['currency']);
 
         if (! hash_equals($cmd->previewToken, InvoiceCalculator::previewToken($cmd->clientId, $cmd->billingMonth, $cmd->entityId, $snapshot['lines']))) {
             throw new IssueRejected('preview_stale');
@@ -146,7 +151,11 @@ final class InvoiceIssuer
             throw new IssueRejected('not_found');
         }
 
-        // 05-05: guards (post-series-lock)
+        $backdate = $this->guards->backdate((int) $series['id'], $cmd->issueDate);
+
+        if ($backdate !== null && ! $cmd->confirmBackdate) {
+            throw new IssueRejected('backdate_unconfirmed', ['last_number' => $backdate['number'], 'last_date' => $backdate['issue_date']]);
+        }
 
         // 8. cislo
         $allocated = $this->numbers->next($series, $cmd->issueDate);
