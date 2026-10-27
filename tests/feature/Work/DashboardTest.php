@@ -227,7 +227,7 @@ final class DashboardTest extends AuthTestCase
         $this->assertStringContainsString('class="work-fab" href="/tasks/new"', $html);
         $this->assertMatchesRegularExpression('#<a href="/" aria-current="page">#', $html);
         $this->assertMatchesRegularExpression('#<a href="/tasks">#', $html);
-        $this->assertStringContainsString('aria-disabled="true"', $html);
+        $this->assertMatchesRegularExpression('#<a href="/invoices">#', $html);
     }
 
     public function testNoInlineStyleNorDemoLink(): void
