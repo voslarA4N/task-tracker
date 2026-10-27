@@ -7,6 +7,7 @@ namespace Tests\Unit\Invoicing\Qr;
 use App\Libraries\Invoicing\Qr\QrPaymentBuilder;
 use App\Libraries\Invoicing\Samples\SampleSnapshots;
 use CodeIgniter\Test\CIUnitTestCase;
+use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -45,5 +46,46 @@ final class QrPaymentBuilderTest extends CIUnitTestCase
     {
         $this->expectException(InvalidArgumentException::class);
         (new QrPaymentBuilder())->build(SampleSnapshots::invoice('sk', null, ['number' => null]));
+    }
+
+    public function testCzTransferIsSpayd(): void
+    {
+        $qr = (new QrPaymentBuilder())->build(SampleSnapshots::invoice('cz'));
+        $this->assertSame('spayd', $qr['standard'] ?? null);
+        $this->assertStringStartsWith('SPD*1.0*', $qr['payload']);
+    }
+
+    public function testCzCashHasNoQr(): void
+    {
+        $s = SampleSnapshots::invoice('cz', null, ['payment' => ['method' => 'cash', 'note' => null, 'qr' => null]]);
+        $this->assertNull((new QrPaymentBuilder())->build($s));
+    }
+
+    public function testPlPlnIsZbp(): void
+    {
+        $qr = (new QrPaymentBuilder())->build(SampleSnapshots::invoice('pl'));
+        $this->assertSame('zbp', $qr['standard'] ?? null);
+    }
+
+    public function testPlLongNumberHasNoQr(): void
+    {
+        $s           = SampleSnapshots::invoice('pl');
+        $s['number'] = str_repeat('1', 33);
+        $this->assertNull((new QrPaymentBuilder())->build($s));
+    }
+
+    public function testPlWithoutNipFails(): void
+    {
+        $s                     = SampleSnapshots::invoice('pl');
+        $s['entity']['tax_id'] = null;
+        $this->expectException(QrPaymentFailed::class);
+        (new QrPaymentBuilder())->build($s);
+    }
+
+    public function testPlWithSkIbanHasNoQr(): void
+    {
+        $s                  = SampleSnapshots::invoice('pl');
+        $s['bank']['iban']  = 'SK3112000000198742637541';
+        $this->assertNull((new QrPaymentBuilder())->build($s));
     }
 }

@@ -11,6 +11,11 @@ use InvalidArgumentException;
  */
 final class QrPaymentBuilder
 {
+    /**
+     * Uroven opravy chyb QR podla standardu.
+     */
+    public const ECC = ['pay_by_square' => 'M', 'spayd' => 'M', 'zbp' => 'L'];
+
     private readonly PayBySquare $payBySquare;
 
     public function __construct(?PayBySquare $pbs = null)
@@ -41,6 +46,19 @@ final class QrPaymentBuilder
 
         if ($country === 'SK') {
             return ['standard' => 'pay_by_square', 'payload' => $this->payBySquare->encode($snapshot)];
+        }
+
+        if ($country === 'CZ') {
+            return ['standard' => 'spayd', 'payload' => (new Spayd())->encode($snapshot)];
+        }
+
+        if (PolishZbpQr::applies($snapshot)) {
+            // Cislo dlhsie ako limit nazvu platby ZBP: bez QR namiesto orezania (spresnenie D-19, 06-RESEARCH Pitfall 7).
+            if (! PolishZbpQr::titleFits($number)) {
+                return null;
+            }
+
+            return ['standard' => 'zbp', 'payload' => (new PolishZbpQr())->encode($snapshot)];
         }
 
         return null;

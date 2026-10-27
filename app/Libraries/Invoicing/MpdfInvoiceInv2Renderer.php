@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Invoicing\Qr\QrPaymentBuilder;
 use App\Libraries\Invoicing\Qr\QrSvg;
 use Composer\InstalledVersions;
 use InvalidArgumentException;
@@ -34,7 +35,7 @@ final class MpdfInvoiceInv2Renderer implements PdfRenderer
             $standard = (string) $pay['qr']['standard'];
             $labelKey = ['pay_by_square' => 'qrPayBySquare', 'spayd' => 'qrSpayd', 'zbp' => 'qrZbp'][$standard] ?? null;
             $qr       = [
-                'uri'      => QrSvg::dataUri((string) $pay['qr']['payload'], $standard === 'zbp' ? 'L' : 'M'),
+                'uri'      => QrSvg::dataUri((string) $pay['qr']['payload'], QrPaymentBuilder::ECC[$standard] ?? 'M'),
                 'standard' => $labelKey === null ? '' : (string) $l[$labelKey],
                 'caption'  => (string) $l['qrCaption'],
             ];
