@@ -25,12 +25,12 @@ final class InvoicesLockHistorical extends BaseCommand
     protected $description = 'Zamkne importované časti mesiaca na historickú externú faktúru (predvolene suchý beh).';
     protected $usage       = 'invoices:lock-historical --client <id> --month <RRRR-MM> [--ref <text>] [--include-app-parts] [--expect-parts <N> --expect-hours <H> --expect-amount <A> --commit]';
     protected $options     = [
-        '--client'        => 'ID klienta (povinné)',
-        '--month'         => 'Fakturačný mesiac RRRR-MM (povinné)',
-        '--ref'           => 'Odkaz na pôvodnú faktúru (voliteľné, max 300 znakov)',
-        '--expect-parts'  => 'Očakávaný počet častí (povinné s --commit)',
-        '--expect-hours'  => 'Očakávané hodiny (povinné s --commit)',
-        '--expect-amount' => 'Očakávaná suma (povinné s --commit)',
+        '--client'            => 'ID klienta (povinné)',
+        '--month'             => 'Fakturačný mesiac RRRR-MM (povinné)',
+        '--ref'               => 'Odkaz na pôvodnú faktúru (voliteľné, max 300 znakov)',
+        '--expect-parts'      => 'Očakávaný počet častí (povinné s --commit)',
+        '--expect-hours'      => 'Očakávané hodiny (povinné s --commit)',
+        '--expect-amount'     => 'Očakávaná suma (povinné s --commit)',
         '--include-app-parts' => 'Zahrnúť aj časti pridané k importovaným úlohám až v aplikácii (predvolene sa vynechajú)',
         '--commit'            => 'Skutočný zápis do databázy',
     ];
@@ -43,7 +43,7 @@ final class InvoicesLockHistorical extends BaseCommand
         $parts  = $this->opt($params, 'expect-parts');
         $hours  = $this->opt($params, 'expect-hours');
         $amount = $this->opt($params, 'expect-amount');
-        $commit = array_key_exists('commit', $params) || CLI::getOption('commit') !== null;
+        $commit = array_key_exists('commit', $params)            || CLI::getOption('commit') !== null;
         $appAll = array_key_exists('include-app-parts', $params) || CLI::getOption('include-app-parts') !== null;
 
         if (
