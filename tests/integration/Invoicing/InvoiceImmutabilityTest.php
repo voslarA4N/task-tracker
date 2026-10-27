@@ -72,6 +72,20 @@ final class InvoiceImmutabilityTest extends PgTestCase
         $this->assertDbError('/is immutable/', fn () => $this->owner()->query('UPDATE invoice_documents SET renderer = \'x\''));
     }
 
+    public function testOwnerTruncateBlockedByTrigger(): void
+    {
+        // WR-07: riadkove triggery TRUNCATE neodchytia, statement trigger ano (aj CASCADE z inej tabulky).
+        $this->rw()->query("INSERT INTO invoice_counters (series_id, period_key, last_value) VALUES ({$this->series}, '202610', 1)");
+
+        $this->assertDbError('/invoices is immutable/', fn () => $this->owner()->query('TRUNCATE invoices CASCADE'));
+        $this->assertDbError('/invoice_lines is immutable/', fn () => $this->owner()->query('TRUNCATE invoice_lines'));
+        $this->assertDbError('/invoice_documents is immutable/', fn () => $this->owner()->query('TRUNCATE invoice_documents'));
+        $this->assertDbError('/invoice_counters is immutable/', fn () => $this->owner()->query('TRUNCATE invoice_counters'));
+        $this->assertDbError('/is immutable/', fn () => $this->owner()->query('TRUNCATE clients CASCADE'));
+        $this->assertSame(1, (int) $this->owner()->query('SELECT count(*) AS c FROM invoices')->getRow()->c);
+        $this->assertSame(1, (int) $this->owner()->query('SELECT count(*) AS c FROM invoice_counters')->getRow()->c);
+    }
+
     public function testCounterRules(): void
     {
         $this->rw()->query("INSERT INTO invoice_counters (series_id, period_key, last_value) VALUES ({$this->series}, '202610', 1)");

@@ -9,6 +9,7 @@ use App\Libraries\Master\ClientService;
 use App\Libraries\Master\EntityService;
 use App\Libraries\Platform\Money;
 use App\Libraries\Platform\Transaction;
+use Throwable;
 
 /**
  * Pre triedy odvodene od PgTestCase. Vyprazdni master tabulky Phase 3.
@@ -30,8 +31,34 @@ trait MasterFixtures
             }
         }
 
-        if ($existing !== []) {
-            $this->owner()->query('TRUNCATE ' . implode(', ', $existing) . ' RESTART IDENTITY CASCADE');
+        if ($existing === []) {
+            return;
+        }
+
+        // WR-07: faktury a citace chrani BEFORE TRUNCATE trigger aj pre ownera. Test ho vypne iba
+        // v transakcii upratovania (rollback pri chybe trigger vrati), produkcny kod nic take nerobi.
+        $guards = array_column($this->owner()->query(
+            "SELECT tgname, tgrelid::regclass::text AS tbl FROM pg_trigger WHERE tgname LIKE '%\\_no\\_truncate' AND NOT tgisinternal",
+        )->getResultArray(), 'tbl', 'tgname');
+        $db = $this->owner();
+        $db->query('BEGIN');
+
+        try {
+            foreach ($guards as $trigger => $table) {
+                $db->query('ALTER TABLE ' . $db->escapeIdentifiers($table) . ' DISABLE TRIGGER ' . $db->escapeIdentifiers($trigger));
+            }
+
+            $db->query('TRUNCATE ' . implode(', ', $existing) . ' RESTART IDENTITY CASCADE');
+
+            foreach ($guards as $trigger => $table) {
+                $db->query('ALTER TABLE ' . $db->escapeIdentifiers($table) . ' ENABLE TRIGGER ' . $db->escapeIdentifiers($trigger));
+            }
+
+            $db->query('COMMIT');
+        } catch (Throwable $e) {
+            $db->query('ROLLBACK');
+
+            throw $e;
         }
     }
 
