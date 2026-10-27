@@ -103,6 +103,8 @@ final class IssueIdempotencyTest extends PgTestCase
         // Pomaly poziadavok potom narazi na invoices_request_key_key a namiesto 500 dostane already_issued.
         $a     = $this->issueSetup();
         $b     = $this->issueSetup(['country' => 'PL', 'client' => ['name' => 'Klient PL', 'identifier_value' => '7010000001']]);
+        $this->owner()->query("UPDATE entity_versions SET tax_id = '1234563218' WHERE entity_id = :e:", ['e' => $b['entity']]);
+
         $key   = $this->uuid4();
         $slow  = $this->issueCommand($a['client'], '2026-10', $a['entity'], $a['parts'], ['requestKey' => $key]);
         $quick = $this->issueCommand($b['client'], '2026-10', $b['entity'], $b['parts'], ['requestKey' => $key]);
