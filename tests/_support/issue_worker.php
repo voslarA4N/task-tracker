@@ -14,6 +14,7 @@ use App\Libraries\Invoicing\InvoiceCalculator;
 use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\IssueCommand;
+use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Platform\FrozenClock;
 use Config\Database;
 use Config\Services;
@@ -43,8 +44,10 @@ foreach (array_filter(explode(',', (string) $clientCsv), static fn (string $v): 
 
     try {
         $unlocked = (new InvoiceParts($db))->unlocked($clientId, (string) $month, null);
-        $calc     = (new InvoiceCalculator())->compute($unlocked, null);
-        $token    = InvoiceCalculator::previewToken($clientId, (string) $month, (int) $entityId, $calc['lines']);
+        $clientRow = $db->query('SELECT * FROM clients WHERE id = :c:', ['c' => $clientId])->getRowArray();
+        $entityRow = $db->query('SELECT * FROM entities WHERE id = :e:', ['e' => (int) $entityId])->getRowArray();
+        $snapshot  = (new SnapshotBuilder($db))->build($clientRow, $entityRow, $unlocked, (string) $month, (string) $issueDate, '2026-10-31', '2026-11-10', null);
+        $token     = InvoiceCalculator::previewToken($snapshot);
         $partIds  = array_map(static fn (array $p): int => (int) $p['allocation_id'], $unlocked);
         sort($partIds);
 

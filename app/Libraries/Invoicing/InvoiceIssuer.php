@@ -93,12 +93,21 @@ final class InvoiceIssuer
         }
 
         // 4. zamknutie casti (len nezamknute, klienta a mesiaca)
+        $where = 'a.id = ANY(CAST(:ids: AS bigint[])) AND a.invoice_id IS NULL AND a.billing_month = :m: AND t.client_id = :c:';
+        $bind  = ['ids' => $ids, 'm' => $cmd->billingMonth, 'c' => $cmd->clientId];
+
+        // zamok v poradi id (bez deadlockov), poradie riadkov urcuje az druhy select (rovnako ako nahlad)
+        $this->db->query(
+            "SELECT a.id FROM billing_allocations a JOIN tasks t ON t.id = a.task_id WHERE {$where} ORDER BY a.id FOR UPDATE OF a",
+            $bind,
+        );
+
         $rows = $this->db->query(
-            'SELECT a.id, a.task_id, a.hours, a.rate, a.amount, a.currency, t.title, t.url, t.hours AS estimated_hours, t.created_at
+            "SELECT a.id, a.task_id, a.hours, a.rate, a.amount, a.currency, t.title, t.url, t.hours AS estimated_hours, t.created_at
              FROM billing_allocations a JOIN tasks t ON t.id = a.task_id
-             WHERE a.id = ANY(CAST(:ids: AS bigint[])) AND a.invoice_id IS NULL AND a.billing_month = :m: AND t.client_id = :c:
-             ORDER BY a.id FOR UPDATE OF a',
-            ['ids' => $ids, 'm' => $cmd->billingMonth, 'c' => $cmd->clientId],
+             WHERE {$where}
+             ORDER BY t.created_at, a.id",
+            $bind,
         )->getResultArray();
 
         if (count($rows) !== count($cmd->partIds)) {
@@ -112,8 +121,6 @@ final class InvoiceIssuer
 
             throw new IssueRejected('parts_changed', [], $locked === null ? null : (int) $locked['id'], $locked === null || $locked['number'] === null ? null : (string) $locked['number']);
         }
-
-        usort($rows, static fn (array $a, array $b): int => [(string) $a['created_at'], (int) $a['id']] <=> [(string) $b['created_at'], (int) $b['id']]);
 
         // 5. subjekt
         $entity = $this->db->query('SELECT * FROM entities WHERE id = :e: FOR SHARE', ['e' => $cmd->entityId])->getRowArray();
@@ -133,7 +140,7 @@ final class InvoiceIssuer
         $snapshot = $this->builder->build($client, $entity, $parts, $cmd->billingMonth, $cmd->issueDate, $cmd->deliveryDate, $cmd->dueDate, null);
         $this->guards->assertCurrency($entity, $snapshot['currency']);
 
-        if (! hash_equals($cmd->previewToken, InvoiceCalculator::previewToken($cmd->clientId, $cmd->billingMonth, $cmd->entityId, $snapshot['lines']))) {
+        if (! hash_equals($cmd->previewToken, InvoiceCalculator::previewToken($snapshot))) {
             throw new IssueRejected('preview_stale');
         }
 

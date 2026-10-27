@@ -107,29 +107,58 @@ final class InvoiceCalculatorTest extends CIUnitTestCase
         (new InvoiceCalculator())->compute([], 'np');
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function snap(): array
+    {
+        return [
+            'number'          => null,
+            'variable_symbol' => null,
+            'issue_date'      => '2026-10-27',
+            'delivery_date'   => '2026-10-31',
+            'due_date'        => '2026-11-10',
+            'entity'          => ['version_id' => 1, 'address_line1' => 'A 1'],
+            'bank'            => ['iban' => 'SK3112000000198742637541'],
+            'legal'           => ['vat_code' => 'np', 'texts' => ['vat_note' => 'x']],
+            'client'          => ['address_line1' => 'C 1'],
+            'lines'           => [
+                ['source_allocation_id' => 1, 'hours' => '1.00', 'rate' => '10.00', 'amount' => '10.00'],
+                ['source_allocation_id' => 2, 'hours' => '2.00', 'rate' => '10.00', 'amount' => '20.00'],
+            ],
+        ];
+    }
+
     public function testPreviewToken(): void
     {
-        $a = (new InvoiceCalculator())->compute([
-            $this->part(1, '1.00', '10.00', '10.00'),
-            $this->part(2, '2.00', '10.00', '20.00'),
-        ], 'np')['lines'];
-        $reversed = array_reverse($a);
-
-        $base = InvoiceCalculator::previewToken(1, '2026-10', 2, $a);
+        $s    = $this->snap();
+        $base = InvoiceCalculator::previewToken($s);
 
         $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/D', $base);
-        $this->assertSame($base, InvoiceCalculator::previewToken(1, '2026-10', 2, $reversed));
-        $this->assertNotSame($base, InvoiceCalculator::previewToken(9, '2026-10', 2, $a));
-        $this->assertNotSame($base, InvoiceCalculator::previewToken(1, '2026-11', 2, $a));
-        $this->assertNotSame($base, InvoiceCalculator::previewToken(1, '2026-10', 3, $a));
 
-        $changed             = $a;
-        $changed[0]['hours'] = '1.50';
-        $this->assertNotSame($base, InvoiceCalculator::previewToken(1, '2026-10', 2, $changed));
+        $n                    = $s;
+        $n['number']          = 'FA-1';
+        $n['variable_symbol'] = '1';
+        $this->assertSame($base, InvoiceCalculator::previewToken($n));
 
-        $changed            = $a;
-        $changed[0]['rate'] = '11.00';
-        $this->assertNotSame($base, InvoiceCalculator::previewToken(1, '2026-10', 2, $changed));
+        $mutations = [
+            static function (array $x): array { $x['issue_date'] = '2026-10-28'; return $x; },
+            static function (array $x): array { $x['delivery_date'] = '2026-10-30'; return $x; },
+            static function (array $x): array { $x['due_date'] = '2026-11-11'; return $x; },
+            static function (array $x): array { $x['entity']['version_id'] = 2; return $x; },
+            static function (array $x): array { $x['entity']['address_line1'] = 'B 2'; return $x; },
+            static function (array $x): array { $x['bank']['iban'] = 'PL61109010140000071219812874'; return $x; },
+            static function (array $x): array { $x['legal']['vat_code'] = 'sk'; return $x; },
+            static function (array $x): array { $x['legal']['texts']['vat_note'] = 'y'; return $x; },
+            static function (array $x): array { $x['client']['address_line1'] = 'D 4'; return $x; },
+            static function (array $x): array { $x['lines'][0]['hours'] = '1.50'; return $x; },
+            static function (array $x): array { $x['lines'][0]['rate'] = '11.00'; return $x; },
+            static function (array $x): array { $x['lines'] = array_reverse($x['lines']); return $x; },
+        ];
+
+        foreach ($mutations as $i => $m) {
+            $this->assertNotSame($base, InvoiceCalculator::previewToken($m($s)), 'mutation ' . $i);
+        }
     }
 
     public function testNoFloatsInOutput(): void

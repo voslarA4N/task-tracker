@@ -125,14 +125,11 @@ final class InvoiceDraftService
                 $count    = $calc['line_count'];
                 $currency = $calc['currency'];
 
-                if ($selected !== null) {
-                    $token = InvoiceCalculator::previewToken($clientId, $month, $selected, $lines);
-                }
-
                 if ($entity !== null) {
                     // mena sa kontroluje pred vyberom bankoveho uctu, inak by sa ukazal zavadzajuci no_bank_account
                     $this->guards->assertCurrency($entity, $this->guards->partsCurrency($parts));
                     $snapshot = $this->builder->build($client, $entity, $parts, $month, $issue, $delivery, $due, null);
+                    $token    = InvoiceCalculator::previewToken($snapshot);
                 }
             } catch (IssueRejected $e) {
                 $errors[] = ['reason' => $e->reason, 'context' => $e->context];
@@ -168,7 +165,7 @@ final class InvoiceDraftService
             $locked,
             $errors,
             $entities,
-            $count > 0 && $errors === [] && $selected !== null,
+            $count > 0 && $errors === [] && $selected !== null && $token !== null,
         );
     }
 

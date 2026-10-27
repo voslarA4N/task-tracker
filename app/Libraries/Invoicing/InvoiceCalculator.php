@@ -74,17 +74,19 @@ final class InvoiceCalculator
     }
 
     /**
-     * @param list<array<string, mixed>> $lines
+     * Token nahladu: sha256 nad kanonickym JSON celej kopie udajov (datumy, verzia subjektu, banka,
+     * pravne texty, hlavicka klienta, riadky v poradi). Vynechane su presne dva kluce, ktore su pred
+     * vystavenim neznáme: `number` a `variable_symbol`. Vsetky ostatne polia kopie pochadzaju z DB
+     * riadkov, vstupnych datumov alebo konstant, takze nie je v nej ziadna volatilna hodnota.
+     * Vstupom musi byt nezmeneny vystup `SnapshotBuilder::build()`. Poradie klucov je poradie
+     * buildera a poradie riadkov je poradie z DB, token teda stazi aj poradie.
+     *
+     * @param array<string, mixed> $snapshot
      */
-    public static function previewToken(int $clientId, string $month, int $entityId, array $lines): string
+    public static function previewToken(array $snapshot): string
     {
-        usort($lines, static fn (array $a, array $b): int => $a['source_allocation_id'] <=> $b['source_allocation_id']);
+        unset($snapshot['number'], $snapshot['variable_symbol']);
 
-        $parts = array_map(
-            static fn (array $l): string => $l['source_allocation_id'] . ':' . $l['hours'] . ':' . $l['rate'] . ':' . $l['amount'],
-            $lines,
-        );
-
-        return hash('sha256', $clientId . '|' . $month . '|' . $entityId . '|' . implode(';', $parts));
+        return hash('sha256', json_encode($snapshot, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 }

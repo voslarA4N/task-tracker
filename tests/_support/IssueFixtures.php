@@ -9,6 +9,8 @@ use App\Libraries\Invoicing\InvoiceCalculator;
 use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\IssueCommand;
+use App\Libraries\Invoicing\IssueRejected;
+use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Invoicing\PdfRenderer;
 use App\Libraries\Master\BankAccountService;
 
@@ -72,15 +74,18 @@ trait IssueFixtures
     {
         sort($partIds);
 
-        $token = $overrides['previewToken'] ?? $this->previewTokenFor($clientId, $month, $entityId, $partIds);
+        $issueDate    = (string) ($overrides['issueDate'] ?? '2026-10-27');
+        $deliveryDate = (string) ($overrides['deliveryDate'] ?? '2026-10-31');
+        $dueDate      = (string) ($overrides['dueDate'] ?? '2026-11-10');
+        $token        = $overrides['previewToken'] ?? $this->previewTokenFor($clientId, $month, $entityId, $partIds, $issueDate, $deliveryDate, $dueDate);
 
         return new IssueCommand(
             $clientId,
             $month,
             $entityId,
-            (string) ($overrides['issueDate'] ?? '2026-10-27'),
-            (string) ($overrides['deliveryDate'] ?? '2026-10-31'),
-            (string) ($overrides['dueDate'] ?? '2026-11-10'),
+            $issueDate,
+            $deliveryDate,
+            $dueDate,
             $partIds,
             (string) $token,
             (string) ($overrides['requestKey'] ?? $this->uuid4()),
@@ -107,10 +112,18 @@ trait IssueFixtures
     /**
      * @param list<int> $partIds
      */
-    private function previewTokenFor(int $clientId, string $month, int $entityId, array $partIds): string
+    protected function previewTokenFor(int $clientId, string $month, int $entityId, array $partIds, string $issueDate = '2026-10-27', string $deliveryDate = '2026-10-31', string $dueDate = '2026-11-10'): string
     {
+        $client = $this->rw()->query('SELECT * FROM clients WHERE id = :c:', ['c' => $clientId])->getRowArray();
+        $entity = $this->rw()->query('SELECT * FROM entities WHERE id = :e:', ['e' => $entityId])->getRowArray();
+
+        if ($client === null || $entity === null) {
+            return str_repeat('0', 64);
+        }
+
+        $template = ($client['portal_url_template'] ?? null) === null ? null : (string) $client['portal_url_template'];
         $unlocked = array_values(array_filter(
-            (new InvoiceParts($this->rw()))->unlocked($clientId, $month, null),
+            (new InvoiceParts($this->rw()))->unlocked($clientId, $month, $template),
             static fn (array $p): bool => in_array($p['allocation_id'], $partIds, true),
         ));
 
@@ -118,8 +131,12 @@ trait IssueFixtures
             return str_repeat('0', 64);
         }
 
-        $calc = (new InvoiceCalculator())->compute($unlocked, null);
+        try {
+            $snapshot = (new SnapshotBuilder($this->rw()))->build($client, $entity, $unlocked, $month, $issueDate, $deliveryDate, $dueDate, null);
+        } catch (IssueRejected) {
+            return str_repeat('0', 64);
+        }
 
-        return InvoiceCalculator::previewToken($clientId, $month, $entityId, $calc['lines']);
+        return InvoiceCalculator::previewToken($snapshot);
     }
 }
