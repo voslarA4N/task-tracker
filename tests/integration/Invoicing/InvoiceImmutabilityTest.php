@@ -83,4 +83,20 @@ final class InvoiceImmutabilityTest extends PgTestCase
         $this->assertPermissionDenied(fn () => $this->rw()->query('DELETE FROM invoice_counters'));
         $this->assertDbError('/may not be deleted/', fn () => $this->owner()->query('DELETE FROM invoice_counters'));
     }
+
+    public function testCounterInsertMustStartAtFirstValue(): void
+    {
+        // WR-06: rad uz ma fakturu, nove obdobie smie zacat iba 1 (ani owner nevlozi medzeru).
+        $this->assertDbError('/must start at 1/', fn () => $this->rw()->query("INSERT INTO invoice_counters (series_id, period_key, last_value) VALUES ({$this->series}, '202611', 500)"));
+        $this->assertDbError('/must start at 1/', fn () => $this->owner()->query("INSERT INTO invoice_counters (series_id, period_key, last_value) VALUES ({$this->series}, '202611', 2)"));
+
+        // Rad bez faktur zacina initial_number (D-12), nie 1 ani inou hodnotou.
+        $fresh = $this->createEntity('PL');
+        $other = (int) $this->owner()->query("SELECT id FROM invoice_series WHERE entity_id = {$fresh} AND kind = 'invoice'")->getRow()->id;
+        $this->owner()->query("UPDATE invoice_series SET initial_number = 7 WHERE id = {$other}");
+
+        $this->assertDbError('/must start at 7/', fn () => $this->rw()->query("INSERT INTO invoice_counters (series_id, period_key, last_value) VALUES ({$other}, '202610', 1)"));
+        $this->rw()->query("INSERT INTO invoice_counters (series_id, period_key, last_value) VALUES ({$other}, '202610', 7)");
+        $this->assertSame(7, (int) $this->owner()->query("SELECT last_value FROM invoice_counters WHERE series_id = {$other}")->getRow()->last_value);
+    }
 }
