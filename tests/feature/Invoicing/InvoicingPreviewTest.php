@@ -157,4 +157,24 @@ final class InvoicingPreviewTest extends AuthTestCase
 
         $this->assertSame($before, $this->counts());
     }
+
+    public function testIssueFormAndPickerMarkup(): void
+    {
+        $s    = $this->issueSetup(['parts' => [['2.00', '2026-10'], ['3.00', '2026-10']]]);
+        $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+
+        $this->assertStringContainsString('<form id="inv-issue-form" method="post" action="/invoices/issue">', $html);
+        $this->assertSame(2, substr_count($html, 'name="part_ids[]"'));
+        $this->assertMatchesRegularExpression('/name="preview_token" value="[0-9a-f]{64}"/', $html);
+        $this->assertMatchesRegularExpression('/name="request_key" value="[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"/', $html);
+        $this->assertStringContainsString(csrf_token(), $html);
+        $this->assertStringContainsString('form="inv-issue-form"', $html);
+        $this->assertStringContainsString('hx-get="/fragments/invoice-preview"', $html);
+        $this->assertStringContainsString('hx-trigger="change"', $html);
+        $this->assertStringContainsString('hx-target="#inv-preview"', $html);
+        $this->assertStringContainsString('hx-push-url="true"', $html);
+        $this->assertStringContainsString('Zobraziť náhľad', $html);
+        $this->assertStringContainsString('aria-live="polite"', $html);
+        $this->assertStringContainsString('data-can-issue="1"', $html);
+    }
 }

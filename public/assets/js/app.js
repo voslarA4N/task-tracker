@@ -218,6 +218,29 @@
         }
       };
     });
+    /* Nahlad faktury: tlacidlo Vystavit je neaktivne bez moznosti vystavenia alebo bez potvrdenia spatneho datumu. */
+    window.Alpine.data('invIssue', function () {
+      return {
+        needsConfirm: false,
+        confirmed: false,
+        canIssue: false,
+        init: function () {
+          var d = this.$el.dataset;
+          this.needsConfirm = d.needsConfirm === '1';
+          this.canIssue = d.canIssue === '1';
+        },
+        toggle: function () { this.confirmed = !this.confirmed; },
+        get disabled() { return !this.canIssue || (this.needsConfirm && !this.confirmed); }
+      };
+    });
+    /* Panel presunu casti: volba Dalsi / Iny mesiac. */
+    window.Alpine.data('invMove', function () {
+      return {
+        monthChoice: 'next',
+        setMonthChoice: function () { this.monthChoice = this.$event.target.value; },
+        get otherMonth() { return this.monthChoice === 'other'; }
+      };
+    });
     window.Alpine.data('copySecret', function () {
       return {
         label: '',
