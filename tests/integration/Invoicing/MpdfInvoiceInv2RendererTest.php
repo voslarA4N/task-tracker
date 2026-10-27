@@ -148,4 +148,36 @@ final class MpdfInvoiceInv2RendererTest extends CIUnitTestCase
         $this->assertStringNotContainsString('/Subtype /Form', $bytes);
         $this->assertStringNotContainsString('Platba QR kódom', $this->text($s));
     }
+
+    public function testCzAndPlHaveStandardCaptions(): void
+    {
+        $cz = SampleSnapshots::invoice('cz');
+        $this->assertSame('spayd', $cz['payment']['qr']['standard']);
+        $czText = $this->text($cz);
+        $this->assertStringContainsString('QR', $czText);
+        $this->assertStringContainsString('Banka:', $czText);
+        $this->assertStringNotContainsString('PAY', $czText);
+
+        $pl = SampleSnapshots::invoice('pl');
+        $this->assertSame('zbp', $pl['payment']['qr']['standard']);
+        $plText = $this->text($pl);
+        $this->assertStringContainsString('ZBP', $plText);
+    }
+
+    public function testEuB2bClientSkUsesPayBySquare(): void
+    {
+        $s = SampleSnapshots::invoice('pl_eu_b2b');
+
+        $this->assertSame('pay_by_square', $s['payment']['qr']['standard']);
+        $this->assertStringContainsString('by square', $this->text($s));
+    }
+
+    public function testNonEuClientHasNoQr(): void
+    {
+        $s = SampleSnapshots::invoice('pl_non_eu');
+
+        $this->assertNull($s['payment']['qr']);
+        $this->assertStringNotContainsString('ZBP', $this->text($s));
+        $this->assertStringNotContainsString('QR code', $this->text($s));
+    }
 }
