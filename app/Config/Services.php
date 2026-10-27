@@ -2,6 +2,7 @@
 
 namespace Config;
 
+use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Platform\AfterResponse;
 use App\Libraries\Platform\Clock;
 use CodeIgniter\Config\BaseService;
@@ -28,6 +29,15 @@ class Services extends BaseService
         }
 
         return new Clock();
+    }
+
+    public static function invoiceIssuer(bool $getShared = true): InvoiceIssuer
+    {
+        if ($getShared) {
+            return static::getSharedInstance('invoiceIssuer');
+        }
+
+        return new InvoiceIssuer();
     }
 
     public static function afterResponse(bool $getShared = true): AfterResponse

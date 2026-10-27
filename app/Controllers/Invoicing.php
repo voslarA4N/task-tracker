@@ -6,6 +6,8 @@ namespace App\Controllers;
 
 use App\Libraries\Invoicing\Draft;
 use App\Libraries\Invoicing\InvoiceDraftService;
+use App\Libraries\Invoicing\IssueInput;
+use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Invoicing\PreviewInput;
 use App\Libraries\Master\ClientService;
 use App\Libraries\Work\AllocationLocked;
@@ -17,9 +19,10 @@ use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\ResponseInterface;
 use IntlDateFormatter;
 use InvalidArgumentException;
+use Throwable;
 
 /**
- * Fakturacia mesiaca: vyber, nahlad (iba citanie) a presun casti z nahladu. Vystavenie dodava 05-09.
+ * Fakturacia mesiaca: vyber, nahlad (iba citanie) a presun casti z nahladu. Vystavenie z nahladu (issue).
  */
 final class Invoicing extends BaseController
 {
@@ -87,6 +90,95 @@ final class Invoicing extends BaseController
         }
 
         return redirect()->to('/invoices/new?' . http_build_query(array_filter($selection, static fn (string $v): bool => $v !== '')));
+    }
+
+    /**
+     * Vystavenie faktury z nahladu (D-06). Suma ani cislo sa z formulara neprijimaju, vsetko pocita server.
+     */
+    public function issue(): ResponseInterface
+    {
+        $request = $this->request;
+        assert($request instanceof IncomingRequest);
+
+        $input  = IssueInput::fromPost($request);
+        $errors = IssueInput::validate($input);
+        $raw    = [
+            'client'        => $input['client_id'],
+            'month'         => $input['billing_month'],
+            'entity'        => $input['entity_id'],
+            'issue_date'    => $input['issue_date'],
+            'delivery_date' => $input['delivery_date'],
+            'due_date'      => $input['due_date'],
+        ];
+
+        if ($errors !== []) {
+            return $this->renderPreview(false, $raw, 422, array_values(array_map(static fn (string $m): array => ['message' => $m], $errors)));
+        }
+
+        try {
+            $issued = service('invoiceIssuer')->issue(IssueInput::toCommand($input, auth()->id() === null ? null : (int) auth()->id()));
+        } catch (IssueRejected $e) {
+            if ($e->reason === 'already_issued' && $e->invoiceId !== null) {
+                return $this->issuedRedirect($e->invoiceId, $e->invoiceNumber);
+            }
+
+            return $this->rejected($e, $raw);
+        } catch (Throwable $e) {
+            log_message('error', 'Invoice issue failed: {class}: {message}', ['class' => $e::class, 'message' => $e->getMessage()]);
+
+            return $this->renderPreview(false, $raw, 500, [['message' => lang('Invoicing.errorFailed')]]);
+        }
+
+        return $this->issuedRedirect($issued->id, $issued->number);
+    }
+
+    private function issuedRedirect(int $invoiceId, ?string $number): ResponseInterface
+    {
+        if ($number !== null) {
+            session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang('Invoicing.issued', [$number])]);
+        }
+
+        $url = '/invoices/' . $invoiceId;
+
+        if (is_htmx()) {
+            return $this->response->setStatusCode(200)->setHeader('HX-Location', $url)->setBody('');
+        }
+
+        return redirect()->to($url);
+    }
+
+    /**
+     * @param array<string, string> $raw
+     */
+    private function rejected(IssueRejected $e, array $raw): ResponseInterface
+    {
+        switch ($e->reason) {
+            case 'parts_changed':
+                if ($e->invoiceNumber !== null && $e->invoiceId !== null) {
+                    $alert = [
+                        'message' => lang('Invoicing.errorDuplicate', [$e->invoiceNumber]),
+                        'link'    => ['href' => '/invoices/' . $e->invoiceId, 'label' => lang('Invoicing.showInvoice', [$e->invoiceNumber])],
+                    ];
+
+                    return $this->renderPreview(false, $raw, 409, [$alert]);
+                }
+
+                return $this->renderPreview(false, $raw, 409, [['message' => lang('Invoicing.errorStale')]]);
+
+            case 'preview_stale':
+                return $this->renderPreview(false, $raw, 409, [['message' => lang('Invoicing.errorStale')]]);
+
+            case 'backdate_unconfirmed':
+                return $this->renderPreview(false, $raw, 422, [['message' => lang('Invoicing.errorBackdate')]]);
+
+            case 'sequence_overflow':
+                $format = is_scalar($e->context['format'] ?? null) ? (string) $e->context['format'] : '';
+
+                return $this->renderPreview(false, $raw, 422, [['message' => lang('Invoicing.errorSequence', [$format])]]);
+
+            default:
+                return $this->renderPreview(false, $raw, 422, [['message' => self::errorMessage($e->reason, $e->context)]]);
+        }
     }
 
     /**
@@ -199,7 +291,18 @@ final class Invoicing extends BaseController
         $request = $this->request;
         assert($request instanceof IncomingRequest);
 
-        $raw     = PreviewInput::fromGet($request);
+        return $this->renderPreview($fragmentRoute, PreviewInput::fromGet($request));
+    }
+
+    /**
+     * @param array<string, string>                                                   $raw
+     * @param list<array{message: string, link?: array{href: string, label: string}}> $alerts
+     */
+    private function renderPreview(bool $fragmentRoute, array $raw, int $forcedStatus = 0, array $alerts = []): ResponseInterface
+    {
+        $request = $this->request;
+        assert($request instanceof IncomingRequest);
+
         $errors  = PreviewInput::validate($raw);
         $clients = (new ClientService())->listAll();
         $bounds  = PreviewInput::monthBounds();
@@ -216,6 +319,7 @@ final class Invoicing extends BaseController
             'monthLabel' => '',
             'clientName' => '',
             'requestKey' => self::uuid4(),
+            'alerts'     => $alerts,
         ];
 
         $status = 200;
@@ -250,6 +354,10 @@ final class Invoicing extends BaseController
                     $data['clientName'] = (string) $c['name'];
                 }
             }
+        }
+
+        if ($forcedStatus !== 0 && $errors === []) {
+            $status = $forcedStatus;
         }
 
         if ($fragmentRoute && is_htmx_fragment_request()) {
