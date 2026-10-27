@@ -6,8 +6,10 @@ namespace Tests\Support;
 
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Invoicing\InvoiceCalculator;
+use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\IssueCommand;
+use App\Libraries\Invoicing\PdfRenderer;
 use App\Libraries\Master\BankAccountService;
 
 /**
@@ -85,6 +87,11 @@ trait IssueFixtures
             (bool) ($overrides['confirmBackdate'] ?? false),
             $overrides['userId'] ?? null,
         );
+    }
+
+    protected function issuer(?PdfRenderer $renderer = null): InvoiceIssuer
+    {
+        return new InvoiceIssuer($this->rw(), null, $renderer ?? new FakePdfRenderer());
     }
 
     protected function uuid4(): string
