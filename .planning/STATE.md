@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 Phase: 5 (faktura-n-jadro) — EXECUTING
 Plan: 9 of 9
 Status: Phase complete — ready for verification
-Last activity: 2026-10-27 - Completed quick task 261027-elv: import:excel --month
+Last activity: 2026-10-27 - Completed quick task 261027-jjx: WR-01 + WR-04 (preview token, line order)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -134,6 +134,7 @@ Recent decisions affecting current work:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 261027-elv | import:excel --month RRRR-MM (import len jedného mesiaca) | 2026-10-27 | 7d884a4 | [261027-elv-import-excel-month-filter](./quick/261027-elv-import-excel-month-filter/) |
+| 261027-jjx | WR-01 + WR-04: preview token z celej kópie údajov, poradie položiek len z DB, blokovanie Vystaviť počas obnovy náhľadu | 2026-10-27 | cef426f | [261027-jjx-preview-token-full-snapshot-and-line-ord](./quick/261027-jjx-preview-token-full-snapshot-and-line-ord/) |
 
 ## Deferred Items
 
