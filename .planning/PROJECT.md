@@ -20,12 +20,15 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 - [x] Úlohy s nacenením, stavmi V práci / Zapracovaná a odvodeným fakturačným stavom (E4). Validated in Phase 4: Úlohy, fakturačné časti a dashboard (nasadené na https://work-tracker.vostack.dev 2026-10-26, UAT na iPhone)
 
+- [x] Fakturačné časti po mesiacoch, zamykanie po vystavení kontrolované na serveri aj v DB (E5). Validated in Phase 5: Fakturačné jadro
+
+- [x] Jadro faktúr (E6): atómové vystavenie za klienta a mesiac, kópia údajov v JSONB, číslovanie `RRRRMM###` bez medzier a bezpečné voči súbehu, uložené PDF so sha256, náhľad chránený tokenom z celej kópie údajov, historické externé faktúry (FA 208-2026 za 09/2026 na produkcii). Validated in Phase 5: Fakturačné jadro (nasadené 2026-10-27, UAT na iPhone)
+
 ### Active
 
 Úplný zoznam s ID je v `.planning/REQUIREMENTS.md` (prevzatý z `docs/PRD.md`, epiky E1–E12, priority P0 + P1 + P2).
 
-- [ ] Fakturačné časti po mesiacoch, zamykanie po vystavení (kontrolované na serveri) (E5). Phase 4: časti po mesiacoch a DB poistka zámku hotové; zamknutie vystavením faktúry (ALC-03) príde v Phase 5
-- [ ] Faktúry za klienta a mesiac s kópiou údajov v JSONB, transakčným číslovaním `RRRRMM###`, PDF podľa právneho profilu a dobropisom (E6)
+- [ ] Faktúry (E6): zvyšok – PDF podľa právneho profilu (Phase 6) a dobropis (Phase 9). Jadro hotové vo Phase 5
 - [ ] PDF výkaz práce ku každej faktúre, rovnako nemenný (E7)
 - [ ] Odoslanie e-mailom, opätovné odoslanie, ručné úhrady, faktúry po splatnosti, upomienky (E8)
 - [ ] Meny EUR, PLN, CZK, kurzy z NBP / ECB / ČNB s ručným prepisom a uložením do kópie údajov (E9)
@@ -114,4 +117,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-26 after Phase 4 (Úlohy, fakturačné časti a dashboard)*
+*Last updated: 2026-10-27 after Phase 5 (Fakturačné jadro)*
