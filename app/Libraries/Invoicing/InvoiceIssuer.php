@@ -11,6 +11,7 @@ use CodeIgniter\Database\BaseConnection;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Database;
 use RuntimeException;
+use Throwable;
 
 /**
  * Jediny zapisovatel vlastnych faktur (D-15). Cele vystavenie je jedna transakcia: zamky, vypocet, kopia udajov,
@@ -199,6 +200,21 @@ final class InvoiceIssuer
             throw new RuntimeException('Renderer returned template ' . $pdf->templateVersion . ', snapshot requires ' . $snapshot['template_version'] . '.');
         }
 
+        // 9b. PDF vykaz v tej istej transakcii (D-05, D-20): zlyhanie renderu vrati cislo aj casti
+        try {
+            $report = $this->renderers->for((string) $snapshot['report_template_version'])->render($snapshot);
+        } catch (DatabaseException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            log_message('error', 'Report render failed: ' . $e::class . ': ' . $e->getMessage());
+
+            throw new IssueRejected('report_failed');
+        }
+
+        if ($report->templateVersion !== $snapshot['report_template_version']) {
+            throw new RuntimeException('Report renderer returned template ' . $report->templateVersion . ', snapshot requires ' . $snapshot['report_template_version'] . '.');
+        }
+
         // 10. faktura so strukturovanymi stlpcami zo snapshotu
         $invoiceId = $this->insertInvoice($cmd, $snapshot, $client, $series, $created);
 
@@ -208,6 +224,7 @@ final class InvoiceIssuer
         }
 
         $this->documents->store($invoiceId, 'invoice', $pdf);
+        $this->documents->store($invoiceId, 'report', $report);
 
         // 12. zamknutie casti
         $locked = (int) $this->db->query('SELECT lock_allocations(:inv:, CAST(:ids: AS bigint[])) AS n', ['inv' => $invoiceId, 'ids' => $ids])->getRow()->n;
@@ -226,6 +243,7 @@ final class InvoiceIssuer
             'currency'      => $snapshot['currency'],
             'line_count'    => $snapshot['totals']['line_count'],
             'sha256'        => $pdf->sha256,
+            'report_sha256' => $report->sha256,
         ]);
 
         // 14. deferred kontrola uplnosti padne ako vynimka este vnutri transakcie

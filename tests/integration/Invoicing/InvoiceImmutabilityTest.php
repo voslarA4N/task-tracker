@@ -32,7 +32,7 @@ final class InvoiceImmutabilityTest extends PgTestCase
         $entity = $this->createEntity('SK');
         $client = $this->createClient();
         $alloc  = $this->createAllocation($this->createTask($client), '8.00', '2026-10');
-        $this->insertIssuedInvoiceRaw($client, $entity, '2026-10', [$alloc]);
+        $this->insertIssuedInvoiceRaw($client, $entity, '2026-10', [$alloc], '%PDF-1.4 test', ['snapshot_schema' => 2, 'with_report' => true]);
         $this->series = (int) $this->owner()->query("SELECT id FROM invoice_series WHERE entity_id = {$entity} AND kind = 'invoice'")->getRow()->id;
     }
 
@@ -62,6 +62,7 @@ final class InvoiceImmutabilityTest extends PgTestCase
         $this->assertPermissionDenied(fn () => $this->rw()->query('DELETE FROM invoices'));
         $this->assertPermissionDenied(fn () => $this->rw()->query("UPDATE invoice_lines SET title = 'x'"));
         $this->assertPermissionDenied(fn () => $this->rw()->query('DELETE FROM invoice_documents'));
+        $this->assertPermissionDenied(fn () => $this->rw()->query("UPDATE invoice_documents SET renderer = 'x' WHERE kind = 'report'"));
         $this->assertPermissionDenied(fn () => $this->rw()->query('TRUNCATE invoices'));
     }
 
@@ -70,6 +71,8 @@ final class InvoiceImmutabilityTest extends PgTestCase
         $this->assertDbError('/is immutable/', fn () => $this->owner()->query('UPDATE invoices SET total = 1'));
         $this->assertDbError('/is immutable/', fn () => $this->owner()->query('DELETE FROM invoice_lines'));
         $this->assertDbError('/is immutable/', fn () => $this->owner()->query('UPDATE invoice_documents SET renderer = \'x\''));
+        $this->assertDbError('/is immutable/', fn () => $this->owner()->query("UPDATE invoice_documents SET renderer = 'x' WHERE kind = 'report'"));
+        $this->assertDbError('/is immutable/', fn () => $this->owner()->query("DELETE FROM invoice_documents WHERE kind = 'report'"));
     }
 
     public function testOwnerTruncateBlockedByTrigger(): void

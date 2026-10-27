@@ -95,9 +95,12 @@ trait IssueFixtures
         );
     }
 
-    protected function issuer(?PdfRenderer $invoiceRenderer = null): InvoiceIssuer
+    protected function issuer(?PdfRenderer $invoiceRenderer = null, ?PdfRenderer $reportRenderer = null): InvoiceIssuer
     {
-        return new InvoiceIssuer($this->rw(), null, new RendererRegistry(['inv-2' => $invoiceRenderer ?? new FakePdfRenderer('inv-2')]));
+        return new InvoiceIssuer($this->rw(), null, new RendererRegistry([
+            'inv-2' => $invoiceRenderer ?? new FakePdfRenderer('inv-2'),
+            'rep-1' => $reportRenderer ?? new FakePdfRenderer('rep-1'),
+        ]));
     }
 
     protected function uuid4(): string

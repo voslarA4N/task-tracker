@@ -28,6 +28,7 @@ final class IssueRejected extends RuntimeException
         'version_not_found',
         'invalid_series_format',
         'not_found',
+        'report_failed',
     ];
 
     /**

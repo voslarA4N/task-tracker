@@ -41,7 +41,7 @@ $db->query('SELECT pg_advisory_lock_shared(777)');
 $numbers  = [];
 $errors   = [];
 $rejected = [];
-$issuer   = new InvoiceIssuer($db, new AuditLogger($db), new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2')]));
+$issuer   = new InvoiceIssuer($db, new AuditLogger($db), new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2'), 'rep-1' => new FakePdfRenderer('rep-1')]));
 
 if ($clientCsv === '--command') {
     /** @var array{client: int, month: string, entity: int, issue: string, delivery: string, due: string, parts: list<int>, token: string, key: string} $c */

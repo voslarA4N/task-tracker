@@ -121,7 +121,7 @@ final class IssueIdempotencyTest extends PgTestCase
             public function render(array $snapshot): RenderedPdf
             {
                 if ($this->quickId === null) {
-                    $this->quickId = (new InvoiceIssuer($this->db, new AuditLogger($this->db), new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2')])))->issue($this->cmd)->id;
+                    $this->quickId = (new InvoiceIssuer($this->db, new AuditLogger($this->db), new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2'), 'rep-1' => new FakePdfRenderer('rep-1')])))->issue($this->cmd)->id;
                 }
 
                 return (new FakePdfRenderer())->render($snapshot);

@@ -45,6 +45,7 @@ return [
     'errorLegalText'        => 'The legal text for {0} is missing. Add it under Settings, Entities and issue again.',
     'errorNoBank'           => 'The entity has no active bank account in {0}. Add one under Settings, Entities.',
     'errorVatCode'          => 'The VAT code is missing for the entity legal profile. The invoice cannot be issued.',
+    'errorReportFailed'     => 'The report PDF could not be created. Nothing was saved and the number stays free. Please try again.',
     'errorVersion'          => 'No valid entity version exists for the issue date. Change the issue date.',
     'errorAmountMismatch'   => 'The part amount does not match hours and rate. Edit the part and try again.',
     'errorEntityInactive'   => 'No entity is active on {0}. Change the issue date or choose an entity.',

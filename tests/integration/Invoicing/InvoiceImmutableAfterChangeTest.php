@@ -6,7 +6,10 @@ namespace Tests\Integration\Invoicing;
 
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Invoicing\DocumentStore;
+use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\MpdfInvoiceInv2Renderer;
+use App\Libraries\Invoicing\MpdfReportRenderer;
+use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Master\ClientService;
 use App\Libraries\Master\EntityInput;
 use App\Libraries\Master\EntityService;
@@ -16,6 +19,7 @@ use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
+use Tests\Support\OverridingLanguage;
 use Tests\Support\PgTestCase;
 
 /**
@@ -39,6 +43,7 @@ final class InvoiceImmutableAfterChangeTest extends PgTestCase
     protected function tearDown(): void
     {
         $this->resetMasterTables();
+        Services::resetSingle('language');
         Services::reset();
         parent::tearDown();
     }
@@ -47,7 +52,7 @@ final class InvoiceImmutableAfterChangeTest extends PgTestCase
     {
         $s = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['5.50', '2026-10']]]);
 
-        $issued = $this->issuer(new MpdfInvoiceInv2Renderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
+        $issued = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
         $this->assertSame('418.50', $issued->total);
 
         $before = $this->state($issued->id);
@@ -55,6 +60,9 @@ final class InvoiceImmutableAfterChangeTest extends PgTestCase
         $doc    = $docs->read($issued->id);
         $this->assertNotNull($doc);
         $this->assertSame(hash('sha256', $doc->bytes), $doc->sha256);
+
+        $report = $docs->read($issued->id, 'report');
+        $this->assertNotNull($report);
 
         $legalBody = (string) $this->owner()->query("SELECT body FROM legal_texts WHERE country = 'SK' AND key = 'vat_note' AND language = 'sk' LIMIT 1")->getRow()->body;
 
@@ -87,6 +95,11 @@ final class InvoiceImmutableAfterChangeTest extends PgTestCase
             $this->assertSame($doc->sha256, $after->sha256);
             $this->assertSame(hash('sha256', $after->bytes), $after->sha256);
 
+            $afterReport = $docs->read($issued->id, 'report');
+            $this->assertNotNull($afterReport);
+            $this->assertSame($report->bytes, $afterReport->bytes);
+            $this->assertSame($report->sha256, $afterReport->sha256);
+
             $which = trim((string) shell_exec('command -v pdftotext'));
 
             if ($which !== '') {
@@ -101,6 +114,40 @@ final class InvoiceImmutableAfterChangeTest extends PgTestCase
             }
         } finally {
             $this->owner()->query('UPDATE legal_texts SET body = :b: WHERE country = \'SK\' AND key = \'vat_note\' AND language = \'sk\'', ['b' => $legalBody]);
+        }
+    }
+
+    public function testStoredPdfsSurviveTranslationChange(): void
+    {
+        $s      = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['4.00', '2026-10']]]);
+        $first  = [$s['parts'][0]];
+        $issued = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $first));
+        $docs   = new DocumentStore($this->rw());
+        $before = ['invoice' => $docs->read($issued->id, 'invoice'), 'report' => $docs->read($issued->id, 'report')];
+        $this->assertNotNull($before['invoice']);
+        $this->assertNotNull($before['report']);
+
+        Services::injectMock('language', new OverridingLanguage('sk', ['InvoicePdf.invoice' => 'X-PREPIS', 'ReportPdf.title' => 'X-VYKAZ']));
+
+        // prepis ucinkuje: nova kopia udajov ho uz obsahuje
+        $this->assertSame('X-PREPIS', lang('InvoicePdf.invoice', [], 'sk'));
+        $client   = $this->rw()->query('SELECT * FROM clients WHERE id = :c:', ['c' => $s['client']])->getRowArray();
+        $entity   = $this->rw()->query('SELECT * FROM entities WHERE id = :e:', ['e' => $s['entity']])->getRowArray();
+        $unlocked = (new InvoiceParts($this->rw()))->unlocked($s['client'], '2026-10', null);
+        $this->assertCount(1, $unlocked);
+        $this->assertNotNull($client);
+        $this->assertNotNull($entity);
+        $fresh = (new SnapshotBuilder($this->rw()))->build($client, $entity, $unlocked, '2026-10', '2026-10-27', '2026-10-31', '2026-11-10', null);
+        $this->assertSame('X-PREPIS', $fresh['labels']['invoice']);
+        $this->assertSame('X-VYKAZ', $fresh['labels']['report']['title']);
+
+        // ulozene PDF su nemenne, regeneracia sa nikdy nespusta (INV-13)
+        foreach (['invoice', 'report'] as $kind) {
+            $after = $docs->read($issued->id, $kind);
+            $this->assertNotNull($after);
+            $this->assertSame($before[$kind]->bytes, $after->bytes);
+            $this->assertSame($before[$kind]->sha256, $after->sha256);
+            $this->assertSame(hash('sha256', $after->bytes), $after->sha256);
         }
     }
 

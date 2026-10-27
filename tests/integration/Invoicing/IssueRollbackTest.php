@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Invoicing;
 
+use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Invoicing\PdfRenderer;
 use App\Libraries\Invoicing\RenderedPdf;
 use App\Libraries\Platform\FrozenClock;
@@ -69,6 +70,21 @@ final class IssueRollbackTest extends PgTestCase
 
         $issued = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
         $this->assertSame('202610001', $issued->number);
+    }
+
+    public function testReportRenderFailureAfterInvoiceRenderLeavesNothing(): void
+    {
+        $s = $this->issueSetup();
+
+        try {
+            $this->issuer(null, new FaultInjectingRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
+            $this->fail('Expected IssueRejected');
+        } catch (IssueRejected $e) {
+            $this->assertSame('report_failed', $e->reason);
+        }
+
+        $this->assertNothingPersisted($s);
+        $this->assertSame('202610001', $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']))->number);
     }
 
     public function testBadDocumentHashRollsBackInvoiceAndLines(): void
