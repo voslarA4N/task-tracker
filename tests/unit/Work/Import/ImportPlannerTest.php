@@ -6,6 +6,7 @@ namespace Tests\Unit\Work\Import;
 
 use App\Libraries\Work\Import\ImportBlock;
 use App\Libraries\Work\Import\ImportPlanner;
+use App\Libraries\Work\Import\ImportReportFormatter;
 use App\Libraries\Work\Import\ImportRow;
 use App\Libraries\Work\Import\ImportSheet;
 use PHPUnit\Framework\TestCase;
@@ -147,5 +148,42 @@ final class ImportPlannerTest extends TestCase
         $plan = (new ImportPlanner())->plan(new ImportSheet(null, [new ImportBlock('2026-10', 5, 7, $rows, [])]), '27.00', 'EUR');
 
         $this->assertSame(2, $plan->genericLinkRows);
+    }
+
+    public function testForMonthPlanMatchesSeptemberSubsetOfFullPlan(): void
+    {
+        $sep = [
+            new ImportRow(4, '2026-09', 'https://t.example/?todo=4', true, 'A', '2.00', null, true, true),
+            new ImportRow(5, '2026-09', 'https://t.example/?todo=5', true, 'B', '1.50', null, true, true),
+            new ImportRow(6, '2026-09', 'https://t.example/?todo=6', false, 'C', '3.00', null, true, false),
+            new ImportRow(7, '2026-09', 'https://t.example/?todo=7', true, 'D', '5.00', null, false, false),
+        ];
+        $oct = [
+            new ImportRow(14, '2026-10', 'https://t.example/?todo=14', true, 'E', '4.00', null, true, true),
+            new ImportRow(15, '2026-10', 'https://t.example/?todo=15', false, 'F', '1.00', null, false, false),
+        ];
+        $sheet   = new ImportSheet('27.00', [
+            $this->block($sep, 'F4:F7', '0.00', 4, 7, '2026-09'),
+            $this->block($oct, 'F14:F15', '0.00', 14, 15, '2026-10'),
+        ]);
+        $planner = new ImportPlanner();
+        $full    = $planner->plan($sheet, '27.00', 'EUR');
+        $plan    = $planner->plan($sheet->forMonth('2026-09'), '27.00', 'EUR');
+
+        $this->assertCount(1, $plan->months);
+        $this->assertSame('2026-09', $plan->months[0]['month']);
+        $this->assertSame($full->months[0]['calc'], $plan->months[0]['calc']);
+        $this->assertSame([$full->billedParts[0]], $plan->billedParts);
+        $this->assertSame(2, $plan->billedPartRows());
+        $this->assertSame(
+            array_column(array_slice($full->items, 0, 4), 'importKey'),
+            array_column($plan->items, 'importKey'),
+        );
+        $this->assertSame(1, $plan->genericLinkRows);
+
+        $warning = (new ImportReportFormatter())->billedWarning($plan, 'EUR', 'sk');
+        $this->assertNotNull($warning);
+        $this->assertStringContainsString('POZOR: 2 riadkov', $warning);
+        $this->assertStringContainsString('94,50', $warning);
     }
 }
