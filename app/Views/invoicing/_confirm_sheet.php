@@ -39,7 +39,7 @@ use App\Libraries\Invoicing\Draft;
         <div class="d-flex gap-2 justify-content-end">
             <button type="button" class="btn btn-outline-secondary btn-touch" data-bs-dismiss="offcanvas"><?= esc(lang('Invoicing.cancel')) ?></button>
             <button type="submit" form="inv-issue-form" class="btn btn-primary btn-touch"
-                    hx-post="/invoices/issue" hx-include="#inv-issue-form" hx-target="#inv-preview" hx-swap="outerHTML" hx-disabled-elt="this">
+                    hx-post="/invoices/issue" hx-include="#inv-issue-form" hx-target="#inv-preview" hx-swap="outerHTML" hx-disabled-elt="this" x-bind:disabled="disabled">
                 <span class="spinner-border spinner-border-sm htmx-indicator" aria-hidden="true"></span>
                 <?= esc(lang('Invoicing.issueCta')) ?>
             </button>

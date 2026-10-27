@@ -47,7 +47,7 @@ final class PreviewTokenScopeTest extends PgTestCase
 
     /**
      * @param array{entity: int, client: int, tasks: list<int>, parts: list<int>, series: int} $s
-     * @param array<string, mixed>                                                            $overrides
+     * @param array<string, mixed>                                                             $overrides
      */
     private function assertStale(array $s, string $token, array $overrides = []): void
     {

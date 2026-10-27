@@ -67,4 +67,5 @@ return [
     'confirmHint'           => 'After issuing, the invoice and its PDF cannot be changed. The number is assigned on issue.',
     'confirmItems'          => '{0} items',
     'confirmBackdateNote'   => 'The invoice will be issued with the back date {0}.',
+    'previewStaleRefresh'   => 'The preview could not be refreshed and may not match the entered dates. Refresh the preview before issuing.',
 ];

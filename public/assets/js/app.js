@@ -220,17 +220,80 @@
     });
     /* Nahlad faktury: tlacidlo Vystavit je neaktivne bez moznosti vystavenia alebo bez potvrdenia spatneho datumu. */
     window.Alpine.data('invIssue', function () {
+      var DATE_IDS = { issue_date: 'inv-issue-date', delivery_date: 'inv-delivery-date', due_date: 'inv-due-date' };
       return {
         needsConfirm: false,
         confirmed: false,
         canIssue: false,
+        inFlight: false,
+        stale: false,
+        datesMatch: true,
+        handlers: null,
         init: function () {
           var d = this.$el.dataset;
+          var self = this;
           this.needsConfirm = d.needsConfirm === '1';
           this.canIssue = d.canIssue === '1';
+          this.handlers = {
+            before: function (e) { self.onBeforeRequest(e); },
+            after: function (e) { self.onAfterRequest(e); },
+            error: function (e) { self.onRefreshError(e); },
+            dates: function () { self.syncDates(); }
+          };
+          document.body.addEventListener('htmx:beforeRequest', this.handlers.before);
+          document.body.addEventListener('htmx:afterRequest', this.handlers.after);
+          document.body.addEventListener('htmx:responseError', this.handlers.error);
+          document.body.addEventListener('htmx:sendError', this.handlers.error);
+          document.addEventListener('input', this.handlers.dates);
+          document.addEventListener('change', this.handlers.dates);
+          this.syncDates();
+        },
+        destroy: function () {
+          var h = this.handlers;
+          if (!h) { return; }
+          document.body.removeEventListener('htmx:beforeRequest', h.before);
+          document.body.removeEventListener('htmx:afterRequest', h.after);
+          document.body.removeEventListener('htmx:responseError', h.error);
+          document.body.removeEventListener('htmx:sendError', h.error);
+          document.removeEventListener('input', h.dates);
+          document.removeEventListener('change', h.dates);
+          this.handlers = null;
+        },
+        isPreviewRefresh: function (e) {
+          var det = e && e.detail;
+          if (!det || !det.requestConfig || !det.target) { return false; }
+          return String(det.requestConfig.verb).toLowerCase() === 'get' && det.target.id === 'inv-preview';
+        },
+        onBeforeRequest: function (e) { if (this.isPreviewRefresh(e)) { this.inFlight = true; } },
+        onAfterRequest: function (e) { if (this.isPreviewRefresh(e)) { this.inFlight = false; } },
+        onRefreshError: function (e) {
+          if (this.isPreviewRefresh(e)) { this.stale = true; this.inFlight = false; }
+        },
+        sameDates: function (visible, hidden) {
+          return visible.issue_date === hidden.issue_date &&
+            visible.delivery_date === hidden.delivery_date &&
+            visible.due_date === hidden.due_date;
+        },
+        syncDates: function () {
+          var form = document.getElementById('inv-issue-form');
+          var visible = {};
+          var hidden = {};
+          var key;
+          if (!form) { return; }
+          for (key in DATE_IDS) {
+            var input = document.getElementById(DATE_IDS[key]);
+            var field = form.elements ? form.elements[key] : null;
+            if (!input || !field) { return; }
+            visible[key] = input.value;
+            hidden[key] = field.value;
+          }
+          this.datesMatch = this.sameDates(visible, hidden);
         },
         toggle: function () { this.confirmed = !this.confirmed; },
-        get disabled() { return !this.canIssue || (this.needsConfirm && !this.confirmed); }
+        get fresh() { return !this.stale; },
+        get disabled() {
+          return !this.canIssue || this.inFlight || this.stale || !this.datesMatch || (this.needsConfirm && !this.confirmed);
+        }
       };
     });
     /* Panel presunu casti: volba Dalsi / Iny mesiac. */

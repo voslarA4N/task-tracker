@@ -178,6 +178,8 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
                 <input type="hidden" name="due_date" value="<?= esc($draft->dueDate, 'attr') ?>">
             </form>
 
+            <div class="alert alert-warning" role="alert" hidden x-bind:hidden="fresh"><?= esc(lang('Invoicing.previewStaleRefresh')) ?></div>
+
             <div class="master-sticky-actions d-flex align-items-center justify-content-between gap-2">
                 <div class="fw-semibold tabular-nums"><?= esc(lang('Invoicing.labelTotal')) ?> <?= esc($fmt($draft->total)) ?></div>
                 <button type="button" class="btn btn-primary btn-touch" data-bs-toggle="offcanvas" data-bs-target="#inv-confirm" x-bind:disabled="disabled"<?= $draft->canIssue ? '' : ' disabled' ?>><?= esc(lang('Invoicing.issueCta')) ?></button>

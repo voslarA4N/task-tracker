@@ -43,12 +43,12 @@ foreach (array_filter(explode(',', (string) $clientCsv), static fn (string $v): 
     $clientId = (int) $clientId;
 
     try {
-        $unlocked = (new InvoiceParts($db))->unlocked($clientId, (string) $month, null);
+        $unlocked  = (new InvoiceParts($db))->unlocked($clientId, (string) $month, null);
         $clientRow = $db->query('SELECT * FROM clients WHERE id = :c:', ['c' => $clientId])->getRowArray();
         $entityRow = $db->query('SELECT * FROM entities WHERE id = :e:', ['e' => (int) $entityId])->getRowArray();
         $snapshot  = (new SnapshotBuilder($db))->build($clientRow, $entityRow, $unlocked, (string) $month, (string) $issueDate, '2026-10-31', '2026-11-10', null);
         $token     = InvoiceCalculator::previewToken($snapshot);
-        $partIds  = array_map(static fn (array $p): int => (int) $p['allocation_id'], $unlocked);
+        $partIds   = array_map(static fn (array $p): int => (int) $p['allocation_id'], $unlocked);
         sort($partIds);
 
         $b    = random_bytes(16);

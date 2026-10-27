@@ -142,18 +142,66 @@ final class InvoiceCalculatorTest extends CIUnitTestCase
         $this->assertSame($base, InvoiceCalculator::previewToken($n));
 
         $mutations = [
-            static function (array $x): array { $x['issue_date'] = '2026-10-28'; return $x; },
-            static function (array $x): array { $x['delivery_date'] = '2026-10-30'; return $x; },
-            static function (array $x): array { $x['due_date'] = '2026-11-11'; return $x; },
-            static function (array $x): array { $x['entity']['version_id'] = 2; return $x; },
-            static function (array $x): array { $x['entity']['address_line1'] = 'B 2'; return $x; },
-            static function (array $x): array { $x['bank']['iban'] = 'PL61109010140000071219812874'; return $x; },
-            static function (array $x): array { $x['legal']['vat_code'] = 'sk'; return $x; },
-            static function (array $x): array { $x['legal']['texts']['vat_note'] = 'y'; return $x; },
-            static function (array $x): array { $x['client']['address_line1'] = 'D 4'; return $x; },
-            static function (array $x): array { $x['lines'][0]['hours'] = '1.50'; return $x; },
-            static function (array $x): array { $x['lines'][0]['rate'] = '11.00'; return $x; },
-            static function (array $x): array { $x['lines'] = array_reverse($x['lines']); return $x; },
+            static function (array $x): array {
+                $x['issue_date'] = '2026-10-28';
+
+                return $x;
+            },
+            static function (array $x): array {
+                $x['delivery_date'] = '2026-10-30';
+
+                return $x;
+            },
+            static function (array $x): array {
+                $x['due_date'] = '2026-11-11';
+
+                return $x;
+            },
+            static function (array $x): array {
+                $x['entity']['version_id'] = 2;
+
+                return $x;
+            },
+            static function (array $x): array {
+                $x['entity']['address_line1'] = 'B 2';
+
+                return $x;
+            },
+            static function (array $x): array {
+                $x['bank']['iban'] = 'PL61109010140000071219812874';
+
+                return $x;
+            },
+            static function (array $x): array {
+                $x['legal']['vat_code'] = 'sk';
+
+                return $x;
+            },
+            static function (array $x): array {
+                $x['legal']['texts']['vat_note'] = 'y';
+
+                return $x;
+            },
+            static function (array $x): array {
+                $x['client']['address_line1'] = 'D 4';
+
+                return $x;
+            },
+            static function (array $x): array {
+                $x['lines'][0]['hours'] = '1.50';
+
+                return $x;
+            },
+            static function (array $x): array {
+                $x['lines'][0]['rate'] = '11.00';
+
+                return $x;
+            },
+            static function (array $x): array {
+                $x['lines'] = array_reverse($x['lines']);
+
+                return $x;
+            },
         ];
 
         foreach ($mutations as $i => $m) {

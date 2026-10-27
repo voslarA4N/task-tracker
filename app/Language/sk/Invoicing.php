@@ -67,4 +67,5 @@ return [
     'confirmHint'           => 'Po vystavení sa faktúra a jej PDF nedajú zmeniť. Číslo sa pridelí pri vystavení.',
     'confirmItems'          => '{0} položiek',
     'confirmBackdateNote'   => 'Faktúra sa vystaví so spätným dátumom {0}.',
+    'previewStaleRefresh'   => 'Náhľad sa nepodarilo obnoviť, nemusí zodpovedať zadaným dátumom. Obnovte náhľad a až potom vystavte faktúru.',
 ];
