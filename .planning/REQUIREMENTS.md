@@ -79,7 +79,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **INV-08**: Všetky údaje faktúry sú uložené štruktúrovane (nielen v PDF a JSONB), aby bol neskôr možný export do KSeF FA(3).
 - [x] **INV-09** [nové, M1]: Každá položka má kód DPH (napr. `zw`, `np`, `0`, sadzba) s predvolenou hodnotou podľa právneho profilu. Výpočty pre platiteľa DPH sa neimplementujú.
 - [ ] **INV-10** [nové, M6]: Dobropis má povinný dôvod, odkaz na číslo a dátum pôvodnej faktúry, vlastný dátum vystavenia a typ opravy.
-- [ ] **INV-11** [nové, M8, rozhodnutie]: PDF faktúry obsahuje QR kód na platbu (SK: PAY by square; PL/CZ: zodpovedajúci štandard) zo snapshotu.
+- [x] **INV-11** [nové, M8, rozhodnutie]: PDF faktúry obsahuje QR kód na platbu (SK: PAY by square; PL/CZ: zodpovedajúci štandard) zo snapshotu.
 - [x] **INV-12** [nové, M13]: Faktúra má formu úhrady (predvolene prevod) a voliteľnú poznámku (napr. o úrokoch z omeškania).
 - [x] **INV-13** [nové, M14, rozhodnutie]: PDF faktúry aj výkazu sa vygeneruje raz pri vystavení a uloží sa ako autoritatívny doklad so `sha256` a verziou šablóny. Zobrazenie a opätovné odoslanie použijú uložené bajty, nikdy sa neregenerujú.
 - [x] **INV-14** [nové, M16]: Vystavenie (zamknutie častí, výpočet, kópia údajov, pridelenie čísla, zápis faktúry a dokladov) prebehne v jednej transakcii. Zlyhanie neskoršieho kroku (napr. e-mail) nepreskočí ani neuvoľní číslo. Dva súbežné pokusy nikdy nevytvoria rovnaké ani preskočené číslo.
@@ -246,7 +246,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ALC-03 | Phase 5 | Complete |
 | NFR-06 | Phase 5 | Complete |
 | INV-05 | Phase 6 | Complete |
-| INV-11 | Phase 6 | Pending |
+| INV-11 | Phase 6 | Complete |
 | INV-12 | Phase 6 | Complete |
 | REP-01 | Phase 6 | Complete |
 | REP-02 | Phase 6 | Complete |
