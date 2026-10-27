@@ -87,8 +87,8 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 
 ### Výkaz práce (E7)
 
-- [ ] **REP-01**: Ku každej faktúre vznikne PDF výkaz. Hlavička: subjekt, klient, obdobie. Tabuľka: odkaz na portál, názov, nacenené hodiny, fakturované hodiny v mesiaci (napr. „16 z 40 h“), suma. Ďalej súčty, sadzba a poznámka o DPH.
-- [ ] **REP-02**: Výkaz obsahuje práve tie časti, ktoré sú na faktúre, a je rovnako nemenný.
+- [x] **REP-01**: Ku každej faktúre vznikne PDF výkaz. Hlavička: subjekt, klient, obdobie. Tabuľka: odkaz na portál, názov, nacenené hodiny, fakturované hodiny v mesiaci (napr. „16 z 40 h“), suma. Ďalej súčty, sadzba a poznámka o DPH.
+- [x] **REP-02**: Výkaz obsahuje práve tie časti, ktoré sú na faktúre, a je rovnako nemenný.
 
 ### Odosielanie, úhrady a upomienky (E8)
 
@@ -248,8 +248,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INV-05 | Phase 6 | Complete |
 | INV-11 | Phase 6 | Pending |
 | INV-12 | Phase 6 | Pending |
-| REP-01 | Phase 6 | Pending |
-| REP-02 | Phase 6 | Pending |
+| REP-01 | Phase 6 | Complete |
+| REP-02 | Phase 6 | Complete |
 | SET-01 | Phase 6 | Pending |
 | MAIL-01 | Phase 7 | Pending |
 | MAIL-02 | Phase 7 | Pending |
