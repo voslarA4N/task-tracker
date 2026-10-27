@@ -16,8 +16,7 @@ use Tests\Support\PgTestCase;
 #[Group('integration')]
 final class LegalTextServiceTest extends PgTestCase
 {
-    private int $id = 0;
-
+    private int $id        = 0;
     private int $auditBase = 0;
 
     protected function setUp(): void

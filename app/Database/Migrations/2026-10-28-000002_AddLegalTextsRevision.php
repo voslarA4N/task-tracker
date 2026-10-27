@@ -41,7 +41,7 @@ final class AddLegalTextsRevision extends Migration
         )->getResultArray();
 
         foreach ($rows as $row) {
-            $this->db->query('ALTER TABLE legal_texts DROP CONSTRAINT ' . $this->db->escapeIdentifiers((string) $row['conname']));
+            $this->db->query('ALTER TABLE legal_texts DROP CONSTRAINT "' . str_replace('"', '""', (string) $row['conname']) . '"');
         }
 
         $this->db->query('ALTER TABLE legal_texts ADD CONSTRAINT legal_texts_body_check CHECK (char_length(body) BETWEEN 1 AND ' . $max . ')');

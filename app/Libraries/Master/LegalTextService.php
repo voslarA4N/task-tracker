@@ -18,10 +18,9 @@ class LegalTextService
 {
     public const MAX_BODY         = 2000;
     public const MAX_INVOICE_NOTE = 500;
-
-    private const KEY_ORDER      = ['vat_note' => 0, 'invoice_note' => 1];
-    private const LANGUAGE_ORDER = ['sk' => 0, 'cs' => 1, 'pl' => 2, 'en' => 3];
-    private const MODE_ORDER     = ['' => 0, 'eu_b2b' => 1, 'non_eu' => 2, 'domestic' => 3];
+    private const KEY_ORDER       = ['vat_note' => 0, 'invoice_note' => 1];
+    private const LANGUAGE_ORDER  = ['sk' => 0, 'cs' => 1, 'pl' => 2, 'en' => 3];
+    private const MODE_ORDER      = ['' => 0, 'eu_b2b' => 1, 'non_eu' => 2, 'domestic' => 3];
 
     /**
      * @var BaseConnection<mixed, mixed>
@@ -77,7 +76,7 @@ class LegalTextService
             $k = $t['country'] . '|' . $t['vat_regime'];
             $groups[$k] ??= ['country' => (string) $t['country'], 'vat_regime' => (string) $t['vat_regime'], 'profiles' => [], 'texts' => []];
 
-            $t['provisional'] = DbBool::of($t['provisional']);
+            $t['provisional']      = DbBool::of($t['provisional']);
             $groups[$k]['texts'][] = $t;
         }
 

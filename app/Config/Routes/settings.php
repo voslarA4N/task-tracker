@@ -11,3 +11,6 @@ $routes->post('settings/security/backup-codes', 'Settings\Security::regenerateCo
 $routes->get('settings/security/backup-codes', 'Settings\Security::showCodes');
 $routes->get('settings/security/backup-codes.txt', 'Settings\Security::codesTxt');
 $routes->post('settings/security/backup-codes/done', 'Settings\Security::confirmCodes');
+$routes->get('settings/legal-texts', 'Settings\LegalTexts::index');
+$routes->get('settings/legal-texts/(:num)/edit', 'Settings\LegalTexts::edit/$1');
+$routes->post('settings/legal-texts/(:num)', 'Settings\LegalTexts::update/$1');

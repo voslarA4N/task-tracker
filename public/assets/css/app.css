@@ -434,3 +434,20 @@ img, table { max-width: 100%; }
   .inv-docs { flex-direction: row; align-items: center; }
   .inv-docs .btn { width: auto; }
 }
+
+/* Zakonne texty (Phase 6, SET-01) */
+.lt-group { margin-bottom: 24px; }
+.lt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 64px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--app-border);
+}
+.lt-row:last-child { border-bottom: 0; }
+.lt-row > .lt-main { flex: 1 1 auto; min-width: 0; }
+.lt-badge { flex: 0 0 auto; }
+.lt-body { font-size: 16px; min-height: 8em; overflow-wrap: anywhere; }
+.lt-effective { font-size: 12px; }
+.lt-check { display: flex; align-items: center; gap: 8px; min-height: 44px; }

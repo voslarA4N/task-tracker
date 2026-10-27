@@ -10,6 +10,7 @@ use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Invoicing\LegalProfile;
 use App\Libraries\Invoicing\Qr\PayBySquare;
 use App\Libraries\Invoicing\ReportRows;
+use App\Libraries\Invoicing\Samples\SampleSnapshots;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Master\EntityService;
 use App\Libraries\Platform\FrozenClock;
@@ -79,7 +80,7 @@ final class SnapshotBuilderTest extends PgTestCase
     public function testSampleSnapshotLegalTextHasResolverShape(): void
     {
         $snap   = $this->build($this->issueSetup());
-        $sample = \App\Libraries\Invoicing\Samples\SampleSnapshots::invoice('sk');
+        $sample = SampleSnapshots::invoice('sk');
 
         $this->assertSame(array_keys($snap['legal']['texts']['vat_note']), array_keys($sample['legal']['texts']['vat_note']));
         $this->assertSame(1, $sample['legal']['texts']['vat_note']['revision']);

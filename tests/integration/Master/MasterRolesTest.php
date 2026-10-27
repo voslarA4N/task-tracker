@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Master;
 
+use CodeIgniter\Database\Exceptions\DatabaseException;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\MasterFixtures;
 use Tests\Support\PgTestCase;
@@ -56,22 +57,19 @@ final class MasterRolesTest extends PgTestCase
             $this->assertPermissionDenied(fn () => $this->rw()->query("UPDATE legal_profiles SET vat_code = 'x'"));
         } finally {
             $this->owner()->query("DELETE FROM legal_texts WHERE country = 'SK' AND billing_mode = 'domestic'");
-            $this->owner()->query("UPDATE legal_texts SET provisional = true, revision = 1 WHERE id = " . $id);
+            $this->owner()->query('UPDATE legal_texts SET provisional = true, revision = 1 WHERE id = ' . $id);
         }
     }
 
     public function testBodyCheckAllows2000ButNot2001(): void
     {
-        try {
-            $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK','sk_non_vat','domestic','sk','vat_note', repeat('a', 2000), true, now())");
-            $this->assertTrue(true);
+        $insert = "INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK','sk_non_vat','%s','sk','vat_note', repeat('a', %d), true, now())";
 
-            try {
-                $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK','sk_non_vat','non_eu','sk','vat_note', repeat('a', 2001), true, now())");
-                $this->fail('CHECK expected');
-            } catch (\CodeIgniter\Database\Exceptions\DatabaseException) {
-                $this->assertTrue(true);
-            }
+        try {
+            $this->owner()->query(sprintf($insert, 'domestic', 2000));
+            $this->assertSame(1, (int) $this->owner()->query("SELECT count(*) AS c FROM legal_texts WHERE billing_mode = 'domestic'")->getRow()->c);
+            $this->expectException(DatabaseException::class);
+            $this->owner()->query(sprintf($insert, 'non_eu', 2001));
         } finally {
             $this->owner()->query("DELETE FROM legal_texts WHERE country = 'SK' AND billing_mode IS NOT NULL");
         }
