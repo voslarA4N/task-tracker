@@ -22,6 +22,8 @@ final class SnapshotBuilder
 {
     public const LABEL_KEYS = ['invoice', 'number', 'variableSymbol', 'supplier', 'customer', 'issueDate', 'deliveryDate', 'dueDate', 'paymentMethod', 'paymentTransfer', 'bankAccount', 'swift', 'item', 'hours', 'rate', 'amount', 'vatCode', 'total', 'companyId', 'taxId', 'vatId', 'regon', 'identifier'];
 
+    public const VS_MAX_DIGITS = 10;
+
     private readonly EntityVersionResolver $versions;
     private readonly LegalProfileResolver $legal;
     private readonly BankAccountSelector $banks;
@@ -97,7 +99,7 @@ final class SnapshotBuilder
             'type'             => 'invoice',
             'template_version' => 'inv-1',
             'number'           => $number,
-            'variable_symbol'  => $number,
+            'variable_symbol'  => $number === null ? null : self::variableSymbol($number),
             'billing_month'    => $month,
             'issue_date'       => $issueDate,
             'delivery_date'    => $deliveryDate,
@@ -168,9 +170,24 @@ final class SnapshotBuilder
     public function withNumber(array $snapshot, string $number): array
     {
         $snapshot['number']          = $number;
-        $snapshot['variable_symbol'] = $number;
+        $snapshot['variable_symbol'] = self::variableSymbol($number);
 
         return $snapshot;
+    }
+
+    /**
+     * Variabilny symbol (SK/CZ): iba cislice, najviac 10. Z cisla dokladu sa vyberu cislice a ponecha
+     * poslednych 10 (poradove cislo je na konci). Format cisla faktury sa nemeni. Bez cislic null.
+     */
+    public static function variableSymbol(string $number): ?string
+    {
+        $digits = (string) preg_replace('/\D+/', '', $number);
+
+        if ($digits === '') {
+            return null;
+        }
+
+        return strlen($digits) > self::VS_MAX_DIGITS ? substr($digits, -self::VS_MAX_DIGITS) : $digits;
     }
 
     private function nullable(mixed $value): ?string

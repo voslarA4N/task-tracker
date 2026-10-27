@@ -163,6 +163,19 @@ final class SnapshotBuilderTest extends PgTestCase
         $this->assertSame('202610001', $snap['variable_symbol']);
     }
 
+    public function testVariableSymbolIsDigitsOnlyAtMostTenDigits(): void
+    {
+        // WR-05: VS pre SK/CZ banky je ciselny, najviac 10 cislic; format cisla faktury sa nemeni.
+        $s    = $this->issueSetup();
+        $snap = (new SnapshotBuilder($this->rw()))->withNumber($this->build($s), 'FA-2026/001');
+
+        $this->assertSame('FA-2026/001', $snap['number']);
+        $this->assertSame('2026001', $snap['variable_symbol']);
+        $this->assertSame('6100012345', SnapshotBuilder::variableSymbol('INV/2026-10/0012345'));
+        $this->assertSame('202610001', SnapshotBuilder::variableSymbol('202610001'));
+        $this->assertNull(SnapshotBuilder::variableSymbol('FA-X'));
+    }
+
     public function testUnlockedPartsOrderAndHasLocked(): void
     {
         $s     = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['20.00', '2026-10']]]);
