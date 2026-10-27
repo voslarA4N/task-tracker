@@ -6,6 +6,7 @@ namespace Tests\Feature\Invoicing;
 
 use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Platform\MoneyFormat;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -80,8 +81,8 @@ final class InvoicingPreviewTest extends AuthTestCase
         $this->assertStringContainsString(esc(MoneyFormat::format('283.50', 'EUR')), $html);
         $this->assertStringContainsString('np', $html);
         $this->assertStringContainsString('id="inv-issue-form"', $html);
-        $this->assertStringContainsString('value="' . $s['parts'][0] . '"', $html);
-        $this->assertStringNotContainsString('value="' . $s['parts'][1] . '"', $html);
+        $this->assertStringContainsString('name="part_ids[]" value="' . $s['parts'][0] . '"', $html);
+        $this->assertStringNotContainsString('name="part_ids[]" value="' . $s['parts'][1] . '"', $html);
         $this->assertStringNotContainsString('202609001', $html);
         $this->assertStringNotContainsString('202610001', $html);
         $this->assertSame($before, $this->counts());
@@ -176,5 +177,109 @@ final class InvoicingPreviewTest extends AuthTestCase
         $this->assertStringContainsString('Zobraziť náhľad', $html);
         $this->assertStringContainsString('aria-live="polite"', $html);
         $this->assertStringContainsString('data-can-issue="1"', $html);
+    }
+
+    /**
+     * @param array<string, string> $data
+     */
+    private function submit(string $url, array $data = [], bool $htmx = true): TestResponse
+    {
+        $this->withSession();
+        $headers = $htmx ? ['HX-Request' => 'true'] : [];
+
+        return $this->withHeaders($headers)->call('post', $url, $data + [csrf_token() => csrf_hash()]);
+    }
+
+    private function allocationMonth(int $id): string
+    {
+        return (string) $this->owner()->query('SELECT billing_month FROM billing_allocations WHERE id = :i:', ['i' => $id])->getRow()->billing_month;
+    }
+
+    public function testMoveSheetOffersNextMonthByDefault(): void
+    {
+        $s    = $this->issueSetup();
+        $html = $this->body($this->fragment('/invoices/preview-move/' . $s['parts'][0] . '?client=' . $s['client'] . '&month=2026-10'));
+
+        $this->assertStringContainsString('<fieldset', $html);
+        $this->assertMatchesRegularExpression('/id="m-month-next" value="next" checked/', $html);
+        $this->assertStringContainsString('type="month"', $html);
+        $this->assertStringContainsString('Ďalší', $html);
+        $this->assertStringContainsString('november 2026', $html);
+    }
+
+    public function testMoveToNextMonthUpdatesPartAndRefreshesPreview(): void
+    {
+        $s = $this->issueSetup(['parts' => [['8.00', '2026-10'], ['2.00', '2026-10']]]);
+
+        $result = $this->submit('/invoices/preview-move/' . $s['parts'][0], ['month_choice' => 'next', 'client' => (string) $s['client'], 'month' => '2026-10']);
+
+        $result->assertStatus(200);
+        $this->assertStringContainsString('allocationChanged', $result->response()->getHeaderLine('HX-Trigger'));
+        $this->assertSame('2026-11', $this->allocationMonth($s['parts'][0]));
+        $row = $this->owner()->query('SELECT hours, rate FROM billing_allocations WHERE id = :i:', ['i' => $s['parts'][0]])->getRow();
+        $this->assertSame('8.00', (string) $row->hours);
+        $this->assertSame('27.00', (string) $row->rate);
+        $this->assertSame(1, (int) $this->owner()->query("SELECT count(*) AS c FROM audit_log WHERE entity_type = 'billing_allocation' AND action = 'update'")->getRow()->c);
+
+        $flash = session()->getFlashdata('app_notice');
+        $this->assertStringContainsString('Časť bola presunutá do', (string) ($flash['message'] ?? ''));
+
+        $html = $this->body($this->fragment('/fragments/invoice-preview?client=' . $s['client'] . '&month=2026-10'));
+        $this->assertStringNotContainsString('name="part_ids[]" value="' . $s['parts'][0] . '"', $html);
+        $this->assertStringContainsString('name="part_ids[]" value="' . $s['parts'][1] . '"', $html);
+    }
+
+    public function testMoveLockedPartIs409(): void
+    {
+        $s = $this->issueSetup();
+        $this->lockAllocation($s['parts'][0]);
+
+        $result = $this->submit('/invoices/preview-move/' . $s['parts'][0], ['month_choice' => 'next']);
+
+        $result->assertStatus(409);
+        $this->assertStringContainsString('Časť je na vystavenej faktúre a nedá sa presunúť.', $this->body($result));
+        $this->assertSame('2026-10', $this->allocationMonth($s['parts'][0]));
+    }
+
+    public function testMoveWithoutCsrfIs403(): void
+    {
+        $s      = $this->issueSetup();
+        $result = $this->withHeaders(['HX-Request' => 'true'])->call('post', '/invoices/preview-move/' . $s['parts'][0], ['month_choice' => 'next']);
+
+        $result->assertStatus(403);
+        $this->assertSame('2026-10', $this->allocationMonth($s['parts'][0]));
+    }
+
+    public function testMoveUnknownPartIs404(): void
+    {
+        $this->expectException(PageNotFoundException::class);
+        $this->submit('/invoices/preview-move/999999', ['month_choice' => 'next']);
+    }
+
+    public function testMovePartOfOtherClientIs404(): void
+    {
+        $s     = $this->issueSetup();
+        $other = $this->createClient(['name' => 'Iny klient']);
+
+        $this->expectException(PageNotFoundException::class);
+        $this->submit('/invoices/preview-move/' . $s['parts'][0], ['month_choice' => 'next', 'client' => (string) $other]);
+    }
+
+    public function testMoveOtherMonthOutOfRangeIs422(): void
+    {
+        $s      = $this->issueSetup();
+        $result = $this->submit('/invoices/preview-move/' . $s['parts'][0], ['month_choice' => 'other', 'billing_month_other' => '2031-01']);
+
+        $result->assertStatus(422);
+        $this->assertStringContainsString('invalid-feedback', $this->body($result));
+        $this->assertSame('2026-10', $this->allocationMonth($s['parts'][0]));
+    }
+
+    public function testMoveToOtherMonth(): void
+    {
+        $s = $this->issueSetup();
+        $this->submit('/invoices/preview-move/' . $s['parts'][0], ['month_choice' => 'other', 'billing_month_other' => '2027-01'])->assertStatus(200);
+
+        $this->assertSame('2027-01', $this->allocationMonth($s['parts'][0]));
     }
 }

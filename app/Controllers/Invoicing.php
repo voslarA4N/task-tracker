@@ -8,11 +8,15 @@ use App\Libraries\Invoicing\Draft;
 use App\Libraries\Invoicing\InvoiceDraftService;
 use App\Libraries\Invoicing\PreviewInput;
 use App\Libraries\Master\ClientService;
+use App\Libraries\Work\AllocationLocked;
+use App\Libraries\Work\AllocationService;
 use App\Libraries\Work\BillingMonth;
 use App\Libraries\Work\LastClient;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\ResponseInterface;
 use IntlDateFormatter;
+use InvalidArgumentException;
 
 /**
  * Fakturacia mesiaca: vyber, nahlad (iba citanie) a presun casti z nahladu. Vystavenie dodava 05-09.
@@ -27,6 +31,62 @@ final class Invoicing extends BaseController
     public function preview(): ResponseInterface
     {
         return $this->render(true);
+    }
+
+    /**
+     * Spodny panel presunu nezamknutej casti z nahladu do ineho mesiaca (D-03).
+     */
+    public function moveSheet(int $id): ResponseInterface
+    {
+        $request = $this->request;
+        assert($request instanceof IncomingRequest);
+
+        [$allocation, $title] = $this->loadPart($id, PreviewInput::fromGet($request));
+
+        return $this->movePanel($allocation['invoice_id'] === null ? 200 : 409, $allocation, $title, PreviewInput::fromGet($request), 'next', '', [], $allocation['invoice_id'] !== null);
+    }
+
+    public function move(int $id): ResponseInterface
+    {
+        $request = $this->request;
+        assert($request instanceof IncomingRequest);
+
+        $selection            = PreviewInput::fromPost($request);
+        [$allocation, $title] = $this->loadPart($id, $selection);
+
+        $choice = $request->getPost('month_choice');
+        $choice = $choice === 'other' ? 'other' : 'next';
+        $other  = $request->getPost('billing_month_other');
+        $other  = is_string($other) ? trim($other) : '';
+        $target = $choice === 'other' ? $other : BillingMonth::next((string) $allocation['billing_month']);
+
+        if (BillingMonth::parse($target) === null || ! BillingMonth::inRange($target)) {
+            $bounds = BillingMonth::rangeBounds();
+            $locale = $request->getLocale();
+            $errors = ['billing_month' => lang('Invoicing.errorMonth', [BillingMonth::label($bounds['min'], $locale), BillingMonth::label($bounds['max'], $locale)])];
+
+            return $this->movePanel(422, $allocation, $title, $selection, $choice, $other, $errors, false);
+        }
+
+        try {
+            (new AllocationService())->update($id, [
+                'hours'         => (string) $allocation['hours'],
+                'billing_month' => $target,
+                'rate'          => (string) $allocation['rate'],
+            ]);
+        } catch (AllocationLocked) {
+            return $this->movePanel(409, $allocation, $title, $selection, $choice, $other, [], true);
+        } catch (InvalidArgumentException) {
+            throw PageNotFoundException::forPageNotFound(lang('Allocations.notFound'));
+        }
+
+        session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang('Invoicing.moveDone', [mb_strtolower(BillingMonth::label($target, $request->getLocale()))])]);
+
+        if (is_htmx()) {
+            return $this->response->setStatusCode(200)->setHeader('HX-Trigger', 'allocationChanged')->setBody('');
+        }
+
+        return redirect()->to('/invoices/new?' . http_build_query(array_filter($selection, static fn (string $v): bool => $v !== '')));
     }
 
     /**
@@ -62,6 +122,58 @@ final class Invoicing extends BaseController
         $fmt = new IntlDateFormatter(service('request')->getLocale(), IntlDateFormatter::LONG, IntlDateFormatter::NONE, 'Europe/Bratislava');
 
         return (string) $fmt->format(service('clock')->now()->modify($iso . ' 12:00:00'));
+    }
+
+    /**
+     * @param array<string, string> $selection
+     *
+     * @return array{0: array<string, mixed>, 1: string}
+     */
+    private function loadPart(int $id, array $selection): array
+    {
+        $allocation = (new AllocationService())->find($id);
+        $task       = $allocation === null ? null : db_connect()->query('SELECT title, client_id FROM tasks WHERE id = :id:', ['id' => $allocation['task_id']])->getRowArray();
+
+        if ($allocation === null || $task === null || ($selection['client'] !== '' && preg_match('/^\d{1,18}$/D', $selection['client']) === 1 && (int) $selection['client'] !== (int) $task['client_id'])) {
+            throw PageNotFoundException::forPageNotFound(lang('Allocations.notFound'));
+        }
+
+        return [$allocation, (string) $task['title']];
+    }
+
+    /**
+     * @param array<string, mixed>  $allocation
+     * @param array<string, string> $selection
+     * @param array<string, string> $errors
+     */
+    private function movePanel(int $status, array $allocation, string $title, array $selection, string $choice, string $other, array $errors, bool $locked): ResponseInterface
+    {
+        $locale = service('request')->getLocale();
+        $month  = (string) $allocation['billing_month'];
+        $bounds = BillingMonth::rangeBounds();
+        $data   = [
+            'allocation' => $allocation,
+            'taskTitle'  => $title,
+            'selection'  => $selection,
+            'choice'     => $choice,
+            'other'      => $other,
+            'errors'     => $errors,
+            'locked'     => $locked,
+            'nextLabel'  => mb_strtolower(BillingMonth::label(BillingMonth::next($month), $locale)),
+            'min'        => $bounds['min'],
+            'max'        => $bounds['max'],
+            'backUrl'    => '/invoices/new?' . http_build_query(array_filter($selection, static fn (string $v): bool => $v !== '')),
+        ];
+
+        $fragment = 'invoicing/_move_sheet';
+
+        if (is_htmx_fragment_request() && service('request')->getHeaderLine('HX-Target') === 'sheet-body') {
+            $fragment = 'invoicing/_move_form';
+        }
+
+        return $this->response->setStatusCode($status)
+            ->setHeader('Vary', 'HX-Request')
+            ->setBody(htmx_view($fragment, $data, 'invoicing/move_page'));
     }
 
     private static function uuid4(): string

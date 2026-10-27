@@ -237,6 +237,7 @@
     window.Alpine.data('invMove', function () {
       return {
         monthChoice: 'next',
+        init: function () { this.monthChoice = this.$el.dataset.monthChoice === 'other' ? 'other' : 'next'; },
         setMonthChoice: function () { this.monthChoice = this.$event.target.value; },
         get otherMonth() { return this.monthChoice === 'other'; }
       };
