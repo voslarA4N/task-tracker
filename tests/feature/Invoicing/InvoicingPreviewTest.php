@@ -282,4 +282,44 @@ final class InvoicingPreviewTest extends AuthTestCase
 
         $this->assertSame('2027-01', $this->allocationMonth($s['parts'][0]));
     }
+
+    public function testPreviewHasPaymentCardWithFourMethodsAndTransferDefault(): void
+    {
+        $s    = $this->issueSetup();
+        $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+
+        $this->assertStringContainsString('name="payment_method" form="inv-issue-form"', $html);
+        $this->assertSame(4, substr_count($html, '<option value="transfer"') + substr_count($html, '<option value="cash"') + substr_count($html, '<option value="card"') + substr_count($html, '<option value="other"'));
+        $this->assertStringContainsString('<option value="transfer" selected>', $html);
+        $this->assertStringContainsString('maxlength="500"', $html);
+    }
+
+    public function testNotePrefilledFromInvoiceNoteAndProvisionalWarningShown(): void
+    {
+        $s = $this->issueSetup();
+        $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK', 'sk_non_vat', NULL, 'sk', 'invoice_note', 'Predvolena poznamka SK', true, now())");
+        $this->owner()->query("UPDATE legal_texts SET provisional = false WHERE key = 'vat_note'");
+
+        try {
+            $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+            $this->assertStringContainsString('>Predvolena poznamka SK</textarea>', $html);
+            $this->assertStringContainsString('Pozor: znenie ešte nepotvrdila účtovníčka', $html);
+
+            $dirty = $this->body($this->fragment('/fragments/invoice-preview?client=' . $s['client'] . '&month=2026-10&payment_note=Moje&payment_note_dirty=1'));
+            $this->assertStringContainsString('>Moje</textarea>', $dirty);
+            $this->assertStringNotContainsString('Pozor: znenie ešte nepotvrdila účtovníčka', $dirty);
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
+            $this->owner()->query("UPDATE legal_texts SET provisional = true WHERE key = 'vat_note' AND provisional = false");
+        }
+    }
+
+    public function testInvalidPaymentQueryValuesAreSilentlyDefaulted(): void
+    {
+        $s      = $this->issueSetup();
+        $result = $this->fragment('/fragments/invoice-preview?client=' . $s['client'] . '&month=2026-10&payment_method=bitcoin&payment_note=' . str_repeat('a', 501));
+
+        $result->assertStatus(200);
+        $this->assertStringContainsString('<option value="transfer" selected>', $this->body($result));
+    }
 }

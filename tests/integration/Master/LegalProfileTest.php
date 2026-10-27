@@ -137,8 +137,7 @@ final class LegalProfileTest extends PgTestCase
         $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK', 'sk_non_vat', NULL, 'sk', 'invoice_note', 'Predvolena poznamka', true, now())");
 
         try {
-            $t = $r->optionalText('SK', 'sk_non_vat', 'domestic', 'sk', 'invoice_note');
-            $this->assertSame(['body' => 'Predvolena poznamka', 'language' => 'sk', 'provisional' => true], $t);
+            $this->assertSame(['body' => 'Predvolena poznamka', 'language' => 'sk', 'provisional' => true], $this->resolver()->optionalText('SK', 'sk_non_vat', 'domestic', 'sk', 'invoice_note'));
         } finally {
             $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
         }

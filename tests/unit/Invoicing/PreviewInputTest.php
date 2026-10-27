@@ -96,8 +96,22 @@ final class PreviewInputTest extends CIUnitTestCase
 
         $out = PreviewInput::fromGet($request);
 
-        $this->assertSame(PreviewInput::FIELDS, array_keys($out));
+        $this->assertSame([...PreviewInput::FIELDS, 'payment_method', 'payment_note', 'payment_note_dirty'], array_keys($out));
+        $this->assertSame('transfer', $out['payment_method']);
+        $this->assertSame('0', $out['payment_note_dirty']);
         $this->assertSame('5', $out['client']);
         $this->assertSame('', $out['entity']);
+    }
+
+    public function testInvalidPaymentFieldsAreSilentlyDefaulted(): void
+    {
+        $request = Services::incomingrequest(null, false);
+        $request->setGlobal('get', ['payment_method' => 'bitcoin', 'payment_note' => str_repeat('a', 501), 'payment_note_dirty' => '1']);
+
+        $out = PreviewInput::fromGet($request);
+
+        $this->assertSame('transfer', $out['payment_method']);
+        $this->assertSame('', $out['payment_note']);
+        $this->assertSame('0', $out['payment_note_dirty']);
     }
 }

@@ -61,7 +61,33 @@ final class PreviewInput
             $out[$field] = is_string($value) ? trim($value) : '';
         }
 
-        return $out;
+        return $out + self::paymentFields($read);
+    }
+
+    /**
+     * Volitelne platobne polia nahladu. Neplatne hodnoty sa ticho nahradia predvolenymi (nahlad nikdy nepadne na tychto poliach).
+     *
+     * @param callable(string): mixed $read
+     *
+     * @return array{payment_method: string, payment_note: string, payment_note_dirty: string}
+     */
+    private static function paymentFields(callable $read): array
+    {
+        $method = $read('payment_method');
+        $note   = $read('payment_note');
+        $dirty  = $read('payment_note_dirty');
+        $note   = is_string($note) ? (IssueInput::normalizeNote($note) ?? '') : '';
+
+        if (mb_strlen($note) > IssueCommand::NOTE_MAX) {
+            $note  = '';
+            $dirty = '0';
+        }
+
+        return [
+            'payment_method'     => is_string($method) && in_array($method, IssueCommand::PAYMENT_METHODS, true) ? $method : 'transfer',
+            'payment_note'       => $note,
+            'payment_note_dirty' => $dirty === '1' ? '1' : '0',
+        ];
     }
 
     /**

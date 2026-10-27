@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Libraries\Invoicing\Draft;
 use App\Libraries\Invoicing\InvoiceDraftService;
+use App\Libraries\Invoicing\IssueCommand;
 use App\Libraries\Invoicing\IssueInput;
 use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Invoicing\PreviewInput;
@@ -106,9 +107,16 @@ final class Invoicing extends BaseController
             'delivery_date' => $input['delivery_date'],
             'due_date'      => $input['due_date'],
         ];
+        $raw += [
+            'payment_method'     => in_array($input['payment_method'], IssueCommand::PAYMENT_METHODS, true) ? $input['payment_method'] : 'transfer',
+            'payment_note'       => $input['payment_note'],
+            'payment_note_dirty' => '1',
+        ];
 
         if ($errors !== []) {
-            return $this->renderPreview(false, $raw, 422, array_values(array_map(static fn (string $m): array => ['message' => $m], $errors)));
+            $payErrors = array_intersect_key($errors, ['payment_method' => true, 'payment_note' => true]);
+
+            return $this->renderPreview(false, $raw, 422, array_values(array_map(static fn (string $m): array => ['message' => $m], array_diff_key($errors, $payErrors))), $payErrors);
         }
 
         try {
@@ -296,8 +304,9 @@ final class Invoicing extends BaseController
     /**
      * @param array<string, string>                                                   $raw
      * @param list<array{message: string, link?: array{href: string, label: string}}> $alerts
+     * @param array<string, string>                                                   $payErrors
      */
-    private function renderPreview(bool $fragmentRoute, array $raw, int $forcedStatus = 0, array $alerts = []): ResponseInterface
+    private function renderPreview(bool $fragmentRoute, array $raw, int $forcedStatus = 0, array $alerts = [], array $payErrors = []): ResponseInterface
     {
         $request = $this->request;
         assert($request instanceof IncomingRequest);
@@ -319,6 +328,7 @@ final class Invoicing extends BaseController
             'clientName' => '',
             'requestKey' => self::uuid4(),
             'alerts'     => $alerts,
+            'payErrors'  => $payErrors,
         ];
 
         $status = 200;
@@ -340,6 +350,9 @@ final class Invoicing extends BaseController
                 $raw['issue_date'] === '' ? null : $raw['issue_date'],
                 $raw['delivery_date'] === '' ? null : $raw['delivery_date'],
                 $raw['due_date'] === '' ? null : $raw['due_date'],
+                $raw['payment_method'] ?? null,
+                $raw['payment_note'] ?? null,
+                ($raw['payment_note_dirty'] ?? '0') === '1',
             );
 
             $data['draft']      = $draft;
@@ -374,12 +387,15 @@ final class Invoicing extends BaseController
     private function selection(Draft $draft): array
     {
         return [
-            'client'        => (string) $draft->clientId,
-            'month'         => $draft->month,
-            'entity'        => $draft->entityId === null ? '' : (string) $draft->entityId,
-            'issue_date'    => $draft->issueDate,
-            'delivery_date' => $draft->deliveryDate,
-            'due_date'      => $draft->dueDate,
+            'client'             => (string) $draft->clientId,
+            'month'              => $draft->month,
+            'entity'             => $draft->entityId === null ? '' : (string) $draft->entityId,
+            'issue_date'         => $draft->issueDate,
+            'delivery_date'      => $draft->deliveryDate,
+            'due_date'           => $draft->dueDate,
+            'payment_method'     => $draft->paymentMethod,
+            'payment_note'       => $draft->paymentNoteDirty ? (string) $draft->paymentNote : '',
+            'payment_note_dirty' => $draft->paymentNoteDirty ? '1' : '0',
         ];
     }
 }

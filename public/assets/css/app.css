@@ -405,6 +405,9 @@ img, table { max-width: 100%; }
 .inv-dates { display: flex; flex-wrap: wrap; gap: 16px; }
 .inv-dates .form-control { min-height: 44px; }
 
+.inv-pay .form-select, .inv-pay .form-control { min-height: 44px; font-size: 16px; }
+.inv-pay textarea.form-control { min-height: 88px; }
+
 .inv-warn { padding: 16px; }
 .inv-warn .form-check { min-height: 44px; display: flex; align-items: center; gap: 8px; }
 

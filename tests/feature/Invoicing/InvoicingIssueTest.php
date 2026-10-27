@@ -230,4 +230,47 @@ final class InvoicingIssueTest extends AuthTestCase
         $result->assertStatus(302);
         $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
     }
+
+    public function testIssueStoresPaymentMethodAndNote(): void
+    {
+        $this->login();
+        $s = $this->issueSetup();
+        $this->submit(['payment_method' => 'cash', 'payment_note' => "Hotovost pri prevzati\r\n"] + $this->previewForm($s['client']))->assertStatus(200);
+
+        $row = $this->owner()->query("SELECT payment_method, payment_note, snapshot->'payment'->>'method' AS sm FROM invoices")->getRowArray();
+        $this->assertSame('cash', $row['payment_method']);
+        $this->assertSame('Hotovost pri prevzati', $row['payment_note']);
+        $this->assertSame('cash', $row['sm']);
+    }
+
+    public function testInvalidPaymentMethodIs422WithoutWrite(): void
+    {
+        $this->login();
+        $s      = $this->issueSetup();
+        $result = $this->submit(['payment_method' => 'bitcoin'] + $this->previewForm($s['client']));
+
+        $result->assertStatus(422);
+        $this->assertStringContainsString('Vyberte platnú formu úhrady.', $this->body($result));
+        $this->assertSame(0, $this->invoiceCount());
+    }
+
+    public function testTooLongPaymentNoteIs422WithoutWrite(): void
+    {
+        $this->login();
+        $s      = $this->issueSetup();
+        $result = $this->submit(['payment_note' => str_repeat('a', 501)] + $this->previewForm($s['client']));
+
+        $result->assertStatus(422);
+        $this->assertStringContainsString('Poznámka môže mať najviac 500 znakov.', $this->body($result));
+        $this->assertSame(0, $this->invoiceCount());
+    }
+
+    public function testChangingPaymentAfterPreviewIsNotStale(): void
+    {
+        $this->login();
+        $s    = $this->issueSetup();
+        $form = $this->previewForm($s['client']);
+        $this->submit(['payment_method' => 'card', 'payment_note' => 'Ina poznamka'] + $form)->assertStatus(200);
+        $this->assertSame(1, $this->invoiceCount());
+    }
 }

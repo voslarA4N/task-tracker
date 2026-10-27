@@ -65,7 +65,7 @@ final class InvoiceDraftService
         return BillingMonth::previous(BillingMonth::current());
     }
 
-    public function draft(int $clientId, string $month, ?int $entityId, ?string $issueDate, ?string $deliveryDate, ?string $dueDate): Draft
+    public function draft(int $clientId, string $month, ?int $entityId, ?string $issueDate, ?string $deliveryDate, ?string $dueDate, ?string $paymentMethod = null, ?string $paymentNote = null, bool $noteDirty = false): Draft
     {
         $clock = service('clock');
 
@@ -146,6 +146,12 @@ final class InvoiceDraftService
             }
         }
 
+        $method      = $paymentMethod !== null && in_array($paymentMethod, IssueCommand::PAYMENT_METHODS, true) ? $paymentMethod : 'transfer';
+        $texts       = is_array($snapshot) ? ($snapshot['legal']['texts'] ?? []) : [];
+        $defaultNote = is_array($texts['invoice_note'] ?? null) ? $texts['invoice_note'] : null;
+        $note        = $noteDirty ? IssueInput::normalizeNote((string) $paymentNote) : ($defaultNote['body'] ?? null);
+        $provisional = (bool) ($texts['vat_note']['provisional'] ?? false) || (! $noteDirty && (bool) ($defaultNote['provisional'] ?? false));
+
         return new Draft(
             $clientId,
             $month,
@@ -166,6 +172,10 @@ final class InvoiceDraftService
             $errors,
             $entities,
             $count > 0 && $errors === [] && $selected !== null && $token !== null,
+            $method,
+            $note,
+            $noteDirty,
+            $provisional,
         );
     }
 

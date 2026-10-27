@@ -13,6 +13,12 @@ use App\Libraries\Invoicing\Draft;
  * @var string $total      uz sformatovana suma
  * @var bool   $needsConfirm
  */
+$methodLabels = [
+    'transfer' => lang('Invoicing.paymentTransfer'),
+    'cash'     => lang('Invoicing.paymentCash'),
+    'card'     => lang('Invoicing.paymentCard'),
+    'other'    => lang('Invoicing.paymentOther'),
+];
 ?>
 <div class="offcanvas offcanvas-bottom work-sheet" tabindex="-1" id="inv-confirm" aria-labelledby="inv-confirm-title">
     <div class="offcanvas-header px-0 pt-0">
@@ -29,6 +35,10 @@ use App\Libraries\Invoicing\Draft;
             <dd><?= esc(Invoicing::dateLabel($draft->issueDate)) ?></dd>
             <dt><?= esc(lang('Invoicing.labelTotal')) ?></dt>
             <dd class="fw-semibold tabular-nums"><?= esc($total) ?></dd>
+            <dt><?= esc(lang('Invoicing.confirmPaymentMethod')) ?></dt>
+            <dd x-text="methodLabel"><?= esc($methodLabels[$draft->paymentMethod]) ?></dd>
+            <dt><?= esc(lang('Invoicing.confirmPaymentNote')) ?></dt>
+            <dd class="text-truncate" title="<?= esc((string) $draft->paymentNote, 'attr') ?>" x-bind:title="note" x-text="note"><?= esc((string) $draft->paymentNote) ?></dd>
             <dt class="visually-hidden"><?= esc(lang('Invoicing.labelItems')) ?></dt>
             <dd><?= esc(lang('Invoicing.confirmItems', [$draft->lineCount])) ?></dd>
         </dl>

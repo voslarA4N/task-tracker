@@ -2,6 +2,7 @@
 
 use App\Controllers\Invoicing;
 use App\Libraries\Invoicing\Draft;
+use App\Libraries\Invoicing\IssueCommand;
 use App\Libraries\Platform\Hours;
 use App\Libraries\Platform\MoneyFormat;
 
@@ -22,7 +23,7 @@ use App\Libraries\Platform\MoneyFormat;
  */
 $empty = lang('Tasks.empty');
 $query = http_build_query($values);
-$dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-preview" hx-trigger="change" hx-target="#inv-preview" hx-swap="outerHTML" hx-push-url="true" hx-include="' . $include . '"';
+$dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-preview" hx-trigger="change" hx-target="#inv-preview" hx-swap="outerHTML" hx-push-url="true" hx-include="' . $include . ', #inv-payment-method, #inv-payment-note, #inv-payment-note-dirty"';
 ?>
 <div id="inv-preview"<?php if (($refresh ?? '') !== '') : ?> hx-get="<?= htmlspecialchars($refresh, ENT_QUOTES, 'UTF-8') ?>" hx-trigger="allocationChanged from:body" hx-target="#inv-preview" hx-swap="outerHTML"<?php endif ?>>
 <?php if (is_array($notice ?? null)) : ?>
@@ -62,6 +63,12 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
     $bank        = $draft->snapshot['bank'] ?? null;
     $bankText    = is_array($bank) ? $bank['label'] . ' · ' . $bank['iban'] : $empty;
     $needsConfirm = $draft->backdate !== null;
+    $methodLabels = [
+    'transfer' => lang('Invoicing.paymentTransfer'),
+    'cash'     => lang('Invoicing.paymentCash'),
+    'card'     => lang('Invoicing.paymentCard'),
+    'other'    => lang('Invoicing.paymentOther'),
+];
     ?>
 
     <section class="app-card mb-3" aria-labelledby="inv-dates-title">
@@ -100,6 +107,7 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
         </section>
     <?php else : ?>
         <div x-data="invIssue" data-can-issue="<?= $draft->canIssue ? '1' : '0' ?>" data-needs-confirm="<?= $needsConfirm ? '1' : '0' ?>">
+            <div x-data="invPay" data-dirty="<?= $draft->paymentNoteDirty ? '1' : '0' ?>">
             <section class="app-card mb-3 inv-summary" aria-labelledby="inv-summary-title">
                 <h2 class="h6 visually-hidden" id="inv-summary-title"><?= esc(lang('Invoicing.title')) ?></h2>
                 <dl class="master-kv mb-2">
@@ -136,6 +144,38 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
             <?php foreach ($draft->errors as $error) : ?>
                 <div class="alert alert-danger" role="alert"><?= esc(Invoicing::errorMessage($error['reason'], $error['context'])) ?></div>
             <?php endforeach ?>
+
+            <section class="app-card mb-3 inv-pay" aria-labelledby="inv-pay-title">
+                <h2 class="h5" id="inv-pay-title"><?= esc(lang('Invoicing.paymentHeading')) ?></h2>
+                <div class="mb-3">
+                    <label class="form-label" for="inv-payment-method"><?= esc(lang('Invoicing.paymentMethodLabel')) ?></label>
+                    <select class="form-select<?= isset($payErrors['payment_method']) ? ' is-invalid' : '' ?>" id="inv-payment-method" name="payment_method" form="inv-issue-form" x-on:change="onMethodChange">
+                        <?php foreach (IssueCommand::PAYMENT_METHODS as $method) : ?>
+                            <option value="<?= esc($method, 'attr') ?>"<?= $draft->paymentMethod === $method ? ' selected' : '' ?>><?= esc($methodLabels[$method]) ?></option>
+                        <?php endforeach ?>
+                    </select>
+                    <?php if (isset($payErrors['payment_method'])) : ?>
+                        <div class="invalid-feedback d-block"><?= esc($payErrors['payment_method']) ?></div>
+                    <?php endif ?>
+                    <div class="form-text"<?= $draft->paymentMethod === 'transfer' ? ' hidden' : '' ?> x-bind:hidden="isNotTransfer"><?= esc(lang('Invoicing.paymentHintQr')) ?></div>
+                    <div class="form-text"<?= $draft->paymentMethod === 'transfer' ? '' : ' hidden' ?> x-bind:hidden="isTransfer"><?= esc(lang('Invoicing.paymentHintNoQr')) ?></div>
+                </div>
+                <div>
+                    <label class="form-label" for="inv-payment-note"><?= esc(lang('Invoicing.paymentNoteLabel')) ?></label>
+                    <textarea class="form-control<?= isset($payErrors['payment_note']) ? ' is-invalid' : '' ?>" id="inv-payment-note" name="payment_note" form="inv-issue-form" rows="3" maxlength="500" x-on:input="onNoteInput"><?= esc((string) $draft->paymentNote) ?></textarea>
+                    <input type="hidden" id="inv-payment-note-dirty" name="payment_note_dirty" form="inv-issue-form" value="<?= $draft->paymentNoteDirty ? '1' : '0' ?>" x-bind:value="dirtyValue">
+                    <?php if (isset($payErrors['payment_note'])) : ?>
+                        <div class="invalid-feedback d-block"><?= esc($payErrors['payment_note']) ?></div>
+                    <?php endif ?>
+                    <div class="d-flex justify-content-between gap-2 form-text">
+                        <span><?= esc(lang('Invoicing.paymentNoteHint')) ?> <a class="d-inline-flex align-items-center py-2" href="/settings/legal-texts"><?= esc(lang('Invoicing.paymentNoteEditDefault')) ?></a></span>
+                        <span class="tabular-nums text-nowrap" x-text="countLabel"><?= mb_strlen((string) $draft->paymentNote) ?> / 500</span>
+                    </div>
+                </div>
+            </section>
+            <?php if ($draft->provisionalText) : ?>
+                <div class="alert alert-warning small" role="alert"><?= esc(lang('Invoicing.provisionalWarning')) ?></div>
+            <?php endif ?>
 
             <section class="app-card mb-3" aria-labelledby="inv-items-title">
                 <h2 class="h5" id="inv-items-title"><?= esc(lang('Invoicing.labelItems')) ?></h2>
@@ -186,6 +226,7 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
                 <noscript><button type="submit" form="inv-issue-form" class="btn btn-primary btn-touch"<?= $draft->canIssue ? '' : ' disabled' ?>><?= esc(lang('Invoicing.issueCta')) ?></button></noscript>
             </div>
             <?= view('invoicing/_confirm_sheet', ['draft' => $draft, 'clientName' => $clientName, 'entityName' => $entityName, 'monthLabel' => $monthLabel, 'total' => $fmt($draft->total), 'needsConfirm' => $needsConfirm]) ?>
+            </div>
         </div>
     <?php endif ?>
 <?php endif ?>
