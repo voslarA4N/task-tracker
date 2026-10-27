@@ -23,6 +23,7 @@ final class RendererRegistry
         return $this->overrides[$templateVersion] ?? match ($templateVersion) {
             'inv-1' => new MpdfInvoiceRenderer(),
             'inv-2' => new MpdfInvoiceInv2Renderer(),
+            'rep-1' => new MpdfReportRenderer(),
             default => throw new InvalidArgumentException('Unknown template version: ' . $templateVersion),
         };
     }

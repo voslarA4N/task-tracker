@@ -1,0 +1,15 @@
+body { font-family: dejavusans; font-size: 9pt; }
+h1 { font-size: 16pt; margin: 0 0 1mm 0; }
+.ref { font-size: 9pt; margin-bottom: 4mm; }
+.footer { font-size: 7pt; text-align: center; }
+table.parties { width: 100%; }
+table.parties td { width: 50%; vertical-align: top; padding-bottom: 3mm; }
+table.items { width: 100%; border-collapse: collapse; }
+table.items th { background-color: #f0f0f0; text-align: left; border-bottom: 0.2mm solid #999999; padding: 1mm; }
+table.items td { border-bottom: 0.2mm solid #999999; padding: 1mm; page-break-inside: avoid; }
+table.items td a { color: #000000; text-decoration: underline; font-size: 7pt; }
+table.totals { width: 100%; margin-top: 3mm; }
+table.totals td { background-color: #f0f0f0; padding: 1.5mm; font-size: 11pt; font-weight: bold; }
+.r { text-align: right; }
+.note { margin-top: 6mm; }
+.note-heading { font-weight: bold; }
