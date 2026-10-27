@@ -162,7 +162,7 @@ final class ImportPlannerTest extends TestCase
             new ImportRow(14, '2026-10', 'https://t.example/?todo=14', true, 'E', '4.00', null, true, true),
             new ImportRow(15, '2026-10', 'https://t.example/?todo=15', false, 'F', '1.00', null, false, false),
         ];
-        $sheet   = new ImportSheet('27.00', [
+        $sheet = new ImportSheet('27.00', [
             $this->block($sep, 'F4:F7', '0.00', 4, 7, '2026-09'),
             $this->block($oct, 'F14:F15', '0.00', 14, 15, '2026-10'),
         ]);

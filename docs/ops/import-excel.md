@@ -19,11 +19,32 @@ Jednorazový import úloh za 09 a 10/2026 pre klienta All4Net (sadzba 27 €) zo
 1. Suchý beh (predvolený, nič nezapíše):
    `make spark ARGS="import:excel docs/All4net-fakturovanie-prace.xlsx --client <id>"`
    Voľby sa zadávajú s hodnotou za medzerou (`--client 1`), `--commit` až za cestu a `--client`.
+   Voliteľne `--month RRRR-MM` obmedzí import na jeden mesiac (hodnota za medzerou, `--commit` posledný),
+   pozri sekciu "Import len jedného mesiaca (--month)".
 2. Skontrolujte report a porovnajte s očakávaním nižšie.
 3. Ostrý beh: pridajte `--commit`:
    `make spark ARGS="import:excel docs/All4net-fakturovanie-prace.xlsx --client <id> --commit"`
    Výstup: `Vytvorené: {n}, preskočené (už importované): {n}, časti: {n}`.
 4. Opakované spustenie s `--commit` musí vypísať `Vytvorené: 0`.
+
+## Import len jedného mesiaca (--month)
+
+`--month RRRR-MM` obmedzí celý beh (suchý beh, report, súčty po mesiacoch, riadok `POZOR:` aj ostrý zápis) na blok
+daného mesiaca. Bez voľby sa príkaz správa ako doteraz.
+
+1. Suchý beh:
+   `make spark ARGS="import:excel docs/All4net-fakturovanie-prace.xlsx --client <id> --month 2026-09"`
+   Report musí obsahovať riadok `Filter mesiaca: September 2026`, len mesiac 09/2026 (11 úloh, 89 h / 2 403,00 €)
+   a nesmie sa v ňom objaviť október. Riadok `POZOR:` sa vypíše len vtedy, ak súbor obsahuje riadky
+   s "Fakturované = ÁNO" a zapracovaním v danom mesiaci.
+2. Ostrý beh: rovnaký príkaz s `--commit` na konci. Vytvorí len úlohy a časti za 09/2026.
+3. Zamknutie: `invoices:lock-historical --client <id> --month 2026-09` (suchý beh), potom s
+   `--expect-parts 11 --expect-hours 89 --expect-amount 2403 ... --commit` podľa sekcie WR-07.
+4. Neskorší import októbra (`--month 2026-10` alebo bez filtra) septembrové riadky preskočí, lebo `import_key`
+   je s filtrom aj bez neho rovnaký.
+
+Chyby: neplatný formát (`2026-9`, `2026-13`, `sep`, voľba bez hodnoty) alebo mesiac, ktorý v súbore nie je, skončí
+chybou a nič sa nezapíše. Súbor sa vždy číta celý, takže neplatný riadok v inom mesiaci import tiež zastaví.
 
 ## Očakávaný výsledok suchého behu
 
@@ -80,8 +101,9 @@ mesiaca. Jedinou poistkou sú `--expect-*`.
 
 Postup:
 
-1. Uložiť výstup `spark import:excel` s riadkom `POZOR: ...`. Ak obsahuje viac mesiacov, rozpis podľa mesiaca
-   overiť v zdrojovom Exceli (filter Fakturované = ÁNO a mesiac) a zapísať sem pri behu.
+1. Uložiť výstup `spark import:excel ... --month 2026-09` (voľba `--month` zúži riadok `POZOR: ...` na jeden mesiac,
+   netreba rozpis robiť ručne v Exceli). Ak súbor neobsahuje riadky "Fakturované = ÁNO", riadok `POZOR:` sa
+   nevypíše a hodnoty `--expect-*` sa overia podľa súčtov Zapracované daného mesiaca.
 2. Suchý beh (predvolený, nič nezapíše):
 
    ```sh

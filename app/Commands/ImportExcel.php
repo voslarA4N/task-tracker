@@ -81,12 +81,12 @@ final class ImportExcel extends BaseCommand
             // ExcelReader parsuje celý súbor, takže neplatný riadok v inom mesiaci import stále zastaví (zámerne).
             $sheet = (new ExcelReader())->read($path);
 
-            if ($monthGiven && is_string($month)) {
+            if ($monthGiven) {
                 $sheet = $sheet->forMonth($month);
                 CLI::write('Filter mesiaca: ' . BillingMonth::label($month, 'sk'), 'yellow');
             }
 
-            $plan  = (new ImportPlanner())->plan($sheet, (string) $client['hourly_rate'], (string) $client['currency']);
+            $plan = (new ImportPlanner())->plan($sheet, (string) $client['hourly_rate'], (string) $client['currency']);
 
             foreach ((new ImportReportFormatter())->lines($plan, (string) $client['currency'], 'sk') as $line) {
                 CLI::write($line);
