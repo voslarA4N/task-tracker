@@ -26,7 +26,7 @@ final class InvoiceIssuer
     private readonly BaseConnection $db;
 
     private readonly AuditLogger $audit;
-    private readonly PdfRenderer $renderer;
+    private readonly RendererRegistry $renderers;
     private readonly SnapshotBuilder $builder;
     private readonly NumberAllocator $numbers;
     private readonly DocumentStore $documents;
@@ -38,14 +38,14 @@ final class InvoiceIssuer
     public function __construct(
         ?BaseConnection $db = null,
         ?AuditLogger $audit = null,
-        ?PdfRenderer $renderer = null,
+        ?RendererRegistry $renderers = null,
         ?SnapshotBuilder $builder = null,
         ?NumberAllocator $numbers = null,
         ?DocumentStore $documents = null,
     ) {
         $this->db        = $db ?? Database::connect();
         $this->audit     = $audit ?? new AuditLogger($this->db);
-        $this->renderer  = $renderer ?? new MpdfInvoiceRenderer();
+        $this->renderers = $renderers ?? new RendererRegistry();
         $this->builder   = $builder ?? new SnapshotBuilder($this->db);
         $this->numbers   = $numbers ?? new NumberAllocator($this->db);
         $this->documents = $documents ?? new DocumentStore($this->db);
@@ -193,7 +193,11 @@ final class InvoiceIssuer
         $snapshot  = $this->builder->withNumber($snapshot, $allocated->number);
 
         // 9. PDF vnutri transakcie
-        $pdf = $this->renderer->render($snapshot);
+        $pdf = $this->renderers->for((string) $snapshot['template_version'])->render($snapshot);
+
+        if ($pdf->templateVersion !== $snapshot['template_version']) {
+            throw new RuntimeException('Renderer returned template ' . $pdf->templateVersion . ', snapshot requires ' . $snapshot['template_version'] . '.');
+        }
 
         // 10. faktura so strukturovanymi stlpcami zo snapshotu
         $invoiceId = $this->insertInvoice($cmd, $snapshot, $client, $series, $created);
@@ -254,9 +258,12 @@ final class InvoiceIssuer
              VALUES ('issued', 'invoice', CAST(:rk: AS uuid), :entity:, :version:, :series:, :number:, :client:, :month:,
                 :issue:, :delivery:, :due:, :turnover:, :ccy:, :total:, :total:, CAST(:counts: AS boolean), :n:,
                 :lang:, :regime:, :mode:, :exemption:, :entity_vat:, :cit:, :civ:, :cvat:,
-                :iban:, :swift:, 'transfer', NULL, CAST(:snapshot: AS jsonb), 1, :tpl:, :created:, :by:) RETURNING id",
+                :iban:, :swift:, :pm:, :pn:, CAST(:snapshot: AS jsonb), :schema:, :tpl:, :created:, :by:) RETURNING id",
             [
                 'rk'         => $cmd->requestKey,
+                'pm'         => $snapshot['payment']['method'],
+                'pn'         => $snapshot['payment']['note'],
+                'schema'     => (int) $snapshot['schema'],
                 'entity'     => $cmd->entityId,
                 'version'    => $snapshot['entity']['version_id'],
                 'series'     => (int) $series['id'],

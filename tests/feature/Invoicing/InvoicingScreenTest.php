@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Invoicing;
 
 use App\Libraries\Invoicing\DocumentStore;
-use App\Libraries\Invoicing\MpdfInvoiceRenderer;
+use App\Libraries\Invoicing\MpdfInvoiceInv2Renderer;
 use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Platform\MoneyFormat;
 use CodeIgniter\Test\TestResponse;
@@ -36,7 +36,7 @@ final class InvoicingScreenTest extends AuthTestCase
         $user = $this->createUser('owner@example.test');
         $this->enrollTotp($user);
         $this->loginAs($user);
-        Services::injectMock('invoiceIssuer', $this->issuer(new MpdfInvoiceRenderer()));
+        Services::injectMock('invoiceIssuer', $this->issuer(new MpdfInvoiceInv2Renderer()));
     }
 
     protected function tearDown(): void

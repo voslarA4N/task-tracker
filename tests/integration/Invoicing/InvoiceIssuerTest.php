@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Tests\Integration\Invoicing;
 
 use App\Libraries\Invoicing\DocumentStore;
-use App\Libraries\Invoicing\MpdfInvoiceRenderer;
+use App\Libraries\Invoicing\MpdfInvoiceInv2Renderer;
 use App\Libraries\Platform\FrozenClock;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
+use RuntimeException;
+use Tests\Support\FakePdfRenderer;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
@@ -55,6 +57,9 @@ final class InvoiceIssuerTest extends PgTestCase
         $this->assertContains($row->counts_toward_limit, [true, 't']);
         $this->assertSame('2026-10-31', $row->turnover_date);
         $this->assertSame('transfer', $row->payment_method);
+        $this->assertNull($row->payment_note);
+        $this->assertSame(2, (int) $row->snapshot_schema);
+        $this->assertSame('inv-2', $row->template_version);
         $this->assertNull($row->fx_rate);
         $this->assertSame('sk', $row->doc_language);
         $this->assertSame('sk_non_vat', $row->vat_regime);
@@ -109,10 +114,35 @@ final class InvoiceIssuerTest extends PgTestCase
         $this->assertSame($s['tasks'][1], (int) $first->source_task_id);
     }
 
+    public function testStoredDocumentCarriesTemplateVersionFromSnapshot(): void
+    {
+        $s      = $this->issueSetup();
+        $issued = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
+
+        $doc = $this->owner()->query("SELECT template_version FROM invoice_documents WHERE invoice_id = :id: AND kind = 'invoice'", ['id' => $issued->id])->getRow();
+        $this->assertSame('inv-2', $doc->template_version);
+    }
+
+    public function testRendererWithWrongTemplateVersionRollsBack(): void
+    {
+        $s        = $this->issueSetup();
+        $counters = (int) $this->owner()->query('SELECT count(*) AS c FROM invoice_counters')->getRow()->c;
+
+        try {
+            $this->issuer(new FakePdfRenderer('inv-1'))->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
+            $this->fail('Expected RuntimeException');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('inv-1', $e->getMessage());
+        }
+
+        $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM invoices')->getRow()->c);
+        $this->assertSame($counters, (int) $this->owner()->query('SELECT count(*) AS c FROM invoice_counters')->getRow()->c);
+    }
+
     public function testRealPdfIsStoredWithMatchingHash(): void
     {
         $s      = $this->issueSetup();
-        $issued = $this->issuer(new MpdfInvoiceRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
+        $issued = $this->issuer(new MpdfInvoiceInv2Renderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
 
         $content = $this->owner()->query("SELECT substring(content from 1 for 5) AS head FROM invoice_documents WHERE invoice_id = :id: AND kind = 'invoice'", ['id' => $issued->id])->getRow();
         $this->assertSame('%PDF-', pg_unescape_bytea((string) $content->head));

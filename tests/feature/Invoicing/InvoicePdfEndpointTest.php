@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Invoicing;
 
 use App\Libraries\Invoicing\DocumentStore;
+use App\Libraries\Invoicing\MpdfInvoiceRenderer;
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use Config\Services;
@@ -14,6 +15,7 @@ use Tests\Support\FakePdfRenderer;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
+use Tests\Support\SnapshotSample;
 
 /**
  * @internal
@@ -71,6 +73,15 @@ final class InvoicePdfEndpointTest extends AuthTestCase
         $this->assertStringContainsString('no-store', $r->getHeaderLine('Cache-Control'));
         $this->assertStringContainsString('private', $r->getHeaderLine('Cache-Control'));
         $this->assertSame('nosniff', $r->getHeaderLine('X-Content-Type-Options'));
+    }
+
+    public function testLegacyInv1PdfIsServedUnchanged(): void
+    {
+        $s     = $this->issueSetup();
+        $bytes = (new MpdfInvoiceRenderer())->render(SnapshotSample::issued())->bytes;
+        $id    = $this->insertIssuedInvoiceRaw($s['client'], $s['entity'], '2026-10', $s['parts'], $bytes);
+
+        $this->assertSame($bytes, (string) $this->get('/invoices/' . $id . '/pdf')->response()->getBody());
     }
 
     public function testDownloadIsAttachment(): void

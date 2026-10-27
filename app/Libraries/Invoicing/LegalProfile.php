@@ -17,15 +17,15 @@ final class LegalProfile
     private const META = ['issue_date', 'delivery_date', 'due_date', 'payment_method'];
 
     /**
-     * @return array{supplier: list<string>, customer: list<string>, meta: list<string>, payment_reference: 'variable_symbol'|'invoice_number', line_unit: bool, line_vat_code: bool, vat_note: bool}
+     * @return array{supplier: list<string>, customer: list<string>, meta: list<string>, payment_reference: 'invoice_number'|'variable_symbol', line_unit: bool, line_vat_code: bool, vat_note: bool}
      */
     public static function print(string $country, string $vatRegime, string $clientBillingMode): array
     {
         $expected = match ($vatRegime) {
-            'sk_non_vat'                        => 'SK',
-            'cz_non_vat'                        => 'CZ',
+            'sk_non_vat'                         => 'SK',
+            'cz_non_vat'                         => 'CZ',
             'pl_exempt_113_1', 'pl_exempt_113_9' => 'PL',
-            default                             => throw new InvalidArgumentException('Unknown VAT regime: ' . $vatRegime),
+            default                              => throw new InvalidArgumentException('Unknown VAT regime: ' . $vatRegime),
         };
 
         if ($country !== $expected) {

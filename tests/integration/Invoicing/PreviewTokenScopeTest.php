@@ -79,8 +79,8 @@ final class PreviewTokenScopeTest extends PgTestCase
 
     public function testTokenIgnoresNumberAndQr(): void
     {
-        $snap = SampleSnapshots::invoice('sk', null, ['number' => null, 'variable_symbol' => null]);
-        $with = (new SnapshotBuilder($this->rw()))->withNumber($snap, '202610001');
+        $snap                  = SampleSnapshots::invoice('sk', null, ['number' => null, 'variable_symbol' => null]);
+        $with                  = (new SnapshotBuilder($this->rw()))->withNumber($snap, '202610001');
         $with['payment']['qr'] = ['payload' => 'x'];
 
         $this->assertSame(InvoiceCalculator::previewToken($snap), InvoiceCalculator::previewToken($with));

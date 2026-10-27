@@ -14,8 +14,7 @@ use InvalidArgumentException;
  */
 final class SampleSnapshots
 {
-    public const PROFILES = ['sk', 'cz', 'pl', 'pl_eu_b2b', 'pl_non_eu'];
-
+    public const PROFILES   = ['sk', 'cz', 'pl', 'pl_eu_b2b', 'pl_non_eu'];
     private const VAT_NOTES = [
         'sk' => ['sk' => 'Nie som platiteľ DPH.', 'en' => 'Not a VAT payer.'],
         'cz' => ['cs' => 'Nejsem plátce DPH.', 'en' => 'Not a VAT payer.'],
@@ -35,12 +34,12 @@ final class SampleSnapshots
     public static function invoice(string $profile, ?string $language = null, array $overrides = []): array
     {
         $cfg = match ($profile) {
-            'sk' => ['country' => 'SK', 'regime' => 'sk_non_vat', 'cur' => 'EUR', 'lang' => 'sk', 'mode' => 'domestic', 'client' => 'SK', 'iban' => 'SK3112000000198742637541', 'swift' => 'GIBASKBX', 'notes' => 'sk'],
-            'cz' => ['country' => 'CZ', 'regime' => 'cz_non_vat', 'cur' => 'CZK', 'lang' => 'cs', 'mode' => 'domestic', 'client' => 'CZ', 'iban' => 'CZ6508000000192000145399', 'swift' => 'GIBACZPX', 'notes' => 'cz'],
-            'pl' => ['country' => 'PL', 'regime' => 'pl_exempt_113_1', 'cur' => 'PLN', 'lang' => 'pl', 'mode' => 'domestic', 'client' => 'PL', 'iban' => 'PL61109010140000071219812874', 'swift' => 'WBKPPLPP', 'notes' => 'pl'],
+            'sk'        => ['country' => 'SK', 'regime' => 'sk_non_vat', 'cur' => 'EUR', 'lang' => 'sk', 'mode' => 'domestic', 'client' => 'SK', 'iban' => 'SK3112000000198742637541', 'swift' => 'GIBASKBX', 'notes' => 'sk'],
+            'cz'        => ['country' => 'CZ', 'regime' => 'cz_non_vat', 'cur' => 'CZK', 'lang' => 'cs', 'mode' => 'domestic', 'client' => 'CZ', 'iban' => 'CZ6508000000192000145399', 'swift' => 'GIBACZPX', 'notes' => 'cz'],
+            'pl'        => ['country' => 'PL', 'regime' => 'pl_exempt_113_1', 'cur' => 'PLN', 'lang' => 'pl', 'mode' => 'domestic', 'client' => 'PL', 'iban' => 'PL61109010140000071219812874', 'swift' => 'WBKPPLPP', 'notes' => 'pl'],
             'pl_eu_b2b' => ['country' => 'PL', 'regime' => 'pl_exempt_113_1', 'cur' => 'PLN', 'lang' => 'sk', 'mode' => 'eu_b2b', 'client' => 'SK', 'iban' => 'PL61109010140000071219812874', 'swift' => 'WBKPPLPP', 'notes' => 'pl_eu_b2b'],
             'pl_non_eu' => ['country' => 'PL', 'regime' => 'pl_exempt_113_1', 'cur' => 'PLN', 'lang' => 'en', 'mode' => 'non_eu', 'client' => 'GB', 'iban' => 'PL61109010140000071219812874', 'swift' => 'WBKPPLPP', 'notes' => 'pl'],
-            default => throw new InvalidArgumentException('Unknown sample profile: ' . $profile),
+            default     => throw new InvalidArgumentException('Unknown sample profile: ' . $profile),
         };
 
         $lang   = $language ?? $cfg['lang'];
@@ -50,8 +49,8 @@ final class SampleSnapshots
             $labels[$key] = lang('InvoicePdf.' . $key, [], $lang);
         }
 
-        $notes = self::VAT_NOTES[$cfg['notes']];
-        $body  = $notes[$lang] ?? $notes['en'] ?? reset($notes);
+        $notes = self::notes($cfg['notes']);
+        $body  = $notes[$lang] ?? $notes['en'];
         $isPl  = $cfg['country'] === 'PL';
         $euB2b = $cfg['mode'] === 'eu_b2b';
 
@@ -111,5 +110,13 @@ final class SampleSnapshots
         ];
 
         return array_replace($base, $overrides);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function notes(string $key): array
+    {
+        return self::VAT_NOTES[$key];
     }
 }

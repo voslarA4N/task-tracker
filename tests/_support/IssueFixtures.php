@@ -11,6 +11,7 @@ use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\IssueCommand;
 use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Invoicing\PdfRenderer;
+use App\Libraries\Invoicing\RendererRegistry;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Master\BankAccountService;
 
@@ -94,9 +95,9 @@ trait IssueFixtures
         );
     }
 
-    protected function issuer(?PdfRenderer $renderer = null): InvoiceIssuer
+    protected function issuer(?PdfRenderer $invoiceRenderer = null): InvoiceIssuer
     {
-        return new InvoiceIssuer($this->rw(), null, $renderer ?? new FakePdfRenderer());
+        return new InvoiceIssuer($this->rw(), null, new RendererRegistry(['inv-2' => $invoiceRenderer ?? new FakePdfRenderer('inv-2')]));
     }
 
     protected function uuid4(): string

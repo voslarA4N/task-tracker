@@ -77,7 +77,7 @@ final class IssueRollbackTest extends PgTestCase
         $renderer = new class () implements PdfRenderer {
             public function render(array $snapshot): RenderedPdf
             {
-                $pdf = RenderedPdf::fromBytes('%PDF-1.4 bad', 'inv-1', 'bad');
+                $pdf = RenderedPdf::fromBytes('%PDF-1.4 bad', 'inv-2', 'bad');
                 $bad = unserialize(str_replace($pdf->sha256, hash('sha256', 'something else'), serialize($pdf)));
 
                 if (! $bad instanceof RenderedPdf) {

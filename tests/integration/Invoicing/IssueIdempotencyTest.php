@@ -10,6 +10,7 @@ use App\Libraries\Invoicing\IssueCommand;
 use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Invoicing\PdfRenderer;
 use App\Libraries\Invoicing\RenderedPdf;
+use App\Libraries\Invoicing\RendererRegistry;
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
@@ -120,7 +121,7 @@ final class IssueIdempotencyTest extends PgTestCase
             public function render(array $snapshot): RenderedPdf
             {
                 if ($this->quickId === null) {
-                    $this->quickId = (new InvoiceIssuer($this->db, new AuditLogger($this->db), new FakePdfRenderer()))->issue($this->cmd)->id;
+                    $this->quickId = (new InvoiceIssuer($this->db, new AuditLogger($this->db), new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2')])))->issue($this->cmd)->id;
                 }
 
                 return (new FakePdfRenderer())->render($snapshot);

@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-/**
- * Popisky PDF faktury (sk). Kopiruju sa do snapshotu pri vystaveni (D-18), render ich necita z lang().
- */
+/** Popisky PDF faktury (sk). Kopiruju sa do snapshotu pri vystaveni (D-18), render ich necita z lang(). */
 return [
     'invoice'         => 'Faktúra',
     'number'          => 'Číslo faktúry',

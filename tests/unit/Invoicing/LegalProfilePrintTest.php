@@ -7,6 +7,7 @@ namespace Tests\Unit\Invoicing;
 use App\Libraries\Invoicing\LegalProfile;
 use CodeIgniter\Test\CIUnitTestCase;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 /**
@@ -37,17 +38,7 @@ final class LegalProfilePrintTest extends CIUnitTestCase
         );
     }
 
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function polishRegimes(): iterable
-    {
-        yield '113_1' => ['pl_exempt_113_1'];
-
-        yield '113_9' => ['pl_exempt_113_9'];
-    }
-
-    #[\PHPUnit\Framework\Attributes\DataProvider('polishRegimes')]
+    #[DataProvider('providePolishExempt')]
     public function testPolishExempt(string $regime): void
     {
         $p = LegalProfile::print('PL', $regime, 'domestic');
@@ -59,6 +50,16 @@ final class LegalProfilePrintTest extends CIUnitTestCase
         $this->assertTrue($p['line_vat_code']);
         $this->assertNotContains('company_id', $p['supplier']);
         $this->assertNotContains('registry_note', $p['supplier']);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function providePolishExempt(): iterable
+    {
+        yield '113_1' => ['pl_exempt_113_1'];
+
+        yield '113_9' => ['pl_exempt_113_9'];
     }
 
     public function testEuB2bAddsVatId(): void

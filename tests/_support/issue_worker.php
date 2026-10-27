@@ -16,6 +16,7 @@ use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\IssueCommand;
 use App\Libraries\Invoicing\IssueRejected;
+use App\Libraries\Invoicing\RendererRegistry;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Platform\FrozenClock;
 use Config\Database;
@@ -40,7 +41,7 @@ $db->query('SELECT pg_advisory_lock_shared(777)');
 $numbers  = [];
 $errors   = [];
 $rejected = [];
-$issuer   = new InvoiceIssuer($db, new AuditLogger($db), new FakePdfRenderer());
+$issuer   = new InvoiceIssuer($db, new AuditLogger($db), new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2')]));
 
 if ($clientCsv === '--command') {
     /** @var array{client: int, month: string, entity: int, issue: string, delivery: string, due: string, parts: list<int>, token: string, key: string} $c */

@@ -6,7 +6,7 @@ namespace Tests\Integration\Invoicing;
 
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Invoicing\DocumentStore;
-use App\Libraries\Invoicing\MpdfInvoiceRenderer;
+use App\Libraries\Invoicing\MpdfInvoiceInv2Renderer;
 use App\Libraries\Master\ClientService;
 use App\Libraries\Master\EntityInput;
 use App\Libraries\Master\EntityService;
@@ -47,7 +47,7 @@ final class InvoiceImmutableAfterChangeTest extends PgTestCase
     {
         $s = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['5.50', '2026-10']]]);
 
-        $issued = $this->issuer(new MpdfInvoiceRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
+        $issued = $this->issuer(new MpdfInvoiceInv2Renderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
         $this->assertSame('418.50', $issued->total);
 
         $before = $this->state($issued->id);

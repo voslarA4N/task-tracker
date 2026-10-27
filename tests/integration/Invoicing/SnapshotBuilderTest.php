@@ -6,8 +6,8 @@ namespace Tests\Integration\Invoicing;
 
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Invoicing\InvoiceParts;
-use App\Libraries\Invoicing\LegalProfile;
 use App\Libraries\Invoicing\IssueRejected;
+use App\Libraries\Invoicing\LegalProfile;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Master\EntityService;
 use App\Libraries\Platform\FrozenClock;
