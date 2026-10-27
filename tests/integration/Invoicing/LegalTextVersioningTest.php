@@ -90,6 +90,27 @@ final class LegalTextVersioningTest extends PgTestCase
         }
     }
 
+    public function testNewNonEuVariantIsUsedByNextInvoice(): void
+    {
+        $s = $this->issueSetup(['country' => 'PL', 'client' => ['country' => 'GB', 'billing_mode' => 'non_eu']]);
+
+        $a = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][0]]));
+        $this->assertStringContainsString('art. 113', $this->snapshot($a->id)['legal']['texts']['vat_note']['body']);
+
+        $service = new LegalTextService($this->rw(), new AuditLogger($this->rw()));
+
+        try {
+            $service->create('PL', 'pl_exempt_113_1', 'non_eu', 'pl', 'vat_note', 'Miejsce świadczenia poza terytorium kraju.', true);
+            $s2 = $this->issueSetup(['country' => 'PL', 'client' => ['country' => 'GB', 'billing_mode' => 'non_eu']]);
+            $b  = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s2['client'], '2026-10', $s2['entity'], [$s2['parts'][0]], ['requestKey' => $this->uuid4()]));
+            $this->assertSame('Miejsce świadczenia poza terytorium kraju.', $this->snapshot($b->id)['legal']['texts']['vat_note']['body']);
+            $this->assertSame('non_eu', $this->snapshot($b->id)['legal']['texts']['vat_note']['billing_mode']);
+            $this->assertStringContainsString('art. 113', $this->snapshot($a->id)['legal']['texts']['vat_note']['body']);
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE billing_mode = 'non_eu'");
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */

@@ -91,7 +91,7 @@ final class SampleSnapshots
                 'vat_regime'     => $cfg['regime'], 'billing_mode' => $cfg['mode'],
                 'exemption_code' => $isPl ? 'ART_113_1' : null, 'vat_code' => $isPl ? 'zw' : 'np',
                 'print'          => LegalProfile::print($cfg['country'], $cfg['regime'], $cfg['mode']),
-                'texts'          => ['vat_note' => ['key' => 'vat_note', 'body' => $body, 'language' => $lang, 'provisional' => true, 'revision' => 1]],
+                'texts'          => ['vat_note' => ['key' => 'vat_note', 'body' => $body, 'language' => $lang, 'provisional' => true, 'revision' => 1, 'billing_mode' => $cfg['notes'] === 'pl_eu_b2b' ? 'eu_b2b' : null]],
             ],
             'bank'     => ['label' => 'Hlavný účet', 'iban' => $cfg['iban'], 'swift' => $cfg['swift'], 'currency' => $cfg['cur']],
             'payment'  => ['method' => 'transfer', 'note' => null, 'qr' => null],

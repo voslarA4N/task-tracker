@@ -142,9 +142,40 @@ final class LegalProfileTest extends PgTestCase
         $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK', 'sk_non_vat', NULL, 'sk', 'invoice_note', 'Predvolena poznamka', true, now())");
 
         try {
-            $this->assertSame(['body' => 'Predvolena poznamka', 'language' => 'sk', 'provisional' => true, 'revision' => 1], $this->resolver()->optionalText('SK', 'sk_non_vat', 'domestic', 'sk', 'invoice_note'));
+            $this->assertSame(['body' => 'Predvolena poznamka', 'language' => 'sk', 'provisional' => true, 'revision' => 1, 'billing_mode' => null], $this->resolver()->optionalText('SK', 'sk_non_vat', 'domestic', 'sk', 'invoice_note'));
         } finally {
             $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
         }
+    }
+
+    public function testGeneralProfileUsesClientModeVariantThenFallsBack(): void
+    {
+        $r      = $this->resolver();
+        $before = $r->text('PL', 'pl_exempt_113_1', 'non_eu', 'pl', 'vat_note');
+        $this->assertNull($before['billing_mode']);
+
+        $this->owner()->query(
+            "INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at)
+             VALUES ('PL', 'pl_exempt_113_1', 'non_eu', 'pl', 'vat_note', 'Miejsce świadczenia poza terytorium kraju.', true, now())",
+        );
+
+        try {
+            $t = $r->text('PL', 'pl_exempt_113_1', 'non_eu', 'pl', 'vat_note');
+            $this->assertSame('Miejsce świadczenia poza terytorium kraju.', $t['body']);
+            $this->assertSame('non_eu', $t['billing_mode']);
+            // iny režim klienta variant nevidí
+            $this->assertNull($r->text('PL', 'pl_exempt_113_1', 'domestic', 'pl', 'vat_note')['billing_mode']);
+            // presný profil eu_b2b nikdy nepoužije non_eu ani všeobecné znenie
+            $this->assertSame('Odwrotne obciążenie.', $r->text('PL', 'pl_exempt_113_1', 'eu_b2b', 'pl', 'vat_note')['body']);
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE billing_mode = 'non_eu'");
+        }
+    }
+
+    public function testMissingLanguageFallsBackToEnglishForSkProfile(): void
+    {
+        $t = $this->resolver()->text('SK', 'sk_non_vat', 'domestic', 'cs', 'vat_note');
+        $this->assertSame('en', $t['language']);
+        $this->assertSame('Not a VAT payer.', $t['body']);
     }
 }

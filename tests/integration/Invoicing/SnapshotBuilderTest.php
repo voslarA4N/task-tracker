@@ -84,6 +84,11 @@ final class SnapshotBuilderTest extends PgTestCase
 
         $this->assertSame(array_keys($snap['legal']['texts']['vat_note']), array_keys($sample['legal']['texts']['vat_note']));
         $this->assertSame(1, $sample['legal']['texts']['vat_note']['revision']);
+        $this->assertNull($sample['legal']['texts']['vat_note']['billing_mode']);
+        $this->assertSame('eu_b2b', SampleSnapshots::invoice('pl_eu_b2b')['legal']['texts']['vat_note']['billing_mode']);
+
+        $pl = $this->build($this->issueSetup(['country' => 'PL']));
+        $this->assertSame(array_keys($pl['legal']['texts']['vat_note']), array_keys(SampleSnapshots::invoice('pl')['legal']['texts']['vat_note']));
     }
 
     public function testSnapshotIsSchemaTwoWithPrintRules(): void
@@ -259,7 +264,7 @@ final class SnapshotBuilderTest extends PgTestCase
         }
 
         $this->assertSame(['method' => 'cash', 'note' => 'Poznamka', 'qr' => null], $snap['payment']);
-        $this->assertSame(['key' => 'invoice_note', 'body' => 'Vzor', 'language' => 'sk', 'provisional' => false, 'revision' => 1], $snap['legal']['texts']['invoice_note']);
+        $this->assertSame(['key' => 'invoice_note', 'body' => 'Vzor', 'language' => 'sk', 'provisional' => false, 'revision' => 1, 'billing_mode' => null], $snap['legal']['texts']['invoice_note']);
     }
 
     public function testQrOnlyAfterNumberForSkTransfer(): void

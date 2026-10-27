@@ -7,6 +7,7 @@ namespace Tests\Integration\Master;
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Master\LegalTextRejected;
 use App\Libraries\Master\LegalTextService;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\PgTestCase;
 
@@ -42,6 +43,7 @@ final class LegalTextServiceTest extends PgTestCase
     {
         $this->owner()->query("UPDATE legal_texts SET body = 'Nie som platiteľ DPH.', provisional = true, revision = 1 WHERE id = :id:", ['id' => $this->id]);
         $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
+        $this->owner()->query("DELETE FROM legal_texts WHERE revision = 1 AND (language = 'cs' AND country = 'SK' OR billing_mode = 'non_eu')");
     }
 
     private function service(): LegalTextService
@@ -117,5 +119,82 @@ final class LegalTextServiceTest extends PgTestCase
         } catch (LegalTextRejected $e) {
             $this->assertSame($reason, $e->reason);
         }
+    }
+
+    public function testCreateAddsVariantAndAudits(): void
+    {
+        $base = $this->owner()->query("SELECT count(*) AS c FROM audit_log WHERE entity_type = 'legal_text' AND action = 'create'")->getRow()->c;
+        $id   = $this->service()->create('SK', 'sk_non_vat', null, 'cs', 'vat_note', 'Nejsem plátce DPH.', true);
+
+        $row = $this->owner()->query('SELECT * FROM legal_texts WHERE id = :id:', ['id' => $id])->getRowArray();
+        $this->assertSame(1, (int) $row['revision']);
+        $this->assertSame('cs', $row['language']);
+        $this->assertSame((int) $base + 1, (int) $this->owner()->query("SELECT count(*) AS c FROM audit_log WHERE entity_type = 'legal_text' AND action = 'create'")->getRow()->c);
+
+        $eff = $this->service()->effective('SK', 'sk_non_vat', null, 'cs', 'vat_note');
+        $this->assertNotNull($eff);
+        $this->assertSame('Nejsem plátce DPH.', $eff['body']);
+        $this->assertFalse($eff['fallback']);
+    }
+
+    public function testEffectiveReportsFallback(): void
+    {
+        $eff = $this->service()->effective('SK', 'sk_non_vat', null, 'cs', 'vat_note');
+        $this->assertNotNull($eff);
+        $this->assertTrue($eff['fallback']);
+        $this->assertSame('en', $eff['language']);
+        $this->assertNull($this->service()->effective('SK', 'sk_non_vat', null, 'cs', 'invoice_note'));
+    }
+
+    public function testEffectiveForNonEuWithoutVariantFallsBackToGeneral(): void
+    {
+        $eff = $this->service()->effective('PL', 'pl_exempt_113_1', 'non_eu', 'cs', 'vat_note');
+        $this->assertNotNull($eff);
+        $this->assertTrue($eff['fallback']);
+        $this->assertSame('en', $eff['language']);
+    }
+
+    public function testCreateDuplicateIsRejectedAndServiceStaysUsable(): void
+    {
+        $count = (int) $this->owner()->query('SELECT count(*) AS c FROM legal_texts')->getRow()->c;
+
+        try {
+            $this->service()->create('SK', 'sk_non_vat', null, 'sk', 'vat_note', 'Iné znenie', true);
+            $this->fail('expected exists');
+        } catch (LegalTextRejected $e) {
+            $this->assertSame('exists', $e->reason);
+        }
+
+        $this->assertSame($count, (int) $this->owner()->query('SELECT count(*) AS c FROM legal_texts')->getRow()->c);
+        $this->assertGreaterThan(0, $this->service()->create('SK', 'sk_non_vat', null, 'cs', 'vat_note', 'Nejsem plátce DPH.', true));
+    }
+
+    #[DataProvider('provideCreateRejectsInvalid')]
+    public function testCreateRejectsInvalid(string $country, string $regime, ?string $mode, string $lang, string $key, string $body, string $reason): void
+    {
+        try {
+            $this->service()->create($country, $regime, $mode, $lang, $key, $body, true);
+            $this->fail('expected rejection');
+        } catch (LegalTextRejected $e) {
+            $this->assertSame($reason, $e->reason);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string, string, ?string, string, string, string, string}>
+     */
+    public static function provideCreateRejectsInvalid(): iterable
+    {
+        yield 'key' => ['SK', 'sk_non_vat', null, 'cs', 'footer', 'x', 'invalid'];
+
+        yield 'country' => ['DE', 'sk_non_vat', null, 'cs', 'vat_note', 'x', 'invalid'];
+
+        yield 'language' => ['SK', 'sk_non_vat', null, 'de', 'vat_note', 'x', 'invalid'];
+
+        yield 'mode' => ['SK', 'sk_non_vat', 'bogus', 'cs', 'vat_note', 'x', 'invalid'];
+
+        yield 'note' => ['SK', 'sk_non_vat', null, 'cs', 'invoice_note', str_repeat('a', 501), 'too_long'];
+
+        yield 'empty' => ['SK', 'sk_non_vat', null, 'cs', 'vat_note', '  ', 'empty'];
     }
 }

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Libraries\Master;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Platform\DbBool;
 use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
+use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Database;
 
 /**
@@ -18,6 +20,7 @@ class LegalTextService
 {
     public const MAX_BODY         = 2000;
     public const MAX_INVOICE_NOTE = 500;
+    private const KEYS            = ['vat_note', 'invoice_note'];
     private const KEY_ORDER       = ['vat_note' => 0, 'invoice_note' => 1];
     private const LANGUAGE_ORDER  = ['sk' => 0, 'cs' => 1, 'pl' => 2, 'en' => 3];
     private const MODE_ORDER      = ['' => 0, 'eu_b2b' => 1, 'non_eu' => 2, 'domestic' => 3];
@@ -146,5 +149,114 @@ class LegalTextService
 
             return $revision + 1;
         });
+    }
+
+    /**
+     * Pridanie variantu znenia (D-13). Whitelist kluca, jazyka, rezimu a existujuceho profilu (D-12, T-06-33).
+     *
+     * @return int id noveho riadku
+     *
+     * @throws LegalTextRejected
+     */
+    public function create(string $country, string $vatRegime, ?string $billingMode, string $language, string $key, string $body, bool $provisional): int
+    {
+        if (! in_array($key, self::KEYS, true)
+            || DocLanguage::tryFrom($language) === null
+            || ($billingMode !== null && BillingMode::tryFrom($billingMode) === null)) {
+            throw new LegalTextRejected('invalid');
+        }
+
+        $body = str_replace(["\r\n", "\r"], "\n", $body);
+
+        if (trim($body) === '') {
+            throw new LegalTextRejected('empty');
+        }
+
+        if (mb_strlen($body) > self::MAX_BODY || ($key === 'invoice_note' && mb_strlen($body) > self::MAX_INVOICE_NOTE)) {
+            throw new LegalTextRejected('too_long');
+        }
+
+        $now = service('clock')->now()->format('Y-m-d H:i:sP');
+
+        try {
+            return Transaction::run($this->db, function () use ($country, $vatRegime, $billingMode, $language, $key, $body, $provisional, $now): int {
+                $profile = $this->db->query(
+                    'SELECT 1 FROM legal_profiles WHERE country = :c: AND vat_regime = :r: LIMIT 1',
+                    ['c' => $country, 'r' => $vatRegime],
+                )->getRowArray();
+
+                if ($profile === null) {
+                    throw new LegalTextRejected('invalid');
+                }
+
+                $exists = $this->db->query(
+                    'SELECT 1 FROM legal_texts WHERE country = :c: AND vat_regime = :r: AND language = :l: AND key = :k: '
+                    . 'AND billing_mode IS NOT DISTINCT FROM CAST(:m: AS text)',
+                    ['c' => $country, 'r' => $vatRegime, 'l' => $language, 'k' => $key, 'm' => $billingMode],
+                )->getRowArray();
+
+                if ($exists !== null) {
+                    throw new LegalTextRejected('exists');
+                }
+
+                $this->db->table('legal_texts')->insert([
+                    'country'      => $country,
+                    'vat_regime'   => $vatRegime,
+                    'billing_mode' => $billingMode,
+                    'language'     => $language,
+                    'key'          => $key,
+                    'body'         => $body,
+                    'provisional'  => DbBool::toDb($provisional),
+                    'revision'     => 1,
+                    'updated_at'   => $now,
+                ]);
+                $id = (int) $this->db->insertID();
+
+                $this->audit->record('legal_text', $id, 'create', null, [
+                    'country'  => $country, 'vat_regime' => $vatRegime, 'billing_mode' => $billingMode,
+                    'language' => $language, 'key' => $key, 'body' => $body, 'provisional' => $provisional, 'revision' => 1,
+                ]);
+
+                return $id;
+            });
+        } catch (DatabaseException $e) {
+            // Subezny INSERT rovnakej kombinacie (unique legal_texts_key); zachytene az mimo transakcie.
+            if (InvoiceIssuer::isUniqueViolation($e, 'legal_texts_key')) {
+                throw new LegalTextRejected('exists');
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Znenie, ktore sa pre kombinaciu realne pouzije (rovnake poradie ako pri vystaveni), s priznakom nahradneho.
+     *
+     * @return array{id: int, body: string, language: string, billing_mode: ?string, revision: int, provisional: bool, fallback: bool}|null
+     */
+    public function effective(string $country, string $vatRegime, ?string $billingMode, string $language, string $key): ?array
+    {
+        $resolver = new LegalProfileResolver($this->db);
+        $row      = $resolver->optionalText($country, $vatRegime, $billingMode ?? '', $language, $key);
+
+        if ($row === null) {
+            return null;
+        }
+
+        $id = $this->db->query(
+            'SELECT id FROM legal_texts WHERE country = :c: AND vat_regime = :r: AND language = :l: AND key = :k: '
+            . 'AND billing_mode IS NOT DISTINCT FROM CAST(:m: AS text)',
+            ['c' => $country, 'r' => $vatRegime, 'l' => $row['language'], 'k' => $key, 'm' => $row['billing_mode']],
+        )->getRowArray();
+
+        return [
+            'id'           => (int) ($id['id'] ?? 0),
+            'body'         => $row['body'],
+            'language'     => $row['language'],
+            'billing_mode' => $row['billing_mode'],
+            'revision'     => $row['revision'],
+            'provisional'  => $row['provisional'],
+            'fallback'     => $row['language'] !== $language || $row['billing_mode'] !== $billingMode,
+        ];
     }
 }
