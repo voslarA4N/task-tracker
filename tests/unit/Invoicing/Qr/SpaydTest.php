@@ -21,15 +21,15 @@ final class SpaydTest extends CIUnitTestCase
      */
     private function snap(): array
     {
-        $s                            = SampleSnapshots::invoice('sk');
-        $s['number']                  = '2610001';
-        $s['variable_symbol']         = '2610001';
-        $s['totals']['total']         = '1080.50';
-        $s['due_date']                = '2026-11-10';
-        $s['labels']['invoice']       = 'Faktúra';
-        $s['entity']['trade_name']    = 'Jan Novák';
-        $s['bank']['iban']            = 'SK3112000000198742637541';
-        $s['bank']['swift']           = 'TATRSKBX';
+        $s                         = SampleSnapshots::invoice('sk');
+        $s['number']               = '2610001';
+        $s['variable_symbol']      = '2610001';
+        $s['totals']['total']      = '1080.50';
+        $s['due_date']             = '2026-11-10';
+        $s['labels']['invoice']    = 'Faktúra';
+        $s['entity']['trade_name'] = 'Jan Novák';
+        $s['bank']['iban']         = 'SK3112000000198742637541';
+        $s['bank']['swift']        = 'TATRSKBX';
 
         return $s;
     }

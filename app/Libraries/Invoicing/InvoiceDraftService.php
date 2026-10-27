@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Invoicing\Qr\PolishZbpQr;
 use App\Libraries\Master\EntityDirectory;
 use App\Libraries\Master\EntityVersionResolver;
+use App\Libraries\Master\InvalidSeriesFormat;
 use App\Libraries\Master\LegalProfileResolver;
 use App\Libraries\Master\LegalTextMissing;
+use App\Libraries\Master\SeriesFormat;
 use App\Libraries\Master\VersionNotFound;
 use App\Libraries\Work\BillingMonth;
 use CodeIgniter\Database\BaseConnection;
@@ -136,13 +139,15 @@ final class InvoiceDraftService
             }
         }
 
-        $backdate = null;
+        $backdate  = null;
+        $seriesFmt = null;
 
         if ($selected !== null) {
-            $series = $this->db->query("SELECT id FROM invoice_series WHERE entity_id = :e: AND kind = 'invoice'", ['e' => $selected])->getRowArray();
+            $series = $this->db->query("SELECT id, format FROM invoice_series WHERE entity_id = :e: AND kind = 'invoice'", ['e' => $selected])->getRowArray();
 
             if ($series !== null) {
-                $backdate = $this->guards->backdate((int) $series['id'], $issue);
+                $backdate  = $this->guards->backdate((int) $series['id'], $issue);
+                $seriesFmt = (string) $series['format'];
             }
         }
 
@@ -151,6 +156,9 @@ final class InvoiceDraftService
         $defaultNote = is_array($texts['invoice_note'] ?? null) ? $texts['invoice_note'] : null;
         $note        = $noteDirty ? IssueInput::normalizeNote((string) $paymentNote) : ($defaultNote['body'] ?? null);
         $provisional = (bool) ($texts['vat_note']['provisional'] ?? false) || (! $noteDirty && (bool) ($defaultNote['provisional'] ?? false));
+
+        $zbpWarning = is_array($snapshot) && $seriesFmt !== null && $method === 'transfer' && PolishZbpQr::applies($snapshot)
+            && ! PolishZbpQr::titleFits(self::longestNumber($seriesFmt, $issue));
 
         return new Draft(
             $clientId,
@@ -176,7 +184,22 @@ final class InvoiceDraftService
             $note,
             $noteDirty,
             $provisional,
+            $zbpWarning,
         );
+    }
+
+    /**
+     * Najdlhsie mozne cislo radu (len citanie formatu). Neplatny format sa ignoruje, vystavenie ho odmietne.
+     */
+    private static function longestNumber(string $format, string $issueDate): string
+    {
+        try {
+            $parsed = SeriesFormat::parse($format);
+
+            return $parsed->render($issueDate, $parsed->maxSequence());
+        } catch (InvalidSeriesFormat) {
+            return '';
+        }
     }
 
     private function validDate(?string $iso): ?string

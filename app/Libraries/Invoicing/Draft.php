@@ -41,6 +41,7 @@ final readonly class Draft
         public ?string $paymentNote = null,
         public bool $paymentNoteDirty = false,
         public bool $provisionalText = false,
+        public bool $zbpTitleWarning = false,
     ) {
     }
 }

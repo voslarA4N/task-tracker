@@ -322,4 +322,28 @@ final class InvoicingPreviewTest extends AuthTestCase
         $result->assertStatus(200);
         $this->assertStringContainsString('<option value="transfer" selected>', $this->body($result));
     }
+
+    /**
+     * Najdlhsi povoleny format (SeriesFormat::MAX_OUTPUT = 30) dava vzdy cislo <= 30 znakov, teda pod limitom ZBP 32:
+     * upozornenie sa v praxi nezobrazi. Test overuje hranicu a ostatne kombinacie.
+     */
+    public function testZbpWarningAbsentForPlWithLongestAllowedFormat(): void
+    {
+        $s = $this->issueSetup(['country' => 'PL', 'format' => 'ABCDEFGHIJKLMNOPQRS-RRRR###']);
+
+        $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+
+        $this->assertStringNotContainsString('QR kód ZBP', $html);
+    }
+
+    public function testZbpWarningAbsentForSkClientAndCash(): void
+    {
+        $s    = $this->issueSetup(['format' => 'ABCDEFGHIJKLMNOPQRS-RRRR###']);
+        $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+        $this->assertStringNotContainsString('QR kód ZBP', $html);
+
+        $pl   = $this->issueSetup(['country' => 'PL']);
+        $html = $this->body($this->get('/invoices/new?client=' . $pl['client'] . '&month=2026-10&payment_method=cash'));
+        $this->assertStringNotContainsString('QR kód ZBP', $html);
+    }
 }

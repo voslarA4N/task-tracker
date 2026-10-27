@@ -85,6 +85,7 @@ return [
     'paymentNoteHint'        => 'Predvyplnené z predvoleného znenia. Môžete ho upraviť alebo vymazať.',
     'paymentNoteEditDefault' => 'Upraviť predvolené znenie',
     'provisionalWarning'     => 'Pozor: znenie ešte nepotvrdila účtovníčka. Faktúra sa dá vystaviť, ale znenie sa po vystavení nezmení.',
+    'zbpTitleTooLong'        => 'Číslo faktúry bude dlhšie ako 32 znakov, preto faktúra pre poľského klienta nebude mať QR kód ZBP. Faktúru môžete vystaviť.',
     'errorPaymentMethod'     => 'Vyberte platnú formu úhrady.',
     'errorPaymentNote'       => 'Poznámka môže mať najviac 500 znakov.',
     'confirmPaymentMethod'   => 'Forma úhrady',

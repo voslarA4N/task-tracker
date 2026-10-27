@@ -173,6 +173,9 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
                     </div>
                 </div>
             </section>
+            <?php if ($draft->zbpTitleWarning) : ?>
+                <div class="alert alert-warning small" role="status"><?= esc(lang('Invoicing.zbpTitleTooLong')) ?></div>
+            <?php endif ?>
             <?php if ($draft->provisionalText) : ?>
                 <div class="alert alert-warning small" role="alert"><?= esc(lang('Invoicing.provisionalWarning')) ?></div>
             <?php endif ?>

@@ -85,6 +85,7 @@ return [
     'paymentNoteHint'        => 'Prefilled from the default wording. You can edit or clear it.',
     'paymentNoteEditDefault' => 'Edit default wording',
     'provisionalWarning'     => 'Warning: the accountant has not yet confirmed this wording. The invoice can be issued, but the wording will not change after issue.',
+    'zbpTitleTooLong'        => 'The invoice number will be longer than 32 characters, so the invoice for the Polish client will have no ZBP QR code. You can still issue it.',
     'errorPaymentMethod'     => 'Choose a valid payment method.',
     'errorPaymentNote'       => 'The note can have at most 500 characters.',
     'confirmPaymentMethod'   => 'Payment method',

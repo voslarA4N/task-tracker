@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Invoicing\Qr;
 
 use App\Libraries\Invoicing\Qr\QrPaymentBuilder;
+use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use App\Libraries\Invoicing\Samples\SampleSnapshots;
 use CodeIgniter\Test\CIUnitTestCase;
-use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -84,8 +84,8 @@ final class QrPaymentBuilderTest extends CIUnitTestCase
 
     public function testPlWithSkIbanHasNoQr(): void
     {
-        $s                  = SampleSnapshots::invoice('pl');
-        $s['bank']['iban']  = 'SK3112000000198742637541';
+        $s                 = SampleSnapshots::invoice('pl');
+        $s['bank']['iban'] = 'SK3112000000198742637541';
         $this->assertNull((new QrPaymentBuilder())->build($s));
     }
 }
