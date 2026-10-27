@@ -8,6 +8,8 @@ use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Work\TaskQueries;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
+use Tests\Support\InvoiceFixtures;
+use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
 use Tests\Support\PgTestCase;
 
@@ -17,6 +19,8 @@ use Tests\Support\PgTestCase;
 #[Group('integration')]
 final class TaskQueriesDetailTest extends PgTestCase
 {
+    use InvoiceFixtures;
+    use IssueFixtures;
     use MasterFixtures;
 
     protected function setUp(): void
@@ -76,5 +80,31 @@ final class TaskQueriesDetailTest extends PgTestCase
     public function testMissingReturnsNull(): void
     {
         $this->assertNull($this->queries()->detail(999999));
+    }
+
+    public function testLockedPartsExposeInvoiceNumberAndOrigin(): void
+    {
+        $s      = $this->issueSetup(['parts' => [['16.00', '2026-10']]]);
+        $issued = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
+
+        $external = $this->createAllocation($s['tasks'][0], '4.00', '2026-09');
+        $this->lockAllocation($external);
+        $this->createAllocation($s['tasks'][0], '2.00', '2026-11');
+
+        $d = $this->queries()->detail($s['tasks'][0]);
+        $this->assertNotNull($d);
+
+        $byMonth = [];
+
+        foreach ($d['allocations'] as $a) {
+            $byMonth[trim((string) $a['billing_month'])] = $a;
+        }
+
+        $this->assertSame('202610001', $byMonth['2026-10']['invoice_number']);
+        $this->assertSame('issued', $byMonth['2026-10']['invoice_origin']);
+        $this->assertSame($issued->id, (int) $byMonth['2026-10']['invoice_id']);
+        $this->assertSame('external', $byMonth['2026-09']['invoice_origin']);
+        $this->assertNull($byMonth['2026-11']['invoice_number']);
+        $this->assertNull($byMonth['2026-11']['invoice_origin']);
     }
 }

@@ -22,6 +22,8 @@ return [
     'overBadge'        => 'Over quoted',
     'sectionTitle'     => 'Billing parts',
     'lockedBadge'      => 'Locked',
+    'lockedInvoice'    => 'Locked · INV {0}',
+    'lockedExternal'   => 'Locked · external invoice',
     'plannedBadge'     => 'Planned',
     'lockedHint'       => 'Locked parts are on an issued invoice and cannot be changed or moved.',
     'emptyParts'       => 'The task has no billing parts yet. Add a part to the month in which you will invoice it.',

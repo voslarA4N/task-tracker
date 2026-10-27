@@ -22,6 +22,8 @@ return [
     'overBadge'        => 'Nad nacenené',
     'sectionTitle'     => 'Fakturačné časti',
     'lockedBadge'      => 'Zamknuté',
+    'lockedInvoice'    => 'Zamknuté · FA {0}',
+    'lockedExternal'   => 'Zamknuté · externá faktúra',
     'plannedBadge'     => 'Naplánované',
     'lockedHint'       => 'Zamknuté časti sú na vystavenej faktúre a nedajú sa meniť ani presunúť.',
     'emptyParts'       => 'Úloha zatiaľ nemá fakturačné časti. Pridajte časť do mesiaca, v ktorom ju budete fakturovať.',

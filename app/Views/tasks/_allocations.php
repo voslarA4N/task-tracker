@@ -29,7 +29,7 @@ $taskId = (int) $task['id'];
                     <div class="d-flex align-items-center gap-2">
                         <?php if ($a['locked']) : ?>
                             <svg class="text-body-secondary" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 1a3 3 0 0 0-3 3v2H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-1V4a3 3 0 0 0-3-3m-2 3a2 2 0 1 1 4 0v2H6z"/></svg>
-                            <span class="badge text-bg-secondary"><?= esc(lang('Allocations.lockedBadge')) ?></span>
+                            <a href="/invoices/<?= (int) $a['invoice_id'] ?>" class="btn-touch d-inline-flex align-items-center"><?= esc($a['invoice_origin'] === 'external' ? lang('Allocations.lockedExternal') : lang('Allocations.lockedInvoice', [(string) $a['invoice_number']])) ?></a>
                         <?php else : ?>
                             <span class="badge text-bg-light border"><?= esc(lang('Allocations.plannedBadge')) ?></span>
                             <a class="btn btn-outline-secondary btn-touch" href="/allocations/<?= $aid ?>/edit" hx-get="/allocations/<?= $aid ?>/edit" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Allocations.editLink')) ?></a>

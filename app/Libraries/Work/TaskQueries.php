@@ -115,8 +115,10 @@ final class TaskQueries
         }
 
         $allocations = $this->db->query(
-            'SELECT id, hours, billing_month, rate, amount, currency, invoice_id, (invoice_id IS NOT NULL) AS locked
-             FROM billing_allocations WHERE task_id = :id: ORDER BY billing_month, id',
+            'SELECT a.id, a.hours, a.billing_month, a.rate, a.amount, a.currency, a.invoice_id, (a.invoice_id IS NOT NULL) AS locked,
+                    i.number AS invoice_number, i.origin AS invoice_origin
+             FROM billing_allocations a LEFT JOIN invoices i ON i.id = a.invoice_id
+             WHERE a.task_id = :id: ORDER BY a.billing_month, a.id',
             ['id' => $id],
         )->getResultArray();
 
