@@ -129,6 +129,44 @@ final class AllocationService
     }
 
     /**
+     * Presun casti do ineho fakturacneho mesiaca. Meni iba billing_month: hodiny, sadzba a suma ostavaju tak,
+     * ako su ulozene pod zamkom (ziadny lost update zo starsieho citania, ziadny prepocet sumy).
+     *
+     * @throws AllocationLocked
+     */
+    public function moveMonth(int $id, string $month): bool
+    {
+        $now = service('clock')->now()->format('Y-m-d H:i:sP');
+
+        try {
+            return Transaction::run($this->db, function () use ($id, $month, $now): bool {
+                $before = $this->lockRow($id);
+
+                if ($before['invoice_id'] !== null) {
+                    throw new AllocationLocked($id);
+                }
+
+                if ($before['billing_month'] === $month) {
+                    return false;
+                }
+
+                $this->db->query(
+                    'UPDATE billing_allocations SET billing_month = :month:, updated_at = :now: WHERE id = :id: AND invoice_id IS NULL',
+                    ['month' => $month, 'now' => $now, 'id' => $id],
+                );
+
+                if ($this->db->affectedRows() !== 1) {
+                    throw new AllocationLocked($id);
+                }
+
+                return $this->audit->recordChange('billing_allocation', $id, 'update', ['billing_month' => $before['billing_month']], ['billing_month' => $month]);
+            });
+        } catch (DatabaseException $e) {
+            throw $this->translate($e, $id);
+        }
+    }
+
+    /**
      * @throws AllocationLocked
      */
     public function delete(int $id): void

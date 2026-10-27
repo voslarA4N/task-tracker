@@ -72,11 +72,7 @@ final class Invoicing extends BaseController
         }
 
         try {
-            (new AllocationService())->update($id, [
-                'hours'         => (string) $allocation['hours'],
-                'billing_month' => $target,
-                'rate'          => (string) $allocation['rate'],
-            ]);
+            (new AllocationService())->moveMonth($id, $target);
         } catch (AllocationLocked) {
             return $this->movePanel(409, $allocation, $title, $selection, $choice, $other, [], true);
         } catch (InvalidArgumentException) {
