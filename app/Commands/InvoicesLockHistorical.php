@@ -23,7 +23,7 @@ final class InvoicesLockHistorical extends BaseCommand
     protected $group       = 'Invoices';
     protected $name        = 'invoices:lock-historical';
     protected $description = 'Zamkne importované časti mesiaca na historickú externú faktúru (predvolene suchý beh).';
-    protected $usage       = 'invoices:lock-historical --client <id> --month <RRRR-MM> [--ref <text>] [--expect-parts <N> --expect-hours <H> --expect-amount <A> --commit]';
+    protected $usage       = 'invoices:lock-historical --client <id> --month <RRRR-MM> [--ref <text>] [--include-app-parts] [--expect-parts <N> --expect-hours <H> --expect-amount <A> --commit]';
     protected $options     = [
         '--client'        => 'ID klienta (povinné)',
         '--month'         => 'Fakturačný mesiac RRRR-MM (povinné)',
@@ -31,7 +31,8 @@ final class InvoicesLockHistorical extends BaseCommand
         '--expect-parts'  => 'Očakávaný počet častí (povinné s --commit)',
         '--expect-hours'  => 'Očakávané hodiny (povinné s --commit)',
         '--expect-amount' => 'Očakávaná suma (povinné s --commit)',
-        '--commit'        => 'Skutočný zápis do databázy',
+        '--include-app-parts' => 'Zahrnúť aj časti pridané k importovaným úlohám až v aplikácii (predvolene sa vynechajú)',
+        '--commit'            => 'Skutočný zápis do databázy',
     ];
 
     public function run(array $params): int
@@ -43,6 +44,7 @@ final class InvoicesLockHistorical extends BaseCommand
         $hours  = $this->opt($params, 'expect-hours');
         $amount = $this->opt($params, 'expect-amount');
         $commit = array_key_exists('commit', $params) || CLI::getOption('commit') !== null;
+        $appAll = array_key_exists('include-app-parts', $params) || CLI::getOption('include-app-parts') !== null;
 
         if (
             $client === null || preg_match('/^\d{1,18}$/D', $client) !== 1
@@ -61,7 +63,7 @@ final class InvoicesLockHistorical extends BaseCommand
             $locker = new ExternalInvoiceLocker();
 
             if (! $commit) {
-                $plan = $locker->plan((int) $client, $month);
+                $plan = $locker->plan((int) $client, $month, $appAll);
 
                 CLI::write('Počet častí: ' . $plan['count']);
                 CLI::write('Hodiny: ' . $plan['hours']);
@@ -72,6 +74,13 @@ final class InvoicesLockHistorical extends BaseCommand
                         static fn (array $p): array => [(string) $p['id'], $p['title'], $p['hours'], $p['rate'], $p['amount'], $p['currency']],
                         $plan['parts'],
                     ), ['ID', 'Úloha', 'Hodiny', 'Sadzba', 'Suma', 'Mena']);
+                }
+
+                if ($plan['excluded'] !== []) {
+                    CLI::write(
+                        'Vynechané časti pridané v aplikácii k importovaným úlohám (ID ' . implode(', ', $plan['excluded']) . '). Zahrnúť ich možno iba výslovne cez --include-app-parts.',
+                        'yellow',
+                    );
                 }
 
                 CLI::write('Suchý beh, nič sa nezapísalo. Spustite znova s --commit a --expect-parts, --expect-hours, --expect-amount.', 'yellow');
@@ -85,7 +94,7 @@ final class InvoicesLockHistorical extends BaseCommand
                 return EXIT_ERROR;
             }
 
-            $id = $locker->lock((int) $client, $month, $ref, (int) $parts, $hours, $amount);
+            $id = $locker->lock((int) $client, $month, $ref, (int) $parts, $hours, $amount, $appAll);
         } catch (DomainException|InvalidArgumentException|RuntimeException $e) {
             CLI::error($e->getMessage());
 

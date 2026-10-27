@@ -85,6 +85,60 @@ final class LockHistoricalTest extends PgTestCase
         $this->assertNotContains($this->manualAlloc, array_column($plan['parts'], 'id'));
     }
 
+    /**
+     * WR-10: cast pridana k importovanej ulohe az v aplikacii (den po importe).
+     */
+    private function addAppPartToImportedTask(): int
+    {
+        $task = (int) $this->owner()->query('SELECT task_id FROM billing_allocations WHERE id = :id:', ['id' => $this->allocs[0]])->getRow()->task_id;
+        Services::injectMock('clock', new FrozenClock('2026-10-26T09:00:00+01:00'));
+
+        return $this->createAllocation($task, '2.00', '2026-09');
+    }
+
+    public function testPlanExcludesAppPartsOnImportedTasksUnlessFlagged(): void
+    {
+        $app    = $this->addAppPartToImportedTask();
+        $locker = new ExternalInvoiceLocker($this->rw());
+
+        $plan = $locker->plan($this->client, '2026-09');
+        $this->assertSame(3, $plan['count']);
+        $this->assertSame('648.00', $plan['amount']);
+        $this->assertNotContains($app, array_column($plan['parts'], 'id'));
+        $this->assertSame([$app], $plan['excluded']);
+
+        $all = $locker->plan($this->client, '2026-09', true);
+        $this->assertSame(4, $all['count']);
+        $this->assertContains($app, array_column($all['parts'], 'id'));
+        $this->assertSame([], $all['excluded']);
+    }
+
+    public function testCommitSkipsAppPartsByDefaultAndDryRunListsThem(): void
+    {
+        $app = $this->addAppPartToImportedTask();
+
+        $out = $this->run2($this->base());
+        $this->assertStringContainsString('Počet častí: 3', $out);
+        $this->assertStringContainsString('ID ' . $app, $out);
+        $this->assertStringContainsString('--include-app-parts', $out);
+
+        $this->run2($this->base() . ' --expect-parts 3 --expect-hours 24 --expect-amount 648 --commit');
+
+        $this->assertSame(1, $this->rowCount('invoices'));
+        $this->assertSame(0, $this->rowCount('billing_allocations WHERE id = ' . $app . ' AND invoice_id IS NOT NULL'));
+        $this->assertSame(3, $this->rowCount('billing_allocations WHERE invoice_id IS NOT NULL'));
+    }
+
+    public function testIncludeAppPartsFlagLocksThemExplicitly(): void
+    {
+        $app = $this->addAppPartToImportedTask();
+
+        $this->run2($this->base() . ' --include-app-parts --expect-parts 4 --expect-hours 26 --expect-amount 702 --commit');
+
+        $this->assertSame(1, $this->rowCount('billing_allocations WHERE id = ' . $app . ' AND invoice_id IS NOT NULL'));
+        $this->assertSame(0, $this->rowCount('billing_allocations WHERE id = ' . $this->manualAlloc . ' AND invoice_id IS NOT NULL'));
+    }
+
     public function testDryRunWritesNothing(): void
     {
         $out = $this->run2($this->base());
