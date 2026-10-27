@@ -1,0 +1,11 @@
+body { font-family: dejavusans; font-size: 9pt; }
+h1 { font-size: 16pt; }
+table.parties { width: 100%; }
+table.parties td { width: 50%; vertical-align: top; padding-bottom: 3mm; }
+table.meta { width: 100%; margin-bottom: 3mm; }
+table.meta td { padding: 0.5mm 0; }
+table.items { width: 100%; border-collapse: collapse; }
+table.items th, table.items td { border-bottom: 0.2mm solid #999999; padding: 1mm; }
+.r { text-align: right; }
+.total { font-size: 11pt; margin-top: 3mm; }
+.note { margin-top: 6mm; }
