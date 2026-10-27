@@ -20,8 +20,7 @@ use Config\Database;
  */
 final class SnapshotBuilder
 {
-    public const LABEL_KEYS = ['invoice', 'number', 'variableSymbol', 'supplier', 'customer', 'issueDate', 'deliveryDate', 'dueDate', 'paymentMethod', 'paymentTransfer', 'bankAccount', 'swift', 'item', 'hours', 'rate', 'amount', 'vatCode', 'total', 'companyId', 'taxId', 'vatId', 'regon', 'identifier'];
-
+    public const LABEL_KEYS    = ['invoice', 'number', 'variableSymbol', 'supplier', 'customer', 'issueDate', 'deliveryDate', 'dueDate', 'paymentMethod', 'paymentTransfer', 'bankAccount', 'swift', 'item', 'hours', 'rate', 'amount', 'vatCode', 'total', 'companyId', 'taxId', 'vatId', 'regon', 'identifier'];
     public const VS_MAX_DIGITS = 10;
 
     private readonly EntityVersionResolver $versions;
