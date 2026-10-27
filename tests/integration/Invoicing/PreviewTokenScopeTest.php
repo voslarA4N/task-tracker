@@ -139,4 +139,26 @@ final class PreviewTokenScopeTest extends PgTestCase
         $order = array_map(static fn (array $r): int => (int) $r['source_allocation_id'], $rows);
         $this->assertSame($preview, $order);
     }
+
+    public function testPaymentIsIgnoredByTokenButInvoiceNoteChangeIsStale(): void
+    {
+        $s      = $this->issueSetup();
+        $token  = $this->previewTokenFor($s['client'], '2026-10', $s['entity'], $s['parts']);
+        $issued = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts'], ['previewToken' => $token, 'paymentMethod' => 'cash', 'paymentNote' => 'Ina poznamka']));
+        $this->assertNotSame('', $issued->number);
+    }
+
+    public function testInvoiceNoteWordingChangeIsStale(): void
+    {
+        $s = $this->issueSetup();
+        $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK', 'sk_non_vat', NULL, 'sk', 'invoice_note', 'Povodne', false, now())");
+
+        try {
+            $token = $this->previewTokenFor($s['client'], '2026-10', $s['entity'], $s['parts']);
+            $this->owner()->query("UPDATE legal_texts SET body = 'Zmenene' WHERE key = 'invoice_note'");
+            $this->assertStale($s, $token);
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
+        }
+    }
 }

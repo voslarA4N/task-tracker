@@ -12,11 +12,11 @@ use CodeIgniter\HTTP\IncomingRequest;
  */
 final class IssueInput
 {
-    public const SCALARS    = ['client_id', 'billing_month', 'entity_id', 'preview_token', 'request_key', 'issue_date', 'delivery_date', 'due_date', 'confirm_backdate'];
+    public const SCALARS    = ['client_id', 'billing_month', 'entity_id', 'preview_token', 'request_key', 'issue_date', 'delivery_date', 'due_date', 'confirm_backdate', 'payment_method', 'payment_note'];
     private const MAX_PARTS = 500;
 
     /**
-     * @return array{client_id: string, billing_month: string, entity_id: string, preview_token: string, request_key: string, issue_date: string, delivery_date: string, due_date: string, confirm_backdate: string, part_ids: list<string>}
+     * @return array{client_id: string, billing_month: string, entity_id: string, preview_token: string, request_key: string, issue_date: string, delivery_date: string, due_date: string, confirm_backdate: string, payment_method: string, payment_note: string, part_ids: list<string>}
      */
     public static function fromPost(IncomingRequest $request): array
     {
@@ -92,6 +92,14 @@ final class IssueInput
             }
         }
 
+        if ($str('payment_method') !== '' && ! in_array($str('payment_method'), IssueCommand::PAYMENT_METHODS, true)) {
+            $errors['payment_method'] = lang('Invoicing.errorPaymentMethod');
+        }
+
+        if (mb_strlen(self::normalizeNote($str('payment_note')) ?? '') > IssueCommand::NOTE_MAX) {
+            $errors['payment_note'] = lang('Invoicing.errorPaymentNote');
+        }
+
         $shared = PreviewInput::validate([
             'month'         => $str('billing_month'),
             'issue_date'    => $str('issue_date'),
@@ -133,6 +141,20 @@ final class IssueInput
             $str('request_key'),
             $str('confirm_backdate') === '1',
             $userId,
+            $str('payment_method') === '' ? 'transfer' : $str('payment_method'),
+            self::normalizeNote($str('payment_note')),
         );
+    }
+
+    /**
+     * \r\n na \n, trim, prazdny retazec na null, riadiace znaky (okrem \n a \t) sa odstrania.
+     */
+    public static function normalizeNote(string $note): ?string
+    {
+        $note = str_replace(["\r\n", "\r"], "\n", $note);
+        $note = (string) preg_replace('/[\x00-\x08\x0B-\x1F\x7F]/', '', $note);
+        $note = trim($note);
+
+        return $note === '' ? null : $note;
     }
 }

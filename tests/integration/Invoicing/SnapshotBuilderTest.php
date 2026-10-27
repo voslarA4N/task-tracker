@@ -226,4 +226,27 @@ final class SnapshotBuilderTest extends PgTestCase
         $this->assertTrue($parts->hasLocked($s['client'], '2026-10'));
         $this->assertCount(1, $parts->unlocked($s['client'], '2026-10', null));
     }
+
+    public function testPaymentAndInvoiceNoteInSnapshot(): void
+    {
+        $s    = $this->issueSetup();
+        $snap = $this->build($s);
+        $this->assertSame(['method' => 'transfer', 'note' => null, 'qr' => null], $snap['payment']);
+        $this->assertNull($snap['legal']['texts']['invoice_note']);
+
+        $client = $this->rw()->query('SELECT * FROM clients WHERE id = :id:', ['id' => $s['client']])->getRowArray();
+        $entity = $this->rw()->query('SELECT * FROM entities WHERE id = :id:', ['id' => $s['entity']])->getRowArray();
+        $parts  = (new InvoiceParts($this->rw()))->unlocked($s['client'], '2026-10', $client['portal_url_template']);
+
+        $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK', 'sk_non_vat', NULL, 'sk', 'invoice_note', 'Vzor', false, now())");
+
+        try {
+            $snap = (new SnapshotBuilder($this->rw()))->build($client, $entity, $parts, '2026-10', '2026-10-27', '2026-10-31', '2026-11-10', null, 'cash', 'Poznamka');
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
+        }
+
+        $this->assertSame(['method' => 'cash', 'note' => 'Poznamka', 'qr' => null], $snap['payment']);
+        $this->assertSame(['key' => 'invoice_note', 'body' => 'Vzor', 'language' => 'sk', 'provisional' => false], $snap['legal']['texts']['invoice_note']);
+    }
 }

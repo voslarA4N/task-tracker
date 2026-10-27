@@ -90,4 +90,37 @@ final class LegalProfileResolver
 
         throw new LegalTextMissing(sprintf('No legal text %s for %s / %s / %s / %s', $key, $country, $vatRegime, $billingMode, $language));
     }
+
+    /**
+     * Ako text(), ale chybajuci text nie je chyba (napr. predvoleny invoice_note je volitelny, D-12).
+     *
+     * @return array{body: string, language: string, provisional: bool}|null
+     */
+    public function optionalText(string $country, string $vatRegime, string $billingMode, string $language, string $key): ?array
+    {
+        try {
+            $mode = $this->profile($country, $vatRegime, $billingMode)['billing_mode'];
+        } catch (LegalTextMissing) {
+            return null;
+        }
+
+        foreach ([[$language, $mode], ['en', $mode]] as [$lang, $m]) {
+            $row = $this->db->query(
+                'SELECT body, language, provisional FROM legal_texts '
+                . 'WHERE country = :c: AND vat_regime = :r: AND language = :l: AND key = :k: '
+                . 'AND billing_mode IS NOT DISTINCT FROM CAST(:m: AS text)',
+                ['c' => $country, 'r' => $vatRegime, 'l' => $lang, 'k' => $key, 'm' => $m],
+            )->getRowArray();
+
+            if ($row !== null && (string) $row['body'] !== '') {
+                return [
+                    'body'        => (string) $row['body'],
+                    'language'    => (string) $row['language'],
+                    'provisional' => DbBool::of($row['provisional']),
+                ];
+            }
+        }
+
+        return null;
+    }
 }

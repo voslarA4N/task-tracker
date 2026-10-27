@@ -162,7 +162,7 @@ final class InvoiceIssuer
         $this->guards->assertEntityActive($entity, $cmd->issueDate);
         $this->guards->assertCurrency($entity, $this->guards->partsCurrency($parts));
 
-        $snapshot = $this->builder->build($client, $entity, $parts, $cmd->billingMonth, $cmd->issueDate, $cmd->deliveryDate, $cmd->dueDate, null);
+        $snapshot = $this->builder->build($client, $entity, $parts, $cmd->billingMonth, $cmd->issueDate, $cmd->deliveryDate, $cmd->dueDate, null, $cmd->paymentMethod, $cmd->paymentNote);
         $this->guards->assertCurrency($entity, $snapshot['currency']);
 
         if (! hash_equals($cmd->previewToken, InvoiceCalculator::previewToken($snapshot))) {

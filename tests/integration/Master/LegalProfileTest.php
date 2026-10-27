@@ -128,4 +128,19 @@ final class LegalProfileTest extends PgTestCase
         $this->expectException(DatabaseException::class);
         $this->owner()->query("INSERT INTO legal_profiles (country, vat_regime, billing_mode, exemption_code, updated_at) VALUES ('SK','sk_non_vat',NULL,NULL, now())");
     }
+
+    public function testOptionalTextIsNullWhenMissingAndFoundWhenPresent(): void
+    {
+        $r = $this->resolver();
+        $this->assertNull($r->optionalText('SK', 'sk_non_vat', 'domestic', 'sk', 'invoice_note'));
+
+        $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK', 'sk_non_vat', NULL, 'sk', 'invoice_note', 'Predvolena poznamka', true, now())");
+
+        try {
+            $t = $r->optionalText('SK', 'sk_non_vat', 'domestic', 'sk', 'invoice_note');
+            $this->assertSame(['body' => 'Predvolena poznamka', 'language' => 'sk', 'provisional' => true], $t);
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
+        }
+    }
 }

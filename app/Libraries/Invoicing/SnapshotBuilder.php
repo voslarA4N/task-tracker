@@ -47,7 +47,7 @@ final class SnapshotBuilder
      *
      * @throws IssueRejected
      */
-    public function build(array $client, array $entity, array $parts, string $month, string $issueDate, string $deliveryDate, string $dueDate, ?string $number): array
+    public function build(array $client, array $entity, array $parts, string $month, string $issueDate, string $deliveryDate, string $dueDate, ?string $number, string $paymentMethod = 'transfer', ?string $paymentNote = null): array
     {
         $entityId = (int) $entity['id'];
 
@@ -73,6 +73,8 @@ final class SnapshotBuilder
         } catch (LegalTextMissing) {
             throw new IssueRejected('legal_text_missing', ['language' => $docLanguage]);
         }
+
+        $note = $this->legal->optionalText($country, $regime, $mode, $docLanguage, 'invoice_note');
 
         $calc = (new InvoiceCalculator())->compute($parts, $profile['vat_code']);
 
@@ -148,7 +150,10 @@ final class SnapshotBuilder
                 'exemption_code' => $profile['exemption_code'],
                 'vat_code'       => $profile['vat_code'],
                 'print'          => LegalProfile::print($country, $regime, $mode),
-                'texts'          => ['vat_note' => ['key' => 'vat_note'] + $text],
+                'texts'          => [
+                    'vat_note'     => ['key' => 'vat_note'] + $text,
+                    'invoice_note' => $note === null ? null : ['key' => 'invoice_note'] + $note,
+                ],
             ],
             'bank' => [
                 'label'    => (string) $bank['label'],
@@ -156,7 +161,7 @@ final class SnapshotBuilder
                 'swift'    => $this->nullable($bank['swift']),
                 'currency' => $bank['currency'],
             ],
-            'payment'  => ['method' => 'transfer', 'note' => null, 'qr' => null],
+            'payment'  => ['method' => $paymentMethod, 'note' => $paymentNote, 'qr' => null],
             'fx'       => null,
             'rounding' => ['line' => 'half_up_2', 'total' => 'sum_of_rounded_lines'],
             'labels'   => $labels + ['report' => $reportLabels],

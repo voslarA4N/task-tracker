@@ -76,7 +76,9 @@ final class InvoiceCalculator
     /**
      * Token nahladu: sha256 nad kanonickym JSON celej kopie udajov (datumy, verzia subjektu, banka,
      * pravne texty, hlavicka klienta, riadky v poradi). Vynechane su kluce neznáme pred vystavenim: `number`,
-     * `variable_symbol` a `payment.qr` (QR sa generuje az s cislom, Pitfall 1). Vsetky ostatne polia kopie pochadzaju z DB
+     * `variable_symbol` a cela sekcia `payment`: `payment.method` a `payment.note` su priamy vstup POST vystavenia
+     * (validovany `IssueInput`, zobrazeny v potvrdzovacom paneli), nie udaj odvodeny z DB, a `payment.qr` sa generuje az s cislom
+     * (Pitfall 1). Zdroj predvyplnenia `legal.texts.invoice_note` v tokene ostava. Vsetky ostatne polia kopie pochadzaju z DB
      * riadkov, vstupnych datumov alebo konstant, takze nie je v nej ziadna volatilna hodnota.
      * Vstupom musi byt nezmeneny vystup `SnapshotBuilder::build()`. Poradie klucov je poradie
      * buildera a poradie riadkov je poradie z DB, token teda stazi aj poradie.
@@ -85,7 +87,7 @@ final class InvoiceCalculator
      */
     public static function previewToken(array $snapshot): string
     {
-        unset($snapshot['number'], $snapshot['variable_symbol'], $snapshot['payment']['qr']);
+        unset($snapshot['number'], $snapshot['variable_symbol'], $snapshot['payment']);
 
         return hash('sha256', json_encode($snapshot, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }

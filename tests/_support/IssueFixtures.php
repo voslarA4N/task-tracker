@@ -92,6 +92,8 @@ trait IssueFixtures
             (string) ($overrides['requestKey'] ?? $this->uuid4()),
             (bool) ($overrides['confirmBackdate'] ?? false),
             $overrides['userId'] ?? null,
+            (string) ($overrides['paymentMethod'] ?? 'transfer'),
+            $overrides['paymentNote'] ?? null,
         );
     }
 
