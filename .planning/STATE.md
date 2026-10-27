@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 05-09-PLAN.md
-last_updated: "2026-10-27T01:39:26.641Z"
+status: ready_to_plan
+stopped_at: Phase 5 complete
+last_updated: "2026-10-27T19:44:30.206Z"
 last_activity: 2026-10-27
 progress:
   total_phases: 12
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 5 — faktura-n-jadro
+**Current focus:** Phase 6 — dokumenty-faktúry-a-výkazu
 
 ## Current Position
 
-Phase: 5 (faktura-n-jadro) — EXECUTING
-Plan: 9 of 9
-Status: Phase complete — ready for verification
-Last activity: 2026-10-27 - Completed quick task 261027-jjx: WR-01 + WR-04 (preview token, line order)
+Phase: 6
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-27
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -36,7 +36,7 @@ Progress: [░░░░░░░░░░] 0%
 
 **Velocity:**
 
-- Total plans completed: 43
+- Total plans completed: 52
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -47,6 +47,7 @@ Progress: [░░░░░░░░░░] 0%
 | 02 | 20 | - | - |
 | 3 | 10 | - | - |
 | 04 | 13 | - | - |
+| 5 | 9 | - | - |
 
 **Recent Trend:**
 
