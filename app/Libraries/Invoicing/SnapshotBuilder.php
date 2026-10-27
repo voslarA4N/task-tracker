@@ -92,20 +92,23 @@ final class SnapshotBuilder
             $labels[$key] = lang('InvoicePdf.' . $key, [], $docLanguage);
         }
 
+        $reportLabels = ReportRows::labels($docLanguage);
+
         return [
-            'schema'           => 2,
-            'origin'           => 'issued',
-            'type'             => 'invoice',
-            'template_version' => 'inv-2',
-            'number'           => $number,
-            'variable_symbol'  => $number === null ? null : self::variableSymbol($number),
-            'billing_month'    => $month,
-            'issue_date'       => $issueDate,
-            'delivery_date'    => $deliveryDate,
-            'due_date'         => $dueDate,
-            'currency'         => $calc['currency'],
-            'doc_language'     => $docLanguage,
-            'entity'           => [
+            'schema'                  => 2,
+            'origin'                  => 'issued',
+            'type'                    => 'invoice',
+            'template_version'        => 'inv-2',
+            'report_template_version' => 'rep-1',
+            'number'                  => $number,
+            'variable_symbol'         => $number === null ? null : self::variableSymbol($number),
+            'billing_month'           => $month,
+            'issue_date'              => $issueDate,
+            'delivery_date'           => $deliveryDate,
+            'due_date'                => $dueDate,
+            'currency'                => $calc['currency'],
+            'doc_language'            => $docLanguage,
+            'entity'                  => [
                 'id'            => $entityId,
                 'version_id'    => (int) $version['id'],
                 'country'       => $country,
@@ -156,7 +159,8 @@ final class SnapshotBuilder
             'payment'  => ['method' => 'transfer', 'note' => null, 'qr' => null],
             'fx'       => null,
             'rounding' => ['line' => 'half_up_2', 'total' => 'sum_of_rounded_lines'],
-            'labels'   => $labels,
+            'labels'   => $labels + ['report' => $reportLabels],
+            'report'   => $this->report($calc['lines'], $reportLabels, $docLanguage, $month),
             'lines'    => $calc['lines'],
             'totals'   => ['total' => $calc['total'], 'hours' => $calc['hours'], 'line_count' => $calc['line_count']],
         ];
@@ -193,5 +197,18 @@ final class SnapshotBuilder
     private function nullable(mixed $value): ?string
     {
         return $value === null || $value === '' ? null : (string) $value;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $lines
+     * @param array<string, string>      $reportLabels
+     *
+     * @return array<string, mixed>
+     */
+    private function report(array $lines, array $reportLabels, string $language, string $month): array
+    {
+        $built = ReportRows::build($lines, $reportLabels, $language);
+
+        return ['period' => ReportRows::period($reportLabels, $month), 'rows' => $built['rows'], 'uniform_rate' => $built['uniform_rate']];
     }
 }

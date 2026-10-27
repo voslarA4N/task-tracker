@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries\Invoicing\Samples;
 
 use App\Libraries\Invoicing\LegalProfile;
+use App\Libraries\Invoicing\ReportRows;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use InvalidArgumentException;
 
@@ -49,25 +50,27 @@ final class SampleSnapshots
             $labels[$key] = lang('InvoicePdf.' . $key, [], $lang);
         }
 
-        $notes = self::notes($cfg['notes']);
-        $body  = $notes[$lang] ?? $notes['en'];
-        $isPl  = $cfg['country'] === 'PL';
-        $euB2b = $cfg['mode'] === 'eu_b2b';
+        $reportLabels = ReportRows::labels($lang);
+        $notes        = self::notes($cfg['notes']);
+        $body         = $notes[$lang] ?? $notes['en'];
+        $isPl         = $cfg['country'] === 'PL';
+        $euB2b        = $cfg['mode'] === 'eu_b2b';
 
         $base = [
-            'schema'           => 2,
-            'origin'           => 'issued',
-            'type'             => 'invoice',
-            'template_version' => 'inv-2',
-            'number'           => '202610001',
-            'variable_symbol'  => '202610001',
-            'billing_month'    => '2026-10',
-            'issue_date'       => '2026-10-26',
-            'delivery_date'    => '2026-10-26',
-            'due_date'         => '2026-11-09',
-            'currency'         => $cfg['cur'],
-            'doc_language'     => $lang,
-            'entity'           => [
+            'schema'                  => 2,
+            'origin'                  => 'issued',
+            'type'                    => 'invoice',
+            'template_version'        => 'inv-2',
+            'report_template_version' => 'rep-1',
+            'number'                  => '202610001',
+            'variable_symbol'         => '202610001',
+            'billing_month'           => '2026-10',
+            'issue_date'              => '2026-10-26',
+            'delivery_date'           => '2026-10-26',
+            'due_date'                => '2026-11-09',
+            'currency'                => $cfg['cur'],
+            'doc_language'            => $lang,
+            'entity'                  => [
                 'id'            => 1, 'version_id' => 1, 'country' => $cfg['country'], 'currency' => $cfg['cur'],
                 'trade_name'    => 'Tomáš Voslař – All4Net',
                 'address_line1' => 'Hlavná 1', 'address_line2' => null, 'postal_code' => '01001', 'city' => 'Žilina',
@@ -93,7 +96,7 @@ final class SampleSnapshots
             'payment'  => ['method' => 'transfer', 'note' => null, 'qr' => null],
             'fx'       => null,
             'rounding' => ['line' => 'half_up_2', 'total' => 'sum_of_rounded_lines'],
-            'labels'   => $labels,
+            'labels'   => $labels + ['report' => $reportLabels],
             'lines'    => [
                 [
                     'position'        => 1, 'source_allocation_id' => 1, 'source_task_id' => 1,
@@ -109,6 +112,8 @@ final class SampleSnapshots
             'totals' => ['total' => '1309.50', 'hours' => '48.50', 'line_count' => 2],
         ];
 
+        $base['report'] = self::report($base['lines'], $reportLabels, $lang, $base['billing_month']);
+
         return array_replace($base, $overrides);
     }
 
@@ -118,5 +123,18 @@ final class SampleSnapshots
     private static function notes(string $key): array
     {
         return self::VAT_NOTES[$key];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $lines
+     * @param array<string, string>      $reportLabels
+     *
+     * @return array<string, mixed>
+     */
+    public static function report(array $lines, array $reportLabels, string $language, string $month): array
+    {
+        $built = ReportRows::build($lines, $reportLabels, $language);
+
+        return ['period' => ReportRows::period($reportLabels, $month), 'rows' => $built['rows'], 'uniform_rate' => $built['uniform_rate']];
     }
 }

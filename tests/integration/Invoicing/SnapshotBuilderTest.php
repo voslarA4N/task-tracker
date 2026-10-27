@@ -8,6 +8,7 @@ use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Invoicing\LegalProfile;
+use App\Libraries\Invoicing\ReportRows;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Master\EntityService;
 use App\Libraries\Platform\FrozenClock;
@@ -87,6 +88,23 @@ final class SnapshotBuilderTest extends PgTestCase
             $this->assertArrayHasKey($key, $snap['labels']);
             $this->assertNotSame('', $snap['labels'][$key]);
         }
+    }
+
+    public function testSnapshotCarriesReportContent(): void
+    {
+        $snap = $this->build($this->issueSetup());
+
+        $this->assertSame('rep-1', $snap['report_template_version']);
+        $this->assertSame('október 2026', $snap['report']['period']);
+        $this->assertCount(count($snap['lines']), $snap['report']['rows']);
+        $this->assertSame('Výkaz práce', $snap['labels']['report']['title']);
+
+        foreach (ReportRows::LABEL_KEYS as $key) {
+            $this->assertNotSame('', $snap['labels']['report'][$key]);
+        }
+
+        $pl = $this->build($this->issueSetup(['client' => ['doc_language' => 'pl']]));
+        $this->assertSame('październik 2026', $pl['report']['period']);
     }
 
     public function testClientLanguageOverridesEntityLanguage(): void
