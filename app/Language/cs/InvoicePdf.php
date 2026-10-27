@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 /**
  * Popisky PDF faktury (cs). Kopiruju sa do snapshotu pri vystaveni (D-18), render ich necita z lang().
- * Preklady pl a cs su predbezne, finalne znenie urci Phase 6.
  */
 return [
     'invoice'         => 'Faktura',
@@ -16,7 +15,7 @@ return [
     'deliveryDate'    => 'Datum dodání',
     'dueDate'         => 'Datum splatnosti',
     'paymentMethod'   => 'Způsob úhrady',
-    'paymentTransfer' => 'Převodem',
+    'paymentTransfer' => 'Převod',
     'bankAccount'     => 'IBAN',
     'swift'           => 'SWIFT',
     'item'            => 'Položka',
@@ -30,4 +29,14 @@ return [
     'vatId'           => 'DIČ',
     'regon'           => 'REGON',
     'identifier'      => 'Identifikátor',
+    'paymentCash'     => 'Hotově',
+    'paymentCard'     => 'Kartou',
+    'paymentOther'    => 'Jiná',
+    'paymentTitle'    => 'Účel platby',
+    'unitHours'       => 'h',
+    'vatNoteHeading'  => 'Poznámka k DPH',
+    'note'            => 'Poznámka',
+    'page'            => 'Strana',
+    'nip'             => 'NIP',
+    'bankName'        => 'Banka',
 ];

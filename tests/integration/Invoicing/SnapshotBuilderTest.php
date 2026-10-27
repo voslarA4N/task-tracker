@@ -6,6 +6,7 @@ namespace Tests\Integration\Invoicing;
 
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Invoicing\InvoiceParts;
+use App\Libraries\Invoicing\LegalProfile;
 use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Master\EntityService;
@@ -70,6 +71,22 @@ final class SnapshotBuilderTest extends PgTestCase
         $this->assertSame('np', $snap['lines'][0]['vat_code']);
         $this->assertSame('1080.00', $snap['totals']['total']);
         $this->assertSame('EUR', $snap['currency']);
+    }
+
+    public function testSnapshotIsSchemaTwoWithPrintRules(): void
+    {
+        $snap = $this->build($this->issueSetup());
+
+        $this->assertSame(2, $snap['schema']);
+        $this->assertSame('inv-2', $snap['template_version']);
+        $this->assertSame(LegalProfile::print('SK', 'sk_non_vat', 'domestic'), $snap['legal']['print']);
+        $this->assertSame('vat_note', $snap['legal']['texts']['vat_note']['key']);
+        $this->assertSame(['method' => 'transfer', 'note' => null, 'qr' => null], $snap['payment']);
+
+        foreach (SnapshotBuilder::LABEL_KEYS as $key) {
+            $this->assertArrayHasKey($key, $snap['labels']);
+            $this->assertNotSame('', $snap['labels'][$key]);
+        }
     }
 
     public function testClientLanguageOverridesEntityLanguage(): void

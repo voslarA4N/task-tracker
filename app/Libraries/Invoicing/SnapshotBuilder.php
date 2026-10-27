@@ -15,12 +15,12 @@ use CodeIgniter\Database\BaseConnection;
 use Config\Database;
 
 /**
- * Zostavi kopiu udajov faktury (schema 1) rovnakym kodom pre nahlad aj vystavenie (D-18).
+ * Zostavi kopiu udajov faktury (schema 2) rovnakym kodom pre nahlad aj vystavenie (D-18).
  * Nic nezapisuje a netaha tabulky faktur.
  */
 final class SnapshotBuilder
 {
-    public const LABEL_KEYS    = ['invoice', 'number', 'variableSymbol', 'supplier', 'customer', 'issueDate', 'deliveryDate', 'dueDate', 'paymentMethod', 'paymentTransfer', 'bankAccount', 'swift', 'item', 'hours', 'rate', 'amount', 'vatCode', 'total', 'companyId', 'taxId', 'vatId', 'regon', 'identifier'];
+    public const LABEL_KEYS    = ['invoice', 'number', 'variableSymbol', 'supplier', 'customer', 'issueDate', 'deliveryDate', 'dueDate', 'paymentMethod', 'paymentTransfer', 'bankAccount', 'swift', 'item', 'hours', 'rate', 'amount', 'vatCode', 'total', 'companyId', 'taxId', 'vatId', 'regon', 'identifier', 'paymentCash', 'paymentCard', 'paymentOther', 'paymentTitle', 'unitHours', 'vatNoteHeading', 'note', 'page', 'nip', 'bankName'];
     public const VS_MAX_DIGITS = 10;
 
     private readonly EntityVersionResolver $versions;
@@ -93,10 +93,10 @@ final class SnapshotBuilder
         }
 
         return [
-            'schema'           => 1,
+            'schema'           => 2,
             'origin'           => 'issued',
             'type'             => 'invoice',
-            'template_version' => 'inv-1',
+            'template_version' => 'inv-2',
             'number'           => $number,
             'variable_symbol'  => $number === null ? null : self::variableSymbol($number),
             'billing_month'    => $month,
@@ -144,7 +144,8 @@ final class SnapshotBuilder
                 'billing_mode'   => $mode,
                 'exemption_code' => $profile['exemption_code'],
                 'vat_code'       => $profile['vat_code'],
-                'texts'          => ['vat_note' => $text],
+                'print'          => LegalProfile::print($country, $regime, $mode),
+                'texts'          => ['vat_note' => ['key' => 'vat_note'] + $text],
             ],
             'bank' => [
                 'label'    => (string) $bank['label'],
@@ -152,7 +153,7 @@ final class SnapshotBuilder
                 'swift'    => $this->nullable($bank['swift']),
                 'currency' => $bank['currency'],
             ],
-            'payment'  => ['method' => 'transfer', 'note' => null],
+            'payment'  => ['method' => 'transfer', 'note' => null, 'qr' => null],
             'fx'       => null,
             'rounding' => ['line' => 'half_up_2', 'total' => 'sum_of_rounded_lines'],
             'labels'   => $labels,
