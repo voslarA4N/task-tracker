@@ -265,7 +265,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 05-03-PLAN.md — SnapshotBuilder, NumberAllocator (upsert), DocumentStore (bytea), InvoiceIssuer v jednej transakcii, rollback a idempotencia (vlna 2)
-- [ ] 05-04-PLAN.md — WR-07: spark invoices:lock-historical + beh na dev DB; scripts/backup.sh a docs/ops/backup.md (vlna 2)
+- [x] 05-04-PLAN.md — WR-07: spark invoices:lock-historical + beh na dev DB; scripts/backup.sh a docs/ops/backup.md (vlna 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -414,7 +414,7 @@ Plans:
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
-| 5. Fakturačné jadro | 3/9 | In Progress|  |
+| 5. Fakturačné jadro | 4/9 | In Progress|  |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
 | 8. Meny a kurzy | 0/0 | Not started | - |
