@@ -1,0 +1,17 @@
+body { font-family: dejavusans; font-size: 9pt; }
+h1 { font-size: 16pt; margin: 0 0 1mm 0; }
+.ref { font-size: 9pt; margin-bottom: 4mm; }
+.small { font-size: 7pt; }
+.footer { font-size: 7pt; text-align: center; }
+table.parties { width: 100%; }
+table.parties td { width: 50%; vertical-align: top; padding-bottom: 3mm; }
+table.meta { width: 100%; margin-bottom: 3mm; }
+table.meta td { padding: 0.5mm 0; }
+table.items { width: 100%; border-collapse: collapse; }
+table.items th { background-color: #f0f0f0; text-align: left; border-bottom: 0.2mm solid #999999; padding: 1mm; }
+table.items td { border-bottom: 0.2mm solid #999999; padding: 1mm; page-break-inside: avoid; }
+table.totals { width: 100%; margin-top: 3mm; }
+table.totals td { background-color: #f0f0f0; padding: 1.5mm; font-size: 12pt; font-weight: bold; }
+.r { text-align: right; }
+.note { margin-top: 6mm; }
+.note-heading { font-weight: bold; }

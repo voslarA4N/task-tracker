@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Invoicing;
 
+use App\Libraries\Invoicing\InvoiceCalculator;
 use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\IssueRejected;
+use App\Libraries\Invoicing\Samples\SampleSnapshots;
+use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Platform\FrozenClock;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -72,6 +75,15 @@ final class PreviewTokenScopeTest extends PgTestCase
 
         $this->assertNotSame('', $issued->number);
         $this->assertSame(1, $this->rows('invoices'));
+    }
+
+    public function testTokenIgnoresNumberAndQr(): void
+    {
+        $snap = SampleSnapshots::invoice('sk', null, ['number' => null, 'variable_symbol' => null]);
+        $with = (new SnapshotBuilder($this->rw()))->withNumber($snap, '202610001');
+        $with['payment']['qr'] = ['payload' => 'x'];
+
+        $this->assertSame(InvoiceCalculator::previewToken($snap), InvoiceCalculator::previewToken($with));
     }
 
     public function testIssueDateChangeIsStale(): void

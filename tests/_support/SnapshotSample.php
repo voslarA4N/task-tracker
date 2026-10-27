@@ -4,11 +4,25 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
+use App\Libraries\Invoicing\Samples\SampleSnapshots;
+
 /**
  * Uplny snapshot faktury podla kontraktu schema 1 pre testy renderera a vystavenia.
  */
 final class SnapshotSample
 {
+    /**
+     * Snapshot schema 2 (inv-2), slovensky neplatitel.
+     *
+     * @param array<string, mixed> $overrides vrchnourovnove kluce sa nahradia
+     *
+     * @return array<string, mixed>
+     */
+    public static function issuedV2(array $overrides = []): array
+    {
+        return SampleSnapshots::invoice('sk', null, $overrides);
+    }
+
     /**
      * @param array<string, mixed> $overrides vrchnourovnove kluce sa nahradia
      *
