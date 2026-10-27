@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries\Master;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Platform\DbBool;
 use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
@@ -157,11 +158,12 @@ class SeriesService
     }
 
     /**
-     * V Phase 3 este neexistuju vystavene doklady, preto je rad vzdy odomknuty.
-     * Phase 5 nahradi telo kontrolou, ci rad obsahuje vystavene doklady (D-10, RESEARCH A7).
+     * Rad je zamknuty (formát a počiatočné číslo sa nesmú meniť), keď obsahuje akýkoľvek doklad (D-13).
      */
     public function isFormatLocked(int $seriesId): bool
     {
-        return false;
+        $row = $this->db->query('SELECT EXISTS (SELECT 1 FROM invoices WHERE series_id = :s:) AS locked', ['s' => $seriesId])->getRowArray();
+
+        return $row !== null && DbBool::of($row['locked']);
     }
 }

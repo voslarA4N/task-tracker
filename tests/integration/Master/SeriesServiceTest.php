@@ -8,7 +8,11 @@ use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Master\InvalidSeriesFormat;
 use App\Libraries\Master\SeriesRejected;
 use App\Libraries\Master\SeriesService;
+use App\Libraries\Platform\FrozenClock;
+use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
+use Tests\Support\InvoiceFixtures;
+use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
 use Tests\Support\PgTestCase;
 
@@ -18,17 +22,21 @@ use Tests\Support\PgTestCase;
 #[Group('integration')]
 final class SeriesServiceTest extends PgTestCase
 {
+    use InvoiceFixtures;
+    use IssueFixtures;
     use MasterFixtures;
 
     protected function setUp(): void
     {
         parent::setUp();
+        Services::injectMock('clock', new FrozenClock('2026-10-27T10:00:00+01:00'));
         $this->resetMasterTables();
     }
 
     protected function tearDown(): void
     {
         $this->resetMasterTables();
+        Services::reset();
         parent::tearDown();
     }
 
@@ -163,12 +171,21 @@ final class SeriesServiceTest extends PgTestCase
         $this->assertSame(0, $this->auditCount());
     }
 
-    public function testNotLockedInPhaseThree(): void
+    public function testFormatLockFollowsIssuedInvoices(): void
     {
-        $id     = $this->createEntity('SK');
-        $series = $this->service()->find($id, 'invoice');
+        $setup  = $this->issueSetup();
+        $id     = $setup['entity'];
+        $series = $setup['series'];
 
-        $this->assertFalse($this->service()->isFormatLocked((int) $series['id']));
+        $this->assertFalse($this->service()->isFormatLocked($series));
+        $this->service()->update($id, 'invoice', 'FA-RRRR###', '2');
+
+        $this->issuer()->issue($this->issueCommand($setup['client'], '2026-10', $id, $setup['parts']));
+
+        $this->assertTrue($this->service()->isFormatLocked($series));
+        $this->assertSame('locked', $this->rejectedReason(fn () => $this->service()->update($id, 'invoice', 'FB-RRRR###', '2')));
+        $this->assertSame('locked', $this->rejectedReason(fn () => $this->service()->update($id, 'invoice', 'FA-RRRR###', '5')));
+        $this->service()->update($id, 'invoice', 'FA-RRRR###', '2');
     }
 
     public function testOtherEntityIsNotAffected(): void
