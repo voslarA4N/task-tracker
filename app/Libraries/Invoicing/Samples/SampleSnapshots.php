@@ -8,6 +8,7 @@ use App\Libraries\Invoicing\LegalProfile;
 use App\Libraries\Invoicing\Qr\QrPaymentBuilder;
 use App\Libraries\Invoicing\ReportRows;
 use App\Libraries\Invoicing\SnapshotBuilder;
+use App\Libraries\Master\LegalProfileResolver;
 use InvalidArgumentException;
 
 /**
@@ -29,11 +30,12 @@ final class SampleSnapshots
     ];
 
     /**
-     * @param array<string, mixed> $overrides vrchnourovnove kluce sa nahradia
+     * @param array<string, mixed>  $overrides vrchnourovnove kluce sa nahradia
+     * @param ?LegalProfileResolver $texts     ak je zadany, legal.texts sa nacitaju z DB (len SELECT), inak seed znenia
      *
      * @return array<string, mixed>
      */
-    public static function invoice(string $profile, ?string $language = null, array $overrides = []): array
+    public static function invoice(string $profile, ?string $language = null, array $overrides = [], ?LegalProfileResolver $texts = null): array
     {
         $cfg = match ($profile) {
             'sk'        => ['country' => 'SK', 'regime' => 'sk_non_vat', 'cur' => 'EUR', 'lang' => 'sk', 'mode' => 'domestic', 'client' => 'SK', 'iban' => 'SK3112000000198742637541', 'swift' => 'GIBASKBX', 'notes' => 'sk'],
@@ -59,6 +61,7 @@ final class SampleSnapshots
 
         $base = [
             'schema'                  => 2,
+            'sample'                  => true,
             'origin'                  => 'issued',
             'type'                    => 'invoice',
             'template_version'        => 'inv-2',
@@ -91,7 +94,12 @@ final class SampleSnapshots
                 'vat_regime'     => $cfg['regime'], 'billing_mode' => $cfg['mode'],
                 'exemption_code' => $isPl ? 'ART_113_1' : null, 'vat_code' => $isPl ? 'zw' : 'np',
                 'print'          => LegalProfile::print($cfg['country'], $cfg['regime'], $cfg['mode']),
-                'texts'          => ['vat_note' => ['key' => 'vat_note', 'body' => $body, 'language' => $lang, 'provisional' => true, 'revision' => 1, 'billing_mode' => $cfg['notes'] === 'pl_eu_b2b' ? 'eu_b2b' : null]],
+                'texts'          => $texts === null
+                    ? [
+                        'vat_note'     => ['key' => 'vat_note', 'body' => $body, 'language' => $lang, 'provisional' => true, 'revision' => 1, 'billing_mode' => $cfg['notes'] === 'pl_eu_b2b' ? 'eu_b2b' : null],
+                        'invoice_note' => null,
+                    ]
+                    : self::dbTexts($texts, $cfg['country'], $cfg['regime'], $cfg['mode'], $lang),
             ],
             'bank'     => ['label' => 'Hlavný účet', 'iban' => $cfg['iban'], 'swift' => $cfg['swift'], 'currency' => $cfg['cur']],
             'payment'  => ['method' => 'transfer', 'note' => null, 'qr' => null],
@@ -117,6 +125,19 @@ final class SampleSnapshots
         $base['report']        = self::report($base['lines'], $reportLabels, $lang, $base['billing_month']);
 
         return array_replace($base, $overrides);
+    }
+
+    /**
+     * @return array<string, array<string, mixed>|null>
+     */
+    private static function dbTexts(LegalProfileResolver $r, string $country, string $regime, string $mode, string $lang): array
+    {
+        $note = $r->optionalText($country, $regime, $mode, $lang, 'invoice_note');
+
+        return [
+            'vat_note'     => ['key' => 'vat_note'] + $r->text($country, $regime, $mode, $lang, 'vat_note'),
+            'invoice_note' => $note === null ? null : ['key' => 'invoice_note'] + $note,
+        ];
     }
 
     /**

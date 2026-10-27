@@ -44,6 +44,10 @@ final class MpdfInvoiceInv2Renderer implements PdfRenderer
         $mpdf->SetTitle($l['invoice'] . ' ' . $number);
         $mpdf->SetAuthor((string) $snapshot['entity']['trade_name']);
         $mpdf->SetCreator('Task Tracker ' . self::TEMPLATE_VERSION);
+        if (($snapshot['sample'] ?? false) === true) {
+            $mpdf->SetHTMLHeader('<div style="text-align: right; font-size: 12pt; font-weight: bold; color: #555555;">VZOR</div>');
+        }
+
         $mpdf->SetHTMLFooter('<div class="footer">' . esc((string) $snapshot['entity']['trade_name']) . ' · ' . esc($number) . ' · ' . esc((string) $l['page']) . ' {PAGENO}/{nbpg}</div>');
 
         $mpdf->WriteHTML((string) file_get_contents(ROOTPATH . 'resources/pdf/invoice-inv2.css'), HTMLParserMode::HEADER_CSS);
