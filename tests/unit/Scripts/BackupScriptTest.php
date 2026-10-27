@@ -24,9 +24,12 @@ final class BackupScriptTest extends CIUnitTestCase
             [ -z "${FAKE_DUMP_FAIL-}" ] || exit 1
             printf 'PGDMP-fake-dump'
             ;;
-          *"pg_restore --list"*)
+          *"pg_restore -f /dev/null"*)
             cat > /dev/null
             [ -z "${FAKE_LIST_FAIL-}" ] || exit 1
+            ;;
+          *pg_restore*)
+            exit 3
             ;;
         esac
         exit 0
@@ -51,8 +54,18 @@ final class BackupScriptTest extends CIUnitTestCase
 
     protected function tearDown(): void
     {
-        foreach ((array) glob($this->dir . '/out/*') as $f) {
-            unlink((string) $f);
+        foreach (['/out/sub/*', '/sub/*', '/out/*'] as $pattern) {
+            foreach ((array) glob($this->dir . $pattern) as $f) {
+                if (is_file((string) $f)) {
+                    unlink((string) $f);
+                }
+            }
+        }
+
+        foreach (['out/sub', 'sub'] as $d) {
+            if (is_dir($this->dir . '/' . $d)) {
+                rmdir($this->dir . '/' . $d);
+            }
         }
 
         foreach (['docker.log', 'scripts/backup.sh', 'bin/docker'] as $f) {
@@ -88,6 +101,19 @@ final class BackupScriptTest extends CIUnitTestCase
 
         $log = (string) file_get_contents($this->dir . '/docker.log');
         $this->assertStringContainsString('pg_dump -U app_owner --format=custom --no-owner task_tracker', $log);
+        // WR-09: overenie cita cely archiv (datove bloky), nie len obsah.
+        $this->assertStringContainsString('pg_restore -f /dev/null', $log);
+        $this->assertStringNotContainsString('--list', $log);
+    }
+
+    public function testRelativeOutputIsResolvedAgainstCallerDirectory(): void
+    {
+        // WR-09: relativna cesta plati voci adresaru volajuceho, nie voci koreňu repozitara.
+        [$code, $stderr] = $this->run2([], 'sub', $this->dir . '/out', $this->dir . '/scripts/backup.sh');
+
+        $this->assertSame(0, $code, $stderr);
+        $this->assertCount(1, (array) glob($this->dir . '/out/sub/task_tracker-*.dump'));
+        $this->assertDirectoryDoesNotExist($this->dir . '/sub');
     }
 
     public function testDumpFailureLeavesNothing(): void
@@ -119,10 +145,10 @@ final class BackupScriptTest extends CIUnitTestCase
      *
      * @return array{0: int, 1: string}
      */
-    private function run2(array $extra): array
+    private function run2(array $extra, ?string $out = null, ?string $cwd = null, string $script = 'scripts/backup.sh'): array
     {
         $env  = ['PATH' => $this->dir . '/bin:/usr/local/bin:/usr/bin:/bin', 'FAKE_LOG' => $this->dir . '/docker.log'] + $extra;
-        $proc = proc_open(['sh', 'scripts/backup.sh', $this->dir . '/out'], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->dir, $env);
+        $proc = proc_open(['sh', $script, $out ?? $this->dir . '/out'], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $cwd ?? $this->dir, $env);
 
         if (! is_resource($proc)) {
             throw new RuntimeException('proc_open failed');

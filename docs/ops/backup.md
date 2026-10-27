@@ -2,7 +2,7 @@
 
 ## Účel
 
-Jedným príkazom vznikne overený dump celej databázy vrátane uložených PDF dokladov (D-24). Ide o lokálny základ,
+Jedným príkazom vznikne dump celej databázy (overený úplným prečítaním archívu) vrátane uložených PDF dokladov (D-24). Ide o lokálny základ,
 šifrovanie, úložisko mimo servera, rotácia a pravidelný test obnovy prídu vo Phase 12.
 
 ## Spustenie
@@ -11,7 +11,8 @@ Jedným príkazom vznikne overený dump celej databázy vrátane uložených PDF
 scripts/backup.sh [adresár]
 ```
 
-Predvolený adresár je `backups/` (v `.gitignore`). Premenné prostredia: `BACKUP_DB` (predvolene `task_tracker`) a
+Predvolený adresár je `backups/` v koreni repozitára (v `.gitignore`). Relatívna cesta v argumente sa berie voči
+aktuálnemu adresáru volajúceho (aj pri spustení z cronu), nie voči koreňu repozitára. Premenné prostredia: `BACKUP_DB` (predvolene `task_tracker`) a
 `BACKUP_DB_USER` (predvolene `app_owner`). Výstup: `task_tracker-RRRRMMDDTHHMMSS.dump` a `.dump.sha256`, obe s právami
 0600. Skript nevypisuje heslá ani obsah dumpu. Pri akejkoľvek chybe skončí nenulovým kódom a neostane neúplný súbor
 (zápis ide do `.partial`, ten sa po chybe zmaže).
@@ -25,7 +26,9 @@ uložené PDF faktúr. Samostatná záloha súborov PDF nie je potrebná, lebo P
 
 ## Overenie
 
-- skript sám po dumpe spustí `pg_restore --list` (čitateľnosť archívu),
+- skript sám po dumpe spustí `pg_restore -f /dev/null`, ktorý prečíta celý archív vrátane všetkých dátových blokov
+  (aj `bytea` s PDF). Odhalí poškodený alebo neúplný archív, nie však logické chyby dát. Tie overí až obnova do
+  dočasnej DB nižšie,
 - kontrolný súčet: `cd backups && sha256sum -c task_tracker-<čas>.dump.sha256`.
 
 ## Ručná obnova do dočasnej DB
