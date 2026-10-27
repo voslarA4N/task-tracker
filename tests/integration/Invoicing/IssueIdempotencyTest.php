@@ -101,8 +101,8 @@ final class IssueIdempotencyTest extends PgTestCase
     {
         // WR-08: subezny poziadavok s rovnakym klucom commitne skor (iny rad, takze bez cakania na zamok radu).
         // Pomaly poziadavok potom narazi na invoices_request_key_key a namiesto 500 dostane already_issued.
-        $a     = $this->issueSetup();
-        $b     = $this->issueSetup(['country' => 'PL', 'client' => ['name' => 'Klient PL', 'identifier_value' => '7010000001']]);
+        $a = $this->issueSetup();
+        $b = $this->issueSetup(['country' => 'PL', 'client' => ['name' => 'Klient PL', 'identifier_value' => '7010000001']]);
         $this->owner()->query("UPDATE entity_versions SET tax_id = '1234563218' WHERE entity_id = :e:", ['e' => $b['entity']]);
 
         $key   = $this->uuid4();
