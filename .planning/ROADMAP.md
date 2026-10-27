@@ -12,7 +12,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 - [x] **Phase 2: Identita a skoré nasadenie** - Prihlásenie s povinnou TOTP, PWA kostra a HTTPS staging otestovaný na reálnom iPhone (completed 2026-10-25)
 - [x] **Phase 3: Master dáta (subjekty a klienti)** - Verziované subjekty, klienti, právny dôvod oslobodenia, audit zmien (completed 2026-10-25)
 - [x] **Phase 4: Úlohy, fakturačné časti a dashboard** - Evidencia úloh, rozdelenie na časti po mesiacoch, dashboard, import z Excelu (completed 2026-10-26)
-- [ ] **Phase 5: Fakturačné jadro** - Atómové vystavenie nemennej faktúry, číslovanie, kópia údajov, uložené PDF so sha256
+- [x] **Phase 5: Fakturačné jadro** - Atómové vystavenie nemennej faktúry, číslovanie, kópia údajov, uložené PDF so sha256 (completed 2026-10-27)
 - [ ] **Phase 6: Dokumenty faktúry a výkazu** - Právne profily, PDF faktúra a výkaz, QR platba, editovateľné zákonné texty
 - [ ] **Phase 7: Doručenie, úhrady a upomienky** - E-mail s PDF, opätovné odoslanie, úhrady, po splatnosti, upomienka
 - [ ] **Phase 8: Meny a kurzy** - NBP/ECB/ČNB kurzy s ručným prepisom a uložením do kópie údajov
@@ -279,7 +279,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 05-09-PLAN.md — Vystavenie z náhľadu: potvrdzovací panel, POST /invoices/issue, 409/422, zhoda súčtov obrazovka = faktúra = snapshot = PDF (vlna 5)
+- [x] 05-09-PLAN.md — Vystavenie z náhľadu: potvrdzovací panel, POST /invoices/issue, 409/422, zhoda súčtov obrazovka = faktúra = snapshot = PDF (vlna 5)
 
 **UI hint**: yes
 **Poznámky**: Najrizikovejšia fáza, izolovaná bez kurzov. **Potrebuje /gsd-research-phase** (zámky a atómové vystavenie, PDF v `bytea` vs súbor, render vo vnútri vs po transakcii, `transException` v CI4 4.7, determinizmus mPDF). Číslovanie jedným príkazom `INSERT … ON CONFLICT DO UPDATE … RETURNING`, nikdy `SEQUENCE` ani `MAX()+1`. Schéma musí byť od začiatku pripravená na dobropis (M6) a obsahovať všetky polia M1–M16. PDF je v tejto fáze funkčné minimum, finálne právne profily prídu vo Phase 6. NFR-06 sa priebežne dopĺňa aj v ďalších fázach (kurzy, limity). Skript zálohy sa začína už tu. Vlastník potvrdil: PDF je autoritatívny, spätný dátum povolený s varovaním. **WR-07 z Phase 4 (voľba C, 2026-10-26):** časti importované z riadkov „Fakturované = ÁNO“ sa zamknú na historickú externú faktúru (fakturované cez tretiu osobu), ktorá nespotrebuje číslo z vlastného radu; schéma faktúr to musí umožniť.
@@ -414,7 +414,7 @@ Plans:
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
-| 5. Fakturačné jadro | 8/9 | In Progress|  |
+| 5. Fakturačné jadro | 9/9 | Complete   | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
 | 8. Meny a kurzy | 0/0 | Not started | - |
