@@ -18,6 +18,8 @@ use RuntimeException;
  */
 final class InvoiceIssuer
 {
+    public const REQUEST_KEY_CONSTRAINT = 'invoices_request_key_key';
+
     /**
      * @var BaseConnection<mixed, mixed>
      */
@@ -62,8 +64,30 @@ final class InvoiceIssuer
                 throw new IssueRejected('parts_changed');
             }
 
+            // WR-08: subezne vystavenie s rovnakym request_key prebehlo skor a commitlo (unique_violation 23505).
+            // Po rollbacku je faktura druheho poziadavku uz viditelna, odpovedou je ta ista ako pri opakovani.
+            if (self::isUniqueViolation($e, self::REQUEST_KEY_CONSTRAINT)) {
+                $this->assertNotIssued($cmd->requestKey);
+            }
+
             throw $e;
         }
+    }
+
+    /**
+     * Ovladac Postgre v CI4 nevystavuje SQLSTATE, sprava pg_last_error vsak nesie nazov obmedzenia.
+     */
+    public static function isUniqueViolation(DatabaseException $e, string $constraint): bool
+    {
+        for ($t = $e; $t !== null; $t = $t->getPrevious()) {
+            $message = $t->getMessage();
+
+            if (str_contains($message, 'duplicate key value violates unique constraint "' . $constraint . '"')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function issueInTransaction(IssueCommand $cmd): IssuedInvoice

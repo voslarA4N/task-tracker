@@ -64,19 +64,7 @@ final class IssueConcurrencyTest extends PgTestCase
             $procs[] = [$proc, $pipes];
         }
 
-        $waiting = 0;
-
-        for ($attempt = 0; $attempt < 200; $attempt++) {
-            $waiting = (int) $this->owner()->query("SELECT count(*) AS c FROM pg_locks WHERE locktype = 'advisory' AND NOT granted")->getRow()->c;
-
-            if ($waiting === 2) {
-                break;
-            }
-            usleep(50_000);
-        }
-
-        $this->owner()->query('SELECT pg_advisory_unlock(777)');
-        $this->assertSame(2, $waiting, 'both workers should be waiting for the start lock');
+        $this->releaseStartLock();
 
         $outputs = [];
 
@@ -93,6 +81,7 @@ final class IssueConcurrencyTest extends PgTestCase
 
         foreach ($outputs as $o) {
             $this->assertSame([], $o['errors']);
+            $this->assertSame([], $o['rejected']);
             $this->assertNotEmpty($o['numbers']);
             $all = array_merge($all, $o['numbers']);
         }
@@ -111,5 +100,73 @@ final class IssueConcurrencyTest extends PgTestCase
         $this->assertSame(self::COUNT, (int) $this->owner()->query('SELECT count(DISTINCT number) AS c FROM invoices')->getRow()->c);
         $this->assertSame(self::COUNT, (int) $this->owner()->query('SELECT last_value FROM invoice_counters')->getRow()->last_value);
         $this->assertSame(self::COUNT, (int) $this->owner()->query('SELECT count(*) AS c FROM billing_allocations WHERE invoice_id IS NOT NULL')->getRow()->c);
+    }
+
+    public function testSameCommandOnTwoProcessesIssuesExactlyOneInvoice(): void
+    {
+        // WR-08: dvojite odoslanie toho isteho prikazu (rovnaky kluc aj casti) subezne v dvoch procesoch.
+        $s   = $this->issueSetup(['parts' => [['8.00', '2026-10'], ['2.00', '2026-10']]]);
+        $cmd = $this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']);
+        $arg = json_encode([
+            'client' => $cmd->clientId, 'month' => $cmd->billingMonth, 'entity' => $cmd->entityId,
+            'issue'  => $cmd->issueDate, 'delivery' => $cmd->deliveryDate, 'due' => $cmd->dueDate,
+            'parts'  => $cmd->partIds, 'token' => $cmd->previewToken, 'key' => $cmd->requestKey,
+        ], JSON_THROW_ON_ERROR);
+
+        $this->owner()->query('SELECT pg_advisory_lock(777)');
+
+        $procs = [];
+
+        foreach ([0, 1] as $i) {
+            $proc = proc_open(
+                [PHP_BINARY, ROOTPATH . 'tests/_support/issue_worker.php', (string) $i, '--command', $arg],
+                [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+                $pipes,
+            );
+            $this->assertIsResource($proc);
+            $procs[] = [$proc, $pipes];
+        }
+
+        $this->releaseStartLock();
+
+        $numbers  = [];
+        $rejected = [];
+
+        foreach ($procs as [$proc, $pipes]) {
+            $out = (string) stream_get_contents($pipes[1]);
+            $err = (string) stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            $this->assertSame(0, proc_close($proc), 'worker failed: ' . $out . $err);
+            $o = json_decode($out, true, 512, JSON_THROW_ON_ERROR);
+            $this->assertSame([], $o['errors']);
+            $numbers  = array_merge($numbers, $o['numbers']);
+            $rejected = array_merge($rejected, $o['rejected']);
+        }
+
+        $invoiceId = (int) $this->owner()->query('SELECT id FROM invoices')->getRow()->id;
+
+        $this->assertSame(['202610001'], $numbers);
+        $this->assertSame([['reason' => 'already_issued', 'invoice_id' => $invoiceId]], $rejected);
+        $this->assertSame(1, (int) $this->owner()->query('SELECT count(*) AS c FROM invoices')->getRow()->c);
+        $this->assertSame(1, (int) $this->owner()->query('SELECT last_value FROM invoice_counters')->getRow()->last_value);
+        $this->assertSame(2, (int) $this->owner()->query('SELECT count(*) AS c FROM billing_allocations WHERE invoice_id = :i:', ['i' => $invoiceId])->getRow()->c);
+    }
+
+    private function releaseStartLock(): void
+    {
+        $waiting = 0;
+
+        for ($attempt = 0; $attempt < 200; $attempt++) {
+            $waiting = (int) $this->owner()->query("SELECT count(*) AS c FROM pg_locks WHERE locktype = 'advisory' AND NOT granted")->getRow()->c;
+
+            if ($waiting === 2) {
+                break;
+            }
+            usleep(50_000);
+        }
+
+        $this->owner()->query('SELECT pg_advisory_unlock(777)');
+        $this->assertSame(2, $waiting, 'both workers should be waiting for the start lock');
     }
 }
