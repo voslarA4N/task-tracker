@@ -46,7 +46,8 @@ final class PayBySquareTest extends CIUnitTestCase
         $this->assertSame('', $fields[0]);
         $this->assertSame(['1', '1', '1309.5', 'EUR', '20261109', '202610001', '', '', ''], array_slice($fields, 1, 9));
         $this->assertSame($s['labels']['invoice'] === '' ? '' : PayBySquare::ascii($s['labels']['invoice'] . ' 202610001'), $fields[10]);
-        $this->assertSame(['1', 'SK3112000000198742637541', 'GIBASKBX', '0', '0', 'Tomas Voslar - All4Net', 'Hlavna 1', '01001 Zilina'], array_slice($fields, 11));
+        // Adresa príjemcu ostáva prázdna: aplikácia ČSOB pri vyplnenej ulici alebo meste hlási chybu (UAT 2026-10-28).
+        $this->assertSame(['1', 'SK3112000000198742637541', 'GIBASKBX', '0', '0', 'Tomas Voslar - All4Net', '', ''], array_slice($fields, 11));
     }
 
     public function testRoundTrip(): void
@@ -59,6 +60,19 @@ final class PayBySquareTest extends CIUnitTestCase
         $this->assertTrue($decoded['crc_ok']);
         $this->assertSame($decoded['raw_len'], $decoded['length']);
         $this->assertSame($pbs->tabFields($s), $decoded['fields']);
+    }
+
+    /**
+     * Zlatý vektor z referenčnej knižnice bysquare 4.1.0 (xseman/bysquare, version 1.0.0,
+     * beneficiary iba s menom) pre rovnaké údaje ako SampleSnapshots::invoice('sk'). Hlavička 1.0.0
+     * (prvé znaky "00"), lebo ČSOB SK (UAT 2026-10-28) 1.1.0 ani 1.2.0 nerozpozná.
+     */
+    public function testMatchesReferenceEncoder(): void
+    {
+        $this->assertSame(
+            '0007O000FUDOQIN09C62MCHVP22M7D8BLOH3M54107BDP865TORPHNRNCPCCI2GBEDLP2RPRUM50T46SM53KIGASUAVH0Q8IPQMQGDU2KUBIM8JTAFJUTJ7858R1BH3IRK849OBTR6MT7AGB0MJ10E7UAIVBOEEJGO9VMG8CUN2VO13VVVJO9K00',
+            (new PayBySquare())->encode(SampleSnapshots::invoice('sk')),
+        );
     }
 
     public function testLzmaFailurePropagates(): void

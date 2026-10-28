@@ -8,14 +8,16 @@ use InvalidArgumentException;
 use Transliterator;
 
 /**
- * Serializer PAY by square (verzia 1.1.0): base32hex(header || length || lzma(crc32 || tab polia)).
+ * Serializer PAY by square (hlavička 1.0.0): base32hex(header || length || lzma(crc32 || tab polia)).
  */
 final class PayBySquare
 {
     /**
-     * Verzia formatu (nibble): 0x01 = 1.1.0. Jedna konstanta (Assumption A1, potvrdi UAT).
+     * Verzia formatu (nibble): 0x00 = 1.0.0. UAT 2026-10-28: aplikacia CSOB SK rozpozna iba 1.0.0,
+     * kody s hlavickou 1.1.0 a 1.2.0 ignoruje. Pole s menom prijemcu (z 1.1.0) za platobnym blokom
+     * aplikacie s 1.0.0 akceptuju; ulicu a mesto nie (CSOB hlasi chybu adresneho riadku), preto su prazdne.
      */
-    public const VERSION = 0x01;
+    public const VERSION = 0x00;
 
     private const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
 
@@ -81,8 +83,8 @@ final class PayBySquare
             '0',
             '0',
             substr(self::ascii((string) $entity['trade_name']), 0, 70),
-            self::ascii((string) $entity['address_line1']),
-            self::ascii((string) $entity['postal_code'] . ' ' . (string) $entity['city']),
+            '',
+            '',
         ];
     }
 
