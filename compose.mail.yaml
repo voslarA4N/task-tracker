@@ -1,0 +1,108 @@
+# Mail stack (Stalwart + Roundcube): spusta sa v /opt/mail, instaluje sa rucne raz podla
+# docs/ops/mail.md (CI ho nenasadzuje). Projekt `mail`.
+# Siet sa vytvara raz s pevnou podsietou (neskor sa do nej pripoji aplikacia, faza 7):
+#   docker network create --driver bridge --subnet 10.250.251.0/24 mail
+#
+# Cesty:
+#   25/465/587/993 -> priamo na Stalwart (IPv4 only, 0.0.0.0, kvoli skutocnej IP klienta)
+#   webmail/autoconfig/autodiscover/mta-sts -> Cloudflare -> edge (SNI) -> web (nginx) -> roundcube / stalwart:8080
+#   Stalwart 443 sa NIKDY nepublikuje, 8080 iba na 127.0.0.1 (SSH tunel, stalwart-cli).
+#
+# Pamat: limity 1g + 256m + 64m + 64m = ~1.4 GB, ocakavana rezidentna spotreba ~300-450 MB
+# (merat `docker stats`), hostitel ma ~3.0 GB volnych.
+name: mail
+
+services:
+  stalwart:
+    image: stalwartlabs/stalwart:v1.0.1
+    init: true
+    restart: unless-stopped
+    mem_limit: 1g
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      # explicitne 0.0.0.0: ziadny [::] docker-proxy (zdrojova IP by sa stratila, docs/ops/mail.md)
+      - "0.0.0.0:25:25"
+      - "0.0.0.0:465:465"
+      - "0.0.0.0:587:587"
+      - "0.0.0.0:993:993"
+      # sprava iba cez SSH tunel a stalwart-cli
+      - "127.0.0.1:${STALWART_ADMIN_PORT:-8080}:8080"
+    environment:
+      # Prazdne v ustalenom stave. Iba pocas bootstrapu (mail-provision.sh) sa nastavi na admin:<heslo>
+      # z prikazoveho riadku; NIKDY ho nezapisovat do .env (plny admin pristup aj v beznom rezime).
+      STALWART_RECOVERY_ADMIN: ${STALWART_RECOVERY_ADMIN:-}
+    volumes:
+      - stalwart-etc:/etc/stalwart
+      - stalwart-data:/var/lib/stalwart
+      - ${MAIL_TLS_DIR:-./tls}:/opt/stalwart-tls:ro
+    networks:
+      mail:
+        aliases: [mail.vostack.dev]
+    depends_on:
+      - unbound
+
+  unbound:
+    build: ./docker/mail/unbound
+    restart: unless-stopped
+    mem_limit: 64m
+    networks:
+      mail:
+        ipv4_address: ${MAIL_DNS_IP:-10.250.251.53}
+
+  roundcube:
+    image: roundcube/roundcubemail:1.7.5-apache-nonroot
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      ROUNDCUBEMAIL_DEFAULT_HOST: ssl://mail.vostack.dev
+      ROUNDCUBEMAIL_DEFAULT_PORT: "993"
+      ROUNDCUBEMAIL_SMTP_SERVER: ssl://mail.vostack.dev
+      ROUNDCUBEMAIL_SMTP_PORT: "465"
+      ROUNDCUBEMAIL_DB_TYPE: sqlite
+      ROUNDCUBEMAIL_DES_KEY: ${ROUNDCUBE_DES_KEY:?nastav ROUNDCUBE_DES_KEY v .env}
+    volumes:
+      - roundcube-db:/var/roundcube/db
+      - ./docker/mail/roundcube:/var/roundcube/config:ro
+    networks: [mail]
+
+  web:
+    image: nginx:1.30-alpine
+    restart: unless-stopped
+    mem_limit: 64m
+    volumes:
+      - ./docker/mail/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/realip/edge.conf:/etc/nginx/realip/edge.conf:ro
+      - ${MAIL_CF_PEER:-./docker/nginx/http.d/cf-peer.conf}:/etc/nginx/http.d/cf-peer.conf:ro
+      - ${MAIL_LE_DIR:-./letsencrypt}:/etc/letsencrypt:ro
+    networks:
+      mail: {}
+      edge:
+        aliases: [mail-web]
+    depends_on:
+      - roundcube
+      - stalwart
+
+  certbot:
+    image: certbot/dns-cloudflare:v5.8.0
+    profiles: [certbot]
+    volumes:
+      - ${MAIL_LE_DIR:-./letsencrypt}:/etc/letsencrypt
+      # kopia pre Stalwart (uid 2000) robi mail-cert-renew.sh ako root v tomto kontajneri
+      - ${MAIL_TLS_DIR:-./tls}:/tls
+      - ./secrets/cloudflare.ini:/secrets/cloudflare.ini:ro
+
+networks:
+  mail:
+    external: true
+    name: ${MAIL_NETWORK:-mail}
+  edge:
+    external: true
+    name: ${EDGE_NETWORK:-edge}
+
+volumes:
+  stalwart-etc:
+  stalwart-data:
+  roundcube-db:
