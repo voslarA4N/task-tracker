@@ -1,5 +1,6 @@
 #!/bin/sh
-# Pripravenie staging servera (spusta sa ako root, idempotentne).
+# Pripravenie servera od nuly (prod + staging + edge; spusta sa ako root, idempotentne).
+# Na zivej produkcii sa nespusta, tam plati cut-over postup v docs/ops/server.md.
 # Pouzitie: ssh root@2.31.74.48 "DEPLOY_PUBKEY='<verejny kluc>' sh -s" < scripts/server-bootstrap.sh
 # Skript negeneruje ani nevypisuje ziadne aplikacne tajomstva.
 set -eu
@@ -85,19 +86,28 @@ CONF
 sshd -t
 systemctl reload ssh 2>/dev/null || systemctl reload sshd
 
-# 7. Adresare
-install -d -m 0750 -o deploy -g deploy /opt/work-tracker
-install -d -m 0700 -o deploy -g deploy /opt/work-tracker/secrets
-# GID 82 (www-data v alpine php obraze) na hostitelovi nema meno; uutils install -g ho neprijme, chown ano
-install -d -m 0750 -o deploy /opt/work-tracker/certs
-chown deploy:82 /opt/work-tracker/certs
-install -d -m 0750 -o deploy -g deploy /opt/work-tracker/letsencrypt
-install -d -m 0750 -o deploy -g deploy /opt/work-tracker/docker
+# 7. Adresare pre oba stacky (prod a staging) a edge
+for d in /opt/work-tracker /opt/work-tracker-staging; do
+  install -d -m 0750 -o deploy -g deploy "$d"
+  install -d -m 0700 -o deploy -g deploy "$d/secrets"
+  # GID 82 (www-data v alpine php obraze) na hostitelovi nema meno; uutils install -g ho neprijme, chown ano
+  install -d -m 0750 -o deploy "$d/certs"
+  chown deploy:82 "$d/certs"
+  install -d -m 0750 -o deploy -g deploy "$d/letsencrypt"
+  install -d -m 0750 -o deploy -g deploy "$d/docker"
+done
 install -d -m 0700 -o deploy -g deploy /var/backups/work-tracker
+install -d -m 0700 -o deploy -g deploy /var/backups/work-tracker-staging
+install -d -m 0750 -o deploy -g deploy /opt/edge
+
+# Siet edge s pevnou podsietou (realip v stack nginx dovery prave jej)
+if ! docker network inspect edge >/dev/null 2>&1; then
+  docker network create --driver bridge --subnet 10.250.250.0/24 edge
+fi
 
 # 8. Odtlacok host kluca a dalsie kroky
 echo
 echo "Hotovo. Odtlacok SSH host kluca servera (posli ho spat na overenie known_hosts):"
 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 echo
-echo "Dalsie kroky: docs/ops/staging.md, sekcia 6 (.env, app.env, migrate.env, secrets/db_*_password) a sekcia 7 (zaloha tajomstiev)."
+echo "Dalsie kroky: docs/ops/server.md, sekcia 6 (.env, app.env, migrate.env, secrets/db_*_password) a sekcia 7 (zaloha tajomstiev)."

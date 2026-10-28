@@ -86,22 +86,51 @@ jobs:
           out=$(docker run --rm task-tracker-php:prod php -d opcache.enable_cli=1 -d opcache.preload=/var/www/html/preload.php -d opcache.preload_user=www-data -r 'echo 1;')
           test "$out" = "1"
 
+  # Vetvovy model (docs/ops/server.md): develop -> staging, main -> produkcia (environment
+  # production s povinnym schvalenim). Ostatne vetvy (feature/*, hotfix/*) iba check.
   deploy:
     needs: check
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: staging
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      url: ${{ github.ref_name == 'main' && 'https://work-tracker.vostack.dev' || 'https://work-tracker-stage.vostack.dev' }}
     concurrency:
-      group: deploy-staging
+      group: deploy-${{ github.ref_name }}
       cancel-in-progress: false
     permissions:
       contents: read
       packages: write
-    env:
-      STAGING_DOMAIN: work-tracker.vostack.dev
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ciel nasadenia
+        run: |
+          case "$GITHUB_REF_NAME" in
+            main)
+              {
+                echo "TARGET_DIR=/opt/work-tracker"
+                echo "APP_DOMAIN=work-tracker.vostack.dev"
+                echo "BRANCH_TAG=main"
+                echo "SMOKE_PROJECT=task-tracker"
+                echo "SMOKE_EXPECT_NOINDEX=0"
+              } >> "$GITHUB_ENV"
+              ;;
+            develop)
+              {
+                echo "TARGET_DIR=/opt/work-tracker-staging"
+                echo "APP_DOMAIN=work-tracker-stage.vostack.dev"
+                echo "BRANCH_TAG=develop"
+                echo "SMOKE_PROJECT=task-tracker-staging"
+                echo "SMOKE_EXPECT_NOINDEX=1"
+              } >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Vetva $GITHUB_REF_NAME sa nenasadzuje" >&2
+              exit 1
+              ;;
+          esac
 
       - name: Prefix obrazov (male pismena)
         run: echo "PREFIX=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
@@ -112,13 +141,13 @@ jobs:
       - name: Build obrazov
         run: |
           docker build --platform linux/amd64 --target prod \
-            -t "$PREFIX-php:sha-$GITHUB_SHA" -t "$PREFIX-php:main" .
+            -t "$PREFIX-php:sha-$GITHUB_SHA" -t "$PREFIX-php:$BRANCH_TAG" .
           docker build --platform linux/amd64 -f docker/nginx/Dockerfile \
-            -t "$PREFIX-nginx:sha-$GITHUB_SHA" -t "$PREFIX-nginx:main" .
+            -t "$PREFIX-nginx:sha-$GITHUB_SHA" -t "$PREFIX-nginx:$BRANCH_TAG" .
 
       - name: Push obrazov
         run: |
-          for t in "$PREFIX-php:sha-$GITHUB_SHA" "$PREFIX-php:main" "$PREFIX-nginx:sha-$GITHUB_SHA" "$PREFIX-nginx:main"; do
+          for t in "$PREFIX-php:sha-$GITHUB_SHA" "$PREFIX-php:$BRANCH_TAG" "$PREFIX-nginx:sha-$GITHUB_SHA" "$PREFIX-nginx:$BRANCH_TAG"; do
             docker push "$t"
           done
 
@@ -143,20 +172,21 @@ jobs:
           SSH_OPTS="-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts"
           T="$DEPLOY_USER@$DEPLOY_HOST"
           # shellcheck disable=SC2086
-          scp $SSH_OPTS compose.staging.yaml scripts/deploy.sh scripts/cert-renew.sh "$T:/opt/work-tracker/"
+          scp $SSH_OPTS compose.server.yaml scripts/deploy.sh scripts/cert-renew.sh "$T:$TARGET_DIR/"
           # shellcheck disable=SC2086
-          scp -r $SSH_OPTS docker/postgres "$T:/opt/work-tracker/docker/"
-          # shellcheck disable=SC2086
-          echo "$GHCR_TOKEN" | ssh $SSH_OPTS "$T" "docker login ghcr.io -u ${{ github.actor }} --password-stdin"
-          # shellcheck disable=SC2086
-          ssh $SSH_OPTS "$T" "chmod +x /opt/work-tracker/deploy.sh /opt/work-tracker/cert-renew.sh"
+          scp -r $SSH_OPTS docker/postgres "$T:$TARGET_DIR/docker/"
+          # Vlastny docker config na stack: login jedneho stacku nezasiahne druhy.
           # shellcheck disable=SC2086,SC2029
-          ssh $SSH_OPTS "$T" "cd /opt/work-tracker && IMAGE_PREFIX=$PREFIX IMAGE_TAG=sha-$GITHUB_SHA sh ./deploy.sh"
+          echo "$GHCR_TOKEN" | ssh $SSH_OPTS "$T" "mkdir -p -m 700 $TARGET_DIR/.docker && DOCKER_CONFIG=$TARGET_DIR/.docker docker login ghcr.io -u ${{ github.actor }} --password-stdin"
+          # shellcheck disable=SC2086,SC2029
+          ssh $SSH_OPTS "$T" "chmod +x $TARGET_DIR/deploy.sh $TARGET_DIR/cert-renew.sh"
+          # shellcheck disable=SC2086,SC2029
+          ssh $SSH_OPTS "$T" "cd $TARGET_DIR && DOCKER_CONFIG=$TARGET_DIR/.docker IMAGE_PREFIX=$PREFIX IMAGE_TAG=sha-$GITHUB_SHA sh ./deploy.sh"
 
-      - name: Smoke staging
+      - name: Smoke
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
           SSH_TARGET="$DEPLOY_USER@$DEPLOY_HOST" \
-          sh scripts/smoke-staging.sh "$STAGING_DOMAIN"
+          sh scripts/smoke-server.sh "$APP_DOMAIN"

@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 use RuntimeException;
 
 /**
- * WR-06: php-fpm na stagingu nevidi heslo superusera ani app_owner; DB dostava hesla
+ * WR-06: php-fpm na serveri (prod aj staging) nevidi heslo superusera ani app_owner; DB dostava hesla
  * iba ako Docker secrets (*_FILE), nie cez premenne prostredia v compose.
  *
  * @internal
@@ -62,6 +62,18 @@ final class StagingSecretsLayoutTest extends CIUnitTestCase
         $this->assertStringContainsString('file: ./secrets/db_superuser_password', $compose);
     }
 
+    public function testNginxHasNoPublishedPortsAndJoinsEdge(): void
+    {
+        $compose = $this->compose();
+        $nginx   = $this->service('nginx');
+
+        $this->assertDoesNotMatchRegularExpression('/^\s*ports\s*:/m', $nginx);
+        $this->assertStringContainsString('NGINX_PROXY_PROTOCOL: proxy_protocol', $nginx);
+        $this->assertStringContainsString('${EDGE_ALIAS:?', $nginx);
+        $this->assertStringContainsString('external: true', $compose);
+        $this->assertStringContainsString('name: ${COMPOSE_PROJECT_NAME:?', $compose);
+    }
+
     public function testProvisionInitReadsPasswordFiles(): void
     {
         $this->makeDir();
@@ -99,7 +111,7 @@ final class StagingSecretsLayoutTest extends CIUnitTestCase
 
     private function compose(): string
     {
-        return (string) file_get_contents(ROOTPATH . 'compose.staging.yaml');
+        return (string) file_get_contents(ROOTPATH . 'compose.server.yaml');
     }
 
     /**

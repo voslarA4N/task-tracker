@@ -9,8 +9,9 @@ use PHPUnit\Framework\Attributes\Group;
 use RuntimeException;
 
 /**
- * D-08: scripts/deploy.sh nikdy nespusti migraciu bez overenej zalohy a pri
- * zlyhani nenahradi bezny stack. Skript bezi v docasnom adresari s falosnym
+ * D-08: scripts/deploy.sh (server: prod aj staging) nikdy nespusti migraciu bez
+ * overenej zalohy a pri zlyhani nenahradi bezny stack. Chraní aj pred zamenou stackov
+ * (COMPOSE_PROJECT_NAME, adresar projektu, siet edge). Skript bezi v docasnom adresari s falosnym
  * `docker` a `crontab` na PATH, ktore len zapisuju volania do calls.log.
  *
  * @internal
@@ -29,6 +30,15 @@ final class DeployGuardTest extends CIUnitTestCase
           *"pg_restore -l"*)
             [ -z "${FAKE_RESTORE_FAIL-}" ] || exit 1
             ;;
+          *"network inspect"*)
+            [ -z "${FAKE_NO_EDGE-}" ] || exit 1
+            ;;
+          *"image inspect"*)
+            [ -z "${FAKE_NO_IMAGE-}" ] || exit 1
+            ;;
+          "ps "*)
+            [ -z "${FAKE_PS_WORKDIR-}" ] || printf '%s\n' "$FAKE_PS_WORKDIR"
+            ;;
           *migrate*)
             [ -z "${FAKE_MIGRATE_FAIL-}" ] || exit 1
             ;;
@@ -38,6 +48,10 @@ final class DeployGuardTest extends CIUnitTestCase
     private const FAKE_CRONTAB = <<<'SH'
         #!/bin/sh
         printf 'crontab %s\n' "$*" >> "$FAKE_LOG"
+        case "$*" in
+          -l) [ -z "${FAKE_CRONTAB_EXISTING-}" ] || printf '%s\n' "$FAKE_CRONTAB_EXISTING" ;;
+          -) cat >> "$FAKE_LOG" ;;
+        esac
         exit 0
         SH;
 
@@ -54,7 +68,7 @@ final class DeployGuardTest extends CIUnitTestCase
             }
         }
         copy(ROOTPATH . 'scripts/deploy.sh', $this->dir . '/deploy.sh');
-        file_put_contents($this->dir . '/.env', "TLS_MODE = origin-ca\nAPP_DOMAIN = test.example\n");
+        file_put_contents($this->dir . '/.env', "TLS_MODE = origin-ca\nAPP_DOMAIN = test.example\nCOMPOSE_PROJECT_NAME = test-stack\nEDGE_ALIAS = wt-test-nginx\nIMAGE_PREFIX = ghcr.io/x/tt\n");
         file_put_contents($this->dir . '/certs/origin.pem', '');
 
         // Rozlozenie tajomstiev podla WR-06 (falosne hodnoty).
@@ -135,6 +149,70 @@ final class DeployGuardTest extends CIUnitTestCase
         $this->assertStringContainsString('migrate.env je citatelny', $err);
     }
 
+    public function testMissingProjectNameOrEdgeAliasFailsBeforeAnyDockerCall(): void
+    {
+        foreach (['COMPOSE_PROJECT_NAME', 'EDGE_ALIAS'] as $key) {
+            file_put_contents($this->dir . '/.env', "TLS_MODE = origin-ca\nAPP_DOMAIN = test.example\n" . ($key === 'EDGE_ALIAS' ? "COMPOSE_PROJECT_NAME = test-stack\n" : "EDGE_ALIAS = wt-test-nginx\n"));
+            @unlink($this->dir . '/calls.log');
+
+            [$code, $err] = $this->runDeploy([]);
+
+            $this->assertNotSame(0, $code);
+            $this->assertSame("logout ghcr.io\n", $this->log());
+            $this->assertStringContainsString($key, $err);
+        }
+    }
+
+    public function testMissingEdgeNetworkFailsBeforePull(): void
+    {
+        [$code, $err] = $this->runDeploy(['FAKE_NO_EDGE' => '1']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertStringContainsString('network inspect edge', $this->log());
+        $this->assertStringNotContainsString('pull', $this->log());
+        $this->assertStringContainsString('edge', $err);
+    }
+
+    public function testProjectFromAnotherDirectoryFailsBeforePull(): void
+    {
+        [$code, $err] = $this->runDeploy(['FAKE_PS_WORKDIR' => '/other']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertStringNotContainsString('pull', $this->log());
+        $this->assertStringContainsString('/other', $err);
+        $this->assertStringContainsString(realpath($this->dir) ?: $this->dir, $err);
+    }
+
+    public function testSkipPullInspectsImagesInsteadOfPulling(): void
+    {
+        [$code, $err] = $this->runDeploy(['SKIP_PULL' => '1']);
+
+        $this->assertSame(0, $code, $err);
+
+        $log = $this->log();
+        $this->assertStringNotContainsString('pull', $log);
+        $this->assertStringContainsString('image inspect ghcr.io/x/tt-php:sha-test ghcr.io/x/tt-nginx:sha-test', $log);
+        $this->assertLessThan(strpos($log, 'pg_dump'), strpos($log, 'image inspect'));
+        $this->assertLessThan(strpos($log, 'up -d --wait --remove-orphans'), strpos($log, 'pg_dump'));
+    }
+
+    public function testCronKeepsOtherStacksAndWritesOneLineForThisDir(): void
+    {
+        $this->writeLetsEncryptEnv();
+        $other = '17 3 * * * /opt/other/cert-renew.sh >> /opt/other/cert-renew.log 2>&1';
+        $mine  = '17 3 * * * ' . (realpath($this->dir) ?: $this->dir) . '/cert-renew.sh >> old 2>&1';
+
+        [$code, $err] = $this->runDeploy(['FAKE_CRONTAB_EXISTING' => $other . "\n" . $mine]);
+
+        $this->assertSame(0, $code, $err);
+
+        $log  = $this->log();
+        $here = (realpath($this->dir) ?: $this->dir) . '/cert-renew.sh';
+        $this->assertSame(1, substr_count($log, $other));
+        $this->assertSame(1, substr_count($log, $here . ' >> ' . (realpath($this->dir) ?: $this->dir) . '/cert-renew.log'));
+        $this->assertStringNotContainsString('>> old', $log);
+    }
+
     public function testEmptyDumpBlocksMigration(): void
     {
         [$code] = $this->runDeploy(['FAKE_DUMP_EMPTY' => '1']);
@@ -187,6 +265,13 @@ final class DeployGuardTest extends CIUnitTestCase
 
         $this->assertSame('sha-test', trim((string) file_get_contents($this->dir . '/.last-good-tag')));
         $this->assertCount(14, glob($this->dir . '/backups/pre-*.dump'));
+    }
+
+    private function writeLetsEncryptEnv(): void
+    {
+        file_put_contents($this->dir . '/.env', "TLS_MODE = letsencrypt\nAPP_DOMAIN = test.example\nLE_EMAIL = a@b.example\nCOMPOSE_PROJECT_NAME = test-stack\nEDGE_ALIAS = wt-test-nginx\nIMAGE_PREFIX = ghcr.io/x/tt\n");
+        mkdir($this->dir . '/letsencrypt/live/test.example', 0o700, true);
+        file_put_contents($this->dir . '/letsencrypt/live/test.example/fullchain.pem', '');
     }
 
     /**

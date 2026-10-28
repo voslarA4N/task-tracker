@@ -1,17 +1,24 @@
 #!/bin/sh
-# Serverový deploy stagingu (spúšťa sa ako /opt/work-tracker/deploy.sh).
+# Serverový deploy (prod aj staging; spúšťa sa ako <adresár stacku>/deploy.sh,
+# /opt/work-tracker alebo /opt/work-tracker-staging).
 # Poradie: pull -> db -> záloha -> overenie zálohy -> rotácia -> migrácia ->
 # certifikát -> up -> .last-good-tag. Migrácia sa NIKDY nespustí bez overenej
 # zálohy (D-08). Pri zlyhaní zostáva bežať predošlý stack.
 # Povinné: IMAGE_TAG; súbory app.env, migrate.env, secrets/db_*_password (sekcia 15
-# v docs/ops/staging.md). Voliteľné: BACKUP_DIR, COMPOSE_FILE_NAME.
+# v docs/ops/server.md); v .env COMPOSE_PROJECT_NAME a EDGE_ALIAS. Voliteľné: BACKUP_DIR
+# (default /var/backups/<názov adresára>), COMPOSE_FILE_NAME, DOCKER_CONFIG, SKIP_PULL=1
+# (obrazy sú už stiahnuté, napr. pri prechode produkcie na edge).
 set -eu
 cd "$(dirname "$0")"
 
 : "${IMAGE_TAG:?Chýba IMAGE_TAG (napr. sha-abc123)}"
 export IMAGE_TAG
-BACKUP_DIR=${BACKUP_DIR:-/var/backups/work-tracker}
-COMPOSE_FILE_NAME=${COMPOSE_FILE_NAME:-compose.staging.yaml}
+HERE=$(pwd -P)
+BACKUP_DIR=${BACKUP_DIR:-/var/backups/$(basename "$HERE")}
+COMPOSE_FILE_NAME=${COMPOSE_FILE_NAME:-compose.server.yaml}
+# Každý stack má vlastný docker config: login a logout jedného deployu nezasiahne druhý.
+DOCKER_CONFIG=${DOCKER_CONFIG:-$HERE/.docker}
+export DOCKER_CONFIG
 
 # Token z CI nesmie zostať na disku servera.
 trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
@@ -21,7 +28,7 @@ dc() { docker compose -f "$COMPOSE_FILE_NAME" "$@"; }
 # Hodnoty z .env sa čítajú po kľúčoch (formát CI4 s bodkami sa nedá `source`-ovať).
 env_get() { sed -n "s/^$1 *= *//p" .env | head -n1 | tr -d "'\"\r"; }
 
-# Rozdelene tajomstva (WR-06, docs/ops/staging.md sekcia 15). Kontrola este pred prvym
+# Rozdelene tajomstva (WR-06, docs/ops/server.md sekcia 15). Kontrola este pred prvym
 # volanim dockeru: pri starom rozlozeni deploy skonci a bezi predosly stack.
 preflight_secrets() {
   bad=0
@@ -49,11 +56,38 @@ preflight_secrets() {
     bad=1
   fi
   if [ "$bad" -ne 0 ]; then
-    echo "Stare rozlozenie tajomstiev. Postup: docs/ops/staging.md, sekcia 15. Nic sa nenasadilo." >&2
+    echo "Stare rozlozenie tajomstiev. Postup: docs/ops/server.md, sekcia 15. Nic sa nenasadilo." >&2
     exit 1
   fi
 }
 preflight_secrets
+
+# Projekt a alias stacku z .env; bez nich by sa stack mohol potichu pomiešať s druhým.
+for key in COMPOSE_PROJECT_NAME EDGE_ALIAS; do
+  if [ -z "$(env_get "$key")" ]; then
+    echo "Chýba $key v .env (docs/ops/server.md, sekcia 6). Nic sa nenasadilo." >&2
+    exit 1
+  fi
+done
+COMPOSE_PROJECT_NAME=$(env_get COMPOSE_PROJECT_NAME)
+export COMPOSE_PROJECT_NAME
+
+# Host: externá sieť edge a kontrola, že projekt nepatrí inému adresáru.
+preflight_host() {
+  if ! docker network inspect edge >/dev/null 2>&1; then
+    echo "Chýba docker sieť edge (docs/ops/server.md, sekcia Edge proxy). Nic sa nenasadilo." >&2
+    exit 1
+  fi
+  dirs=$(docker ps -a --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" \
+    --format '{{index .Labels "com.docker.compose.project.working_dir"}}' | sort -u)
+  for d in $dirs; do
+    if [ -n "$d" ] && [ "$d" != "$HERE" ]; then
+      echo "Projekt $COMPOSE_PROJECT_NAME už beží z iného adresára ($d), tento deploy je v $HERE. Nic sa nenasadilo." >&2
+      exit 1
+    fi
+  done
+}
+preflight_host
 
 TLS_MODE=$(env_get TLS_MODE)
 APP_DOMAIN=$(env_get APP_DOMAIN)
@@ -79,8 +113,14 @@ ensure_cert() {
   esac
 }
 
-echo "Sťahujem obrazy ($IMAGE_TAG)"
-dc pull php nginx
+if [ "${SKIP_PULL:-}" = 1 ]; then
+  PREFIX=${IMAGE_PREFIX:-$(env_get IMAGE_PREFIX)}
+  echo "Preskakujem pull, kontrolujem lokálne obrazy ($IMAGE_TAG)"
+  docker image inspect "$PREFIX-php:$IMAGE_TAG" "$PREFIX-nginx:$IMAGE_TAG" >/dev/null
+else
+  echo "Sťahujem obrazy ($IMAGE_TAG)"
+  dc pull php nginx
+fi
 dc up -d --wait db
 
 # Záloha pred migráciou
@@ -128,8 +168,9 @@ fi
 printf '%s\n' "$IMAGE_TAG" > .last-good-tag
 
 if [ "$TLS_MODE" = "letsencrypt" ]; then
-  CRON_LINE='17 3 * * * /opt/work-tracker/cert-renew.sh >> /opt/work-tracker/cert-renew.log 2>&1'
-  { crontab -l 2>/dev/null | grep -vF 'cert-renew.sh' || true; echo "$CRON_LINE"; } | crontab -
+  # Jeden riadok na stack (podľa cesty); riadky iných stackov ostávajú.
+  CRON_LINE="17 3 * * * $HERE/cert-renew.sh >> $HERE/cert-renew.log 2>&1"
+  { crontab -l 2>/dev/null | grep -vF "$HERE/cert-renew.sh" || true; echo "$CRON_LINE"; } | crontab -
 fi
 
 docker image prune -f --filter until=168h > /dev/null || true
