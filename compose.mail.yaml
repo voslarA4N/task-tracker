@@ -52,6 +52,17 @@ services:
       mail:
         ipv4_address: ${MAIL_DNS_IP:-10.250.251.53}
 
+  # Jednorazovo nastavi vlastnika volume SQLite (image Roundcube bezi ako www-data, uid 33, a
+  # novy named volume je root:root, takze by DB nesla vytvorit).
+  roundcube-init:
+    image: alpine:3.24
+    restart: "no"
+    mem_limit: 16m
+    network_mode: none
+    command: ["chown", "33:33", "/var/roundcube/db"]
+    volumes:
+      - roundcube-db:/var/roundcube/db
+
   roundcube:
     image: roundcube/roundcubemail:1.7.5-apache-nonroot
     restart: unless-stopped
@@ -67,6 +78,9 @@ services:
       - roundcube-db:/var/roundcube/db
       - ./docker/mail/roundcube:/var/roundcube/config:ro
     networks: [mail]
+    depends_on:
+      roundcube-init:
+        condition: service_completed_successfully
 
   web:
     image: nginx:1.30-alpine
