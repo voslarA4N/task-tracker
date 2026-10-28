@@ -13,8 +13,11 @@ final readonly class SeedAdminCredentials
 {
     public const KEY_EMAIL    = 'SEED_ADMIN_EMAIL';
     public const KEY_PASSWORD = 'SEED_ADMIN_PASSWORD';
-    /** Tolerovany a ignorovany kluc zo starsich suborov. */
-    public const KEY_SECRET   = 'SEED_ADMIN_TOTP_SECRET';
+
+    /**
+     * Tolerovany a ignorovany kluc zo starsich suborov.
+     */
+    public const KEY_SECRET = 'SEED_ADMIN_TOTP_SECRET';
 
     private function __construct(
         public string $email,

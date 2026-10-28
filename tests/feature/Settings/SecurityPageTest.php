@@ -103,7 +103,7 @@ final class SecurityPageTest extends AuthTestCase
 
     public function testDevicesAreListedWithBadgeDatesAndRevokeModal(): void
     {
-        $user    = $this->createUser();
+        $user = $this->createUser();
         $this->enrollTotp($user);
         $current = $this->trustDevice($user, self::SAFARI);
         $other   = $this->trustDevice($user, self::CHROME);

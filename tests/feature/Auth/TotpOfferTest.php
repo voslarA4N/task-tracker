@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature\Auth;
 
 use App\Libraries\Auth\TotpService;
+use App\Libraries\Auth\TrustedDeviceService;
 use App\Libraries\Platform\FrozenClock;
+use CodeIgniter\Security\Exceptions\SecurityException;
 use CodeIgniter\Shield\Entities\User;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
@@ -47,6 +49,9 @@ final class TotpOfferTest extends AuthTestCase
         return $user;
     }
 
+    /**
+     * @param array<string, string> $headers
+     */
     private function fetch(string $path, array $headers = []): TestResponse
     {
         $this->withSession();
@@ -134,7 +139,7 @@ final class TotpOfferTest extends AuthTestCase
 
         $r->assertStatus(302);
         $this->assertSame(1, (int) $this->owner()->query('SELECT count(*) AS c FROM trusted_devices WHERE user_id = ? AND revoked_at IS NULL', [$user->id])->getRow()->c);
-        $this->assertTrue($r->response()->hasCookie('wt_device', null, \App\Libraries\Auth\TrustedDeviceService::COOKIE_PREFIX));
+        $this->assertTrue($r->response()->hasCookie('wt_device', null, TrustedDeviceService::COOKIE_PREFIX));
     }
 
     public function testDeclineWithoutCsrfIsForbidden(): void
@@ -144,7 +149,7 @@ final class TotpOfferTest extends AuthTestCase
         try {
             $r = $this->postTo('/2fa/offer/decline', [], false);
             $this->assertSame(403, $r->response()->getStatusCode());
-        } catch (\CodeIgniter\Security\Exceptions\SecurityException) {
+        } catch (SecurityException) {
             $this->addToAssertionCount(1);
         }
 

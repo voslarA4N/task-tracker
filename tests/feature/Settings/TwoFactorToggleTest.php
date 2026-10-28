@@ -7,6 +7,7 @@ namespace Tests\Feature\Settings;
 use App\Libraries\Auth\BackupCodeService;
 use App\Libraries\Auth\TotpService;
 use App\Libraries\Auth\TrustedDeviceService;
+use CodeIgniter\Security\Exceptions\SecurityException;
 use CodeIgniter\Shield\Entities\User;
 use CodeIgniter\Test\Mock\MockEmail;
 use CodeIgniter\Test\TestResponse;
@@ -264,7 +265,7 @@ final class TwoFactorToggleTest extends AuthTestCase
         try {
             $status = $this->postTo('/settings/security/2fa/disable', ['current_password' => self::PASSWORD, 'code' => $this->totpCode($secret)], false)->response()->getStatusCode();
             $this->assertSame(403, $status);
-        } catch (\CodeIgniter\Security\Exceptions\SecurityException) {
+        } catch (SecurityException) {
             $this->addToAssertionCount(1);
         }
 

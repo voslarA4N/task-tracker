@@ -17,7 +17,6 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('unit')]
 final class SeedAdminCredentialsTest extends CIUnitTestCase
 {
-    private const SECRET   = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
     private const PASSWORD = 'Sup3r-Tajne-Heslo-12345';
 
     private string $file = '';
