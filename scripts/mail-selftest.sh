@@ -284,6 +284,12 @@ CODE=$(docker run --rm --network "$ENET" "$CURLIMG" $CURLOPT -o /dev/null -w '%{
 [ "$CODE" = 404 ] && ok "13c priamo na mail-web: /admin -> 404" || fail "13c /admin -> $CODE"
 CODE=$(docker run --rm --network "$ENET" "$CURLIMG" $CURLOPT -o /dev/null -w '%{http_code}' --haproxy-clientip 203.0.113.9 https://webmail.vostack.dev/ || true)
 [ "$CODE" = 000 ] && ok "13d PROXY zdroj mimo Cloudflare zahodeny (444)" || fail "13d zdroj mimo CF -> $CODE"
+# presne prikaz z runbooku (krok 10d): nginx:1.30-alpine ma curl >= 8.2 a edge siet vie rezolvovat mail-web
+OUT=$(docker run --rm --network "$ENET" --network-alias runbook-check --entrypoint curl nginx:1.30-alpine -sk --max-time 10 \
+  --haproxy-protocol --haproxy-clientip 173.245.48.1 --connect-to ::"$P-web-1":443 https://webmail.vostack.dev/ || true)
+echo "$OUT" | grep -q rcmloginuser && ok "13f runbook 10d: nginx:1.30-alpine curl --haproxy-clientip funguje" || fail "13f runbook 10d prikaz"
+# runbook krok 10c sa spolieha na tento riadok v logu
+dc logs --since 1m web 2>&1 | grep -q 'host=webmail.vostack.dev .* 444' && ok "13e log webu ukazuje host=webmail.vostack.dev so stavom 444" || fail "13e log webu bez host=webmail 444"
 dc up -d --no-deps --force-recreate web >/dev/null
 
 # --- 5. cert-renew (default rezim), zaloha, obnova -------------------------------------------------

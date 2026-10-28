@@ -20,6 +20,7 @@ Jeden server Hetzner Cloud #172176757 (IP `2.31.74.48`, amd64), dva nezávislé 
 - Docker sieť `edge` (podsieť `10.250.250.0/24`, mimo predvolených poolov Dockeru) spája edge s nginx oboch stackov. Realip v stack nginx dôveruje presne tejto podsieti.
 - Pôvodné rozhodnutie fázy 2 (D-03 "staging je zároveň budúca produkcia") je prekonané: `/opt/work-tracker` je produkcia od go-live.
 - Architektúra amd64, obrazy z GHCR (D-04 fázy 2).
+- Vlastný mailový server (Stalwart + Roundcube) pre `vostack.dev` beží ako samostatný compose projekt `mail` v `/opt/mail`; inštalácia, DNS, zálohy a rollback sú v [docs/ops/mail.md](mail.md).
 
 ## Vetvový model
 
@@ -352,6 +353,8 @@ docker network create --driver bridge --subnet 10.250.250.0/24 edge
 # súbory skopírovať do /opt/edge: nginx.conf (docker/edge/nginx.conf) a compose.edge.yaml
 cd /opt/edge && docker compose -f compose.edge.yaml up -d
 ```
+
+Mail stack (webmail, autoconfig, autodiscover, mta-sts) má v `map` štyri riadky na `mail-web:443` (nginx `web` stacku `mail`, v sieti `edge` s aliasom `mail-web`), pozri [mail.md](mail.md).
 
 Nový hostname: pridať riadok do `map` v `nginx.conf`, potom `docker compose -f compose.edge.yaml exec edge nginx -s reload`.
 
