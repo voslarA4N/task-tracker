@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 Phase: 7
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-10-28
+Last activity: 2026-10-29 - Completed quick task 261028-w8p: vlastný mailový server (Stalwart + Roundcube)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -143,6 +143,7 @@ Recent decisions affecting current work:
 | 261028-fcr | Staging (work-tracker-stage.vostack.dev) na tom istom serveri cez edge proxy (SNI + PROXY protocol), vetvy develop → staging, main → produkcia; repo zmeny, server cut-over čaká na vlastníka | 2026-10-28 | ed05715 | [261028-fcr-staging-prostredie-a-vetvovy-model-devel](./quick/261028-fcr-staging-prostredie-a-vetvovy-model-devel/) |
 | 261028-hu8 | Staging seed: deterministická vymyslená história od 2026-01-01 (3 subjekty, 8 klientov, ~157 úloh, ~41 faktúr cez reálny InvoiceIssuer), reset DB pri každom staging deployi s poistkami proti produkcii, moduly na rozširovanie | 2026-10-28 | 4777762 | [261028-hu8-staging-seed-s-vymyslenou-historiou-od-2](./quick/261028-hu8-staging-seed-s-vymyslenou-historiou-od-2/) |
 | 261028-mf3 | Voliteľná 2FA: ponuka pri prvom prihlásení s voľbou „nechcem“, zapnutie/vypnutie v Nastaveniach (heslo + TOTP alebo záložný kód), reset hesla e-mailom a zapamätanie zariadenia aj bez 2FA, staging admin bez 2FA | 2026-10-28 | d8c2e5f | [261028-mf3-volitelna-2fa-s-moznostou-vypnutia-v-gui](./quick/261028-mf3-volitelna-2fa-s-moznostou-vypnutia-v-gui/) |
+| 261028-w8p | Vlastný mailový server: Stalwart 1.0.1 + Roundcube (webmail.vostack.dev), unbound pre DNSBL, schránky info@/noreply@ + aliasy, DKIM/SPF/DMARC p=none/MTA-STS testing, nočné zálohy; nasadené na 2.31.74.48 (/opt/mail) 2026-10-29 | 2026-10-29 | 3367b4e | Needs Review | [261028-w8p-vlastny-mailovy-server-stalwart-a-webmai](./quick/261028-w8p-vlastny-mailovy-server-stalwart-a-webmai/) |
 
 ## Deferred Items
 

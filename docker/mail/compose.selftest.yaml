@@ -1,0 +1,18 @@
+# Override iba pre lokalny test (scripts/mail-selftest.sh, projekt mail-selftest).
+# Porty idu na vysoke localhost porty, aby test nikdy neobsadil host 25/465/587/993.
+# Roundcube dostane CA balik (systemovy + testovacia CA), takze verify_peer ostava zapnute.
+services:
+  stalwart:
+    ports: !override
+      - "127.0.0.1:18025:25"
+      - "127.0.0.1:18465:465"
+      - "127.0.0.1:18587:587"
+      - "127.0.0.1:18993:993"
+      - "127.0.0.1:18080:8080"
+  roundcube:
+    volumes:
+      - ${MAIL_SELFTEST_CA_BUNDLE:?}:/etc/ssl/certs/ca-certificates.crt:ro
+  certbot:
+    volumes:
+      # nahrada za ./secrets/cloudflare.ini, ktory v teste neexistuje
+      - ${MAIL_SELFTEST_CF_INI:?}:/secrets/cloudflare.ini:ro
