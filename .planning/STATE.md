@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 Phase: 06 (dokumenty-fakt-ry-a-v-kazu) — EXECUTING
 Plan: 9 of 9
 Status: Phase complete — ready for verification
-Last activity: 2026-10-28
+Last activity: 2026-10-28 - Completed quick task 261028-fcr: staging + vetvový model (repo časť)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -139,6 +139,7 @@ Recent decisions affecting current work:
 |---|-------------|------|--------|-----------|
 | 261027-elv | import:excel --month RRRR-MM (import len jedného mesiaca) | 2026-10-27 | 7d884a4 | [261027-elv-import-excel-month-filter](./quick/261027-elv-import-excel-month-filter/) |
 | 261027-jjx | WR-01 + WR-04: preview token z celej kópie údajov, poradie položiek len z DB, blokovanie Vystaviť počas obnovy náhľadu | 2026-10-27 | cef426f | [261027-jjx-preview-token-full-snapshot-and-line-ord](./quick/261027-jjx-preview-token-full-snapshot-and-line-ord/) |
+| 261028-fcr | Staging (work-tracker-stage.vostack.dev) na tom istom serveri cez edge proxy (SNI + PROXY protocol), vetvy develop → staging, main → produkcia; repo zmeny, server cut-over čaká na vlastníka | 2026-10-28 | ed05715 | [261028-fcr-staging-prostredie-a-vetvovy-model-devel](./quick/261028-fcr-staging-prostredie-a-vetvovy-model-devel/) |
 
 ## Deferred Items
 
