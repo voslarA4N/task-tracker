@@ -30,4 +30,13 @@ return [
     'backupPlaceholder' => 'XXXXX-XXXXX',
     'remember'          => 'Zapamätať si toto zariadenie na 30 dní',
     'rememberHelp'      => 'Heslo ani kód 2FA sa na tomto zariadení nebudú pýtať 30 dní. Nezapínajte na cudzom zariadení.',
+    'offerTitle'        => 'Dvojfázové overenie (2FA)',
+    'offerIntro'        => 'Dvojfázové overenie chráni účet aj pri úniku hesla. Je voliteľné a môžete si ho kedykoľvek zapnúť neskôr v Nastaveniach → Bezpečnosť.',
+    'offerSetup'        => 'Nastaviť 2FA',
+    'offerDecline'      => 'Nechcem nastavovať 2FA',
+    'offerDeclineHelp'  => 'Ponuku už neuvidíte. 2FA si môžete zapnúť v Nastaveniach.',
+    'offerBack'         => 'Späť na výber',
+    'continueTitle'     => 'Dokončiť prihlásenie',
+    'continueIntro'     => 'Heslo je správne. Účet nemá zapnuté dvojfázové overenie.',
+    'rememberHelpNoTotp' => 'Heslo sa na tomto zariadení nebude pýtať 30 dní. Nezapínajte na cudzom zariadení.',
 ];

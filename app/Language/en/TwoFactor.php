@@ -30,4 +30,13 @@ return [
     'backupPlaceholder' => 'XXXXX-XXXXX',
     'remember'          => 'Remember this device for 30 days',
     'rememberHelp'      => 'You will not be asked for your password or 2FA code on this device for 30 days. Do not enable this on a device that is not yours.',
+    'offerTitle'        => 'Two-factor authentication (2FA)',
+    'offerIntro'        => 'Two-factor authentication protects your account even if the password leaks. It is optional and you can turn it on any time later in Settings → Security.',
+    'offerSetup'        => 'Set up 2FA',
+    'offerDecline'      => 'I do not want to set up 2FA',
+    'offerDeclineHelp'  => 'You will not see this offer again. You can turn 2FA on in Settings.',
+    'offerBack'         => 'Back to choice',
+    'continueTitle'     => 'Finish signing in',
+    'continueIntro'     => 'The password is correct. This account has no two-factor authentication.',
+    'rememberHelpNoTotp' => 'The password will not be asked on this device for 30 days. Do not enable on a shared device.',
 ];

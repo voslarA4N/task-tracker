@@ -74,12 +74,12 @@ final class TotpSetupTest extends AuthTestCase
         return (int) $this->owner()->query('SELECT count(*) AS c FROM auth_events WHERE event = ?', [$event])->getRow()->c;
     }
 
-    public function testIndexRedirectsToSetup(): void
+    public function testIndexRedirectsToOffer(): void
     {
         $this->pendingUser();
         $result = $this->fetch('/2fa');
         $result->assertStatus(302);
-        $this->assertStringEndsWith('/2fa/setup', $result->response()->getHeaderLine('Location'));
+        $this->assertStringEndsWith('/2fa/offer', $result->response()->getHeaderLine('Location'));
     }
 
     public function testSetupPageRenders(): void
