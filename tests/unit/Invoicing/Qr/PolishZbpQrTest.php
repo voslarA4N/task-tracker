@@ -66,6 +66,29 @@ final class PolishZbpQrTest extends CIUnitTestCase
         (new PolishZbpQr())->encode($s);
     }
 
+    public function testAmountAtLimitEncodesSixDigits(): void
+    {
+        $s                    = $this->snap();
+        $s['totals']['total'] = '9999.99';
+
+        $this->assertTrue(PolishZbpQr::amountFits('9999.99'));
+        $this->assertStringStartsWith('1234563218|PL|61109010140000071219812874|999999|', (new PolishZbpQr())->encode($s));
+    }
+
+    public function testAmountAboveLimitDoesNotFitAndFails(): void
+    {
+        $this->assertFalse(PolishZbpQr::amountFits('10000.00'));
+        $this->assertFalse(PolishZbpQr::amountFits('12500.00'));
+        $this->assertTrue(PolishZbpQr::amountFits('0.00'));
+        $this->assertTrue(PolishZbpQr::amountFits('0009999.99'));
+        $this->assertFalse(PolishZbpQr::amountFits('abc'));
+
+        $s                    = $this->snap();
+        $s['totals']['total'] = '10000.00';
+        $this->expectException(QrPaymentFailed::class);
+        (new PolishZbpQr())->encode($s);
+    }
+
     public function testApplies(): void
     {
         $this->assertTrue(PolishZbpQr::applies($this->snap()));

@@ -58,6 +58,11 @@ final class QrPaymentBuilder
                 return null;
             }
 
+            // Suma nad 9 999,99 PLN sa nezmesti do 6-ciferneho pola ZBP: tiez bez QR (CR-01).
+            if (! PolishZbpQr::amountFits((string) ((array) $snapshot['totals'])['total'])) {
+                return null;
+            }
+
             return ['standard' => 'zbp', 'payload' => (new PolishZbpQr())->encode($snapshot)];
         }
 

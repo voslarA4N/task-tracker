@@ -86,6 +86,7 @@ return [
     'paymentNoteEditDefault' => 'Upraviť predvolené znenie',
     'provisionalWarning'     => 'Pozor: znenie ešte nepotvrdila účtovníčka. Faktúra sa dá vystaviť, ale znenie sa po vystavení nezmení.',
     'zbpTitleTooLong'        => 'Číslo faktúry bude dlhšie ako 32 znakov, preto faktúra pre poľského klienta nebude mať QR kód ZBP. Faktúru môžete vystaviť.',
+    'zbpAmountTooHigh'       => 'Suma je vyššia ako 9 999,99 PLN, čo QR kód ZBP neunesie, preto faktúra pre poľského klienta nebude mať QR kód. Faktúru môžete vystaviť.',
     'errorPaymentMethod'     => 'Vyberte platnú formu úhrady.',
     'errorPaymentNote'       => 'Poznámka môže mať najviac 500 znakov.',
     'confirmPaymentMethod'   => 'Forma úhrady',

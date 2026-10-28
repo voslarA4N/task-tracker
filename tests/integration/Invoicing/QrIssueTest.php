@@ -89,6 +89,17 @@ final class QrIssueTest extends PgTestCase
         $this->assertStringContainsString('|202610001|', $qr['payload']);
     }
 
+    public function testPlClientAboveZbpAmountLimitIssuesWithoutQr(): void
+    {
+        // 40 h x 250,00 = 10 000,00 PLN: 7-ciferne grosze sa do pola ZBP nezmestia (CR-01)
+        $s = $this->issueSetup(['country' => 'PL', 'parts' => [['40.00', '2026-10', ['rate' => '250.00']]]]);
+        $this->setNip($s['entity']);
+        $id = $this->issue($s);
+
+        $this->assertSame('10000.00', (string) $this->owner()->query('SELECT total FROM invoices WHERE id = :id:', ['id' => $id])->getRow()->total);
+        $this->assertNull($this->qrOf($id)['qr']);
+    }
+
     public function testGermanClientHasNoQrAndIssues(): void
     {
         $s = $this->issueSetup(['client' => ['country' => 'DE']]);

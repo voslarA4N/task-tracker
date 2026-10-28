@@ -157,8 +157,9 @@ final class InvoiceDraftService
         $note        = $noteDirty ? IssueInput::normalizeNote((string) $paymentNote) : ($defaultNote['body'] ?? null);
         $provisional = (bool) ($texts['vat_note']['provisional'] ?? false) || (! $noteDirty && (bool) ($defaultNote['provisional'] ?? false));
 
-        $zbpWarning = is_array($snapshot) && $seriesFmt !== null && $method === 'transfer' && PolishZbpQr::applies($snapshot)
-            && ! PolishZbpQr::titleFits(self::longestNumber($seriesFmt, $issue));
+        $zbpApplies       = is_array($snapshot) && $method === 'transfer' && PolishZbpQr::applies($snapshot);
+        $zbpWarning       = $zbpApplies && $seriesFmt !== null && ! PolishZbpQr::titleFits(self::longestNumber($seriesFmt, $issue));
+        $zbpAmountWarning = $zbpApplies && ! PolishZbpQr::amountFits((string) ($snapshot['totals']['total'] ?? ''));
 
         return new Draft(
             $clientId,
@@ -185,6 +186,7 @@ final class InvoiceDraftService
             $noteDirty,
             $provisional,
             $zbpWarning,
+            $zbpAmountWarning,
         );
     }
 

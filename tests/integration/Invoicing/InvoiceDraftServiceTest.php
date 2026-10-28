@@ -90,6 +90,24 @@ final class InvoiceDraftServiceTest extends PgTestCase
         $this->assertSame($d->total, $issued->total);
     }
 
+    public function testZbpAmountWarningAboveLimit(): void
+    {
+        $below = $this->issueSetup(['country' => 'PL']);
+        $d     = $this->service()->draft($below['client'], '2026-10', $below['entity'], null, null, null);
+        $this->assertSame('1080.00', $d->total);
+        $this->assertFalse($d->zbpAmountWarning);
+
+        $this->resetMasterTables();
+        $above = $this->issueSetup(['country' => 'PL', 'parts' => [['40.00', '2026-10', ['rate' => '250.00']]]]);
+        $d     = $this->service()->draft($above['client'], '2026-10', $above['entity'], null, null, null);
+        $this->assertSame('10000.00', $d->total);
+        $this->assertTrue($d->zbpAmountWarning);
+        $this->assertTrue($d->canIssue);
+
+        $cash = $this->service()->draft($above['client'], '2026-10', $above['entity'], null, null, null, 'cash');
+        $this->assertFalse($cash->zbpAmountWarning);
+    }
+
     public function testEndedEntityIsNotOffered(): void
     {
         $s     = $this->issueSetup();

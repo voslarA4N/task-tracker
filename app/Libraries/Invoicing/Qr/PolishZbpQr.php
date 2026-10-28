@@ -11,9 +11,23 @@ final class PolishZbpQr
 {
     public const TITLE_MAX = 32;
 
+    /**
+     * Pole 4 (suma v groszoch) ma podla Rekomendacji ZBP presne 6 cislic, teda najviac 9 999,99 PLN.
+     */
+    public const AMOUNT_MAX_GROSZE_DIGITS = 6;
+
     public static function titleFits(string $number): bool
     {
         return mb_strlen($number) <= self::TITLE_MAX;
+    }
+
+    /**
+     * Suma (format "1234.56") sa zmesti do 6-cifernych groszy. Vyssia suma: bez QR namiesto chybneho pola (CR-01).
+     */
+    public static function amountFits(string $total): bool
+    {
+        return preg_match('/^(\d+)\.(\d{2})$/', $total, $a) === 1
+            && strlen(ltrim($a[1] . $a[2], '0')) <= self::AMOUNT_MAX_GROSZE_DIGITS;
     }
 
     /**
@@ -63,7 +77,12 @@ final class PolishZbpQr
         }
 
         $grosze = ltrim($a[1] . $a[2], '0');
-        $grosze = str_pad($grosze === '' ? '0' : $grosze, 6, '0', STR_PAD_LEFT);
+
+        if (strlen($grosze) > self::AMOUNT_MAX_GROSZE_DIGITS) {
+            throw new QrPaymentFailed('ZBP amount exceeds 9999.99 PLN.');
+        }
+
+        $grosze = str_pad($grosze === '' ? '0' : $grosze, self::AMOUNT_MAX_GROSZE_DIGITS, '0', STR_PAD_LEFT);
         $name   = (string) preg_replace('/[|\x00-\x1F\x7F]/u', '', (string) $entity['trade_name']);
         $name   = trim(mb_substr($name, 0, 20));
         $title  = (string) preg_replace('/[|\x00-\x1F\x7F]/u', '', $number);

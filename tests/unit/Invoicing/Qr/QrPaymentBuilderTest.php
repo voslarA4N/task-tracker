@@ -74,6 +74,23 @@ final class QrPaymentBuilderTest extends CIUnitTestCase
         $this->assertNull((new QrPaymentBuilder())->build($s));
     }
 
+    public function testPlAmountAtLimitHasZbpQr(): void
+    {
+        $s                    = SampleSnapshots::invoice('pl');
+        $s['totals']['total'] = '9999.99';
+        $qr                   = (new QrPaymentBuilder())->build($s);
+
+        $this->assertSame('zbp', $qr['standard'] ?? null);
+        $this->assertStringContainsString('|999999|', (string) ($qr['payload'] ?? ''));
+    }
+
+    public function testPlAmountAboveLimitHasNoQr(): void
+    {
+        $s                    = SampleSnapshots::invoice('pl');
+        $s['totals']['total'] = '10000.00';
+        $this->assertNull((new QrPaymentBuilder())->build($s));
+    }
+
     public function testPlWithoutNipFails(): void
     {
         $s                     = SampleSnapshots::invoice('pl');

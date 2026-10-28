@@ -346,4 +346,15 @@ final class InvoicingPreviewTest extends AuthTestCase
         $html = $this->body($this->get('/invoices/new?client=' . $pl['client'] . '&month=2026-10&payment_method=cash'));
         $this->assertStringNotContainsString('QR kód ZBP', $html);
     }
+
+    public function testZbpAmountWarningShownAboveLimitOnlyForTransfer(): void
+    {
+        $s    = $this->issueSetup(['country' => 'PL', 'parts' => [['40.00', '2026-10', ['rate' => '250.00']]]]);
+        $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+
+        $this->assertStringContainsString('Suma je vyššia ako 9 999,99 PLN', $html);
+
+        $cash = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10&payment_method=cash'));
+        $this->assertStringNotContainsString('Suma je vyššia ako 9 999,99 PLN', $cash);
+    }
 }

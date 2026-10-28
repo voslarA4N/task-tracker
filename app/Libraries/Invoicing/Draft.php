@@ -42,6 +42,7 @@ final readonly class Draft
         public bool $paymentNoteDirty = false,
         public bool $provisionalText = false,
         public bool $zbpTitleWarning = false,
+        public bool $zbpAmountWarning = false,
     ) {
     }
 }
