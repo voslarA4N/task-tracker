@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-/**
- * Popisky PDF faktury (pl). Kopiruju sa do snapshotu pri vystaveni (D-18), render ich necita z lang().
- * Preklady pl a cs su predbezne, finalne znenie urci Phase 6.
- */
+/** Popisky PDF faktury (pl). Kopiruju sa do snapshotu pri vystaveni (D-18), render ich necita z lang(). */
 return [
     'invoice'         => 'Faktura',
     'number'          => 'Numer faktury',
@@ -13,11 +10,11 @@ return [
     'supplier'        => 'Sprzedawca',
     'customer'        => 'Nabywca',
     'issueDate'       => 'Data wystawienia',
-    'deliveryDate'    => 'Data dostawy',
+    'deliveryDate'    => 'Data dostawy/wykonania usługi',
     'dueDate'         => 'Termin płatności',
-    'paymentMethod'   => 'Sposób płatności',
+    'paymentMethod'   => 'Forma płatności',
     'paymentTransfer' => 'Przelew',
-    'bankAccount'     => 'IBAN',
+    'bankAccount'     => 'Numer konta (IBAN)',
     'swift'           => 'SWIFT',
     'item'            => 'Pozycja',
     'hours'           => 'Godziny',
@@ -30,4 +27,18 @@ return [
     'vatId'           => 'NIP UE',
     'regon'           => 'REGON',
     'identifier'      => 'Identyfikator',
+    'paymentCash'     => 'Gotówka',
+    'paymentCard'     => 'Karta',
+    'paymentOther'    => 'Inna',
+    'paymentTitle'    => 'Tytuł płatności',
+    'unitHours'       => 'godz.',
+    'vatNoteHeading'  => 'Informacja o VAT',
+    'note'            => 'Uwagi',
+    'page'            => 'Strona',
+    'nip'             => 'NIP',
+    'bankName'        => 'Bank',
+    'qrPayBySquare'   => 'PAY by square',
+    'qrSpayd'         => 'QR Platba',
+    'qrZbp'           => 'Kod QR ZBP',
+    'qrCaption'       => 'Płatność kodem QR',
 ];

@@ -1,10 +1,12 @@
 #!/bin/sh
-# Smoke kontrola stagingu cez Cloudflare: sh scripts/smoke-staging.sh <domena>
-# Voliteľné env: SSH_TARGET (pamäť cez docker stats), ORIGIN_IP (origin mimo CF
-# musí byť nedostupný), SMOKE_EMAIL + SMOKE_PASSWORD (zmena session cookie po hesle).
+# Smoke kontrola servera (prod alebo staging) cez Cloudflare: sh scripts/smoke-server.sh <domena>
+# Voliteľné env: SSH_TARGET (pamäť cez docker stats), SMOKE_PROJECT (compose projekt, ktorého
+# kontajnery sa sčítajú; bez neho všetky), ORIGIN_IP (origin mimo CF musí byť nedostupný),
+# SMOKE_EXPECT_NOINDEX=1 (staging: /login musí mať X-Robots-Tag noindex; inak ho nesmie mať),
+# SMOKE_EMAIL + SMOKE_PASSWORD (zmena session cookie po hesle).
 set -eu
 
-D=${1:?Použitie: smoke-staging.sh <domena>}
+D=${1:?Použitie: smoke-server.sh <domena>}
 BASE="https://$D"
 
 FAILS=0
@@ -50,6 +52,13 @@ else
   has '^vary:.*HX-Request' || ok=0
   has '^cf-cache-status: *HIT' && ok=0
   if [ "$ok" = 1 ]; then pass "hlavičky $BASE/login"; else fail "hlavičky $BASE/login"; fi
+
+  # X-Robots-Tag: staging noindex, prod bez hlavičky
+  if [ "${SMOKE_EXPECT_NOINDEX:-0}" = 1 ]; then
+    if has '^x-robots-tag:.*noindex'; then pass "X-Robots-Tag noindex"; else fail "X-Robots-Tag noindex chýba"; fi
+  else
+    if has '^x-robots-tag:'; then fail "X-Robots-Tag nemá byť na produkcii"; else pass "bez X-Robots-Tag"; fi
+  fi
 
   # 4. cookies
   CK=$(echo "$hdr" | grep -i '^set-cookie:' || true)
@@ -102,11 +111,19 @@ else
   skip "zmena session cookie (chýba SMOKE_EMAIL/SMOKE_PASSWORD)"
 fi
 
-# 7. pamäť kontajnerov (NFR-02)
+# 7. pamäť kontajnerov (NFR-02); so SMOKE_PROJECT iba tento stack
 if [ -n "${SSH_TARGET:-}" ]; then
-  MEM=$(ssh "$SSH_TARGET" "docker stats --no-stream --format '{{.MemUsage}}'" 2>/dev/null \
+  if [ -n "${SMOKE_PROJECT:-}" ]; then
+    REMOTE="ids=\$(docker ps -q --filter label=com.docker.compose.project=$SMOKE_PROJECT); [ -n \"\$ids\" ] && docker stats --no-stream --format '{{.MemUsage}}' \$ids"
+    LABEL="pamäť ($SMOKE_PROJECT)"
+  else
+    REMOTE="docker stats --no-stream --format '{{.MemUsage}}'"
+    LABEL="pamäť"
+  fi
+  # shellcheck disable=SC2029  # $REMOTE sa zamerne expanduje na klientovi (SMOKE_PROJECT)
+  MEM=$(ssh "$SSH_TARGET" "$REMOTE" 2>/dev/null \
     | awk '{ v=$1; n=v+0; if (v ~ /GiB/) n*=1024; else if (v ~ /KiB/) n/=1024; else if (v ~ /MiB/) n=n; s+=n } END { printf "%.0f", s }' || true)
-  if [ -n "$MEM" ] && [ "$MEM" -gt 0 ] && [ "$MEM" -lt 512 ]; then pass "pamäť ${MEM} MiB < 512"; else fail "pamäť (${MEM:-?} MiB, limit 512)"; fi
+  if [ -n "$MEM" ] && [ "$MEM" -gt 0 ] && [ "$MEM" -lt 512 ]; then pass "$LABEL ${MEM} MiB < 512"; else fail "$LABEL (${MEM:-?} MiB, limit 512)"; fi
 else
   skip "pamäť (chýba SSH_TARGET)"
 fi

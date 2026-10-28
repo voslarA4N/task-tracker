@@ -52,7 +52,7 @@ trait InvoiceFixtures
 
     /**
      * @param list<int>            $allocationIds
-     * @param array<string, mixed> $overrides     number, series_id, total, line_count, vat_code, sha256, without_document
+     * @param array<string, mixed> $overrides     number, series_id, total, line_count, vat_code, sha256, without_document, snapshot_schema, with_report
      */
     protected function insertIssuedInvoiceRaw(int $clientId, int $entityId, string $month, array $allocationIds, string $pdfBytes = '%PDF-1.4 test', array $overrides = []): int
     {
@@ -70,7 +70,7 @@ trait InvoiceFixtures
                 "INSERT INTO invoices (origin, type, entity_id, entity_version_id, series_id, number, client_id, billing_month, issue_date, delivery_date, due_date, turnover_date,
                     currency, total, total_entity_ccy, counts_toward_limit, line_count, doc_language, vat_regime, billing_mode, template_version, snapshot, snapshot_schema, created_at)
                  VALUES ('issued', 'invoice', :entity:, :ver:, :series:, :number:, :client:, :month:, '2026-10-27', '2026-10-27', '2026-11-10', '2026-10-27',
-                    :ccy:, :total:, :total:, true, :n:, :lang:, :regime:, 'domestic', 'test-1', '{\"schema\":1}', 1, :now:)",
+                    :ccy:, :total:, :total:, true, :n:, :lang:, :regime:, 'domestic', 'test-1', '{\"schema\":1}', :schema:, :now:)",
                 [
                     'entity' => $entityId,
                     'ver'    => $version->id,
@@ -84,6 +84,7 @@ trait InvoiceFixtures
                     'lang'   => $version->doc_language,
                     'regime' => $version->vat_regime,
                     'now'    => $now,
+                    'schema' => (int) ($overrides['snapshot_schema'] ?? 1),
                 ],
             );
             $invoiceId = (int) $db->query('SELECT max(id) AS id FROM invoices')->getRow()->id;
@@ -100,6 +101,14 @@ trait InvoiceFixtures
                         'sha'  => $overrides['sha256'] ?? hash('sha256', $pdfBytes),
                         'now'  => $now,
                     ],
+                );
+            }
+
+            if (($overrides['with_report'] ?? false) === true) {
+                $db->query(
+                    "INSERT INTO invoice_documents (invoice_id, kind, content, byte_size, sha256, template_version, renderer, created_at)
+                     VALUES (:inv:, 'report', decode(:hex:, 'hex'), :size:, :sha:, 'rep-1', 'test', :now:)",
+                    ['inv' => $invoiceId, 'hex' => bin2hex($pdfBytes), 'size' => strlen($pdfBytes), 'sha' => hash('sha256', $pdfBytes), 'now' => $now],
                 );
             }
 

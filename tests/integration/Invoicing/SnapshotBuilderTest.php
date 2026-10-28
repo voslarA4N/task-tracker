@@ -7,6 +7,10 @@ namespace Tests\Integration\Invoicing;
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\IssueRejected;
+use App\Libraries\Invoicing\LegalProfile;
+use App\Libraries\Invoicing\Qr\PayBySquare;
+use App\Libraries\Invoicing\ReportRows;
+use App\Libraries\Invoicing\Samples\SampleSnapshots;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Master\EntityService;
 use App\Libraries\Platform\FrozenClock;
@@ -15,6 +19,7 @@ use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
+use Tests\Support\PayBySquareDecoder;
 use Tests\Support\PgTestCase;
 
 /**
@@ -70,6 +75,53 @@ final class SnapshotBuilderTest extends PgTestCase
         $this->assertSame('np', $snap['lines'][0]['vat_code']);
         $this->assertSame('1080.00', $snap['totals']['total']);
         $this->assertSame('EUR', $snap['currency']);
+    }
+
+    public function testSampleSnapshotLegalTextHasResolverShape(): void
+    {
+        $snap   = $this->build($this->issueSetup());
+        $sample = SampleSnapshots::invoice('sk');
+
+        $this->assertSame(array_keys($snap['legal']['texts']['vat_note']), array_keys($sample['legal']['texts']['vat_note']));
+        $this->assertSame(1, $sample['legal']['texts']['vat_note']['revision']);
+        $this->assertNull($sample['legal']['texts']['vat_note']['billing_mode']);
+        $this->assertSame('eu_b2b', SampleSnapshots::invoice('pl_eu_b2b')['legal']['texts']['vat_note']['billing_mode']);
+
+        $pl = $this->build($this->issueSetup(['country' => 'PL']));
+        $this->assertSame(array_keys($pl['legal']['texts']['vat_note']), array_keys(SampleSnapshots::invoice('pl')['legal']['texts']['vat_note']));
+    }
+
+    public function testSnapshotIsSchemaTwoWithPrintRules(): void
+    {
+        $snap = $this->build($this->issueSetup());
+
+        $this->assertSame(2, $snap['schema']);
+        $this->assertSame('inv-2', $snap['template_version']);
+        $this->assertSame(LegalProfile::print('SK', 'sk_non_vat', 'domestic'), $snap['legal']['print']);
+        $this->assertSame('vat_note', $snap['legal']['texts']['vat_note']['key']);
+        $this->assertSame(['method' => 'transfer', 'note' => null, 'qr' => null], $snap['payment']);
+
+        foreach (SnapshotBuilder::LABEL_KEYS as $key) {
+            $this->assertArrayHasKey($key, $snap['labels']);
+            $this->assertNotSame('', $snap['labels'][$key]);
+        }
+    }
+
+    public function testSnapshotCarriesReportContent(): void
+    {
+        $snap = $this->build($this->issueSetup());
+
+        $this->assertSame('rep-1', $snap['report_template_version']);
+        $this->assertSame('október 2026', $snap['report']['period']);
+        $this->assertCount(count($snap['lines']), $snap['report']['rows']);
+        $this->assertSame('Výkaz práce', $snap['labels']['report']['title']);
+
+        foreach (ReportRows::LABEL_KEYS as $key) {
+            $this->assertNotSame('', $snap['labels']['report'][$key]);
+        }
+
+        $pl = $this->build($this->issueSetup(['client' => ['doc_language' => 'pl']]));
+        $this->assertSame('październik 2026', $pl['report']['period']);
     }
 
     public function testClientLanguageOverridesEntityLanguage(): void
@@ -163,6 +215,19 @@ final class SnapshotBuilderTest extends PgTestCase
         $this->assertSame('202610001', $snap['variable_symbol']);
     }
 
+    public function testVariableSymbolIsDigitsOnlyAtMostTenDigits(): void
+    {
+        // WR-05: VS pre SK/CZ banky je ciselny, najviac 10 cislic; format cisla faktury sa nemeni.
+        $s    = $this->issueSetup();
+        $snap = (new SnapshotBuilder($this->rw()))->withNumber($this->build($s), 'FA-2026/001');
+
+        $this->assertSame('FA-2026/001', $snap['number']);
+        $this->assertSame('2026001', $snap['variable_symbol']);
+        $this->assertSame('6100012345', SnapshotBuilder::variableSymbol('INV/2026-10/0012345'));
+        $this->assertSame('202610001', SnapshotBuilder::variableSymbol('202610001'));
+        $this->assertNull(SnapshotBuilder::variableSymbol('FA-X'));
+    }
+
     public function testUnlockedPartsOrderAndHasLocked(): void
     {
         $s     = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['20.00', '2026-10']]]);
@@ -177,5 +242,53 @@ final class SnapshotBuilderTest extends PgTestCase
         $this->lockAllocation($s['parts'][0]);
         $this->assertTrue($parts->hasLocked($s['client'], '2026-10'));
         $this->assertCount(1, $parts->unlocked($s['client'], '2026-10', null));
+    }
+
+    public function testPaymentAndInvoiceNoteInSnapshot(): void
+    {
+        $s    = $this->issueSetup();
+        $snap = $this->build($s);
+        $this->assertSame(['method' => 'transfer', 'note' => null, 'qr' => null], $snap['payment']);
+        $this->assertNull($snap['legal']['texts']['invoice_note']);
+
+        $client = $this->rw()->query('SELECT * FROM clients WHERE id = :id:', ['id' => $s['client']])->getRowArray();
+        $entity = $this->rw()->query('SELECT * FROM entities WHERE id = :id:', ['id' => $s['entity']])->getRowArray();
+        $parts  = (new InvoiceParts($this->rw()))->unlocked($s['client'], '2026-10', $client['portal_url_template']);
+
+        $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK', 'sk_non_vat', NULL, 'sk', 'invoice_note', 'Vzor', false, now())");
+
+        try {
+            $snap = (new SnapshotBuilder($this->rw()))->build($client, $entity, $parts, '2026-10', '2026-10-27', '2026-10-31', '2026-11-10', null, 'cash', 'Poznamka');
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
+        }
+
+        $this->assertSame(['method' => 'cash', 'note' => 'Poznamka', 'qr' => null], $snap['payment']);
+        $this->assertSame(['key' => 'invoice_note', 'body' => 'Vzor', 'language' => 'sk', 'provisional' => false, 'revision' => 1, 'billing_mode' => null], $snap['legal']['texts']['invoice_note']);
+    }
+
+    public function testQrOnlyAfterNumberForSkTransfer(): void
+    {
+        $s        = $this->issueSetup();
+        $built    = $this->build($s);
+        $numbered = (new SnapshotBuilder($this->rw()))->withNumber($built, '202610001');
+
+        $this->assertNull($built['payment']['qr']);
+        $this->assertSame('pay_by_square', $numbered['payment']['qr']['standard']);
+        $this->assertMatchesRegularExpression('/^[0-9A-V]+$/', $numbered['payment']['qr']['payload']);
+
+        $decoded = PayBySquareDecoder::decode($numbered['payment']['qr']['payload']);
+        $this->assertTrue($decoded['crc_ok']);
+        $this->assertContains($numbered['bank']['iban'], $decoded['fields']);
+        $this->assertContains((new PayBySquare())->tabFields($numbered)[3], $decoded['fields']);
+    }
+
+    public function testNoQrForCash(): void
+    {
+        $s                         = $this->issueSetup();
+        $snap                      = $this->build($s);
+        $snap['payment']['method'] = 'cash';
+
+        $this->assertNull((new SnapshotBuilder($this->rw()))->withNumber($snap, '202610001')['payment']['qr']);
     }
 }

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 05-09-PLAN.md
-last_updated: "2026-10-27T01:39:26.641Z"
-last_activity: 2026-10-27
+stopped_at: Completed 06-08-PLAN.md
+last_updated: "2026-10-28T20:19:59.556Z"
+last_activity: 2026-10-28
 progress:
   total_phases: 12
-  completed_phases: 5
-  total_plans: 62
-  completed_plans: 62
-  percent: 42
+  completed_phases: 6
+  total_plans: 71
+  completed_plans: 71
+  percent: 50
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 5 — faktura-n-jadro
+**Current focus:** Phase 06 — dokumenty-fakt-ry-a-v-kazu
 
 ## Current Position
 
-Phase: 5 (faktura-n-jadro) — EXECUTING
-Plan: 9 of 9
+Phase: 7
+Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-10-27 - Completed quick task 261027-jjx: WR-01 + WR-04 (preview token, line order)
+Last activity: 2026-10-28
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -36,7 +36,7 @@ Progress: [░░░░░░░░░░] 0%
 
 **Velocity:**
 
-- Total plans completed: 43
+- Total plans completed: 61
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -47,6 +47,8 @@ Progress: [░░░░░░░░░░] 0%
 | 02 | 20 | - | - |
 | 3 | 10 | - | - |
 | 04 | 13 | - | - |
+| 5 | 9 | - | - |
+| 06 | 9 | - | - |
 
 **Recent Trend:**
 
@@ -84,6 +86,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 5 P02 | 35min | 3 tasks | 18 files |
 | Phase 05 P08 | 50min | 3 tasks | 16 files |
 | Phase 05 P09 | 45min | 2 tasks | 11 files |
+| Phase 06 P06 | 40min | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -114,6 +117,8 @@ Recent decisions affecting current work:
 - [Phase 03]: 03-07: portal URL template accepts only http/https with host and {id} once; preview is text only
 - [Phase 04]: 04-04: client currency lock applies to any billing allocation (locked or unlocked), stricter than Discretion text; RESEARCH Pitfall 9
 - [Phase 04]: WR-07 (vlastník 2026-10-26, voľba C): importované riadky „Fakturované = ÁNO“ ostávajú zatiaľ nezamknuté časti; vo Phase 5 sa zamknú na historickú (externú) faktúru, aby sa nedali znova fakturovať. Historická faktúra nesmie spotrebovať číslo z radu `RRRRMM###`.
+- [Phase 06]: previewToken omits whole payment section; legal.texts.invoice_note stays in token
+- [Phase 06]: D-19 refined: ZBP number >32 chars gives no QR; missing PL NIP still qr_failed
 
 ### Pending Todos
 
@@ -135,6 +140,9 @@ Recent decisions affecting current work:
 |---|-------------|------|--------|-----------|
 | 261027-elv | import:excel --month RRRR-MM (import len jedného mesiaca) | 2026-10-27 | 7d884a4 | [261027-elv-import-excel-month-filter](./quick/261027-elv-import-excel-month-filter/) |
 | 261027-jjx | WR-01 + WR-04: preview token z celej kópie údajov, poradie položiek len z DB, blokovanie Vystaviť počas obnovy náhľadu | 2026-10-27 | cef426f | [261027-jjx-preview-token-full-snapshot-and-line-ord](./quick/261027-jjx-preview-token-full-snapshot-and-line-ord/) |
+| 261028-fcr | Staging (work-tracker-stage.vostack.dev) na tom istom serveri cez edge proxy (SNI + PROXY protocol), vetvy develop → staging, main → produkcia; repo zmeny, server cut-over čaká na vlastníka | 2026-10-28 | ed05715 | [261028-fcr-staging-prostredie-a-vetvovy-model-devel](./quick/261028-fcr-staging-prostredie-a-vetvovy-model-devel/) |
+| 261028-hu8 | Staging seed: deterministická vymyslená história od 2026-01-01 (3 subjekty, 8 klientov, ~157 úloh, ~41 faktúr cez reálny InvoiceIssuer), reset DB pri každom staging deployi s poistkami proti produkcii, moduly na rozširovanie | 2026-10-28 | 4777762 | [261028-hu8-staging-seed-s-vymyslenou-historiou-od-2](./quick/261028-hu8-staging-seed-s-vymyslenou-historiou-od-2/) |
+| 261028-mf3 | Voliteľná 2FA: ponuka pri prvom prihlásení s voľbou „nechcem“, zapnutie/vypnutie v Nastaveniach (heslo + TOTP alebo záložný kód), reset hesla e-mailom a zapamätanie zariadenia aj bez 2FA, staging admin bez 2FA | 2026-10-28 | d8c2e5f | [261028-mf3-volitelna-2fa-s-moznostou-vypnutia-v-gui](./quick/261028-mf3-volitelna-2fa-s-moznostou-vypnutia-v-gui/) |
 
 ## Deferred Items
 
@@ -146,6 +154,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-27T01:39:26.605Z
-Stopped at: Completed 05-09-PLAN.md
+Last session: 2026-10-28T00:16:34.042Z
+Stopped at: Completed 06-08-PLAN.md
 Resume file: None

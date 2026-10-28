@@ -405,6 +405,9 @@ img, table { max-width: 100%; }
 .inv-dates { display: flex; flex-wrap: wrap; gap: 16px; }
 .inv-dates .form-control { min-height: 44px; }
 
+.inv-pay .form-select, .inv-pay .form-control { min-height: 44px; font-size: 16px; }
+.inv-pay textarea.form-control { min-height: 88px; }
+
 .inv-warn { padding: 16px; }
 .inv-warn .form-check { min-height: 44px; display: flex; align-items: center; gap: 8px; }
 
@@ -425,9 +428,26 @@ img, table { max-width: 100%; }
 .inv-row .inv-row-meta { font-size: 12px; color: var(--app-muted); }
 .inv-row .inv-row-amount { font-size: 16px; font-weight: 400; font-variant-numeric: tabular-nums; }
 
-.inv-pdf-actions { display: flex; flex-direction: column; gap: 8px; }
-.inv-pdf-actions .btn { width: 100%; }
+.inv-docs { display: flex; flex-direction: column; gap: 8px; }
+.inv-docs .btn { width: 100%; min-height: 44px; }
 @media (min-width: 768px) {
-  .inv-pdf-actions { flex-direction: row; }
-  .inv-pdf-actions .btn { width: auto; }
+  .inv-docs { flex-direction: row; align-items: center; }
+  .inv-docs .btn { width: auto; }
 }
+
+/* Zakonne texty (Phase 6, SET-01) */
+.lt-group { margin-bottom: 24px; }
+.lt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 64px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--app-border);
+}
+.lt-row:last-child { border-bottom: 0; }
+.lt-row > .lt-main { flex: 1 1 auto; min-width: 0; }
+.lt-badge { flex: 0 0 auto; }
+.lt-body { font-size: 16px; min-height: 8em; overflow-wrap: anywhere; }
+.lt-effective { font-size: 12px; }
+.lt-check { display: flex; align-items: center; gap: 8px; min-height: 44px; }

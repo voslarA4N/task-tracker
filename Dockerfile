@@ -2,7 +2,7 @@
 FROM php:8.5-fpm-alpine AS base
 COPY --from=mlocati/php-extension-installer:2.12 /usr/bin/install-php-extensions /usr/local/bin/
 RUN install-php-extensions intl pdo_pgsql pgsql gd bcmath zip \
-    && apk add --no-cache tzdata
+    && apk add --no-cache tzdata xz
 ENV TZ=Europe/Bratislava
 COPY docker/php/conf.d/app.ini $PHP_INI_DIR/conf.d/zz-app.ini
 COPY docker/php/fpm/zz-www.conf /usr/local/etc/php-fpm.d/zz-www.conf

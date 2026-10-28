@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature\Invoicing;
 
 use App\Libraries\Invoicing\DocumentStore;
+use App\Libraries\Invoicing\MpdfInvoiceInv2Renderer;
+use App\Libraries\Invoicing\MpdfInvoiceRenderer;
+use App\Libraries\Invoicing\MpdfReportRenderer;
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use Config\Services;
@@ -14,6 +17,8 @@ use Tests\Support\FakePdfRenderer;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
+use Tests\Support\OverridingLanguage;
+use Tests\Support\SnapshotSample;
 
 /**
  * @internal
@@ -38,6 +43,7 @@ final class InvoicePdfEndpointTest extends AuthTestCase
     protected function tearDown(): void
     {
         $this->resetMasterTables();
+        Services::resetSingle('language');
         Services::reset();
         parent::tearDown();
     }
@@ -71,6 +77,15 @@ final class InvoicePdfEndpointTest extends AuthTestCase
         $this->assertStringContainsString('no-store', $r->getHeaderLine('Cache-Control'));
         $this->assertStringContainsString('private', $r->getHeaderLine('Cache-Control'));
         $this->assertSame('nosniff', $r->getHeaderLine('X-Content-Type-Options'));
+    }
+
+    public function testLegacyInv1PdfIsServedUnchanged(): void
+    {
+        $s     = $this->issueSetup();
+        $bytes = (new MpdfInvoiceRenderer())->render(SnapshotSample::issued())->bytes;
+        $id    = $this->insertIssuedInvoiceRaw($s['client'], $s['entity'], '2026-10', $s['parts'], $bytes);
+
+        $this->assertSame($bytes, (string) $this->get('/invoices/' . $id . '/pdf')->response()->getBody());
     }
 
     public function testDownloadIsAttachment(): void
@@ -119,5 +134,70 @@ final class InvoicePdfEndpointTest extends AuthTestCase
         $result = $this->get('/invoices/' . $i['id'] . '/pdf');
 
         $this->assertSame('inline; filename="faktura-FA_2026_001.pdf"', $result->response()->getHeaderLine('Content-Disposition'));
+    }
+
+    public function testReportServesStoredBytesWithCzechSlovakPrefix(): void
+    {
+        $i      = $this->issue(new FakePdfRenderer());
+        $stored = (new DocumentStore($this->rw()))->read($i['id'], 'report');
+        $result = $this->get('/invoices/' . $i['id'] . '/report');
+        $r      = $result->response();
+
+        $result->assertStatus(200);
+        $this->assertNotNull($stored);
+        $this->assertSame($stored->bytes, (string) $r->getBody());
+        $this->assertSame('application/pdf', $r->getHeaderLine('Content-Type'));
+        $this->assertSame('inline; filename="vykaz-202610001.pdf"', $r->getHeaderLine('Content-Disposition'));
+        $this->assertSame('"' . $stored->sha256 . '"', $r->getHeaderLine('ETag'));
+        $this->assertStringContainsString('no-store', $r->getHeaderLine('Cache-Control'));
+        $this->assertSame('nosniff', $r->getHeaderLine('X-Content-Type-Options'));
+    }
+
+    public function testReportFilenameForEnglishClient(): void
+    {
+        $i = $this->issue(new FakePdfRenderer(), ['client' => ['doc_language' => 'en']]);
+
+        $this->assertSame('inline; filename="report-202610001.pdf"', $this->get('/invoices/' . $i['id'] . '/report')->response()->getHeaderLine('Content-Disposition'));
+        $this->assertSame('inline; filename="invoice-202610001.pdf"', $this->get('/invoices/' . $i['id'] . '/pdf')->response()->getHeaderLine('Content-Disposition'));
+    }
+
+    public function testSchema1InvoiceHasNoReport404(): void
+    {
+        $s  = $this->issueSetup();
+        $id = $this->insertIssuedInvoiceRaw($s['client'], $s['entity'], '2026-10', $s['parts']);
+
+        $this->expectException(PageNotFoundException::class);
+        $this->get('/invoices/' . $id . '/report');
+    }
+
+    public function testReportOfExternalInvoiceIs404(): void
+    {
+        $client = $this->createClient();
+        $alloc  = $this->createAllocation($this->createTask($client), '8.00', '2026-09');
+        $id     = $this->insertExternalInvoice($client, '2026-09', [$alloc], null);
+
+        $this->expectException(PageNotFoundException::class);
+        $this->get('/invoices/' . $id . '/report');
+    }
+
+    public function testRedownloadAfterTranslationChangeReturnsIdenticalBytes(): void
+    {
+        $s      = $this->issueSetup();
+        $issued = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
+        $before = [];
+
+        foreach (['pdf', 'report'] as $path) {
+            $r             = $this->get('/invoices/' . $issued->id . '/' . $path)->response();
+            $before[$path] = [(string) $r->getBody(), $r->getHeaderLine('ETag')];
+        }
+
+        Services::injectMock('language', new OverridingLanguage('sk', ['InvoicePdf.invoice' => 'X-PREPIS', 'ReportPdf.title' => 'X-VYKAZ']));
+        $this->assertSame('X-PREPIS', lang('InvoicePdf.invoice', [], 'sk'));
+
+        foreach (['pdf', 'report'] as $path) {
+            $r = $this->get('/invoices/' . $issued->id . '/' . $path)->response();
+            $this->assertSame($before[$path][0], (string) $r->getBody());
+            $this->assertSame($before[$path][1], $r->getHeaderLine('ETag'));
+        }
     }
 }

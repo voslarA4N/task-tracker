@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Invoicing\Qr\PolishZbpQr;
+use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use App\Libraries\Master\EntityDirectory;
 use App\Libraries\Master\EntityVersionResolver;
+use App\Libraries\Master\InvalidSeriesFormat;
 use App\Libraries\Master\LegalProfileResolver;
 use App\Libraries\Master\LegalTextMissing;
+use App\Libraries\Master\SeriesFormat;
 use App\Libraries\Master\VersionNotFound;
 use App\Libraries\Work\BillingMonth;
 use CodeIgniter\Database\BaseConnection;
@@ -65,7 +69,7 @@ final class InvoiceDraftService
         return BillingMonth::previous(BillingMonth::current());
     }
 
-    public function draft(int $clientId, string $month, ?int $entityId, ?string $issueDate, ?string $deliveryDate, ?string $dueDate): Draft
+    public function draft(int $clientId, string $month, ?int $entityId, ?string $issueDate, ?string $deliveryDate, ?string $dueDate, ?string $paymentMethod = null, ?string $paymentNote = null, bool $noteDirty = false): Draft
     {
         $clock = service('clock');
 
@@ -136,15 +140,43 @@ final class InvoiceDraftService
             }
         }
 
-        $backdate = null;
+        $backdate  = null;
+        $seriesFmt = null;
 
         if ($selected !== null) {
-            $series = $this->db->query("SELECT id FROM invoice_series WHERE entity_id = :e: AND kind = 'invoice'", ['e' => $selected])->getRowArray();
+            $series = $this->db->query("SELECT id, format FROM invoice_series WHERE entity_id = :e: AND kind = 'invoice'", ['e' => $selected])->getRowArray();
 
             if ($series !== null) {
-                $backdate = $this->guards->backdate((int) $series['id'], $issue);
+                $backdate  = $this->guards->backdate((int) $series['id'], $issue);
+                $seriesFmt = (string) $series['format'];
             }
         }
+
+        $method      = $paymentMethod !== null && in_array($paymentMethod, IssueCommand::PAYMENT_METHODS, true) ? $paymentMethod : 'transfer';
+        $texts       = is_array($snapshot) ? ($snapshot['legal']['texts'] ?? []) : [];
+        $defaultNote = is_array($texts['invoice_note'] ?? null) ? $texts['invoice_note'] : null;
+        $note        = $noteDirty ? IssueInput::normalizeNote((string) $paymentNote) : ($defaultNote['body'] ?? null);
+        $provisional = (bool) ($texts['vat_note']['provisional'] ?? false) || (! $noteDirty && (bool) ($defaultNote['provisional'] ?? false));
+
+        // Skusobny QR s najdlhsim moznym cislom radu: deterministicke zlyhanie (NIP, IBAN, suma, xz) sa ukaze uz v nahlade (WR-03).
+        if (is_array($snapshot) && $method === 'transfer' && $seriesFmt !== null && $errors === []) {
+            $probeNumber = self::longestNumber($seriesFmt, $issue);
+
+            if ($probeNumber !== '') {
+                $probe                      = $snapshot;
+                $probe['payment']['method'] = $method;
+
+                try {
+                    $this->builder->withNumber($probe, $probeNumber);
+                } catch (QrPaymentFailed $e) {
+                    $errors[] = ['reason' => 'qr_failed', 'context' => ['qr_reason' => $e->reason]];
+                }
+            }
+        }
+
+        $zbpApplies       = is_array($snapshot) && $method === 'transfer' && PolishZbpQr::applies($snapshot);
+        $zbpWarning       = $zbpApplies && $seriesFmt !== null && ! PolishZbpQr::titleFits(self::longestNumber($seriesFmt, $issue));
+        $zbpAmountWarning = $zbpApplies && ! PolishZbpQr::amountFits((string) ($snapshot['totals']['total'] ?? ''));
 
         return new Draft(
             $clientId,
@@ -166,7 +198,27 @@ final class InvoiceDraftService
             $errors,
             $entities,
             $count > 0 && $errors === [] && $selected !== null && $token !== null,
+            $method,
+            $note,
+            $noteDirty,
+            $provisional,
+            $zbpWarning,
+            $zbpAmountWarning,
         );
+    }
+
+    /**
+     * Najdlhsie mozne cislo radu (len citanie formatu). Neplatny format sa ignoruje, vystavenie ho odmietne.
+     */
+    private static function longestNumber(string $format, string $issueDate): string
+    {
+        try {
+            $parsed = SeriesFormat::parse($format);
+
+            return $parsed->render($issueDate, $parsed->maxSequence());
+        } catch (InvalidSeriesFormat) {
+            return '';
+        }
     }
 
     private function validDate(?string $iso): ?string

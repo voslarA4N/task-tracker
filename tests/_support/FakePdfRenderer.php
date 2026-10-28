@@ -14,13 +14,17 @@ final class FakePdfRenderer implements PdfRenderer
 {
     public int $calls = 0;
 
+    public function __construct(private readonly string $templateVersion = '')
+    {
+    }
+
     public function render(array $snapshot): RenderedPdf
     {
         $this->calls++;
 
         return RenderedPdf::fromBytes(
             '%PDF-FAKE ' . ($snapshot['number'] ?? 'null') . ' ' . ($snapshot['totals']['total'] ?? ''),
-            'inv-1',
+            $this->templateVersion !== '' ? $this->templateVersion : (string) $snapshot['template_version'],
             'fake',
         );
     }

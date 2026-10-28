@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-/**
- * Popisky PDF faktury (sk). Kopiruju sa do snapshotu pri vystaveni (D-18), render ich necita z lang().
- * Preklady pl a cs su predbezne, finalne znenie urci Phase 6.
- */
+/** Popisky PDF faktury (sk). Kopiruju sa do snapshotu pri vystaveni (D-18), render ich necita z lang(). */
 return [
     'invoice'         => 'Faktúra',
     'number'          => 'Číslo faktúry',
@@ -16,7 +13,7 @@ return [
     'deliveryDate'    => 'Dátum dodania',
     'dueDate'         => 'Dátum splatnosti',
     'paymentMethod'   => 'Forma úhrady',
-    'paymentTransfer' => 'Prevodom',
+    'paymentTransfer' => 'Prevod',
     'bankAccount'     => 'IBAN',
     'swift'           => 'SWIFT',
     'item'            => 'Položka',
@@ -30,4 +27,18 @@ return [
     'vatId'           => 'IČ DPH',
     'regon'           => 'REGON',
     'identifier'      => 'Identifikátor',
+    'paymentCash'     => 'Hotovosť',
+    'paymentCard'     => 'Karta',
+    'paymentOther'    => 'Iná',
+    'paymentTitle'    => 'Účel platby',
+    'unitHours'       => 'h',
+    'vatNoteHeading'  => 'Poznámka k DPH',
+    'note'            => 'Poznámka',
+    'page'            => 'Strana',
+    'nip'             => 'NIP',
+    'bankName'        => 'Banka',
+    'qrPayBySquare'   => 'PAY by square',
+    'qrSpayd'         => 'QR Platba',
+    'qrZbp'           => 'Kod QR ZBP',
+    'qrCaption'       => 'Platba QR kódom',
 ];

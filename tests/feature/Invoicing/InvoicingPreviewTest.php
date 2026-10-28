@@ -282,4 +282,122 @@ final class InvoicingPreviewTest extends AuthTestCase
 
         $this->assertSame('2027-01', $this->allocationMonth($s['parts'][0]));
     }
+
+    public function testPreviewHasPaymentCardWithFourMethodsAndTransferDefault(): void
+    {
+        $s    = $this->issueSetup();
+        $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+
+        $this->assertStringContainsString('name="payment_method" form="inv-issue-form"', $html);
+        $this->assertSame(4, substr_count($html, '<option value="transfer"') + substr_count($html, '<option value="cash"') + substr_count($html, '<option value="card"') + substr_count($html, '<option value="other"'));
+        $this->assertStringContainsString('<option value="transfer" selected>', $html);
+        $this->assertStringContainsString('maxlength="500"', $html);
+    }
+
+    public function testNotePrefilledFromInvoiceNoteAndProvisionalWarningShown(): void
+    {
+        $s = $this->issueSetup();
+        $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK', 'sk_non_vat', NULL, 'sk', 'invoice_note', 'Predvolena poznamka SK', true, now())");
+        $this->owner()->query("UPDATE legal_texts SET provisional = false WHERE key = 'vat_note'");
+
+        try {
+            $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+            $this->assertStringContainsString('>Predvolena poznamka SK</textarea>', $html);
+            $this->assertStringContainsString('Pozor: znenie ešte nepotvrdila účtovníčka', $html);
+
+            $dirty = $this->body($this->fragment('/fragments/invoice-preview?client=' . $s['client'] . '&month=2026-10&payment_note=Moje&payment_note_dirty=1'));
+            $this->assertStringContainsString('>Moje</textarea>', $dirty);
+            $this->assertStringNotContainsString('Pozor: znenie ešte nepotvrdila účtovníčka', $dirty);
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
+            $this->owner()->query("UPDATE legal_texts SET provisional = true WHERE key = 'vat_note' AND provisional = false");
+        }
+    }
+
+    public function testInvalidPaymentQueryValuesAreSilentlyDefaulted(): void
+    {
+        $s      = $this->issueSetup();
+        $result = $this->fragment('/fragments/invoice-preview?client=' . $s['client'] . '&month=2026-10&payment_method=bitcoin&payment_note=' . str_repeat('a', 501));
+
+        $result->assertStatus(200);
+        $this->assertStringContainsString('<option value="transfer" selected>', $this->body($result));
+    }
+
+    /**
+     * Najdlhsi povoleny format (SeriesFormat::MAX_OUTPUT = 30) dava vzdy cislo <= 30 znakov, teda pod limitom ZBP 32:
+     * upozornenie sa v praxi nezobrazi. Test overuje hranicu a ostatne kombinacie.
+     */
+    public function testZbpWarningAbsentForPlWithLongestAllowedFormat(): void
+    {
+        $s = $this->issueSetup(['country' => 'PL', 'format' => 'ABCDEFGHIJKLMNOPQRS-RRRR###']);
+
+        $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+
+        $this->assertStringNotContainsString('QR kód ZBP', $html);
+    }
+
+    public function testZbpWarningAbsentForSkClientAndCash(): void
+    {
+        $s    = $this->issueSetup(['format' => 'ABCDEFGHIJKLMNOPQRS-RRRR###']);
+        $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+        $this->assertStringNotContainsString('QR kód ZBP', $html);
+
+        $pl   = $this->issueSetup(['country' => 'PL']);
+        $html = $this->body($this->get('/invoices/new?client=' . $pl['client'] . '&month=2026-10&payment_method=cash'));
+        $this->assertStringNotContainsString('QR kód ZBP', $html);
+    }
+
+    public function testZbpAmountWarningShownAboveLimitOnlyForTransfer(): void
+    {
+        $s    = $this->issueSetup(['country' => 'PL', 'parts' => [['40.00', '2026-10', ['rate' => '250.00']]]]);
+        $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+
+        $this->assertStringContainsString('Suma je vyššia ako 9 999,99 PLN', $html);
+
+        $cash = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10&payment_method=cash'));
+        $this->assertStringNotContainsString('Suma je vyššia ako 9 999,99 PLN', $cash);
+    }
+
+    public function testQrHintsMatchPaymentMethodWithoutJs(): void
+    {
+        $s        = $this->issueSetup();
+        $transfer = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+        $cash     = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10&payment_method=cash'));
+
+        $qrShown  = '<div class="form-text" x-bind:hidden="isNotTransfer">Na faktúre bude QR kód';
+        $qrHidden = '<div class="form-text" hidden x-bind:hidden="isNotTransfer">Na faktúre bude QR kód';
+        $noShown  = '<div class="form-text" x-bind:hidden="isTransfer">QR kód sa netlačí.';
+        $noHidden = '<div class="form-text" hidden x-bind:hidden="isTransfer">QR kód sa netlačí.';
+
+        $this->assertStringContainsString($qrShown, $transfer);
+        $this->assertStringContainsString($noHidden, $transfer);
+        $this->assertStringContainsString($qrHidden, $cash);
+        $this->assertStringContainsString($noShown, $cash);
+    }
+
+    public function testPreviewNamesQrCauseForPlEntityWithoutNip(): void
+    {
+        $s    = $this->issueSetup(['country' => 'PL']);
+        $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+
+        $this->assertStringContainsString('QR kód pre platbu sa nedá vytvoriť', $html);
+        $this->assertStringContainsString('Subjekt nemá platné NIP', $html);
+        $this->assertStringNotContainsString('Skontrolujte IBAN', $html);
+    }
+
+    public function testAllocationRefreshIncludesLivePaymentFieldsInsteadOfStaleUrlValues(): void
+    {
+        $s    = $this->issueSetup();
+        $html = $this->body($this->fragment('/fragments/invoice-preview?client=' . $s['client'] . '&month=2026-10&payment_method=cash&payment_note=Stara&payment_note_dirty=1'));
+
+        $this->assertSame(1, preg_match('/<div id="inv-preview" hx-get="([^"]*)" hx-trigger="allocationChanged from:body"[^>]*>/', $html, $m));
+        $this->assertStringContainsString('hx-include="#inv-payment-method, #inv-payment-note, #inv-payment-note-dirty"', $m[0]);
+        $refresh = html_entity_decode($m[1], ENT_QUOTES);
+        $this->assertStringNotContainsString('payment_', $refresh);
+
+        // htmx pripoji aktualne hodnoty z formulara k URL obnovy
+        $after = $this->body($this->fragment($refresh . '&payment_method=card&payment_note=Nova&payment_note_dirty=1'));
+        $this->assertStringContainsString('<option value="card" selected>', $after);
+        $this->assertStringContainsString('>Nova</textarea>', $after);
+    }
 }

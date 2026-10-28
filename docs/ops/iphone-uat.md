@@ -8,7 +8,7 @@ Dátum UAT: 2026-10-25 (vlastník nahlásil „UAT OK“ pre všetky kroky)
 
 | # | Krok | Očakávaný výsledok | Výsledok | Poznámka |
 |---|------|--------------------|----------|----------|
-| 1 | PC: vytvor admin účet podľa `docs/ops/staging.md`, sekcia 10: `ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.staging.yaml exec php php spark user:create <e-mail> --admin'` (heslo zadávaš ty, minimálne 12 znakov, bez časti e-mailu pred `@`) | Príkaz vypíše „Používateľ ... vytvorený“, heslo sa nikde nezobrazí | OK | účet vytvorený na serveri ako `sudo -u deploy` (príkaz z PC vyžaduje `-i ~/.ssh/work_tracker_deploy`) |
+| 1 | PC: vytvor admin účet podľa `docs/ops/server.md`, sekcia 10: `ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.server.yaml exec php php spark user:create <e-mail> --admin'` (heslo zadávaš ty, minimálne 12 znakov, bez časti e-mailu pred `@`) | Príkaz vypíše „Používateľ ... vytvorený“, heslo sa nikde nezobrazí | OK | účet vytvorený na serveri ako `sudo -u deploy` (príkaz z PC vyžaduje `-i ~/.ssh/work_tracker_deploy`) |
 | 2 | iPhone, Safari: otvor `https://work-tracker.vostack.dev` | Presmerovanie na prihlásenie, zobrazí sa inštalačný panel „Pridajte si Work Tracker na plochu“, po zatvorení (×) a znovunačítaní sa panel už nezobrazí | OK | |
 | 3 | Prihlás sa heslom, naskenuj QR v Google/Microsoft Authenticator, zadaj kód, aktivuj 2FA | Zobrazí sa 10 záložných kódov; „Stiahnuť .txt“ uloží súbor; „Pokračovať“ je neaktívne, kým nezaškrtneš „Uložil som si ich“; zaškrtnuté „Zapamätať si toto zariadenie na 30 dní“ (O-5 = yes); po „Pokračovať“ domovská stránka | OK | |
 | 4 | Zdieľať → Pridať na plochu | Ikona „Work Tracker“ (modrá, WT); spustenie z plochy je bez lišty Safari (standalone), inštalačný panel sa nezobrazí | OK | |
@@ -19,7 +19,7 @@ Dátum UAT: 2026-10-25 (vlastník nahlásil „UAT OK“ pre všetky kroky)
 | 9 | PC: Zabezpečenie → odvolať iPhone; na iPhone ďalšia navigácia v PWA | iPhone požaduje heslo aj TOTP | OK | |
 | 10 | PC: odhlás sa, prihlás sa heslom + záložným kódom | Prihlásenie prejde, zostatok záložných kódov je 9 | OK | |
 | 11 | iPhone: prihlás sa znova a nechaj zaškrtnuté zapamätanie zariadenia | Zariadenie je opäť v zozname dôveryhodných | OK | |
-| 12 | Server: `ssh deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.staging.yaml logs php \| grep mail.suppressed'` (alebo `writable/logs`) | Riadky `mail.suppressed kind=security.device_trusted` (a pri odvolaní zodpovedajúci druh) bez tela správy | OK | |
+| 12 | Server: `ssh deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.server.yaml logs php \| grep mail.suppressed'` (alebo `writable/logs`) | Riadky `mail.suppressed kind=security.device_trusted` (a pri odvolaní zodpovedajúci druh) bez tela správy | OK | |
 
 ## Dlhodobé kontroly
 

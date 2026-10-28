@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Libraries\Invoicing;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use App\Libraries\Platform\DbBool;
 use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Database;
 use RuntimeException;
+use Throwable;
 
 /**
  * Jediny zapisovatel vlastnych faktur (D-15). Cele vystavenie je jedna transakcia: zamky, vypocet, kopia udajov,
@@ -18,13 +20,15 @@ use RuntimeException;
  */
 final class InvoiceIssuer
 {
+    public const REQUEST_KEY_CONSTRAINT = 'invoices_request_key_key';
+
     /**
      * @var BaseConnection<mixed, mixed>
      */
     private readonly BaseConnection $db;
 
     private readonly AuditLogger $audit;
-    private readonly PdfRenderer $renderer;
+    private readonly RendererRegistry $renderers;
     private readonly SnapshotBuilder $builder;
     private readonly NumberAllocator $numbers;
     private readonly DocumentStore $documents;
@@ -36,14 +40,14 @@ final class InvoiceIssuer
     public function __construct(
         ?BaseConnection $db = null,
         ?AuditLogger $audit = null,
-        ?PdfRenderer $renderer = null,
+        ?RendererRegistry $renderers = null,
         ?SnapshotBuilder $builder = null,
         ?NumberAllocator $numbers = null,
         ?DocumentStore $documents = null,
     ) {
         $this->db        = $db ?? Database::connect();
         $this->audit     = $audit ?? new AuditLogger($this->db);
-        $this->renderer  = $renderer ?? new MpdfInvoiceRenderer();
+        $this->renderers = $renderers ?? new RendererRegistry();
         $this->builder   = $builder ?? new SnapshotBuilder($this->db);
         $this->numbers   = $numbers ?? new NumberAllocator($this->db);
         $this->documents = $documents ?? new DocumentStore($this->db);
@@ -62,8 +66,30 @@ final class InvoiceIssuer
                 throw new IssueRejected('parts_changed');
             }
 
+            // WR-08: subezne vystavenie s rovnakym request_key prebehlo skor a commitlo (unique_violation 23505).
+            // Po rollbacku je faktura druheho poziadavku uz viditelna, odpovedou je ta ista ako pri opakovani.
+            if (self::isUniqueViolation($e, self::REQUEST_KEY_CONSTRAINT)) {
+                $this->assertNotIssued($cmd->requestKey);
+            }
+
             throw $e;
         }
+    }
+
+    /**
+     * Ovladac Postgre v CI4 nevystavuje SQLSTATE, sprava pg_last_error vsak nesie nazov obmedzenia.
+     */
+    public static function isUniqueViolation(DatabaseException $e, string $constraint): bool
+    {
+        for ($t = $e; $t !== null; $t = $t->getPrevious()) {
+            $message = $t->getMessage();
+
+            if (str_contains($message, 'duplicate key value violates unique constraint "' . $constraint . '"')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function issueInTransaction(IssueCommand $cmd): IssuedInvoice
@@ -137,7 +163,7 @@ final class InvoiceIssuer
         $this->guards->assertEntityActive($entity, $cmd->issueDate);
         $this->guards->assertCurrency($entity, $this->guards->partsCurrency($parts));
 
-        $snapshot = $this->builder->build($client, $entity, $parts, $cmd->billingMonth, $cmd->issueDate, $cmd->deliveryDate, $cmd->dueDate, null);
+        $snapshot = $this->builder->build($client, $entity, $parts, $cmd->billingMonth, $cmd->issueDate, $cmd->deliveryDate, $cmd->dueDate, null, $cmd->paymentMethod, $cmd->paymentNote);
         $this->guards->assertCurrency($entity, $snapshot['currency']);
 
         if (! hash_equals($cmd->previewToken, InvoiceCalculator::previewToken($snapshot))) {
@@ -166,10 +192,36 @@ final class InvoiceIssuer
 
         // 8. cislo
         $allocated = $this->numbers->next($series, $cmd->issueDate);
-        $snapshot  = $this->builder->withNumber($snapshot, $allocated->number);
+
+        try {
+            $snapshot = $this->builder->withNumber($snapshot, $allocated->number);
+        } catch (QrPaymentFailed $e) {
+            log_message('error', 'QR payment failed (' . $e->reason . '): ' . $e->getMessage());
+
+            throw new IssueRejected('qr_failed', ['qr_reason' => $e->reason]);
+        }
 
         // 9. PDF vnutri transakcie
-        $pdf = $this->renderer->render($snapshot);
+        $pdf = $this->renderers->for((string) $snapshot['template_version'])->render($snapshot);
+
+        if ($pdf->templateVersion !== $snapshot['template_version']) {
+            throw new RuntimeException('Renderer returned template ' . $pdf->templateVersion . ', snapshot requires ' . $snapshot['template_version'] . '.');
+        }
+
+        // 9b. PDF vykaz v tej istej transakcii (D-05, D-20): zlyhanie renderu vrati cislo aj casti
+        try {
+            $report = $this->renderers->for((string) $snapshot['report_template_version'])->render($snapshot);
+        } catch (DatabaseException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            log_message('error', 'Report render failed: ' . $e::class . ': ' . $e->getMessage());
+
+            throw new IssueRejected('report_failed');
+        }
+
+        if ($report->templateVersion !== $snapshot['report_template_version']) {
+            throw new RuntimeException('Report renderer returned template ' . $report->templateVersion . ', snapshot requires ' . $snapshot['report_template_version'] . '.');
+        }
 
         // 10. faktura so strukturovanymi stlpcami zo snapshotu
         $invoiceId = $this->insertInvoice($cmd, $snapshot, $client, $series, $created);
@@ -180,6 +232,7 @@ final class InvoiceIssuer
         }
 
         $this->documents->store($invoiceId, 'invoice', $pdf);
+        $this->documents->store($invoiceId, 'report', $report);
 
         // 12. zamknutie casti
         $locked = (int) $this->db->query('SELECT lock_allocations(:inv:, CAST(:ids: AS bigint[])) AS n', ['inv' => $invoiceId, 'ids' => $ids])->getRow()->n;
@@ -198,6 +251,7 @@ final class InvoiceIssuer
             'currency'      => $snapshot['currency'],
             'line_count'    => $snapshot['totals']['line_count'],
             'sha256'        => $pdf->sha256,
+            'report_sha256' => $report->sha256,
         ]);
 
         // 14. deferred kontrola uplnosti padne ako vynimka este vnutri transakcie
@@ -230,9 +284,12 @@ final class InvoiceIssuer
              VALUES ('issued', 'invoice', CAST(:rk: AS uuid), :entity:, :version:, :series:, :number:, :client:, :month:,
                 :issue:, :delivery:, :due:, :turnover:, :ccy:, :total:, :total:, CAST(:counts: AS boolean), :n:,
                 :lang:, :regime:, :mode:, :exemption:, :entity_vat:, :cit:, :civ:, :cvat:,
-                :iban:, :swift:, 'transfer', NULL, CAST(:snapshot: AS jsonb), 1, :tpl:, :created:, :by:) RETURNING id",
+                :iban:, :swift:, :pm:, :pn:, CAST(:snapshot: AS jsonb), :schema:, :tpl:, :created:, :by:) RETURNING id",
             [
                 'rk'         => $cmd->requestKey,
+                'pm'         => $snapshot['payment']['method'],
+                'pn'         => $snapshot['payment']['note'],
+                'schema'     => (int) $snapshot['schema'],
                 'entity'     => $cmd->entityId,
                 'version'    => $snapshot['entity']['version_id'],
                 'series'     => (int) $series['id'],

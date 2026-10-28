@@ -62,7 +62,10 @@ final class InvoiceDetailTest extends AuthTestCase
         $this->assertStringContainsString('Celkom', $html);
         $this->assertStringContainsString(esc(MoneyFormat::format('1080.00', 'EUR')), $html);
         $this->assertStringContainsString('href="/invoices/' . $issued->id . '/pdf" target="_blank" rel="noopener noreferrer"', $html);
-        $this->assertStringContainsString('/invoices/' . $issued->id . '/pdf?download=1', $html);
+        $this->assertStringContainsString('href="/invoices/' . $issued->id . '/report" target="_blank" rel="noopener noreferrer"', $html);
+        $this->assertStringContainsString('Faktúra PDF', $html);
+        $this->assertStringContainsString('Výkaz PDF', $html);
+        $this->assertStringNotContainsString('Pre túto faktúru výkaz nebol vytvorený', $html);
         $sha = (string) $this->owner()->query('SELECT sha256 FROM invoice_documents WHERE invoice_id = :i:', ['i' => $issued->id])->getRow()->sha256;
         $this->assertStringContainsString(substr(trim($sha), 0, 16), $html);
         $this->assertStringContainsString('Vystavená faktúra je nemenná', $html);
@@ -70,6 +73,18 @@ final class InvoiceDetailTest extends AuthTestCase
         $this->assertStringNotContainsString('Upraviť', $html);
         $this->assertStringNotContainsString('Zmazať', $html);
         $this->assertStringNotContainsString('method="post"', $html);
+    }
+
+    public function testSchema1DetailShowsNoReportInfoInsteadOfButton(): void
+    {
+        $this->login();
+        $s    = $this->issueSetup();
+        $id   = $this->insertIssuedInvoiceRaw($s['client'], $s['entity'], '2026-10', $s['parts']);
+        $html = $this->body($this->get('/invoices/' . $id));
+
+        $this->assertStringContainsString('Pre túto faktúru výkaz nebol vytvorený', $html);
+        $this->assertStringNotContainsString('/report"', $html);
+        $this->assertStringContainsString('href="/invoices/' . $id . '/pdf"', $html);
     }
 
     public function testExternalDetailWithHttpLink(): void

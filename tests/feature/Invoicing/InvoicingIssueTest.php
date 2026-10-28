@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Invoicing;
 
+use App\Libraries\Invoicing\InvoiceIssuer;
+use App\Libraries\Invoicing\Qr\Lzma;
+use App\Libraries\Invoicing\Qr\PayBySquare;
+use App\Libraries\Invoicing\Qr\QrPaymentBuilder;
+use App\Libraries\Invoicing\Qr\QrPaymentFailed;
+use App\Libraries\Invoicing\RendererRegistry;
+use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\AuthTestCase;
+use Tests\Support\FakePdfRenderer;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
@@ -229,5 +237,71 @@ final class InvoicingIssueTest extends AuthTestCase
 
         $result->assertStatus(302);
         $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
+    }
+
+    public function testIssueStoresPaymentMethodAndNote(): void
+    {
+        $this->login();
+        $s = $this->issueSetup();
+        $this->submit(['payment_method' => 'cash', 'payment_note' => "Hotovost pri prevzati\r\n"] + $this->previewForm($s['client']))->assertStatus(200);
+
+        $row = $this->owner()->query("SELECT payment_method, payment_note, snapshot->'payment'->>'method' AS sm FROM invoices")->getRowArray();
+        $this->assertSame('cash', $row['payment_method']);
+        $this->assertSame('Hotovost pri prevzati', $row['payment_note']);
+        $this->assertSame('cash', $row['sm']);
+    }
+
+    public function testInvalidPaymentMethodIs422WithoutWrite(): void
+    {
+        $this->login();
+        $s      = $this->issueSetup();
+        $result = $this->submit(['payment_method' => 'bitcoin'] + $this->previewForm($s['client']));
+
+        $result->assertStatus(422);
+        $this->assertStringContainsString('Vyberte platnú formu úhrady.', $this->body($result));
+        $this->assertSame(0, $this->invoiceCount());
+    }
+
+    public function testTooLongPaymentNoteIs422WithoutWrite(): void
+    {
+        $this->login();
+        $s      = $this->issueSetup();
+        $result = $this->submit(['payment_note' => str_repeat('a', 501)] + $this->previewForm($s['client']));
+
+        $result->assertStatus(422);
+        $this->assertStringContainsString('Poznámka môže mať najviac 500 znakov.', $this->body($result));
+        $this->assertSame(0, $this->invoiceCount());
+    }
+
+    public function testChangingPaymentAfterPreviewIsNotStale(): void
+    {
+        $this->login();
+        $s    = $this->issueSetup();
+        $form = $this->previewForm($s['client']);
+        $this->submit(['payment_method' => 'card', 'payment_note' => 'Ina poznamka'] + $form)->assertStatus(200);
+        $this->assertSame(1, $this->invoiceCount());
+    }
+
+    public function testQrFailureIs500WithMessageAndNothingWritten(): void
+    {
+        $this->login();
+        $s    = $this->issueSetup();
+        $lzma = new class () implements Lzma {
+            public function compress(string $raw): string
+            {
+                throw new QrPaymentFailed('boom', QrPaymentFailed::COMPRESSION_FAILED);
+            }
+        };
+        $issuer = new InvoiceIssuer($this->rw(), null, new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2'), 'rep-1' => new FakePdfRenderer('rep-1')]), new SnapshotBuilder($this->rw(), null, null, null, new QrPaymentBuilder(new PayBySquare($lzma))));
+        Services::injectMock('invoiceIssuer', $issuer);
+
+        $form   = $this->previewForm($s['client']);
+        $result = $this->submit($form);
+
+        $result->assertStatus(500);
+        $this->assertStringContainsString('QR kód pre platbu sa nepodarilo vytvoriť', $this->body($result));
+        $this->assertStringContainsString('nástroj xz chýba alebo zlyhal', $this->body($result));
+        $this->assertStringNotContainsString('Skontrolujte IBAN', $this->body($result));
+        $this->assertSame(0, $this->invoiceCount());
     }
 }

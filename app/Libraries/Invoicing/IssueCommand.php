@@ -12,6 +12,9 @@ use InvalidArgumentException;
  */
 final readonly class IssueCommand
 {
+    public const PAYMENT_METHODS = ['transfer', 'cash', 'card', 'other'];
+    public const NOTE_MAX        = 500;
+
     /**
      * @param list<int> $partIds
      */
@@ -27,6 +30,8 @@ final readonly class IssueCommand
         public string $requestKey,
         public bool $confirmBackdate = false,
         public ?int $userId = null,
+        public string $paymentMethod = 'transfer',
+        public ?string $paymentNote = null,
     ) {
         if ($clientId < 1 || $entityId < 1) {
             throw new InvalidArgumentException('Invalid client or entity id.');
@@ -61,6 +66,14 @@ final readonly class IssueCommand
 
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/D', $requestKey) !== 1) {
             throw new InvalidArgumentException('Invalid request key.');
+        }
+
+        if (! in_array($paymentMethod, self::PAYMENT_METHODS, true)) {
+            throw new InvalidArgumentException('Invalid payment method.');
+        }
+
+        if ($paymentNote !== null && (mb_strlen($paymentNote) < 1 || mb_strlen($paymentNote) > self::NOTE_MAX || preg_match('/[\x00-\x09\x0B-\x1F\x7F]/', $paymentNote) === 1)) {
+            throw new InvalidArgumentException('Invalid payment note.');
         }
     }
 }

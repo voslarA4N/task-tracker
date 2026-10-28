@@ -9,11 +9,11 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 ## Fázy
 
 - [x] **Phase 1: Základ a infraštruktúra** - Docker/WSL2, CI4, PostgreSQL roly, Money, Clock, htmx/CSP/CSRF vzory, spike mPDF (completed 2026-10-23)
-- [x] **Phase 2: Identita a skoré nasadenie** - Prihlásenie s povinnou TOTP, PWA kostra a HTTPS staging otestovaný na reálnom iPhone (completed 2026-10-25)
+- [x] **Phase 2: Identita a skoré nasadenie** - Prihlásenie s povinnou TOTP, PWA kostra a HTTPS staging otestovaný na reálnom iPhone (completed 2026-10-25) (2FA od 2026-10-28 voliteľná, rozhodnutie vlastníka)
 - [x] **Phase 3: Master dáta (subjekty a klienti)** - Verziované subjekty, klienti, právny dôvod oslobodenia, audit zmien (completed 2026-10-25)
 - [x] **Phase 4: Úlohy, fakturačné časti a dashboard** - Evidencia úloh, rozdelenie na časti po mesiacoch, dashboard, import z Excelu (completed 2026-10-26)
 - [x] **Phase 5: Fakturačné jadro** - Atómové vystavenie nemennej faktúry, číslovanie, kópia údajov, uložené PDF so sha256 (completed 2026-10-27)
-- [ ] **Phase 6: Dokumenty faktúry a výkazu** - Právne profily, PDF faktúra a výkaz, QR platba, editovateľné zákonné texty
+- [x] **Phase 6: Dokumenty faktúry a výkazu** - Právne profily, PDF faktúra a výkaz, QR platba, editovateľné zákonné texty (completed 2026-10-28)
 - [ ] **Phase 7: Doručenie, úhrady a upomienky** - E-mail s PDF, opätovné odoslanie, úhrady, po splatnosti, upomienka
 - [ ] **Phase 8: Meny a kurzy** - NBP/ECB/ČNB kurzy s ručným prepisom a uložením do kópie údajov
 - [ ] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí
@@ -69,7 +69,7 @@ Plans:
 
 ### Phase 2: Identita a skoré nasadenie
 
-**Goal**: Vlastník sa prihlási heslom a povinnou TOTP 2FA na HTTPS stagingu a nainštalovanú PWA otestuje na reálnom iPhone, takže nič sa nevystavuje bez zabezpečeného prístupu.
+**Goal**: Vlastník sa prihlási heslom a povinnou TOTP 2FA na HTTPS stagingu a nainštalovanú PWA otestuje na reálnom iPhone, takže nič sa nevystavuje bez zabezpečeného prístupu (2FA od 2026-10-28 voliteľná, rozhodnutie vlastníka).
 **Mode:** mvp
 **Depends on**: Phase 1
 **Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, AUTH-08, AUTH-09, PWA-01, NFR-02, NFR-03, NFR-08
@@ -297,7 +297,43 @@ Plans:
   3. Ku každej faktúre vznikne PDF výkaz s hlavičkou (subjekt, klient, obdobie), tabuľkou (odkaz na portál, názov, nacenené hodiny, „16 z 40 h“, suma), súčtami a poznámkou o DPH; obsahuje presne tie časti, ktoré sú na faktúre, a je uložený nemenne.
   4. Používateľ upraví zákonné texty a poznámky pre každú krajinu, DPH režim, režim fakturácie a jazyk v nastaveniach; nové znenie ovplyvní len doklady vystavené po zmene.
 
-**Plans**: TBD
+**Plans**: 9 plans (9 vĺn, sekvenčne)Plans:
+**Wave 1**
+
+- [x] 06-01-PLAN.md — Faktúra inv-2 so zákonnými náležitosťami podľa profilu: LegalProfile, snapshot schema 2, RendererRegistry, inv-1 nedotknuté (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 06-02-PLAN.md — Obsah výkazu práce v snapshote (ReportRows, ReportPdf vo 4 jazykoch) a renderer rep-1 so šablónou (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 06-03-PLAN.md — Výkaz pri vystavení v tej istej transakcii, povinný report v DB (trigger), nemennosť oboch PDF, tlačidlá Faktúra PDF a Výkaz PDF na detaile (vlna 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 06-04-PLAN.md — Forma úhrady a poznámka faktúry v náhľade (predvyplnená z invoice_note), upozornenie na predbežné znenie (vlna 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 06-05-PLAN.md — QR PAY by square pre SK klientov (xz LZMA, bacon SVG), rollback pri zlyhaní QR (vlna 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [x] 06-06-PLAN.md — QR Platba (SPAYD) pre CZ a ZBP pre PL klientov, upozornenie v náhľade pri príliš dlhom čísle pre ZBP (vlna 6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [x] 06-07-PLAN.md — Nastavenia → Zákonné texty: zoznam a úprava znenia s revíziou, auditom a stĺpcovými oprávneniami (vlna 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [x] 06-08-PLAN.md — Pridanie variantu znenia pre jazyk alebo režim fakturácie a zobrazenie použitého (náhradného) znenia (vlna 8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
+- [x] 06-09-PLAN.md — spark documents:samples (vzorové PDF pre staging a účtovníčku), meranie výkonu (skupina performance), ručný UAT QR (vlna 9)
+
 **UI hint**: yes
 **Poznámky**: **Potrebuje /gsd-research-phase** (právne profily, SMTP, mPDF fonty a pamäť, PAY by square vyžaduje LZMA). **Závislosť od účtovníčky:** finálne znenie zákonných textov a náležitostí (§ 3a ObZ, art. 106e, art. 113 ust. 1 vs 9, reverse charge pri PL subjekt → SK B2B) sa potvrdzuje až s ňou; texty sú konfigurácia v DB, nie kód. Nasadiť na staging a posielať si vzorové PDF.
 
@@ -414,8 +450,8 @@ Plans:
 | 2. Identita a skoré nasadenie | 20/20 | Complete    | 2026-10-25 |
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
-| 5. Fakturačné jadro | 9/9 | Complete   | 2026-10-27 |
-| 6. Dokumenty faktúry a výkazu | 0/0 | Not started | - |
+| 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
+| 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
 | 8. Meny a kurzy | 0/0 | Not started | - |
 | 9. Dobropisy | 0/0 | Not started | - |

@@ -296,6 +296,40 @@
         }
       };
     });
+    /* Nahlad faktury: forma uhrady, poznamka (pocitadlo, dirty priznak) a rekapitulacia v potvrdzovacom paneli. */
+    window.Alpine.data('invPay', function () {
+      var NOTE_MAX = 500;
+      return {
+        method: 'transfer',
+        note: '',
+        dirty: false,
+        init: function () {
+          var sel = document.getElementById('inv-payment-method');
+          var area = document.getElementById('inv-payment-note');
+          this.dirty = this.$el.dataset.dirty === '1';
+          if (sel) { this.method = sel.value; }
+          if (area) { this.note = area.value; }
+        },
+        onMethodChange: function () { this.method = this.$event.target.value; },
+        onNoteInput: function () {
+          this.note = this.$event.target.value;
+          this.dirty = true;
+        },
+        get isTransfer() { return this.method === 'transfer'; },
+        get isNotTransfer() { return this.method !== 'transfer'; },
+        get dirtyValue() { return this.dirty ? '1' : '0'; },
+        get countLabel() { return this.note.length + ' / ' + NOTE_MAX; },
+        get methodLabel() {
+          var sel = document.getElementById('inv-payment-method');
+          var i;
+          if (!sel || !sel.options) { return this.method; }
+          for (i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === this.method) { return sel.options[i].textContent; }
+          }
+          return this.method;
+        }
+      };
+    });
     /* Panel presunu casti: volba Dalsi / Iny mesiac. */
     window.Alpine.data('invMove', function () {
       return {

@@ -113,19 +113,69 @@ final class LegalProfileTest extends PgTestCase
         $this->resolver()->profile('CZ', 'pl_exempt_113_1', 'domestic');
     }
 
-    public function testAppRwIsReadOnly(): void
+    public function testAppRwCannotWriteProfilesOrDeleteTexts(): void
     {
         $this->assertSame(16, (int) $this->rw()->query('SELECT count(*) AS c FROM legal_texts')->getRow()->c);
-        $this->assertPermissionDenied(fn () => $this->rw()->query(
-            "INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, updated_at) VALUES ('SK','sk_non_vat',NULL,'sk','x_y_z','x', now())",
-        ));
         $this->assertPermissionDenied(fn () => $this->rw()->query("UPDATE legal_profiles SET exemption_code = 'X_Y_Z'"));
+        $this->assertPermissionDenied(fn () => $this->rw()->query(
+            "INSERT INTO legal_profiles (country, vat_regime, billing_mode, exemption_code, updated_at) VALUES ('SK','sk_non_vat','eu_b2b',NULL, now())",
+        ));
         $this->assertPermissionDenied(fn () => $this->rw()->query('DELETE FROM legal_texts'));
+    }
+
+    public function testTextResolverReturnsRevision(): void
+    {
+        $this->assertSame(1, $this->resolver()->text('SK', 'sk_non_vat', 'domestic', 'sk', 'vat_note')['revision']);
     }
 
     public function testNullBillingModeIsUnique(): void
     {
         $this->expectException(DatabaseException::class);
         $this->owner()->query("INSERT INTO legal_profiles (country, vat_regime, billing_mode, exemption_code, updated_at) VALUES ('SK','sk_non_vat',NULL,NULL, now())");
+    }
+
+    public function testOptionalTextIsNullWhenMissingAndFoundWhenPresent(): void
+    {
+        $r = $this->resolver();
+        $this->assertNull($r->optionalText('SK', 'sk_non_vat', 'domestic', 'sk', 'invoice_note'));
+
+        $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK', 'sk_non_vat', NULL, 'sk', 'invoice_note', 'Predvolena poznamka', true, now())");
+
+        try {
+            $this->assertSame(['body' => 'Predvolena poznamka', 'language' => 'sk', 'provisional' => true, 'revision' => 1, 'billing_mode' => null], $this->resolver()->optionalText('SK', 'sk_non_vat', 'domestic', 'sk', 'invoice_note'));
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
+        }
+    }
+
+    public function testGeneralProfileUsesClientModeVariantThenFallsBack(): void
+    {
+        $r      = $this->resolver();
+        $before = $r->text('PL', 'pl_exempt_113_1', 'non_eu', 'pl', 'vat_note');
+        $this->assertNull($before['billing_mode']);
+
+        $this->owner()->query(
+            "INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at)
+             VALUES ('PL', 'pl_exempt_113_1', 'non_eu', 'pl', 'vat_note', 'Miejsce świadczenia poza terytorium kraju.', true, now())",
+        );
+
+        try {
+            $t = $r->text('PL', 'pl_exempt_113_1', 'non_eu', 'pl', 'vat_note');
+            $this->assertSame('Miejsce świadczenia poza terytorium kraju.', $t['body']);
+            $this->assertSame('non_eu', $t['billing_mode']);
+            // iny režim klienta variant nevidí
+            $this->assertNull($r->text('PL', 'pl_exempt_113_1', 'domestic', 'pl', 'vat_note')['billing_mode']);
+            // presný profil eu_b2b nikdy nepoužije non_eu ani všeobecné znenie
+            $this->assertSame('Odwrotne obciążenie.', $r->text('PL', 'pl_exempt_113_1', 'eu_b2b', 'pl', 'vat_note')['body']);
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE billing_mode = 'non_eu'");
+        }
+    }
+
+    public function testMissingLanguageFallsBackToEnglishForSkProfile(): void
+    {
+        $t = $this->resolver()->text('SK', 'sk_non_vat', 'domestic', 'cs', 'vat_note');
+        $this->assertSame('en', $t['language']);
+        $this->assertSame('Not a VAT payer.', $t['body']);
     }
 }

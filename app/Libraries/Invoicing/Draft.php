@@ -37,6 +37,12 @@ final readonly class Draft
         public array $errors,
         public array $entities,
         public bool $canIssue,
+        public string $paymentMethod = 'transfer',
+        public ?string $paymentNote = null,
+        public bool $paymentNoteDirty = false,
+        public bool $provisionalText = false,
+        public bool $zbpTitleWarning = false,
+        public bool $zbpAmountWarning = false,
     ) {
     }
 }

@@ -4,7 +4,7 @@ DC        := docker compose
 EXEC      := $(DC) exec -T -u www-data -e COMPOSER_HOME=/tmp/composer php
 EXEC_ROOT := $(DC) exec -T php
 
-.PHONY: help doctor up down ps logs shell composer spark migrate reset test-db perms test test-unit stan cs cs-fix check certs smoke smoke-staging spike-pdf vendor-assets
+.PHONY: help doctor up down ps logs shell composer spark migrate reset reset-staging test-db perms test test-unit stan cs cs-fix check certs smoke smoke-server spike-pdf vendor-assets
 
 help: ## Vypíše dostupné príkazy
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -38,6 +38,9 @@ migrate: ## Migrácie ako app_owner
 
 reset: ## Reset vývojovej DB (skript z plánu 01-05)
 	sh scripts/db-reset.sh
+
+reset-staging: ## Reset vývojovej DB so staging seedom (SEED_ADMIN_* v .env)
+	sh scripts/db-reset.sh --staging
 
 test-db: ## Príprava testovacej DB (skript z plánu 01-05)
 	sh scripts/test-db.sh
@@ -74,5 +77,5 @@ spike-pdf: perms ## Spike mPDF (studený štart, opakovanie, FPM)
 vendor-assets: ## Stiahne frontend knižnice do public/assets/vendor
 	sh scripts/vendor-assets.sh
 
-smoke-staging: ## Smoke kontrola stagingu (DOMAIN=work-tracker.vostack.dev)
-	sh scripts/smoke-staging.sh $(or $(DOMAIN),work-tracker.vostack.dev)
+smoke-server: ## Smoke kontrola servera (DOMAIN=work-tracker.vostack.dev, pre staging work-tracker-stage.vostack.dev)
+	sh scripts/smoke-server.sh $(or $(DOMAIN),work-tracker.vostack.dev)

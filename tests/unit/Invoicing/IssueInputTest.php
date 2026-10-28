@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Invoicing;
 
+use App\Libraries\Invoicing\IssueCommand;
 use App\Libraries\Invoicing\IssueInput;
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\HTTP\IncomingRequest;
@@ -12,6 +13,7 @@ use CodeIgniter\HTTP\UserAgent;
 use CodeIgniter\Test\CIUnitTestCase;
 use Config\App;
 use Config\Services;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
 
 /**
@@ -51,6 +53,16 @@ final class IssueInputTest extends CIUnitTestCase
     public function testValidInputHasNoErrors(): void
     {
         $this->assertSame([], IssueInput::validate($this->valid()));
+    }
+
+    public function testFarFutureDatesAreRejected(): void
+    {
+        $v = ['issue_date' => '2062-10-27', 'delivery_date' => '2062-10-31', 'due_date' => '2062-11-10'] + $this->valid();
+
+        $errors = IssueInput::validate($v);
+
+        $this->assertArrayHasKey('issue_date', $errors);
+        $this->assertArrayHasKey('delivery_date', $errors);
     }
 
     public function testMissingPreviewTokenIsRejected(): void
@@ -103,5 +115,47 @@ final class IssueInputTest extends CIUnitTestCase
         $v = $this->valid();
         unset($v['confirm_backdate']);
         $this->assertFalse(IssueInput::toCommand($v, null)->confirmBackdate);
+    }
+
+    public function testPaymentDefaultsWithoutError(): void
+    {
+        $this->assertSame([], IssueInput::validate($this->valid()));
+        $cmd = IssueInput::toCommand($this->valid(), 1);
+        $this->assertSame('transfer', $cmd->paymentMethod);
+        $this->assertNull($cmd->paymentNote);
+    }
+
+    public function testInvalidPaymentMethodIsRejected(): void
+    {
+        $errors = IssueInput::validate(['payment_method' => 'bitcoin'] + $this->valid());
+        $this->assertArrayHasKey('payment_method', $errors);
+    }
+
+    public function testTooLongNoteIsRejected(): void
+    {
+        $this->assertArrayHasKey('payment_note', IssueInput::validate(['payment_note' => str_repeat('a', 501)] + $this->valid()));
+        $this->assertSame([], IssueInput::validate(['payment_note' => str_repeat('á', 500)] + $this->valid()));
+    }
+
+    public function testNoteIsNormalized(): void
+    {
+        $cmd = IssueInput::toCommand(['payment_note' => "  Úroky z omeškania 0,05 % denne.\r\n ", 'payment_method' => 'cash'] + $this->valid(), 1);
+        $this->assertSame('Úroky z omeškania 0,05 % denne.', $cmd->paymentNote);
+        $this->assertSame('cash', $cmd->paymentMethod);
+        $this->assertNull(IssueInput::toCommand(['payment_note' => '  '] + $this->valid(), 1)->paymentNote);
+    }
+
+    public function testNoteWithTabPassesValidationAndBuildsCommand(): void
+    {
+        $v = ['payment_note' => "Stlpec A\tStlpec B\n\tOdsadene"] + $this->valid();
+
+        $this->assertSame([], IssueInput::validate($v));
+        $this->assertSame("Stlpec A Stlpec B\n Odsadene", IssueInput::toCommand($v, 1)->paymentNote);
+    }
+
+    public function testCommandRejectsInvalidPayment(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new IssueCommand(5, '2026-10', 2, '2026-10-27', '2026-10-31', '2026-11-10', [7], self::TOKEN, self::KEY, false, null, 'wire');
     }
 }

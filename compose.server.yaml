@@ -1,14 +1,20 @@
-# Staging (a buduca produkcia, D-03): spusta sa v /opt/work-tracker cez
-#   docker compose -f compose.staging.yaml up -d
+# Server stack (prod aj staging): jedna definicia, dva nasadenia.
+#   prod:    /opt/work-tracker          (COMPOSE_PROJECT_NAME=task-tracker, EDGE_ALIAS=wt-prod-nginx)
+#   staging: /opt/work-tracker-staging  (COMPOSE_PROJECT_NAME=task-tracker-staging, EDGE_ALIAS=wt-stage-nginx)
+# Spusta sa cez deploy.sh, rucne: docker compose -f compose.server.yaml up -d
+# Ziadne publikovane porty: 80/443 vlastni edge stack (compose.edge.yaml, D-02); nginx sa
+# k nemu pripaja cez externu siet `edge` pod aliasom EDGE_ALIAS.
 # Obrazy php a nginx idu z GHCR podla IMAGE_PREFIX a IMAGE_TAG. writable/ je na volume.
 # Bez Mailpitu, bez build, bez bind mountov kodu. DB nema publikovane porty.
 #
-# Tajomstva su rozdelene podla toho, kto ich potrebuje (WR-06, docs/ops/staging.md sekcia 15):
-#   .env         iba interpolacia compose a deploy.sh (domena, TLS, IMAGE_PREFIX), bez hesiel
+# Tajomstva su rozdelene podla toho, kto ich potrebuje (WR-06, docs/ops/server.md sekcia 15):
+#   .env         iba interpolacia compose a deploy.sh (projekt, alias, domena, TLS, IMAGE_PREFIX), bez hesiel
 #   app.env      CI4 runtime pre php-fpm: iba app_rw, mail, encryption.key, pepper
 #   migrate.env  app.env + database.owner.* (app_owner), iba jednorazovy kontajner migrate
 #   secrets/db_*_password  hesla roli pre inicializaciu DB (Docker secrets, *_FILE)
-name: task-tracker
+# Nazov projektu z .env: prod musi ostat task-tracker (zdiela volumes task-tracker_pgdata a
+# task-tracker_writable); `:?` zabrani, aby stack potichu prebral cudzi projekt.
+name: ${COMPOSE_PROJECT_NAME:?Chýba COMPOSE_PROJECT_NAME v .env}
 
 services:
   php:
@@ -31,10 +37,10 @@ services:
   nginx:
     image: ${IMAGE_PREFIX:?}-nginx:${IMAGE_TAG:?}
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
     environment:
+      # PROXY protocol z edge a znacka noindex (iba staging, prod prazdne), viď docker/nginx.
+      NGINX_PROXY_PROTOCOL: proxy_protocol
+      NGINX_ROBOTS_TAG: ${NGINX_ROBOTS_TAG:-}
       APP_DOMAIN: ${APP_DOMAIN:?}
       NGINX_HSTS_VALUE: ${NGINX_HSTS_VALUE:?}
       SSL_CERT: ${SSL_CERT:?}
@@ -42,6 +48,10 @@ services:
     volumes:
       - ./letsencrypt:/etc/letsencrypt:ro
       - ./certs:/etc/nginx/certs:ro
+    networks:
+      default: {}
+      edge:
+        aliases: ["${EDGE_ALIAS:?Chýba EDGE_ALIAS v .env}"]
     depends_on: [php]
 
   db:
@@ -92,13 +102,36 @@ services:
         condition: service_healthy
     command: ["php", "spark", "migrate", "-g", "owner", "--all"]
 
-  # Iba na vyziadanie: docker compose -f compose.staging.yaml run --rm certbot ...
+  # Iba staging, iba na vyziadanie z deploy.sh (STAGING_RESEED=1): `php spark staging:seed` ako app_rw
+  # (app.env, bez migrate.env). Jediny kontajner, ktory vidi secrets/seed_admin.env (heslo a TOTP seed admina);
+  # php a migrate ho nemontuju. Bezi ako root (entrypoint nezhadzuje prava), subor 0600 deploy je preto citatelny.
+  seed:
+    image: ${IMAGE_PREFIX:?}-php:${IMAGE_TAG:?}
+    profiles: ["seed"]
+    environment:
+      TZ: Europe/Bratislava
+    volumes:
+      - ./app.env:/var/www/html/.env:ro
+      - ./secrets/seed_admin.env:/run/secrets/seed_admin.env:ro
+      - writable:/var/www/html/writable
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["php", "spark", "staging:seed"]
+
+  # Iba na vyziadanie: docker compose -f compose.server.yaml run --rm certbot ...
   certbot:
     image: certbot/dns-cloudflare:v5.8.0
     profiles: ["certbot"]
     volumes:
       - ./letsencrypt:/etc/letsencrypt
       - ./secrets/cloudflare.ini:/secrets/cloudflare.ini:ro
+
+networks:
+  default: {}
+  edge:
+    external: true
+    name: edge
 
 volumes:
   pgdata:

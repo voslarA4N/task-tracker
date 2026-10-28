@@ -6,7 +6,8 @@ declare(strict_types=1);
  * Samostatny proces vystavujuci faktury cez spojenie `tests` (app_rw) pre test sueboh (plan 05-06).
  *
  * CLI: php tests/_support/issue_worker.php <workerIndex> <clientIdsCsv> <month> <issueDate> <entityId>
- * Vystup: JSON {"worker": n, "numbers": [...], "errors": [...]}
+ *      php tests/_support/issue_worker.php <workerIndex> --command <json>   (WR-08: hotovy prikaz, rovnaky v oboch procesoch)
+ * Vystup: JSON {"worker": n, "numbers": [...], "errors": [...], "rejected": [{"reason": ..., "invoice_id": ...}]}
  */
 
 use App\Libraries\Audit\AuditLogger;
@@ -14,6 +15,8 @@ use App\Libraries\Invoicing\InvoiceCalculator;
 use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\IssueCommand;
+use App\Libraries\Invoicing\IssueRejected;
+use App\Libraries\Invoicing\RendererRegistry;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Platform\FrozenClock;
 use Config\Database;
@@ -35,9 +38,27 @@ $db = Database::connect('tests', false);
 // Cakanie na spolocny start: rodic drzi exkluzivny zamok 777 a uvolni ho, ked oba workery cakaju.
 $db->query('SELECT pg_advisory_lock_shared(777)');
 
-$numbers = [];
-$errors  = [];
-$issuer  = new InvoiceIssuer($db, new AuditLogger($db), new FakePdfRenderer());
+$numbers  = [];
+$errors   = [];
+$rejected = [];
+$issuer   = new InvoiceIssuer($db, new AuditLogger($db), new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2'), 'rep-1' => new FakePdfRenderer('rep-1')]));
+
+if ($clientCsv === '--command') {
+    /** @var array{client: int, month: string, entity: int, issue: string, delivery: string, due: string, parts: list<int>, token: string, key: string} $c */
+    $c = json_decode((string) $month, true, 512, JSON_THROW_ON_ERROR);
+
+    try {
+        $numbers[] = $issuer->issue(new IssueCommand($c['client'], $c['month'], $c['entity'], $c['issue'], $c['delivery'], $c['due'], $c['parts'], $c['token'], $c['key'], false, null))->number;
+    } catch (IssueRejected $e) {
+        $rejected[] = ['reason' => $e->reason, 'invoice_id' => $e->invoiceId];
+    } catch (Throwable $e) {
+        $errors[] = $e::class . ': ' . $e->getMessage();
+    }
+
+    echo json_encode(['worker' => (int) $index, 'numbers' => $numbers, 'errors' => $errors, 'rejected' => $rejected], JSON_THROW_ON_ERROR);
+
+    exit(0);
+}
 
 foreach (array_filter(explode(',', (string) $clientCsv), static fn (string $v): bool => $v !== '') as $clientId) {
     $clientId = (int) $clientId;
@@ -59,11 +80,13 @@ foreach (array_filter(explode(',', (string) $clientCsv), static fn (string $v): 
 
         $issued    = $issuer->issue(new IssueCommand($clientId, (string) $month, (int) $entityId, (string) $issueDate, '2026-10-31', '2026-11-10', $partIds, $token, $key, false, null));
         $numbers[] = $issued->number;
+    } catch (IssueRejected $e) {
+        $rejected[] = ['reason' => $e->reason, 'invoice_id' => $e->invoiceId];
     } catch (Throwable $e) {
         $errors[] = $clientId . ': ' . $e::class . ': ' . $e->getMessage();
     }
 }
 
-echo json_encode(['worker' => (int) $index, 'numbers' => $numbers, 'errors' => $errors], JSON_THROW_ON_ERROR);
+echo json_encode(['worker' => (int) $index, 'numbers' => $numbers, 'errors' => $errors, 'rejected' => $rejected], JSON_THROW_ON_ERROR);
 
 exit(0);

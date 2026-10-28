@@ -20,6 +20,13 @@ use RuntimeException;
 final class ExternalInvoiceLocker
 {
     /**
+     * WR-10: cast vznikla importom, ak ju import zalozil v tej istej transakcii ako ulohu (TaskService::create
+     * a hned markDone). Cast pridana k importovanej ulohe neskor v aplikacii je mimo okna a bez
+     * $includeAppParts sa nezamkne.
+     */
+    public const IMPORT_WINDOW = '1 minute';
+
+    /**
      * @var BaseConnection<mixed, mixed>
      */
     private readonly BaseConnection $db;
@@ -36,21 +43,28 @@ final class ExternalInvoiceLocker
     }
 
     /**
-     * Nic nezapisuje.
+     * Nic nezapisuje. `excluded` su nezamknute casti importovanych uloh mesiaca pridane v aplikacii (mimo okna
+     * importu), ktore sa bez $includeAppParts nezamknu.
      *
-     * @return array{parts: list<array{id: int, task_id: int, title: string, hours: string, rate: string, amount: string, currency: string}>, count: int, hours: string, amount: string, currencies: list<string>}
+     * @return array{parts: list<array{id: int, task_id: int, title: string, hours: string, rate: string, amount: string, currency: string}>, count: int, hours: string, amount: string, currencies: list<string>, excluded: list<int>}
      */
-    public function plan(int $clientId, string $month): array
+    public function plan(int $clientId, string $month, bool $includeAppParts = false): array
     {
-        return $this->summarize($this->selectParts($clientId, $month, false));
+        $all      = $this->selectParts($clientId, $month, false, true);
+        $selected = $includeAppParts ? $all : $this->selectParts($clientId, $month, false, false);
+        $ids      = array_map(static fn (array $r): int => (int) $r['id'], $selected);
+
+        return $this->summarize($selected) + [
+            'excluded' => array_values(array_diff(array_map(static fn (array $r): int => (int) $r['id'], $all), $ids)),
+        ];
     }
 
     /**
      * @throws DomainException nothing_to_lock, expectation_mismatch, mixed_currency
      */
-    public function lock(int $clientId, string $month, ?string $ref, int $expectParts, string $expectHours, string $expectAmount): int
+    public function lock(int $clientId, string $month, ?string $ref, int $expectParts, string $expectHours, string $expectAmount, bool $includeAppParts = false): int
     {
-        return Transaction::run($this->db, function () use ($clientId, $month, $ref, $expectParts, $expectHours, $expectAmount): int {
+        return Transaction::run($this->db, function () use ($clientId, $month, $ref, $expectParts, $expectHours, $expectAmount, $includeAppParts): int {
             // poradie zamkov: tasks -> clients -> casti
             $taskIds = array_map(
                 static fn (array $r): int => (int) $r['id'],
@@ -61,7 +75,7 @@ final class ExternalInvoiceLocker
             );
             $this->db->query('SELECT id FROM clients WHERE id = :c: FOR SHARE', ['c' => $clientId]);
 
-            $plan = $this->summarize($taskIds === [] ? [] : $this->selectParts($clientId, $month, true));
+            $plan = $this->summarize($taskIds === [] ? [] : $this->selectParts($clientId, $month, true, $includeAppParts));
 
             if ($plan['count'] === 0) {
                 throw new DomainException('nothing_to_lock');
@@ -165,12 +179,14 @@ final class ExternalInvoiceLocker
     /**
      * @return list<array<string, mixed>>
      */
-    private function selectParts(int $clientId, string $month, bool $forUpdate): array
+    private function selectParts(int $clientId, string $month, bool $forUpdate, bool $includeAppParts): array
     {
+        $window = $includeAppParts ? '' : " AND a.created_at <= t.created_at + interval '" . self::IMPORT_WINDOW . "'";
+
         return $this->db->query(
             'SELECT a.id, a.task_id, t.title, a.hours, a.rate, a.amount, a.currency
              FROM billing_allocations a JOIN tasks t ON t.id = a.task_id
-             WHERE t.client_id = :c: AND a.billing_month = :m: AND a.invoice_id IS NULL AND t.import_key IS NOT NULL
+             WHERE t.client_id = :c: AND a.billing_month = :m: AND a.invoice_id IS NULL AND t.import_key IS NOT NULL' . $window . '
              ORDER BY t.created_at, a.id' . ($forUpdate ? ' FOR UPDATE OF a' : ''),
             ['c' => $clientId, 'm' => $month],
         )->getResultArray();

@@ -94,4 +94,11 @@ final class InvoicesListTest extends AuthTestCase
         $result->assertStatus(302);
         $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
     }
+
+    public function testAnonymousReportIsRedirected(): void
+    {
+        $result = $this->get('/invoices/1/report');
+        $result->assertStatus(302);
+        $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
+    }
 }

@@ -23,7 +23,7 @@ $feedback = static fn (string $name): string => isset($errors[$name])
     <div class="inv-picker">
         <div>
             <label class="form-label" for="inv-client"><?= esc(lang('Invoicing.labelClient')) ?></label>
-            <select class="form-select<?= $invalid('client') ?>" id="inv-client" name="client" <?= $htmx('') ?><?= $describe('client') ?>>
+            <select class="form-select<?= $invalid('client') ?>" id="inv-client" name="client" <?= $htmx('#inv-payment-method, #inv-payment-note, #inv-payment-note-dirty') ?><?= $describe('client') ?>>
                 <?php foreach ($clients as $c) : ?>
                     <option value="<?= (int) $c['id'] ?>"<?= (string) $c['id'] === $v('client') ? ' selected' : '' ?>><?= esc((string) $c['name']) ?></option>
                 <?php endforeach ?>
@@ -34,7 +34,7 @@ $feedback = static fn (string $name): string => isset($errors[$name])
             <label class="form-label" for="inv-month"><?= esc(lang('Invoicing.labelMonth')) ?></label>
             <input class="form-control<?= $invalid('month') ?>" type="month" id="inv-month" name="month" value="<?= esc($v('month'), 'attr') ?>"
                    min="<?= esc($bounds['min'], 'attr') ?>" max="<?= esc($bounds['max'], 'attr') ?>"
-                   <?= $htmx('#inv-client, #inv-entity') ?><?= $describe('month') ?>>
+                   <?= $htmx('#inv-client, #inv-entity, #inv-payment-method, #inv-payment-note, #inv-payment-note-dirty') ?><?= $describe('month') ?>>
             <?= $feedback('month') ?>
         </div>
         <?= view('invoicing/_entity_field', ['entities' => $entities ?? [], 'values' => $values, 'errors' => $errors, 'oob' => false]) ?>

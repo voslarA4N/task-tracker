@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Libraries\Invoicing\Draft;
 use App\Libraries\Invoicing\InvoiceDraftService;
+use App\Libraries\Invoicing\IssueCommand;
 use App\Libraries\Invoicing\IssueInput;
 use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Invoicing\PreviewInput;
@@ -26,6 +27,8 @@ use Throwable;
  */
 final class Invoicing extends BaseController
 {
+    private const PAYMENT_FIELDS = ['payment_method', 'payment_note', 'payment_note_dirty'];
+
     public function new(): ResponseInterface
     {
         return $this->render(false);
@@ -72,11 +75,7 @@ final class Invoicing extends BaseController
         }
 
         try {
-            (new AllocationService())->update($id, [
-                'hours'         => (string) $allocation['hours'],
-                'billing_month' => $target,
-                'rate'          => (string) $allocation['rate'],
-            ]);
+            (new AllocationService())->moveMonth($id, $target);
         } catch (AllocationLocked) {
             return $this->movePanel(409, $allocation, $title, $selection, $choice, $other, [], true);
         } catch (InvalidArgumentException) {
@@ -110,9 +109,16 @@ final class Invoicing extends BaseController
             'delivery_date' => $input['delivery_date'],
             'due_date'      => $input['due_date'],
         ];
+        $raw += [
+            'payment_method'     => in_array($input['payment_method'], IssueCommand::PAYMENT_METHODS, true) ? $input['payment_method'] : 'transfer',
+            'payment_note'       => $input['payment_note'],
+            'payment_note_dirty' => '1',
+        ];
 
         if ($errors !== []) {
-            return $this->renderPreview(false, $raw, 422, array_values(array_map(static fn (string $m): array => ['message' => $m], $errors)));
+            $payErrors = array_intersect_key($errors, ['payment_method' => true, 'payment_note' => true]);
+
+            return $this->renderPreview(false, $raw, 422, array_values(array_map(static fn (string $m): array => ['message' => $m], array_diff_key($errors, $payErrors))), $payErrors);
         }
 
         try {
@@ -176,6 +182,12 @@ final class Invoicing extends BaseController
 
                 return $this->renderPreview(false, $raw, 422, [['message' => lang('Invoicing.errorSequence', [$format])]]);
 
+            case 'qr_failed':
+                return $this->renderPreview(false, $raw, 500, [['message' => lang('Invoicing.errorQrFailed', [self::qrReasonMessage($e->context)])]]);
+
+            case 'report_failed':
+                return $this->renderPreview(false, $raw, 500, [['message' => lang('Invoicing.errorReportFailed')]]);
+
             default:
                 return $this->renderPreview(false, $raw, 422, [['message' => self::errorMessage($e->reason, $e->context)]]);
         }
@@ -201,7 +213,26 @@ final class Invoicing extends BaseController
             'version_not_found'  => lang('Invoicing.errorVersion'),
             'amount_mismatch'    => lang('Invoicing.errorAmountMismatch'),
             'entity_inactive'    => lang('Invoicing.errorEntityInactive', [self::dateLabel($text('date'))]),
+            'qr_failed'          => lang('Invoicing.errorQrPreview', [self::qrReasonMessage($context)]),
             default              => lang('Invoicing.errorGeneric'),
+        };
+    }
+
+    /**
+     * Konkretna pricina zlyhania QR (QrPaymentFailed::REASONS) ako veta s polom na opravu (WR-03).
+     *
+     * @param array<string, mixed> $context
+     */
+    public static function qrReasonMessage(array $context): string
+    {
+        return match ($context['qr_reason'] ?? null) {
+            'nip_invalid'        => lang('Invoicing.qrReasonNip'),
+            'iban_invalid'       => lang('Invoicing.qrReasonIban'),
+            'amount_invalid'     => lang('Invoicing.qrReasonAmount'),
+            'title_too_long'     => lang('Invoicing.qrReasonTitle'),
+            'payload_too_long'   => lang('Invoicing.qrReasonPayload'),
+            'compression_failed' => lang('Invoicing.qrReasonCompression'),
+            default              => lang('Invoicing.qrReasonOther'),
         };
     }
 
@@ -297,8 +328,9 @@ final class Invoicing extends BaseController
     /**
      * @param array<string, string>                                                   $raw
      * @param list<array{message: string, link?: array{href: string, label: string}}> $alerts
+     * @param array<string, string>                                                   $payErrors
      */
-    private function renderPreview(bool $fragmentRoute, array $raw, int $forcedStatus = 0, array $alerts = []): ResponseInterface
+    private function renderPreview(bool $fragmentRoute, array $raw, int $forcedStatus = 0, array $alerts = [], array $payErrors = []): ResponseInterface
     {
         $request = $this->request;
         assert($request instanceof IncomingRequest);
@@ -320,6 +352,7 @@ final class Invoicing extends BaseController
             'clientName' => '',
             'requestKey' => self::uuid4(),
             'alerts'     => $alerts,
+            'payErrors'  => $payErrors,
         ];
 
         $status = 200;
@@ -341,13 +374,18 @@ final class Invoicing extends BaseController
                 $raw['issue_date'] === '' ? null : $raw['issue_date'],
                 $raw['delivery_date'] === '' ? null : $raw['delivery_date'],
                 $raw['due_date'] === '' ? null : $raw['due_date'],
+                $raw['payment_method'] ?? null,
+                $raw['payment_note'] ?? null,
+                ($raw['payment_note_dirty'] ?? '0') === '1',
             );
 
             $data['draft']      = $draft;
             $data['entities']   = $draft->entities;
             $data['monthLabel'] = mb_strtolower(BillingMonth::label($month, $request->getLocale()));
             $data['values']     = $this->selection($draft);
-            $data['refresh']    = '/fragments/invoice-preview?' . http_build_query($data['values']);
+            // Platobne polia nie su v URL obnovy: posiela ich hx-include z aktualneho formulara, inak by presun
+            // casti prepisal rozpisanu poznamku a formu uhrady hodnotami z casu vykreslenia (WR-07).
+            $data['refresh'] = '/fragments/invoice-preview?' . http_build_query(array_diff_key($data['values'], array_flip(self::PAYMENT_FIELDS)));
 
             foreach ($clients as $c) {
                 if ((int) $c['id'] === $clientId) {
@@ -375,12 +413,15 @@ final class Invoicing extends BaseController
     private function selection(Draft $draft): array
     {
         return [
-            'client'        => (string) $draft->clientId,
-            'month'         => $draft->month,
-            'entity'        => $draft->entityId === null ? '' : (string) $draft->entityId,
-            'issue_date'    => $draft->issueDate,
-            'delivery_date' => $draft->deliveryDate,
-            'due_date'      => $draft->dueDate,
+            'client'             => (string) $draft->clientId,
+            'month'              => $draft->month,
+            'entity'             => $draft->entityId === null ? '' : (string) $draft->entityId,
+            'issue_date'         => $draft->issueDate,
+            'delivery_date'      => $draft->deliveryDate,
+            'due_date'           => $draft->dueDate,
+            'payment_method'     => $draft->paymentMethod,
+            'payment_note'       => $draft->paymentNoteDirty ? (string) $draft->paymentNote : '',
+            'payment_note_dirty' => $draft->paymentNoteDirty ? '1' : '0',
         ];
     }
 }

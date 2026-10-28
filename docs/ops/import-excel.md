@@ -92,8 +92,12 @@ faktúru. Tá nespotrebuje číslo z radu `RRRRMM###`, nemá PDF a nezapočítav
 obraze.
 
 **Obmedzenie výberu:** príkaz nevyberá podľa stĺpca "Fakturované = ÁNO" (ten sa v DB neuchováva, Q3 v 05-RESEARCH),
-ale podľa mesiaca a `tasks.import_key IS NOT NULL`. Zamkol by teda aj importované, no nevyfakturované časti toho
-mesiaca. Jedinou poistkou sú `--expect-*`.
+ale podľa mesiaca, `tasks.import_key IS NOT NULL` a toho, že časť vznikla pri importe (jej `created_at` je najviac
+1 minútu po `created_at` importovanej úlohy, import zakladá úlohu aj časť v jednej transakcii). Časti, ktoré vlastník
+pridal k importovanej úlohe až neskôr v aplikácii, sa predvolene **nezamknú**. Suchý beh ich vypíše
+(`Vynechané časti pridané v aplikácii ... (ID ...)`), zahrnúť ich možno iba výslovne voľbou `--include-app-parts`
+(vtedy aj `--expect-*` musia zodpovedať súčtu vrátane nich). Importované, no nevyfakturované časti mesiaca by príkaz
+stále zamkol, poistkou proti tomu sú `--expect-*`.
 
 **Odkiaľ brať hodnoty `--expect-*`:** nikdy zo suchého behu `invoices:lock-historical`, ale z riadku správy importu
 `POZOR: N riadkov označených Fakturované = ÁNO (H h / A)` (`ImportReportFormatter::billedWarning`, súčty z

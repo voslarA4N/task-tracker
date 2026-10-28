@@ -61,33 +61,67 @@ final class LegalProfileResolver
 
     /**
      * Text vždy z toho istého riadku profilu ako kód oslobodenia (WR-11): mód sa určí cez profile()
-     * (presná zhoda, inak NULL) a text sa hľadá len pre tento mód. Poradie: (jazyk, mód) -> (en, mód) -> výnimka.
-     * Kód ART_28B_RC sa tak nikdy nespáruje so všeobecným znením "zwolniony ... art. 113".
+     * (presná zhoda, inak NULL). Pri presnom móde profilu je poradie (jazyk, mód) -> (en, mód), takže kód ART_28B_RC
+     * sa nikdy nespáruje so všeobecným znením "zwolniony ... art. 113". Až keď profil padol na všeobecný režim (NULL),
+     * smie sa použiť aj vlastné znenie pre režim klienta (D-13): (jazyk, režim klienta) -> (jazyk, NULL) -> (en, režim klienta) -> (en, NULL).
      *
-     * @return array{body: string, language: string, provisional: bool}
+     * @return array{body: string, language: string, provisional: bool, revision: int, billing_mode: ?string}
      */
     public function text(string $country, string $vatRegime, string $billingMode, string $language, string $key): array
     {
-        $mode     = $this->profile($country, $vatRegime, $billingMode)['billing_mode'];
-        $attempts = [[$language, $mode], ['en', $mode]];
+        $row = $this->resolveText($country, $vatRegime, $billingMode, $language, $key);
 
-        foreach ($attempts as [$lang, $mode]) {
+        if ($row === null) {
+            throw new LegalTextMissing(sprintf('No legal text %s for %s / %s / %s / %s', $key, $country, $vatRegime, $billingMode, $language));
+        }
+
+        return $row;
+    }
+
+    /**
+     * Ako text(), ale chybajuci text nie je chyba (napr. predvoleny invoice_note je volitelny, D-12).
+     *
+     * @return array{body: string, language: string, provisional: bool, revision: int, billing_mode: ?string}|null
+     */
+    public function optionalText(string $country, string $vatRegime, string $billingMode, string $language, string $key): ?array
+    {
+        return $this->resolveText($country, $vatRegime, $billingMode, $language, $key);
+    }
+
+    /**
+     * @return array{body: string, language: string, provisional: bool, revision: int, billing_mode: ?string}|null
+     */
+    private function resolveText(string $country, string $vatRegime, string $billingMode, string $language, string $key): ?array
+    {
+        try {
+            $mode = $this->profile($country, $vatRegime, $billingMode)['billing_mode'];
+        } catch (LegalTextMissing) {
+            return null;
+        }
+
+        $attempts = $mode === null
+            ? [[$language, $billingMode], [$language, null], ['en', $billingMode], ['en', null]]
+            : [[$language, $mode], ['en', $mode]];
+
+        foreach ($attempts as [$lang, $m]) {
             $row = $this->db->query(
-                'SELECT body, language, provisional FROM legal_texts '
+                'SELECT body, language, provisional, revision, billing_mode FROM legal_texts '
                 . 'WHERE country = :c: AND vat_regime = :r: AND language = :l: AND key = :k: '
                 . 'AND billing_mode IS NOT DISTINCT FROM CAST(:m: AS text)',
-                ['c' => $country, 'r' => $vatRegime, 'l' => $lang, 'k' => $key, 'm' => $mode],
+                ['c' => $country, 'r' => $vatRegime, 'l' => $lang, 'k' => $key, 'm' => $m],
             )->getRowArray();
 
             if ($row !== null && (string) $row['body'] !== '') {
                 return [
-                    'body'        => (string) $row['body'],
-                    'language'    => (string) $row['language'],
-                    'provisional' => DbBool::of($row['provisional']),
+                    'body'         => (string) $row['body'],
+                    'language'     => (string) $row['language'],
+                    'provisional'  => DbBool::of($row['provisional']),
+                    'revision'     => (int) $row['revision'],
+                    'billing_mode' => $row['billing_mode'] === null ? null : (string) $row['billing_mode'],
                 ];
             }
         }
 
-        throw new LegalTextMissing(sprintf('No legal text %s for %s / %s / %s / %s', $key, $country, $vatRegime, $billingMode, $language));
+        return null;
     }
 }

@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 use RuntimeException;
 
 /**
- * WR-06: php-fpm na stagingu nevidi heslo superusera ani app_owner; DB dostava hesla
+ * WR-06: php-fpm na serveri (prod aj staging) nevidi heslo superusera ani app_owner; DB dostava hesla
  * iba ako Docker secrets (*_FILE), nie cez premenne prostredia v compose.
  *
  * @internal
@@ -49,6 +49,23 @@ final class StagingSecretsLayoutTest extends CIUnitTestCase
         $this->assertStringContainsString('profiles: ["migrate"]', $migrate);
     }
 
+    public function testSeedServiceIsOneOffAppRwAndTheOnlyOneSeeingSeedAdminSecrets(): void
+    {
+        $seed = $this->service('seed');
+
+        $this->assertStringContainsString('profiles: ["seed"]', $seed);
+        $this->assertStringContainsString('./app.env:/var/www/html/.env:ro', $seed);
+        $this->assertStringContainsString('./secrets/seed_admin.env:/run/secrets/seed_admin.env:ro', $seed);
+        $this->assertStringNotContainsString('migrate.env', $seed);
+        $this->assertStringContainsString('"staging:seed"', $seed);
+
+        foreach (['php', 'migrate', 'nginx', 'db'] as $name) {
+            $this->assertStringNotContainsString('seed_admin', (string) preg_replace('/^\s*#.*$/m', '', $this->service($name)), "{$name} nesmie vidiet seed_admin.env");
+        }
+
+        $this->assertSame(1, substr_count($this->compose(), './secrets/seed_admin.env'));
+    }
+
     public function testDbGetsPasswordsOnlyAsSecretFiles(): void
     {
         $compose = $this->compose();
@@ -60,6 +77,18 @@ final class StagingSecretsLayoutTest extends CIUnitTestCase
         $this->assertStringContainsString('DB_OWNER_PASSWORD_FILE: /run/secrets/db_owner_password', $db);
         $this->assertStringContainsString('DB_RW_PASSWORD_FILE: /run/secrets/db_rw_password', $db);
         $this->assertStringContainsString('file: ./secrets/db_superuser_password', $compose);
+    }
+
+    public function testNginxHasNoPublishedPortsAndJoinsEdge(): void
+    {
+        $compose = $this->compose();
+        $nginx   = $this->service('nginx');
+
+        $this->assertDoesNotMatchRegularExpression('/^\s*ports\s*:/m', $nginx);
+        $this->assertStringContainsString('NGINX_PROXY_PROTOCOL: proxy_protocol', $nginx);
+        $this->assertStringContainsString('${EDGE_ALIAS:?', $nginx);
+        $this->assertStringContainsString('external: true', $compose);
+        $this->assertStringContainsString('name: ${COMPOSE_PROJECT_NAME:?', $compose);
     }
 
     public function testProvisionInitReadsPasswordFiles(): void
@@ -99,7 +128,7 @@ final class StagingSecretsLayoutTest extends CIUnitTestCase
 
     private function compose(): string
     {
-        return (string) file_get_contents(ROOTPATH . 'compose.staging.yaml');
+        return (string) file_get_contents(ROOTPATH . 'compose.server.yaml');
     }
 
     /**

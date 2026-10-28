@@ -52,6 +52,31 @@ final class PreviewInputTest extends CIUnitTestCase
         $this->assertArrayHasKey('due_date', $errors);
     }
 
+    public function testIssueDateFarInFutureIsRejected(): void
+    {
+        $this->assertArrayHasKey('issue_date', PreviewInput::validate(['issue_date' => '2062-10-27']));
+        $this->assertArrayHasKey('issue_date', PreviewInput::validate(['issue_date' => '2026-11-04']));
+        $this->assertSame([], PreviewInput::validate(['issue_date' => '2026-11-03']));
+        $this->assertSame([], PreviewInput::validate(['issue_date' => '2025-01-15']));
+    }
+
+    public function testDeliveryDateOutsideBillingMonthWindowIsRejected(): void
+    {
+        $this->assertArrayHasKey('delivery_date', PreviewInput::validate(['month' => '2026-09', 'delivery_date' => '2062-09-30']));
+        $this->assertArrayHasKey('delivery_date', PreviewInput::validate(['month' => '2026-09', 'delivery_date' => '2026-07-31']));
+        $this->assertArrayHasKey('delivery_date', PreviewInput::validate(['month' => '2026-09', 'delivery_date' => '2026-11-01']));
+        $this->assertSame([], PreviewInput::validate(['month' => '2026-09', 'delivery_date' => '2026-09-30']));
+        $this->assertSame([], PreviewInput::validate(['month' => '2026-09', 'delivery_date' => '2026-08-01']));
+        $this->assertSame([], PreviewInput::validate(['month' => '2026-09', 'delivery_date' => '2026-10-31']));
+        $this->assertSame([], PreviewInput::validate(['month' => '2026-11', 'delivery_date' => '2026-11-30']));
+    }
+
+    public function testDueDateMoreThanAYearAfterIssueIsRejected(): void
+    {
+        $this->assertArrayHasKey('due_date', PreviewInput::validate(['issue_date' => '2026-10-27', 'due_date' => '2027-10-28']));
+        $this->assertSame([], PreviewInput::validate(['issue_date' => '2026-10-27', 'due_date' => '2027-10-27']));
+    }
+
     public function testInvalidDateIsRejected(): void
     {
         $this->assertArrayHasKey('issue_date', PreviewInput::validate(['issue_date' => '2026-02-30']));
@@ -71,8 +96,22 @@ final class PreviewInputTest extends CIUnitTestCase
 
         $out = PreviewInput::fromGet($request);
 
-        $this->assertSame(PreviewInput::FIELDS, array_keys($out));
+        $this->assertSame([...PreviewInput::FIELDS, 'payment_method', 'payment_note', 'payment_note_dirty'], array_keys($out));
+        $this->assertSame('transfer', $out['payment_method']);
+        $this->assertSame('0', $out['payment_note_dirty']);
         $this->assertSame('5', $out['client']);
         $this->assertSame('', $out['entity']);
+    }
+
+    public function testInvalidPaymentFieldsAreSilentlyDefaulted(): void
+    {
+        $request = Services::incomingrequest(null, false);
+        $request->setGlobal('get', ['payment_method' => 'bitcoin', 'payment_note' => str_repeat('a', 501), 'payment_note_dirty' => '1']);
+
+        $out = PreviewInput::fromGet($request);
+
+        $this->assertSame('transfer', $out['payment_method']);
+        $this->assertSame('', $out['payment_note']);
+        $this->assertSame('0', $out['payment_note_dirty']);
     }
 }

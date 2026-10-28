@@ -154,6 +154,51 @@ final class AllocationServiceTest extends PgTestCase
         $this->assertSame('2026-10', $row['billing_month']);
     }
 
+    public function testMoveMonthChangesOnlyMonthAndKeepsConcurrentEdit(): void
+    {
+        // WR-03: cast precitana pred zamkom (stary nahlad) nesmie pri presune prepisat neskorsiu upravu hodin.
+        $task  = $this->createTask($this->createClient());
+        $id    = $this->createAllocation($task, '8.00', '2026-10');
+        $stale = $this->service()->find($id);
+        $this->service()->update($id, ['hours' => '10.00', 'billing_month' => '2026-10', 'rate' => '27.00']);
+
+        $this->assertTrue($this->service()->moveMonth($id, '2026-11'));
+
+        $row = $this->service()->find($id);
+        $this->assertSame('8.00', $stale['hours']);
+        $this->assertSame('10.00', $row['hours']);
+        $this->assertSame('270.00', $row['amount']);
+        $this->assertSame('2026-11', $row['billing_month']);
+
+        $after = json_decode((string) $this->owner()->query("SELECT after_data FROM audit_log WHERE action = 'update' AND entity_type = 'billing_allocation' ORDER BY id DESC LIMIT 1")->getRow()->after_data, true);
+        $this->assertSame(['billing_month' => '2026-11'], $after);
+    }
+
+    public function testMoveMonthToSameMonthReturnsFalse(): void
+    {
+        $task = $this->createTask($this->createClient());
+        $id   = $this->createAllocation($task, '8.00', '2026-10');
+
+        $this->assertFalse($this->service()->moveMonth($id, '2026-10'));
+        $this->assertSame(0, $this->audits('update'));
+    }
+
+    public function testMoveMonthLockedThrows(): void
+    {
+        $task = $this->createTask($this->createClient());
+        $id   = $this->createAllocation($task, '8.00', '2026-10');
+        $this->lockAllocation($id);
+
+        try {
+            $this->service()->moveMonth($id, '2026-11');
+            $this->fail('AllocationLocked expected');
+        } catch (AllocationLocked $e) {
+            $this->assertSame($id, $e->allocationId);
+        }
+
+        $this->assertSame('2026-10', $this->service()->find($id)['billing_month']);
+    }
+
     public function testDeleteUnlocked(): void
     {
         $task = $this->createTask($this->createClient());

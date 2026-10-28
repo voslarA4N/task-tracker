@@ -47,7 +47,7 @@ $ids = static function (array $rows): array {
 </table>
 <table class="meta">
     <tr><td><?= esc($l['issueDate']) ?>: <?= esc(PdfFormat::date($s['issue_date'], $lg)) ?></td><td><?= esc($l['deliveryDate']) ?>: <?= esc(PdfFormat::date($s['delivery_date'], $lg)) ?></td><td><?= esc($l['dueDate']) ?>: <?= esc(PdfFormat::date($s['due_date'], $lg)) ?></td></tr>
-    <tr><td><?= esc($l['variableSymbol']) ?>: <?= esc($s['variable_symbol'] ?? $s['number']) ?></td><td colspan="2"><?= esc($l['paymentMethod']) ?>: <?= esc($l['paymentTransfer']) ?></td></tr>
+    <tr><td><?= esc($l['variableSymbol']) ?>: <?= esc(array_key_exists('variable_symbol', $s) ? (string) $s['variable_symbol'] : $s['number']) ?></td><td colspan="2"><?= esc($l['paymentMethod']) ?>: <?= esc($l['paymentTransfer']) ?></td></tr>
     <tr><td><?= esc($l['bankAccount']) ?>: <?= esc($b['iban']) ?></td><td colspan="2"><?php if (! empty($b['swift'])) : ?><?= esc($l['swift']) ?>: <?= esc($b['swift']) ?><?php endif; ?></td></tr>
 </table>
 <table class="items">

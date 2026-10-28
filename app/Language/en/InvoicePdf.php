@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-/**
- * Popisky PDF faktury (en). Kopiruju sa do snapshotu pri vystaveni (D-18), render ich necita z lang().
- * Preklady pl a cs su predbezne, finalne znenie urci Phase 6.
- */
+/** Popisky PDF faktury (en). Kopiruju sa do snapshotu pri vystaveni (D-18), render ich necita z lang(). */
 return [
     'invoice'         => 'Invoice',
     'number'          => 'Invoice number',
@@ -30,4 +27,18 @@ return [
     'vatId'           => 'VAT ID',
     'regon'           => 'REGON',
     'identifier'      => 'Identifier',
+    'paymentCash'     => 'Cash',
+    'paymentCard'     => 'Card',
+    'paymentOther'    => 'Other',
+    'paymentTitle'    => 'Payment reference',
+    'unitHours'       => 'h',
+    'vatNoteHeading'  => 'VAT note',
+    'note'            => 'Note',
+    'page'            => 'Page',
+    'nip'             => 'NIP',
+    'bankName'        => 'Bank',
+    'qrPayBySquare'   => 'PAY by square',
+    'qrSpayd'         => 'QR Platba',
+    'qrZbp'           => 'Kod QR ZBP',
+    'qrCaption'       => 'Pay by QR code',
 ];

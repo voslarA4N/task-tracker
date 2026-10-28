@@ -44,7 +44,95 @@ final class TwoFactor extends BaseController
             return $user;
         }
 
-        return redirect()->to($this->hasTotp($user) ? '/2fa/verify' : '/2fa/setup');
+        if ($this->hasTotp($user)) {
+            return redirect()->to('/2fa/verify');
+        }
+
+        // Pouzivatel 2FA odmietol: prihlasenie iba heslom, ale s moznostou zapamatat zariadenie (D-01).
+        return redirect()->to($this->isDeclined($user) ? '/2fa/continue' : '/2fa/offer');
+    }
+
+    /**
+     * Prvotna ponuka 2FA (D-02): "Nastavit 2FA" alebo "Nechcem nastavovat 2FA".
+     */
+    public function offer(): ResponseInterface
+    {
+        $user = $this->pendingUserOrRedirect(self::ENROL_TTL);
+
+        if ($user instanceof RedirectResponse) {
+            return $user;
+        }
+
+        if ($this->hasTotp($user)) {
+            return redirect()->to('/2fa/verify');
+        }
+
+        if ($this->isDeclined($user)) {
+            return redirect()->to('/2fa');
+        }
+
+        return $this->response->setBody(view('auth/totp_offer', ['title' => lang('TwoFactor.offerTitle')]));
+    }
+
+    public function decline(): ResponseInterface
+    {
+        $user = $this->pendingUserOrRedirect(self::ENROL_TTL);
+
+        if ($user instanceof RedirectResponse) {
+            return $user;
+        }
+
+        if ($this->hasTotp($user)) {
+            return redirect()->to('/2fa/verify');
+        }
+
+        $db  = db_connect();
+        $now = service('clock')->now()->format('Y-m-d H:i:sP');
+        $db->query(
+            'UPDATE user_security SET totp_declined_at = :now:, updated_at = :now: WHERE user_id = :u: AND totp_enabled_at IS NULL AND totp_declined_at IS NULL',
+            ['now' => $now, 'u' => (int) $user->id],
+        );
+
+        if ($db->affectedRows() === 1) {
+            (new AuditLog())->record(AuthEvent::TotpDeclined, true, (int) $user->id);
+        }
+
+        session()->remove(self::SETUP_SECRET_KEY);
+
+        return $this->completeLogin($user, $this->wantsRemember(), AuthEvent::LoginNoTotp);
+    }
+
+    /**
+     * Dokoncenie prihlasenia pouzivatela, ktory 2FA odmietol (heslo uz je overene).
+     */
+    public function continuePage(): ResponseInterface
+    {
+        $user = $this->pendingUserOrRedirect();
+
+        if ($user instanceof RedirectResponse) {
+            return $user;
+        }
+
+        if (! $this->isDeclined($user) || $this->hasTotp($user)) {
+            return redirect()->to('/2fa');
+        }
+
+        return $this->response->setBody(view('auth/totp_continue', ['title' => lang('TwoFactor.continueTitle')]));
+    }
+
+    public function proceed(): ResponseInterface
+    {
+        $user = $this->pendingUserOrRedirect();
+
+        if ($user instanceof RedirectResponse) {
+            return $user;
+        }
+
+        if (! $this->isDeclined($user) || $this->hasTotp($user)) {
+            return redirect()->to('/2fa');
+        }
+
+        return $this->completeLogin($user, $this->wantsRemember(), AuthEvent::LoginNoTotp);
     }
 
     public function setup(): ResponseInterface
@@ -95,7 +183,7 @@ final class TwoFactor extends BaseController
 
         $db = db_connect();
         $db->query(
-            'UPDATE user_security SET totp_secret_enc = :enc:, totp_enabled_at = :now:, totp_last_step = :step:, updated_at = :now: WHERE user_id = :u: AND totp_enabled_at IS NULL',
+            'UPDATE user_security SET totp_secret_enc = :enc:, totp_enabled_at = :now:, totp_last_step = :step:, totp_declined_at = NULL, updated_at = :now: WHERE user_id = :u: AND totp_enabled_at IS NULL',
             ['enc' => $svc->encryptSecret($secret), 'now' => $now->format('Y-m-d H:i:sP'), 'step' => $step, 'u' => $userId],
         );
 
@@ -191,7 +279,7 @@ final class TwoFactor extends BaseController
         }
 
         if (! $this->hasTotp($user)) {
-            return redirect()->to('/2fa/setup');
+            return redirect()->to('/2fa');
         }
 
         return $this->backupPage(null, 200);
@@ -210,7 +298,7 @@ final class TwoFactor extends BaseController
         }
 
         if (! $this->hasTotp($user)) {
-            return redirect()->to('/2fa/setup');
+            return redirect()->to('/2fa');
         }
 
         $locked = $this->lockedResponse($user, null, 'backup');
@@ -252,7 +340,7 @@ final class TwoFactor extends BaseController
         }
 
         if (! $this->hasTotp($user)) {
-            return redirect()->to('/2fa/setup');
+            return redirect()->to('/2fa');
         }
 
         return $this->verifyPage(null, 200);
@@ -271,7 +359,7 @@ final class TwoFactor extends BaseController
         }
 
         if (! $this->hasTotp($user)) {
-            return redirect()->to('/2fa/setup');
+            return redirect()->to('/2fa');
         }
 
         $locked = $this->lockedResponse($user);
@@ -464,7 +552,7 @@ final class TwoFactor extends BaseController
     /**
      * Dokonci Shield akciu po overenom kode a prihlasi pouzivatela; pri $remember vyda dovernu cookie zariadenia.
      */
-    private function completeLogin(User $user, bool $remember): RedirectResponse
+    private function completeLogin(User $user, bool $remember, AuthEvent $event = AuthEvent::LoginTotpOk): RedirectResponse
     {
         $authenticator = auth('session')->getAuthenticator();
         $identity      = model(UserIdentityModel::class)->getIdentityByType($user, TotpAction::TYPE);
@@ -489,7 +577,7 @@ final class TwoFactor extends BaseController
             'last_activity' => $now->getTimestamp(),
         ]);
         (new LockoutService())->clear($this->request->getIPAddress(), mb_strtolower((string) $user->email));
-        (new AuditLog())->record(AuthEvent::LoginTotpOk, true, $userId);
+        (new AuditLog())->record($event, true, $userId);
 
         $redirect = redirect()->to('/');
 
@@ -511,6 +599,13 @@ final class TwoFactor extends BaseController
         );
 
         return $redirect->setCookie($devices->cookie($device['token'], $device['expiresAt']));
+    }
+
+    private function isDeclined(User $user): bool
+    {
+        $row = db_connect()->table('user_security')->select('totp_declined_at')->where('user_id', $user->id)->get()->getRow();
+
+        return $row !== null && $row->totp_declined_at !== null;
     }
 
     private function hasTotp(User $user): bool

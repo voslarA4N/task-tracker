@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Scripts;
 
 use CodeIgniter\Test\CIUnitTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use RuntimeException;
 
 /**
- * D-08: scripts/deploy.sh nikdy nespusti migraciu bez overenej zalohy a pri
- * zlyhani nenahradi bezny stack. Skript bezi v docasnom adresari s falosnym
+ * D-08: scripts/deploy.sh (server: prod aj staging) nikdy nespusti migraciu bez
+ * overenej zalohy a pri zlyhani nenahradi bezny stack. Chraní aj pred zamenou stackov
+ * (COMPOSE_PROJECT_NAME, adresar projektu, siet edge). Skript bezi v docasnom adresari s falosnym
  * `docker` a `crontab` na PATH, ktore len zapisuju volania do calls.log.
  *
  * @internal
@@ -29,6 +31,21 @@ final class DeployGuardTest extends CIUnitTestCase
           *"pg_restore -l"*)
             [ -z "${FAKE_RESTORE_FAIL-}" ] || exit 1
             ;;
+          *"network inspect"*)
+            [ -z "${FAKE_NO_EDGE-}" ] || exit 1
+            ;;
+          *"image inspect"*)
+            [ -z "${FAKE_NO_IMAGE-}" ] || exit 1
+            ;;
+          "ps "*)
+            # Ako skutočný docker: .Labels je v `docker ps` reťazec, index na ňom zlyhá.
+            case "$*" in *"index .Labels"*) echo 'failed to execute template' >&2; exit 1 ;; esac
+            [ -z "${FAKE_PS_FAIL-}" ] || exit 1
+            [ -z "${FAKE_PS_WORKDIR-}" ] || printf '%s\n' "$FAKE_PS_WORKDIR"
+            ;;
+          *"staging:seed"*)
+            [ -z "${FAKE_SEED_FAIL-}" ] || exit 1
+            ;;
           *migrate*)
             [ -z "${FAKE_MIGRATE_FAIL-}" ] || exit 1
             ;;
@@ -38,6 +55,10 @@ final class DeployGuardTest extends CIUnitTestCase
     private const FAKE_CRONTAB = <<<'SH'
         #!/bin/sh
         printf 'crontab %s\n' "$*" >> "$FAKE_LOG"
+        case "$*" in
+          -l) [ -z "${FAKE_CRONTAB_EXISTING-}" ] || printf '%s\n' "$FAKE_CRONTAB_EXISTING" ;;
+          -) cat >> "$FAKE_LOG" ;;
+        esac
         exit 0
         SH;
 
@@ -54,7 +75,7 @@ final class DeployGuardTest extends CIUnitTestCase
             }
         }
         copy(ROOTPATH . 'scripts/deploy.sh', $this->dir . '/deploy.sh');
-        file_put_contents($this->dir . '/.env', "TLS_MODE = origin-ca\nAPP_DOMAIN = test.example\n");
+        file_put_contents($this->dir . '/.env', "TLS_MODE = origin-ca\nAPP_DOMAIN = test.example\nCOMPOSE_PROJECT_NAME = test-stack\nEDGE_ALIAS = wt-test-nginx\nIMAGE_PREFIX = ghcr.io/x/tt\n");
         file_put_contents($this->dir . '/certs/origin.pem', '');
 
         // Rozlozenie tajomstiev podla WR-06 (falosne hodnoty).
@@ -135,6 +156,79 @@ final class DeployGuardTest extends CIUnitTestCase
         $this->assertStringContainsString('migrate.env je citatelny', $err);
     }
 
+    public function testMissingProjectNameOrEdgeAliasFailsBeforeAnyDockerCall(): void
+    {
+        foreach (['COMPOSE_PROJECT_NAME', 'EDGE_ALIAS'] as $key) {
+            file_put_contents($this->dir . '/.env', "TLS_MODE = origin-ca\nAPP_DOMAIN = test.example\n" . ($key === 'EDGE_ALIAS' ? "COMPOSE_PROJECT_NAME = test-stack\n" : "EDGE_ALIAS = wt-test-nginx\n"));
+            @unlink($this->dir . '/calls.log');
+
+            [$code, $err] = $this->runDeploy([]);
+
+            $this->assertNotSame(0, $code);
+            $this->assertSame("logout ghcr.io\n", $this->log());
+            $this->assertStringContainsString($key, $err);
+        }
+    }
+
+    public function testMissingEdgeNetworkFailsBeforePull(): void
+    {
+        [$code, $err] = $this->runDeploy(['FAKE_NO_EDGE' => '1']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertStringContainsString('network inspect edge', $this->log());
+        $this->assertStringNotContainsString('pull', $this->log());
+        $this->assertStringContainsString('edge', $err);
+    }
+
+    public function testProjectFromAnotherDirectoryFailsBeforePull(): void
+    {
+        [$code, $err] = $this->runDeploy(['FAKE_PS_WORKDIR' => '/other']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertStringNotContainsString('pull', $this->log());
+        $this->assertStringContainsString('/other', $err);
+        $this->assertStringContainsString(realpath($this->dir) ?: $this->dir, $err);
+    }
+
+    public function testFailingProjectDirectoryCheckFailsBeforePull(): void
+    {
+        [$code, $err] = $this->runDeploy(['FAKE_PS_FAIL' => '1']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertStringNotContainsString('pull', $this->log());
+        $this->assertStringContainsString('docker ps', $err);
+    }
+
+    public function testSkipPullInspectsImagesInsteadOfPulling(): void
+    {
+        [$code, $err] = $this->runDeploy(['SKIP_PULL' => '1']);
+
+        $this->assertSame(0, $code, $err);
+
+        $log = $this->log();
+        $this->assertStringNotContainsString('pull', $log);
+        $this->assertStringContainsString('image inspect ghcr.io/x/tt-php:sha-test ghcr.io/x/tt-nginx:sha-test', $log);
+        $this->assertLessThan(strpos($log, 'pg_dump'), strpos($log, 'image inspect'));
+        $this->assertLessThan(strpos($log, 'up -d --wait --remove-orphans'), strpos($log, 'pg_dump'));
+    }
+
+    public function testCronKeepsOtherStacksAndWritesOneLineForThisDir(): void
+    {
+        $this->writeLetsEncryptEnv();
+        $other = '17 3 * * * /opt/other/cert-renew.sh >> /opt/other/cert-renew.log 2>&1';
+        $mine  = '17 3 * * * ' . (realpath($this->dir) ?: $this->dir) . '/cert-renew.sh >> old 2>&1';
+
+        [$code, $err] = $this->runDeploy(['FAKE_CRONTAB_EXISTING' => $other . "\n" . $mine]);
+
+        $this->assertSame(0, $code, $err);
+
+        $log  = $this->log();
+        $here = (realpath($this->dir) ?: $this->dir) . '/cert-renew.sh';
+        $this->assertSame(1, substr_count($log, $other));
+        $this->assertSame(1, substr_count($log, $here . ' >> ' . (realpath($this->dir) ?: $this->dir) . '/cert-renew.log'));
+        $this->assertStringNotContainsString('>> old', $log);
+    }
+
     public function testEmptyDumpBlocksMigration(): void
     {
         [$code] = $this->runDeploy(['FAKE_DUMP_EMPTY' => '1']);
@@ -187,6 +281,156 @@ final class DeployGuardTest extends CIUnitTestCase
 
         $this->assertSame('sha-test', trim((string) file_get_contents($this->dir . '/.last-good-tag')));
         $this->assertCount(14, glob($this->dir . '/backups/pre-*.dump'));
+    }
+
+    public function testWithoutStagingReseedNoResetOrSeedRuns(): void
+    {
+        // regresia: aj s `staging.seed = true` v app.env sa bez STAGING_RESEED nic nemaze ani nenaplna
+        file_put_contents($this->dir . '/app.env', "staging.seed = true\n", FILE_APPEND);
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertSame(0, $code, $err);
+        $log = $this->log();
+        $this->assertStringNotContainsString('DROP DATABASE', $log);
+        $this->assertStringNotContainsString('provision.sql', $log);
+        $this->assertStringNotContainsString('staging:seed', $log);
+        $this->assertStringNotContainsString('seed_admin', $log);
+    }
+
+    public function testStagingReseedRunsResetMigrateAndSeedInOrder(): void
+    {
+        $this->enableReseed();
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertSame(0, $code, $err);
+
+        $log      = $this->log();
+        $previous = -1;
+
+        foreach (['pg_dump', 'pg_restore -l', 'DROP DATABASE IF EXISTS task_tracker WITH (FORCE)', 'provision.sql', 'run --rm --no-deps -T migrate php spark migrate -g owner --all', 'run --rm --no-deps -T seed', 'staging:seed', 'up -d --wait --remove-orphans'] as $step) {
+            $pos = strpos($log, $step);
+            $this->assertNotFalse($pos, "chyba krok: {$step}");
+            $this->assertGreaterThan($previous, $pos, "zle poradie kroku: {$step}");
+            $previous = $pos;
+        }
+
+        $this->assertSame('sha-test', trim((string) file_get_contents($this->dir . '/.last-good-tag')));
+        // heslo seed admina ani db hesla nie su v ziadnom argumente dockeru
+        $this->assertStringNotContainsString('fake-db_', $log);
+        $this->assertStringContainsString('DB_OWNER_PASSWORD=$(cat "$DB_OWNER_PASSWORD_FILE")', $log);
+    }
+
+    #[DataProvider('provideStagingReseedRefusalsHappenBeforeAnyDockerCall')]
+    public function testStagingReseedRefusalsHappenBeforeAnyDockerCall(string $case): void
+    {
+        $this->enableReseed();
+
+        switch ($case) {
+            case 'project':
+                $this->setEnvKey('COMPOSE_PROJECT_NAME', 'task-tracker');
+                break;
+
+            case 'domain':
+                $this->setEnvKey('APP_DOMAIN', 'work-tracker.vostack.dev');
+                break;
+
+            case 'missing':
+                unlink($this->dir . '/secrets/seed_admin.env');
+                break;
+
+            case 'perm':
+                chmod($this->dir . '/secrets/seed_admin.env', 0o644);
+                break;
+
+            case 'flag':
+                $this->writePrivate('/app.env', "CI_ENVIRONMENT = production\ndatabase.default.username = app_rw\n");
+                break;
+
+            case 'typo':
+                $this->setEnvKey('STAGING_RESEED', 'yes');
+                break;
+        }
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertNotSame(0, $code);
+        $this->assertSame("logout ghcr.io\n", $this->log());
+        $this->assertStringContainsString('Nic sa nenasadilo', $err);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideStagingReseedRefusalsHappenBeforeAnyDockerCall(): iterable
+    {
+        yield 'production project' => ['project'];
+
+        yield 'production domain' => ['domain'];
+
+        yield 'missing seed_admin.env' => ['missing'];
+
+        yield 'seed_admin.env readable by others' => ['perm'];
+
+        yield 'app.env without staging.seed' => ['flag'];
+
+        yield 'typo value' => ['typo'];
+    }
+
+    public function testProductionWithSeedFlagInAppEnvIsRefused(): void
+    {
+        $this->setEnvKey('COMPOSE_PROJECT_NAME', 'task-tracker');
+        file_put_contents($this->dir . '/app.env', "staging.seed = true\n", FILE_APPEND);
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertNotSame(0, $code);
+        $this->assertSame("logout ghcr.io\n", $this->log());
+        $this->assertStringContainsString('Produkcia', $err);
+    }
+
+    public function testProductionDirectoryIsHardcodedAsRefusedForReseed(): void
+    {
+        $script = (string) file_get_contents(ROOTPATH . 'scripts/deploy.sh');
+
+        $this->assertStringContainsString('"$HERE" = /opt/work-tracker ]', $script);
+    }
+
+    public function testFailedSeedKeepsOldStack(): void
+    {
+        file_put_contents($this->dir . '/.last-good-tag', "sha-old\n");
+        $this->enableReseed();
+
+        [$code, $err] = $this->runDeploy(['FAKE_SEED_FAIL' => '1']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertStringContainsString('staging:seed', $this->log());
+        $this->assertStringNotContainsString('up -d --wait --remove-orphans', $this->log());
+        $this->assertSame("sha-old\n", file_get_contents($this->dir . '/.last-good-tag'));
+        $this->assertStringContainsString('Seed zlyhal', $err);
+    }
+
+    private function enableReseed(): void
+    {
+        file_put_contents($this->dir . '/.env', "STAGING_RESEED = 1\n", FILE_APPEND);
+        file_put_contents($this->dir . '/app.env', "staging.seed = true\n", FILE_APPEND);
+        $this->writePrivate('/secrets/seed_admin.env', "SEED_ADMIN_EMAIL = a@b.example\n");
+    }
+
+    private function setEnvKey(string $key, string $value): void
+    {
+        $lines   = file($this->dir . '/.env', FILE_IGNORE_NEW_LINES) ?: [];
+        $lines   = array_values(array_filter($lines, static fn (string $l): bool => ! str_starts_with($l, $key . ' ')));
+        $lines[] = $key . ' = ' . $value;
+        file_put_contents($this->dir . '/.env', implode("\n", $lines) . "\n");
+    }
+
+    private function writeLetsEncryptEnv(): void
+    {
+        file_put_contents($this->dir . '/.env', "TLS_MODE = letsencrypt\nAPP_DOMAIN = test.example\nLE_EMAIL = a@b.example\nCOMPOSE_PROJECT_NAME = test-stack\nEDGE_ALIAS = wt-test-nginx\nIMAGE_PREFIX = ghcr.io/x/tt\n");
+        mkdir($this->dir . '/letsencrypt/live/test.example', 0o700, true);
+        file_put_contents($this->dir . '/letsencrypt/live/test.example/fullchain.pem', '');
     }
 
     /**

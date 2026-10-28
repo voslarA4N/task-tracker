@@ -21,14 +21,14 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 ### Prihlásenie a bezpečnosť (E1)
 
 - [x] **AUTH-01**: Používateľ sa prihlási e-mailom a heslom (Argon2id).
-- [x] **AUTH-02**: Používateľ musí mať TOTP 2FA (RFC 6238, Google/Microsoft Authenticator). Nastaví ju cez QR kód (generovaný lokálne) pri prvom prihlásení. TOTP kód sa nedá použiť dvakrát (replay ochrana).
+- [x] **AUTH-02**: TOTP 2FA (RFC 6238, Google/Microsoft Authenticator) je voliteľná. Pri prvom prihlásení sa zobrazí ponuka „Nastaviť 2FA“ / „Nechcem nastavovať 2FA“ (voľba sa uloží), zapnutie aj vypnutie je v Nastaveniach → Bezpečnosť (vypnutie vyžaduje heslo a kód z aplikácie alebo záložný kód). QR kód sa generuje lokálne. TOTP kód sa nedá použiť dvakrát (replay ochrana). (zmena 2026-10-28, rozhodnutie vlastníka, quick 261028-mf3)
 - [x] **AUTH-03**: Používateľ dostane 10 jednorazových záložných kódov (uložených ako hash) a môže ich pregenerovať. Použitý kód sa nedá použiť znova.
 - [x] **AUTH-04**: Počet pokusov o prihlásenie a o zadanie TOTP je obmedzený.
-- [x] **AUTH-05**: Používateľ si môže „zapamätať zariadenie“ na 30 dní. Na dôveryhodnom zariadení sa TOTP nevyžaduje. Zariadenia sa dajú zobraziť a odvolať. Po 30 dňoch alebo po odvolaní sa TOTP vyžaduje znova.
-- [x] **AUTH-06**: Používateľ si obnoví heslo e-mailom (časovo obmedzený token). Obnovenie hesla neobíde TOTP.
+- [x] **AUTH-05**: Používateľ si môže „zapamätať zariadenie“ na 30 dní, s 2FA aj bez nej. Na dôveryhodnom zariadení sa heslo ani TOTP nevyžaduje. Zariadenia sa dajú zobraziť a odvolať, zapnutie aj vypnutie 2FA ich odvolá. Po 30 dňoch alebo po odvolaní sa prihlásenie vyžaduje znova. (zmena 2026-10-28, rozhodnutie vlastníka, quick 261028-mf3)
+- [x] **AUTH-06**: Používateľ si obnoví heslo e-mailom (časovo obmedzený token), aj účet bez 2FA. Obnovenie hesla neobíde TOTP u účtu, ktorý ju má zapnutú. (zmena 2026-10-28, rozhodnutie vlastníka, quick 261028-mf3)
 - [x] **AUTH-07**: Denník prihlásení zaznamenáva úspech alebo neúspech, IP adresu, zariadenie a čas.
 - [x] **AUTH-08**: Dátový model obsahuje používateľov a roly `admin` a `accountant` (UI pre `accountant` je voliteľné).
-- [x] **AUTH-09** [nové]: Bez platného TOTP alebo záložného kódu sa nedá dostať na žiadnu stránku okrem prihlásenia (stav „čaká na 2FA“ nie je prihlásenie).
+- [x] **AUTH-09** [nové]: Bez dokončeného prihlásenia (heslo, a ak má účet 2FA, aj TOTP alebo záložný kód; pri prvom prihlásení aj voľba v ponuke 2FA) sa nedá dostať na žiadnu stránku okrem prihlásenia (stav „čaká na 2FA“ nie je prihlásenie). (zmena 2026-10-28, rozhodnutie vlastníka, quick 261028-mf3)
 
 ### Môj subjekt (E2)
 
@@ -73,22 +73,22 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **INV-02**: Faktúra má jednu položku za každú časť (názov úlohy, hodiny, sadzba, suma), dátum vystavenia, dátum dodania (predvolene posledný deň mesiaca) a splatnosť. Variabilný symbol je číslo faktúry.
 - [x] **INV-03**: Pri vystavení sa do JSONB uloží kópia údajov: verzia subjektu, klient, mena, jazyk, DPH režim, režim fakturácie, zákonné texty, preložené popisky, URL portálu, kurz. Faktúra je odvtedy nemenná (vynútené aj DB oprávneniami/triggermi).
 - [x] **INV-04**: Číslovanie podľa nastaviteľného formátu s tokenmi `RRRR`, `RR`, `MM`, `#…` a pevným textom (predvolene `RRRRMM###`). Rad patrí subjektu. Poradie sa vynuluje každý mesiac, ak formát obsahuje `MM`, inak každý rok. Počiatočné číslo sa dá nastaviť. Čísla idú bez medzier a pridelenie je bezpečné voči súbehu (prvá faktúra 10/2026 = `202610001`, druhá `202610002`, prvá v 11/2026 = `202611001`).
-- [ ] **INV-05**: PDF faktúry vzniká z kópie údajov, má jednoduchý dizajn a len zákonné náležitosti podľa právneho profilu krajiny, DPH režimu a režimu fakturácie (SK neplatiteľ s textom „Nie som platiteľ DPH.“ a údajom o zápise, PL art. 113, EÚ B2B). Jazyk podľa klienta alebo subjektu.
+- [x] **INV-05**: PDF faktúry vzniká z kópie údajov, má jednoduchý dizajn a len zákonné náležitosti podľa právneho profilu krajiny, DPH režimu a režimu fakturácie (SK neplatiteľ s textom „Nie som platiteľ DPH.“ a údajom o zápise, PL art. 113, EÚ B2B). Jazyk podľa klienta alebo subjektu.
 - [ ] **INV-06**: Faktúra má stavy vystavená → odoslaná → uhradená. „Po splatnosti“ sa odvodzuje. „Stornovaná“ nastane po dobropise.
 - [ ] **INV-07**: Dobropis je celé storno pôvodnej faktúry so zápornými položkami, s vlastným radom alebo prefixom. Uvoľní zamknuté časti, aby sa dali fakturovať znova.
 - [x] **INV-08**: Všetky údaje faktúry sú uložené štruktúrovane (nielen v PDF a JSONB), aby bol neskôr možný export do KSeF FA(3).
 - [x] **INV-09** [nové, M1]: Každá položka má kód DPH (napr. `zw`, `np`, `0`, sadzba) s predvolenou hodnotou podľa právneho profilu. Výpočty pre platiteľa DPH sa neimplementujú.
 - [ ] **INV-10** [nové, M6]: Dobropis má povinný dôvod, odkaz na číslo a dátum pôvodnej faktúry, vlastný dátum vystavenia a typ opravy.
-- [ ] **INV-11** [nové, M8, rozhodnutie]: PDF faktúry obsahuje QR kód na platbu (SK: PAY by square; PL/CZ: zodpovedajúci štandard) zo snapshotu.
-- [ ] **INV-12** [nové, M13]: Faktúra má formu úhrady (predvolene prevod) a voliteľnú poznámku (napr. o úrokoch z omeškania).
+- [x] **INV-11** [nové, M8, rozhodnutie]: PDF faktúry obsahuje QR kód na platbu (SK: PAY by square; PL/CZ: zodpovedajúci štandard) zo snapshotu.
+- [x] **INV-12** [nové, M13]: Faktúra má formu úhrady (predvolene prevod) a voliteľnú poznámku (napr. o úrokoch z omeškania).
 - [x] **INV-13** [nové, M14, rozhodnutie]: PDF faktúry aj výkazu sa vygeneruje raz pri vystavení a uloží sa ako autoritatívny doklad so `sha256` a verziou šablóny. Zobrazenie a opätovné odoslanie použijú uložené bajty, nikdy sa neregenerujú.
 - [x] **INV-14** [nové, M16]: Vystavenie (zamknutie častí, výpočet, kópia údajov, pridelenie čísla, zápis faktúry a dokladov) prebehne v jednej transakcii. Zlyhanie neskoršieho kroku (napr. e-mail) nepreskočí ani neuvoľní číslo. Dva súbežné pokusy nikdy nevytvoria rovnaké ani preskočené číslo.
 - [x] **INV-15** [nové, rozhodnutie]: Dátum vystavenia môže byť v minulosti. Ak je skorší ako dátum poslednej faktúry v rade, aplikácia pred vystavením upozorní.
 
 ### Výkaz práce (E7)
 
-- [ ] **REP-01**: Ku každej faktúre vznikne PDF výkaz. Hlavička: subjekt, klient, obdobie. Tabuľka: odkaz na portál, názov, nacenené hodiny, fakturované hodiny v mesiaci (napr. „16 z 40 h“), suma. Ďalej súčty, sadzba a poznámka o DPH.
-- [ ] **REP-02**: Výkaz obsahuje práve tie časti, ktoré sú na faktúre, a je rovnako nemenný.
+- [x] **REP-01**: Ku každej faktúre vznikne PDF výkaz. Hlavička: subjekt, klient, obdobie. Tabuľka: odkaz na portál, názov, nacenené hodiny, fakturované hodiny v mesiaci (napr. „16 z 40 h“), suma. Ďalej súčty, sadzba a poznámka o DPH.
+- [x] **REP-02**: Výkaz obsahuje práve tie časti, ktoré sú na faktúre, a je rovnako nemenný.
 
 ### Odosielanie, úhrady a upomienky (E8)
 
@@ -132,7 +132,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [ ] **UI-03**: Na PC sú tabuľkové zoznamy úloh a faktúr, obrazovka „Fakturácia mesiaca“ a nastavenia (subjekty, klienti, číslovanie, limity, šablóny, zákonné texty, používatelia, 2FA, zariadenia).
 - [x] **PWA-01**: Manifest (ikony vrátane `apple-touch-icon`, `display: standalone`) a service worker s cache statických súborov a offline stránkou. Inštalácia na iPhone cez „Pridať na plochu“. Používateľ sa na dôveryhodnom zariadení neprihlasuje častejšie ako raz za 30 dní.
 - [x] **IMP-01**: Import úloh za 09 a 10/2026 z `docs/All4net-fakturovanie-prace.xlsx` pre klienta All4Net (27 €). „Zapracované = ÁNO“ sa importuje ako zapracovaná úloha s nezamknutou časťou v danom mesiaci. Import má suchý beh a je opakovateľný bez duplikátov.
-- [ ] **SET-01**: Zákonné texty a poznámky sa dajú upraviť pre každú krajinu, DPH režim, režim fakturácie a jazyk.
+- [x] **SET-01**: Zákonné texty a poznámky sa dajú upraviť pre každú krajinu, DPH režim, režim fakturácie a jazyk.
 - [x] **SET-02** [nové, M5]: Právny dôvod oslobodenia od DPH je štruktúrované pole s kódom (napr. `ART_113_1`, `ART_113_9`, reverse charge) v právnom profile a uloží sa do kópie údajov.
 
 ### Prevádzka a nefunkčné požiadavky
@@ -245,12 +245,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INV-15 | Phase 5 | Complete |
 | ALC-03 | Phase 5 | Complete |
 | NFR-06 | Phase 5 | Complete |
-| INV-05 | Phase 6 | Pending |
-| INV-11 | Phase 6 | Pending |
-| INV-12 | Phase 6 | Pending |
-| REP-01 | Phase 6 | Pending |
-| REP-02 | Phase 6 | Pending |
-| SET-01 | Phase 6 | Pending |
+| INV-05 | Phase 6 | Complete |
+| INV-11 | Phase 6 | Complete |
+| INV-12 | Phase 6 | Complete |
+| REP-01 | Phase 6 | Complete |
+| REP-02 | Phase 6 | Complete |
+| SET-01 | Phase 6 | Complete |
 | MAIL-01 | Phase 7 | Pending |
 | MAIL-02 | Phase 7 | Pending |
 | MAIL-03 | Phase 7 | Pending |

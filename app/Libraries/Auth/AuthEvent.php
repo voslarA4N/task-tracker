@@ -26,4 +26,7 @@ enum AuthEvent: string
     case TotpResetCli           = 'totp_reset_cli';
     case PasswordSetCli         = 'password_set_cli';
     case UserCreatedCli         = 'user_created_cli';
+    case TotpDeclined           = 'totp_declined';
+    case TotpDisabled           = 'totp_disabled';
+    case LoginNoTotp            = 'login_no_totp';
 }

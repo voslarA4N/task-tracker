@@ -12,7 +12,7 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 ### Validated
 
-- [x] Prihlásenie heslom (Argon2id) s povinnou TOTP 2FA, záložnými kódmi, „zapamätať zariadenie“ na 30 dní a denníkom prihlásení (E1). Validated in Phase 2: Identita a skoré nasadenie (staging https://work-tracker.vostack.dev, UAT na iPhone 2026-10-25; 7- a 30-dňová kontrola sledovaná v STATE.md)
+- [x] Prihlásenie heslom (Argon2id) s voliteľnou TOTP 2FA (od 2026-10-28, pôvodne povinná), záložnými kódmi, „zapamätať zariadenie“ na 30 dní a denníkom prihlásení (E1). Validated in Phase 2: Identita a skoré nasadenie (staging https://work-tracker.vostack.dev, UAT na iPhone 2026-10-25; 7- a 30-dňová kontrola sledovaná v STATE.md)
 
 - [x] Viac vlastných subjektov (SK, PL, CZ) s verziami „platné od“, vlastným číselným radom, menou, jazykom a DPH režimom (E2). Validated in Phase 3: Master dáta (subjekty a klienti), nasadené na https://work-tracker.vostack.dev 2026-10-25
 
@@ -20,13 +20,17 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 - [x] Úlohy s nacenením, stavmi V práci / Zapracovaná a odvodeným fakturačným stavom (E4). Validated in Phase 4: Úlohy, fakturačné časti a dashboard (nasadené na https://work-tracker.vostack.dev 2026-10-26, UAT na iPhone)
 
+- [x] Fakturačné časti po mesiacoch, zamykanie po vystavení kontrolované na serveri aj v DB (E5). Validated in Phase 5: Fakturačné jadro
+
+- [x] Jadro faktúr (E6): atómové vystavenie za klienta a mesiac, kópia údajov v JSONB, číslovanie `RRRRMM###` bez medzier a bezpečné voči súbehu, uložené PDF so sha256, náhľad chránený tokenom z celej kópie údajov, historické externé faktúry (FA 208-2026 za 09/2026 na produkcii). Validated in Phase 5: Fakturačné jadro (nasadené 2026-10-27, UAT na iPhone)
+
+- [x] PDF faktúra `inv-2` podľa právneho profilu (SK, CZ, PL art. 113, EÚ B2B), forma úhrady a poznámka, QR platba PAY by square 1.0.0 / SPAYD / ZBP, nemenný PDF výkaz `rep-1` vznikajúci v tej istej transakcii ako faktúra (E6, E7), editovateľné zákonné texty s revíziou a auditom (E12). Validated in Phase 6: Dokumenty faktúry a výkazu (UAT na stagingu 2026-10-28; znenia čakajú na potvrdenie účtovníčkou)
+
 ### Active
 
 Úplný zoznam s ID je v `.planning/REQUIREMENTS.md` (prevzatý z `docs/PRD.md`, epiky E1–E12, priority P0 + P1 + P2).
 
-- [ ] Fakturačné časti po mesiacoch, zamykanie po vystavení (kontrolované na serveri) (E5). Phase 4: časti po mesiacoch a DB poistka zámku hotové; zamknutie vystavením faktúry (ALC-03) príde v Phase 5
-- [ ] Faktúry za klienta a mesiac s kópiou údajov v JSONB, transakčným číslovaním `RRRRMM###`, PDF podľa právneho profilu a dobropisom (E6)
-- [ ] PDF výkaz práce ku každej faktúre, rovnako nemenný (E7)
+- [ ] Faktúry (E6): zvyšok – dobropis (Phase 9). Jadro hotové vo Phase 5, PDF podľa právneho profilu vo Phase 6
 - [ ] Odoslanie e-mailom, opätovné odoslanie, ručné úhrady, faktúry po splatnosti, upomienky (E8)
 - [ ] Meny EUR, PLN, CZK, kurzy z NBP / ECB / ČNB s ručným prepisom a uložením do kópie údajov (E9)
 - [ ] Dashboard (mobil, variant B), mesačné a ročné prehľady, export CSV a XLSX, limity obratu nastaviteľné v aplikácii (E10)
@@ -81,6 +85,7 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 | Limity obratu v tabuľke v nastaveniach (nie v kóde), obrat z vystavených faktúr podľa dátumu dodania | Limity sa menia každý rok, spôsob výpočtu sa dá nastaviť pre krajinu | — Pending |
 | Režim fakturácie a príznak limitu na klientovi, editovateľné zákonné texty | Cezhraničné pravidlá nie sú overené (riziko R1), rozhodne účtovníčka | — Pending |
 | Kurz podľa krajiny subjektu (PL: NBP, SK: ECB, CZ: ČNB) s ručným prepisom, uložený do kópie údajov | Prehľady a limity počítajú len z uložených prepočítaných súm, nikdy aktuálnym kurzom | — Pending |
+| TOTP 2FA voliteľná pre všetkých, ponuka pri prvom prihlásení, vypnutie v GUI (heslo + kód), reset hesla e-mailom a zapamätanie zariadenia aj bez 2FA | Rozhodnutie vlastníka 2026-10-28, prekonáva povinnú 2FA z Phase 2 | ✓ quick 261028-mf3 |
 | Shield + vlastná akcia TOTP. Ak Shield prekáža, vlastné prihlasovanie nad sessions CI4 | Shield nemá natívnu TOTP (riziko R4) | — Pending |
 | Bootstrap 5.3 + htmx 2 + Alpine.js, bez SPA a build pipeline | Výkon, malý JS, jednoduchá PWA | — Pending |
 | Plánovacie dokumenty v slovenčine. V1 = P0 + P1 + P2 (všetky epiky E1–E12) | Rozhodnutie používateľa pri inicializácii | — Pending |
@@ -114,4 +119,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-26 after Phase 4 (Úlohy, fakturačné časti a dashboard)*
+*Last updated: 2026-10-28 after Phase 6 (Dokumenty faktúry a výkazu)*

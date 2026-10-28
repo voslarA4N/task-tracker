@@ -144,6 +144,41 @@ final class DbResetGuardTest extends CIUnitTestCase
         $this->assertStringNotContainsString('DROP DATABASE', (string) file_get_contents($this->dir . '/docker.log'));
     }
 
+    public function testStagingModeKeepsGuardAndRunsStagingSeedInsteadOfDevSeeder(): void
+    {
+        file_put_contents($this->dir . '/.env', "CI_ENVIRONMENT = development\n");
+        $env = ['PATH' => $this->dir . '/bin:/usr/local/bin:/usr/bin:/bin', 'FAKE_LOG' => $this->dir . '/docker.log'];
+
+        [$code, $stderr] = $this->runReset($env, ['--staging']);
+        $log             = (string) file_get_contents($this->dir . '/docker.log');
+
+        $this->assertSame(0, $code, $stderr);
+        $this->assertStringContainsString('DROP DATABASE', $log);
+        $this->assertStringContainsString('-e staging.seed=true php php spark staging:seed', $log);
+        $this->assertStringNotContainsString('DevSeeder', $log);
+    }
+
+    public function testStagingModeIsRefusedOutsideDevelopment(): void
+    {
+        file_put_contents($this->dir . '/.env', "CI_ENVIRONMENT = production\n");
+
+        [$code, $stderr] = $this->runReset(['PATH' => $this->dir . '/bin:/usr/local/bin:/usr/bin:/bin', 'FAKE_LOG' => $this->dir . '/docker.log'], ['--staging']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertStringContainsString('REFUSED', $stderr);
+        $this->assertStringNotContainsString('staging:seed', is_file($this->dir . '/docker.log') ? (string) file_get_contents($this->dir . '/docker.log') : '');
+    }
+
+    public function testUnknownArgumentIsRejectedBeforeAnyDockerCall(): void
+    {
+        file_put_contents($this->dir . '/.env', "CI_ENVIRONMENT = development\n");
+
+        [$code] = $this->runReset(['PATH' => $this->dir . '/bin:/usr/local/bin:/usr/bin:/bin', 'FAKE_LOG' => $this->dir . '/docker.log'], ['--prod']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertFileDoesNotExist($this->dir . '/docker.log');
+    }
+
     public function testGuardRunsBeforeDrop(): void
     {
         $script = (string) file_get_contents(ROOTPATH . 'scripts/db-reset.sh');
@@ -157,12 +192,13 @@ final class DbResetGuardTest extends CIUnitTestCase
 
     /**
      * @param array<string, string> $env
+     * @param list<string>          $args
      *
      * @return array{0: int, 1: string}
      */
-    private function runReset(array $env): array
+    private function runReset(array $env, array $args = []): array
     {
-        $proc = proc_open(['sh', 'scripts/db-reset.sh'], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->dir, $env);
+        $proc = proc_open(['sh', 'scripts/db-reset.sh', ...$args], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->dir, $env);
         if (! is_resource($proc)) {
             throw new RuntimeException('proc_open failed');
         }

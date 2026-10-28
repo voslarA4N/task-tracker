@@ -90,6 +90,42 @@ final class InvoiceDraftServiceTest extends PgTestCase
         $this->assertSame($d->total, $issued->total);
     }
 
+    public function testZbpAmountWarningAboveLimit(): void
+    {
+        $below = $this->issueSetup(['country' => 'PL']);
+        $d     = $this->service()->draft($below['client'], '2026-10', $below['entity'], null, null, null);
+        $this->assertSame('1080.00', $d->total);
+        $this->assertFalse($d->zbpAmountWarning);
+
+        $this->resetMasterTables();
+        $above = $this->issueSetup(['country' => 'PL', 'parts' => [['40.00', '2026-10', ['rate' => '250.00']]]]);
+        $d     = $this->service()->draft($above['client'], '2026-10', $above['entity'], null, null, null);
+        $this->assertSame('10000.00', $d->total);
+        $this->assertTrue($d->zbpAmountWarning);
+        $this->assertTrue($d->canIssue);
+
+        $cash = $this->service()->draft($above['client'], '2026-10', $above['entity'], null, null, null, 'cash');
+        $this->assertFalse($cash->zbpAmountWarning);
+    }
+
+    public function testDeterministicQrFailureIsReportedInPreview(): void
+    {
+        $s = $this->issueSetup(['country' => 'PL']);
+        $d = $this->service()->draft($s['client'], '2026-10', $s['entity'], null, null, null);
+
+        $this->assertSame([['reason' => 'qr_failed', 'context' => ['qr_reason' => 'nip_invalid']]], $d->errors);
+        $this->assertFalse($d->canIssue);
+
+        $cash = $this->service()->draft($s['client'], '2026-10', $s['entity'], null, null, null, 'cash');
+        $this->assertSame([], $cash->errors);
+        $this->assertTrue($cash->canIssue);
+
+        $this->owner()->query("UPDATE entity_versions SET tax_id = '1234563218' WHERE entity_id = :e:", ['e' => $s['entity']]);
+        $fixed = $this->service()->draft($s['client'], '2026-10', $s['entity'], null, null, null);
+        $this->assertSame([], $fixed->errors);
+        $this->assertTrue($fixed->canIssue);
+    }
+
     public function testEndedEntityIsNotOffered(): void
     {
         $s     = $this->issueSetup();

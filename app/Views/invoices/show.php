@@ -18,7 +18,9 @@ $number   = (string) ($invoice['number'] ?? '');
 $ref      = (string) ($invoice['external_ref'] ?? '');
 $refOk    = preg_match('#^https?://#i', $ref) === 1;
 $heading  = $external ? ($number !== '' ? $number : lang('Invoices.externalTitle')) : $number;
-$doc      = $invoice['document'] ?? null;
+$doc       = $invoice['document'] ?? null;
+$reportDoc = $invoice['report_document'] ?? null;
+$schema    = (int) ($invoice['snapshot_schema'] ?? 1);
 $total    = MoneyFormat::format((string) $invoice['total'], $currency);
 $entity   = (array) ($snap['entity'] ?? []);
 $client   = (array) ($snap['client'] ?? []);
@@ -61,12 +63,19 @@ $empty = lang('Tasks.empty');
         </div>
 
         <?php if (! $external) : ?>
-            <div class="master-actions inv-pdf-actions mt-3">
-                <a class="btn btn-primary btn-touch" href="/invoices/<?= $id ?>/pdf" target="_blank" rel="noopener noreferrer"><?= esc(lang('Invoices.showPdf')) ?></a>
-                <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/pdf?download=1"><?= esc(lang('Invoices.downloadPdf')) ?></a>
+            <div class="inv-docs mt-3">
+                <a class="btn btn-primary btn-touch" href="/invoices/<?= $id ?>/pdf" target="_blank" rel="noopener noreferrer"><?= esc(lang('Invoices.invoicePdf')) ?></a>
+                <?php if ($reportDoc !== null || $schema >= 2) : ?>
+                    <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/report" target="_blank" rel="noopener noreferrer"><?= esc(lang('Invoices.reportPdf')) ?></a>
+                <?php else : ?>
+                    <span class="small text-body-secondary"><?= esc(lang('Invoices.noReport')) ?></span>
+                <?php endif ?>
             </div>
             <?php if (is_array($doc)) : ?>
                 <p class="small text-body-secondary mt-2 mb-0" title="<?= esc((string) $doc['sha256'], 'attr') ?>"><?= esc(lang('Invoices.shaHint', [substr((string) $doc['sha256'], 0, 16)])) ?></p>
+            <?php endif ?>
+            <?php if (is_array($reportDoc)) : ?>
+                <p class="small text-body-secondary mt-1 mb-0" title="<?= esc((string) $reportDoc['sha256'], 'attr') ?>"><?= esc(lang('Invoices.shaHintReport', [substr((string) $reportDoc['sha256'], 0, 16)])) ?></p>
             <?php endif ?>
         <?php endif ?>
     </section>
@@ -122,6 +131,8 @@ $empty = lang('Tasks.empty');
                 <dd class="small"><?= $legalTxt === '' ? esc($empty) : esc($legalTxt) ?></dd>
                 <dt><?= esc(lang('Invoices.labelTemplate')) ?></dt>
                 <dd><?= esc((string) ($invoice['template_version'] ?? $empty)) ?></dd>
+                <dt><?= esc(lang('Invoices.labelReportTemplate')) ?></dt>
+                <dd><?= is_array($reportDoc) ? esc((string) $reportDoc['template_version']) : esc($empty) ?></dd>
                 <dt><?= esc(lang('Invoices.labelSha')) ?></dt>
                 <dd class="small"><?= is_array($doc) ? esc((string) $doc['sha256']) : esc($empty) ?></dd>
             </dl>

@@ -10,7 +10,7 @@
  * @var bool                  $oob
  */
 $selected  = (string) ($values['entity'] ?? '');
-$htmxAttrs = 'hx-get="/fragments/invoice-preview" hx-trigger="change" hx-target="#inv-preview" hx-swap="outerHTML" hx-push-url="true" hx-include="#inv-client, #inv-month, #inv-issue-date, #inv-delivery-date, #inv-due-date"';
+$htmxAttrs = 'hx-get="/fragments/invoice-preview" hx-trigger="change" hx-target="#inv-preview" hx-swap="outerHTML" hx-push-url="true" hx-include="#inv-client, #inv-month, #inv-issue-date, #inv-delivery-date, #inv-due-date, #inv-payment-method, #inv-payment-note, #inv-payment-note-dirty"';
 ?>
 <div id="inv-entity-field"<?= $oob ? ' hx-swap-oob="true"' : '' ?>>
     <label class="form-label" for="inv-entity"><?= esc(lang('Invoicing.labelEntity')) ?></label>

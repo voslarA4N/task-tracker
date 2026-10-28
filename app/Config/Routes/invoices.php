@@ -7,3 +7,4 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('invoices', 'Invoices::index');
 $routes->get('invoices/(:num)', 'Invoices::show/$1');
 $routes->get('invoices/(:num)/pdf', 'Invoices::pdf/$1');
+$routes->get('invoices/(:num)/report', 'Invoices::report/$1');

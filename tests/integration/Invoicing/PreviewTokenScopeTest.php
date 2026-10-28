@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Invoicing;
 
+use App\Libraries\Invoicing\InvoiceCalculator;
 use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\IssueRejected;
+use App\Libraries\Invoicing\Samples\SampleSnapshots;
+use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Platform\FrozenClock;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -74,6 +77,15 @@ final class PreviewTokenScopeTest extends PgTestCase
         $this->assertSame(1, $this->rows('invoices'));
     }
 
+    public function testTokenIgnoresNumberAndQr(): void
+    {
+        $snap                  = SampleSnapshots::invoice('sk', null, ['number' => null, 'variable_symbol' => null]);
+        $with                  = (new SnapshotBuilder($this->rw()))->withNumber($snap, '202610001');
+        $with['payment']['qr'] = ['payload' => 'x'];
+
+        $this->assertSame(InvoiceCalculator::previewToken($snap), InvoiceCalculator::previewToken($with));
+    }
+
     public function testIssueDateChangeIsStale(): void
     {
         $s     = $this->issueSetup();
@@ -126,5 +138,37 @@ final class PreviewTokenScopeTest extends PgTestCase
         $rows  = $this->owner()->query('SELECT source_allocation_id FROM invoice_lines ORDER BY position')->getResultArray();
         $order = array_map(static fn (array $r): int => (int) $r['source_allocation_id'], $rows);
         $this->assertSame($preview, $order);
+    }
+
+    public function testPaymentIsIgnoredByTokenButInvoiceNoteChangeIsStale(): void
+    {
+        $s      = $this->issueSetup();
+        $token  = $this->previewTokenFor($s['client'], '2026-10', $s['entity'], $s['parts']);
+        $issued = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts'], ['previewToken' => $token, 'paymentMethod' => 'cash', 'paymentNote' => 'Ina poznamka']));
+        $this->assertNotSame('', $issued->number);
+    }
+
+    public function testInvoiceNoteWordingChangeIsStale(): void
+    {
+        $s = $this->issueSetup();
+        $this->owner()->query("INSERT INTO legal_texts (country, vat_regime, billing_mode, language, key, body, provisional, updated_at) VALUES ('SK', 'sk_non_vat', NULL, 'sk', 'invoice_note', 'Povodne', false, now())");
+
+        try {
+            $token = $this->previewTokenFor($s['client'], '2026-10', $s['entity'], $s['parts']);
+            $this->owner()->query("UPDATE legal_texts SET body = 'Zmenene' WHERE key = 'invoice_note'");
+            $this->assertStale($s, $token);
+        } finally {
+            $this->owner()->query("DELETE FROM legal_texts WHERE key = 'invoice_note'");
+        }
+    }
+
+    public function testRealQrDoesNotChangeToken(): void
+    {
+        $s      = $this->issueSetup();
+        $token  = $this->previewTokenFor($s['client'], '2026-10', $s['entity'], $s['parts']);
+        $issued = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts'], ['previewToken' => $token]));
+
+        $qr = $this->owner()->query("SELECT snapshot->'payment'->'qr'->>'standard' AS st FROM invoices WHERE number = :n:", ['n' => $issued->number])->getRow();
+        $this->assertSame('pay_by_square', $qr->st);
     }
 }
