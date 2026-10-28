@@ -80,8 +80,9 @@ final class QrPaymentBuilderTest extends CIUnitTestCase
         $s['totals']['total'] = '9999.99';
         $qr                   = (new QrPaymentBuilder())->build($s);
 
-        $this->assertSame('zbp', $qr['standard'] ?? null);
-        $this->assertStringContainsString('|999999|', (string) ($qr['payload'] ?? ''));
+        $this->assertNotNull($qr);
+        $this->assertSame('zbp', $qr['standard']);
+        $this->assertStringContainsString('|999999|', $qr['payload']);
     }
 
     public function testPlAmountAboveLimitHasNoQr(): void
