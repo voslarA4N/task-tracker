@@ -13,7 +13,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 - [x] **Phase 3: Master dáta (subjekty a klienti)** - Verziované subjekty, klienti, právny dôvod oslobodenia, audit zmien (completed 2026-10-25)
 - [x] **Phase 4: Úlohy, fakturačné časti a dashboard** - Evidencia úloh, rozdelenie na časti po mesiacoch, dashboard, import z Excelu (completed 2026-10-26)
 - [x] **Phase 5: Fakturačné jadro** - Atómové vystavenie nemennej faktúry, číslovanie, kópia údajov, uložené PDF so sha256 (completed 2026-10-27)
-- [ ] **Phase 6: Dokumenty faktúry a výkazu** - Právne profily, PDF faktúra a výkaz, QR platba, editovateľné zákonné texty
+- [x] **Phase 6: Dokumenty faktúry a výkazu** - Právne profily, PDF faktúra a výkaz, QR platba, editovateľné zákonné texty (completed 2026-10-28)
 - [ ] **Phase 7: Doručenie, úhrady a upomienky** - E-mail s PDF, opätovné odoslanie, úhrady, po splatnosti, upomienka
 - [ ] **Phase 8: Meny a kurzy** - NBP/ECB/ČNB kurzy s ručným prepisom a uložením do kópie údajov
 - [ ] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí
@@ -332,7 +332,7 @@ Plans:
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
-- [ ] 06-09-PLAN.md — spark documents:samples (vzorové PDF pre staging a účtovníčku), meranie výkonu (skupina performance), ručný UAT QR (vlna 9)
+- [x] 06-09-PLAN.md — spark documents:samples (vzorové PDF pre staging a účtovníčku), meranie výkonu (skupina performance), ručný UAT QR (vlna 9)
 
 **UI hint**: yes
 **Poznámky**: **Potrebuje /gsd-research-phase** (právne profily, SMTP, mPDF fonty a pamäť, PAY by square vyžaduje LZMA). **Závislosť od účtovníčky:** finálne znenie zákonných textov a náležitostí (§ 3a ObZ, art. 106e, art. 113 ust. 1 vs 9, reverse charge pri PL subjekt → SK B2B) sa potvrdzuje až s ňou; texty sú konfigurácia v DB, nie kód. Nasadiť na staging a posielať si vzorové PDF.
@@ -451,7 +451,7 @@ Plans:
 | 3. Master dáta (subjekty a klienti) | 10/10 | Complete    | 2026-10-25 |
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
-| 6. Dokumenty faktúry a výkazu | 8/9 | In Progress|  |
+| 6. Dokumenty faktúry a výkazu | 9/9 | Complete   | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 0/0 | Not started | - |
 | 8. Meny a kurzy | 0/0 | Not started | - |
 | 9. Dobropisy | 0/0 | Not started | - |
