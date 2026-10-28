@@ -46,7 +46,22 @@ final class SeedAdminCredentialsTest extends CIUnitTestCase
 
         $this->assertSame('owner@example.test', $c->email);
         $this->assertSame(self::PASSWORD, $c->password);
-        $this->assertSame(self::SECRET, $c->totpSecret);
+    }
+
+    public function testFileWithoutTotpSecretLoads(): void
+    {
+        file_put_contents($this->file, "SEED_ADMIN_EMAIL=a@example.test\nSEED_ADMIN_PASSWORD=" . self::PASSWORD . "\n");
+
+        $c = SeedAdminCredentials::load($this->file, 'production');
+
+        $this->assertSame('a@example.test', $c->email);
+    }
+
+    public function testInvalidTotpSecretIsIgnored(): void
+    {
+        file_put_contents($this->file, "SEED_ADMIN_EMAIL=a@example.test\nSEED_ADMIN_PASSWORD=" . self::PASSWORD . "\nSEED_ADMIN_TOTP_SECRET=abc1!\n");
+
+        $this->assertSame(self::PASSWORD, SeedAdminCredentials::load($this->file, 'production')->password);
     }
 
     public function testMissingFileRefusesInProduction(): void
@@ -59,7 +74,6 @@ final class SeedAdminCredentialsTest extends CIUnitTestCase
         $c = SeedAdminCredentials::load($this->file, 'development', $this->fallback());
 
         $this->assertSame('dev@example.test', $c->email);
-        $this->assertSame(self::SECRET, $c->totpSecret);
     }
 
     public function testMissingFileAndFallbackRefuses(): void
@@ -72,8 +86,6 @@ final class SeedAdminCredentialsTest extends CIUnitTestCase
         $cases = [
             'bad email'      => ['SEED_ADMIN_EMAIL' => 'not-an-email'],
             'empty password' => ['SEED_ADMIN_PASSWORD' => ''],
-            'bad secret'     => ['SEED_ADMIN_TOTP_SECRET' => 'abc1!'],
-            'short secret'   => ['SEED_ADMIN_TOTP_SECRET' => 'JBSWY3DPEHPK3PXP'],
         ];
 
         foreach ($cases as $name => $override) {
@@ -100,9 +112,8 @@ final class SeedAdminCredentialsTest extends CIUnitTestCase
     private function fallback(): array
     {
         return [
-            'SEED_ADMIN_EMAIL'       => 'dev@example.test',
-            'SEED_ADMIN_PASSWORD'    => self::PASSWORD,
-            'SEED_ADMIN_TOTP_SECRET' => self::SECRET,
+            'SEED_ADMIN_EMAIL'    => 'dev@example.test',
+            'SEED_ADMIN_PASSWORD' => self::PASSWORD,
         ];
     }
 

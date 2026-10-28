@@ -19,6 +19,8 @@ final class SecurityNotifier
     public const PASSWORD_CHANGED         = 'password_changed';
     public const PASSWORD_RESET           = 'password_reset';
     public const TOTP_RESET               = 'totp_reset';
+    public const TOTP_ENABLED             = 'totp_enabled';
+    public const TOTP_DISABLED            = 'totp_disabled';
     public const BACKUP_CODES_REGENERATED = 'backup_codes_regenerated';
     public const DEVICE_TRUSTED           = 'device_trusted';
     public const ACCOUNT_LOCKED           = 'account_locked';
@@ -26,6 +28,8 @@ final class SecurityNotifier
         self::PASSWORD_CHANGED,
         self::PASSWORD_RESET,
         self::TOTP_RESET,
+        self::TOTP_ENABLED,
+        self::TOTP_DISABLED,
         self::BACKUP_CODES_REGENERATED,
         self::DEVICE_TRUSTED,
         self::ACCOUNT_LOCKED,

@@ -111,6 +111,22 @@ final class AccountRecovery
 
     public function resetTwoFactor(User $user, DateTimeImmutable $now): void
     {
+        $this->clearTwoFactor($user, $now, null, 'totp_reset', AuthEvent::TotpResetCli);
+        $this->notifier->notify(SecurityNotifier::TOTP_RESET, (string) $user->email, $this->locale((int) $user->id), ['at' => $now]);
+    }
+
+    /**
+     * Vypnutie 2FA pouzivatelom z nastaveni. Overenie hesla a kodu robi volajuci; pouzivatel je oznaceny
+     * ako "odmietol 2FA", aby sa ponuka pri dalsom prihlaseni nezobrazila.
+     */
+    public function disableTwoFactor(User $user, DateTimeImmutable $now): void
+    {
+        $this->clearTwoFactor($user, $now, $now, 'totp_disabled', AuthEvent::TotpDisabled);
+        $this->notifier->notify(SecurityNotifier::TOTP_DISABLED, (string) $user->email, $this->locale((int) $user->id), ['at' => $now]);
+    }
+
+    private function clearTwoFactor(User $user, DateTimeImmutable $now, ?DateTimeImmutable $declinedAt, string $revokeReason, AuthEvent $event): void
+    {
         $userId = (int) $user->id;
         $db     = $this->db();
 
@@ -118,16 +134,16 @@ final class AccountRecovery
 
         try {
             $db->query(
-                'UPDATE user_security SET totp_secret_enc = NULL, totp_enabled_at = NULL, totp_last_step = NULL, updated_at = :now: WHERE user_id = :u:',
-                ['now' => $now->format(self::FORMAT), 'u' => $userId],
+                'UPDATE user_security SET totp_secret_enc = NULL, totp_enabled_at = NULL, totp_last_step = NULL, totp_declined_at = :declined:, updated_at = :now: WHERE user_id = :u:',
+                ['declined' => $declinedAt?->format(self::FORMAT), 'now' => $now->format(self::FORMAT), 'u' => $userId],
             );
             $this->backupCodes->deleteAll($userId);
-            $this->devices->revokeAll($userId, 'totp_reset', $now);
+            $this->devices->revokeAll($userId, $revokeReason, $now);
             $this->devices->bumpEpoch($userId, $now);
             model(UserIdentityModel::class)->deleteIdentitiesByType($user, TotpAction::TYPE);
-            // Bez 2FA sa reset hesla e-mailom nepouziva (WR-04).
+            // Rozpracovane obnovy hesla sa po zmene stavu 2FA zahodia (povodne WR-04, ponechane ako opatrnost).
             $db->query('DELETE FROM password_resets WHERE user_id = :u: AND used_at IS NULL', ['u' => $userId]);
-            $this->audit->record(AuthEvent::TotpResetCli, true, $userId);
+            $this->audit->record($event, true, $userId);
             $db->transComplete();
         } catch (Throwable $e) {
             $db->transRollback();
@@ -136,8 +152,6 @@ final class AccountRecovery
         } finally {
             $db->transException(false);
         }
-
-        $this->notifier->notify(SecurityNotifier::TOTP_RESET, (string) $user->email, $this->locale($userId), ['at' => $now]);
     }
 
     private function locale(int $userId): string

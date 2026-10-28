@@ -7,17 +7,18 @@ namespace App\Libraries\StagingSeed;
 /**
  * Prihlasovacie udaje seed admina (D-02). Citane zo suboru KEY=VALUE bez zapisu do prostredia procesu.
  * Chybove spravy nesu iba nazvy klucov, nikdy hodnoty.
+ * SEED_ADMIN_TOTP_SECRET sa od 2026-10-28 ignoruje (2FA je volitelna, seed admin ju nema); riadok v starom subore nevadi.
  */
 final readonly class SeedAdminCredentials
 {
     public const KEY_EMAIL    = 'SEED_ADMIN_EMAIL';
     public const KEY_PASSWORD = 'SEED_ADMIN_PASSWORD';
+    /** Tolerovany a ignorovany kluc zo starsich suborov. */
     public const KEY_SECRET   = 'SEED_ADMIN_TOTP_SECRET';
 
     private function __construct(
         public string $email,
         public string $password,
-        public string $totpSecret,
     ) {
     }
 
@@ -35,7 +36,7 @@ final readonly class SeedAdminCredentials
         } elseif ($environment === 'production') {
             throw new SeedRefused(SeedRefused::CREDENTIALS, 'credentials file is missing');
         } else {
-            foreach ([self::KEY_EMAIL, self::KEY_PASSWORD, self::KEY_SECRET] as $key) {
+            foreach ([self::KEY_EMAIL, self::KEY_PASSWORD] as $key) {
                 $value = $fallback === null ? env($key) : ($fallback[$key] ?? null);
 
                 if (is_string($value)) {
@@ -44,7 +45,7 @@ final readonly class SeedAdminCredentials
             }
         }
 
-        foreach ([self::KEY_EMAIL, self::KEY_PASSWORD, self::KEY_SECRET] as $key) {
+        foreach ([self::KEY_EMAIL, self::KEY_PASSWORD] as $key) {
             if (($values[$key] ?? '') === '') {
                 throw new SeedRefused(SeedRefused::CREDENTIALS, 'missing ' . $key);
             }
@@ -56,13 +57,7 @@ final readonly class SeedAdminCredentials
             throw new SeedRefused(SeedRefused::CREDENTIALS, 'invalid ' . self::KEY_EMAIL);
         }
 
-        $secret = strtoupper((string) preg_replace('/[\s=]+/', '', $values[self::KEY_SECRET]));
-
-        if (preg_match('/^[A-Z2-7]{32,}$/D', $secret) !== 1) {
-            throw new SeedRefused(SeedRefused::CREDENTIALS, 'invalid ' . self::KEY_SECRET);
-        }
-
-        return new self($email, $values[self::KEY_PASSWORD], $secret);
+        return new self($email, $values[self::KEY_PASSWORD]);
     }
 
     /**

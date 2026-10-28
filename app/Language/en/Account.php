@@ -66,4 +66,7 @@ return [
     'event_totp_reset_cli'           => '2FA reset by administrator',
     'event_password_set_cli'         => 'Password set by administrator',
     'event_user_created_cli'         => 'Account created',
+    'event_totp_declined'            => '2FA declined',
+    'event_totp_disabled'            => '2FA turned off',
+    'event_login_no_totp'            => 'Signed in without 2FA',
 ];

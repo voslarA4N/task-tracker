@@ -93,6 +93,39 @@ final class RecoveryTest extends AuthTestCase
         $this->assertStringContainsString('reset', strtolower((string) $this->mail()->archive['subject']));
     }
 
+    public function testResetTwoFactorClearsDeclinedFlag(): void
+    {
+        $user = $this->prepared();
+        $this->owner()->query('UPDATE user_security SET totp_declined_at = now() WHERE user_id = ?', [$user->id]);
+
+        (new AccountRecovery())->resetTwoFactor($user, $this->clock->now());
+
+        $this->assertNull($this->owner()->query('SELECT totp_declined_at FROM user_security WHERE user_id = ?', [$user->id])->getRow()->totp_declined_at);
+    }
+
+    public function testDisableTwoFactorWipesEverythingAndMarksDeclined(): void
+    {
+        $user  = $this->prepared();
+        $epoch = (new TrustedDeviceService())->currentEpoch((int) $user->id);
+        $this->owner()->query("INSERT INTO password_resets (user_id, token_hash, ip, created_at, expires_at) VALUES (?, ?, '203.0.113.9', now(), now() + interval '1 hour')", [$user->id, hash('sha256', 'x')]);
+
+        (new AccountRecovery())->disableTwoFactor($user, $this->clock->now());
+
+        $sec = $this->owner()->query('SELECT totp_secret_enc, totp_enabled_at, totp_last_step, totp_declined_at FROM user_security WHERE user_id = ?', [$user->id])->getRowArray();
+        $this->assertNull($sec['totp_secret_enc']);
+        $this->assertNull($sec['totp_enabled_at']);
+        $this->assertNull($sec['totp_last_step']);
+        $this->assertNotNull($sec['totp_declined_at']);
+        $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM backup_codes WHERE user_id = ?', [$user->id])->getRow()->c);
+        $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM trusted_devices WHERE user_id = ? AND revoked_at IS NULL', [$user->id])->getRow()->c);
+        $this->assertSame(2, (int) $this->owner()->query("SELECT count(*) AS c FROM trusted_devices WHERE user_id = ? AND revoked_reason = 'totp_disabled'", [$user->id])->getRow()->c);
+        $this->assertSame($epoch + 1, (new TrustedDeviceService())->currentEpoch((int) $user->id));
+        $this->assertSame(0, (int) $this->owner()->query("SELECT count(*) AS c FROM auth_identities WHERE user_id = ? AND type = 'totp_gateway'", [$user->id])->getRow()->c);
+        $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM password_resets WHERE user_id = ? AND used_at IS NULL', [$user->id])->getRow()->c);
+        $this->assertSame(1, $this->eventCount('totp_disabled'));
+        $this->assertSame(['owner@example.test'], $this->mail()->archive['recipients'] ?? null);
+    }
+
     public function testSetPasswordViaCliChangesPasswordRevokesDevicesAndNotifies(): void
     {
         $user  = $this->prepared();

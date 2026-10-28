@@ -66,4 +66,7 @@ return [
     'event_totp_reset_cli'           => 'Reset 2FA správcom',
     'event_password_set_cli'         => 'Heslo nastavené správcom',
     'event_user_created_cli'         => 'Účet vytvorený',
+    'event_totp_declined'            => '2FA odmietnutá',
+    'event_totp_disabled'            => 'Vypnuté 2FA',
+    'event_login_no_totp'            => 'Prihlásenie bez 2FA',
 ];

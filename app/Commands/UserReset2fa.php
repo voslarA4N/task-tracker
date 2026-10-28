@@ -52,7 +52,7 @@ final class UserReset2fa extends BaseCommand
 
         (new AccountRecovery())->resetTwoFactor($user, service('clock')->now());
 
-        CLI::write('2FA bola zrušená. Pri ďalšom prihlásení sa nastaví nanovo.', 'green');
+        CLI::write('2FA bola zrušená. Pri ďalšom prihlásení sa zobrazí ponuka nastavenia 2FA.', 'green');
 
         return EXIT_SUCCESS;
     }
