@@ -157,8 +157,8 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
                     <?php if (isset($payErrors['payment_method'])) : ?>
                         <div class="invalid-feedback d-block"><?= esc($payErrors['payment_method']) ?></div>
                     <?php endif ?>
-                    <div class="form-text"<?= $draft->paymentMethod === 'transfer' ? ' hidden' : '' ?> x-bind:hidden="isNotTransfer"><?= esc(lang('Invoicing.paymentHintQr')) ?></div>
-                    <div class="form-text"<?= $draft->paymentMethod === 'transfer' ? '' : ' hidden' ?> x-bind:hidden="isTransfer"><?= esc(lang('Invoicing.paymentHintNoQr')) ?></div>
+                    <div class="form-text"<?= $draft->paymentMethod === 'transfer' ? '' : ' hidden' ?> x-bind:hidden="isNotTransfer"><?= esc(lang('Invoicing.paymentHintQr')) ?></div>
+                    <div class="form-text"<?= $draft->paymentMethod === 'transfer' ? ' hidden' : '' ?> x-bind:hidden="isTransfer"><?= esc(lang('Invoicing.paymentHintNoQr')) ?></div>
                 </div>
                 <div>
                     <label class="form-label" for="inv-payment-note"><?= esc(lang('Invoicing.paymentNoteLabel')) ?></label>

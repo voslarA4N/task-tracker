@@ -357,4 +357,21 @@ final class InvoicingPreviewTest extends AuthTestCase
         $cash = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10&payment_method=cash'));
         $this->assertStringNotContainsString('Suma je vyššia ako 9 999,99 PLN', $cash);
     }
+
+    public function testQrHintsMatchPaymentMethodWithoutJs(): void
+    {
+        $s        = $this->issueSetup();
+        $transfer = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+        $cash     = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10&payment_method=cash'));
+
+        $qrShown  = '<div class="form-text" x-bind:hidden="isNotTransfer">Na faktúre bude QR kód';
+        $qrHidden = '<div class="form-text" hidden x-bind:hidden="isNotTransfer">Na faktúre bude QR kód';
+        $noShown  = '<div class="form-text" x-bind:hidden="isTransfer">QR kód sa netlačí.';
+        $noHidden = '<div class="form-text" hidden x-bind:hidden="isTransfer">QR kód sa netlačí.';
+
+        $this->assertStringContainsString($qrShown, $transfer);
+        $this->assertStringContainsString($noHidden, $transfer);
+        $this->assertStringContainsString($qrHidden, $cash);
+        $this->assertStringContainsString($noShown, $cash);
+    }
 }
