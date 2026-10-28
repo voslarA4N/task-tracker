@@ -6,6 +6,7 @@ namespace App\Database\Migrations;
 
 use App\Database\Support\GrantsPrivileges;
 use CodeIgniter\Database\Migration;
+use RuntimeException;
 
 /**
  * SET-01, D-14: zakonne texty upravuje vlastnik cez UI. Pridava stlpec revision, limit znenia 2000 znakov
@@ -24,11 +25,20 @@ final class AddLegalTextsRevision extends Migration
         $this->db->query("COMMENT ON TABLE legal_texts IS 'Legal wording per profile and language; app_rw may INSERT and UPDATE body, provisional, revision, updated_at only (D-14)'");
     }
 
+    /**
+     * Rollback nikdy nemaze znenia vlastnika (WR-05): ak je niektore dlhsie ako povodny limit 1000 znakov,
+     * odmietne sa este pred akoukolvek zmenou a vlastnik ho musi najprv skratit.
+     */
     public function down(): void
     {
+        $tooLong = (int) $this->db->query('SELECT count(*) AS n FROM legal_texts WHERE char_length(body) > 1000')->getRow()->n;
+
+        if ($tooLong > 0) {
+            throw new RuntimeException($tooLong . ' legal text(s) exceed 1000 characters; shorten them before rolling back AddLegalTextsRevision.');
+        }
+
         $this->db->query('REVOKE UPDATE (body, provisional, revision, updated_at) ON legal_texts FROM app_rw');
         $this->db->query('REVOKE INSERT ON legal_texts FROM app_rw');
-        $this->db->query('DELETE FROM legal_texts WHERE char_length(body) > 1000');
         $this->replaceBodyCheck(1000);
         $this->db->query('ALTER TABLE legal_texts DROP COLUMN revision');
         $this->db->query("COMMENT ON TABLE legal_texts IS 'Provisional legal wording per profile and language; read-only for app_rw (D-17)'");
