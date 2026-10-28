@@ -1,6 +1,13 @@
 #!/bin/sh
 # D-09: reset vyvojovej DB (drop, provisioning, migracie ako app_owner, DevSeeder).
+# `--staging` (make reset-staging): namiesto DevSeeder spusti `spark staging:seed` (vymyslena historia od
+# 2026-01-01, prihlasovacie udaje SEED_ADMIN_* z dev .env). Rovnaka ochrana prostredia ako pri beznom reset.
 set -eu
+MODE=${1:-dev}
+case "$MODE" in
+  dev|--staging) ;;
+  *) echo "Pouzitie: db-reset.sh [--staging]" >&2; exit 2 ;;
+esac
 cd "$(dirname "$0")/.."
 . scripts/lib-env-guard.sh
 # Allow-list (development|testing), fail closed: hostitel (.env + procesne prostredie)...
@@ -16,4 +23,8 @@ fi
 docker compose exec -T db psql -U postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS task_tracker WITH (FORCE)'
 docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U postgres -d postgres -v dbname=task_tracker -f /opt/provision/provision.sql'
 docker compose exec -T -u www-data php php spark migrate -g owner --all
-docker compose exec -T -u www-data php php spark db:seed 'App\Database\Seeds\DevSeeder'
+if [ "$MODE" = "--staging" ]; then
+  docker compose exec -T -u www-data -e staging.seed=true php php spark staging:seed
+else
+  docker compose exec -T -u www-data php php spark db:seed 'App\Database\Seeds\DevSeeder'
+fi

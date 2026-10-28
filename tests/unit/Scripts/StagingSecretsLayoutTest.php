@@ -49,6 +49,23 @@ final class StagingSecretsLayoutTest extends CIUnitTestCase
         $this->assertStringContainsString('profiles: ["migrate"]', $migrate);
     }
 
+    public function testSeedServiceIsOneOffAppRwAndTheOnlyOneSeeingSeedAdminSecrets(): void
+    {
+        $seed = $this->service('seed');
+
+        $this->assertStringContainsString('profiles: ["seed"]', $seed);
+        $this->assertStringContainsString('./app.env:/var/www/html/.env:ro', $seed);
+        $this->assertStringContainsString('./secrets/seed_admin.env:/run/secrets/seed_admin.env:ro', $seed);
+        $this->assertStringNotContainsString('migrate.env', $seed);
+        $this->assertStringContainsString('"staging:seed"', $seed);
+
+        foreach (['php', 'migrate', 'nginx', 'db'] as $name) {
+            $this->assertStringNotContainsString('seed_admin', (string) preg_replace('/^\s*#.*$/m', '', $this->service($name)), "{$name} nesmie vidiet seed_admin.env");
+        }
+
+        $this->assertSame(1, substr_count($this->compose(), './secrets/seed_admin.env'));
+    }
+
     public function testDbGetsPasswordsOnlyAsSecretFiles(): void
     {
         $compose = $this->compose();

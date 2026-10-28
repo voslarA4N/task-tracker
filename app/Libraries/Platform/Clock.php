@@ -40,6 +40,17 @@ class Clock
         return $date !== false && $date->format('Y-m-d') === $iso ? $date : null;
     }
 
+    /**
+     * Prisny parser lokalneho datumu a casu YYYY-MM-DDTHH:MM:SS v casovej zone aplikacie, null pri neplatnom.
+     * Pouziva ho staging seed na spatne datovanu historiu.
+     */
+    public function parseDateTime(string $iso): ?DateTimeImmutable
+    {
+        $at = DateTimeImmutable::createFromFormat('!Y-m-d\TH:i:s', $iso, $this->timezone());
+
+        return $at !== false && $at->format('Y-m-d\TH:i:s') === $iso ? $at : null;
+    }
+
     public function timezone(): DateTimeZone
     {
         return new DateTimeZone($this->timezoneName);
