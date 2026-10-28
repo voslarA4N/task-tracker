@@ -145,6 +145,14 @@ final class IssueInputTest extends CIUnitTestCase
         $this->assertNull(IssueInput::toCommand(['payment_note' => '  '] + $this->valid(), 1)->paymentNote);
     }
 
+    public function testNoteWithTabPassesValidationAndBuildsCommand(): void
+    {
+        $v = ['payment_note' => "Stlpec A\tStlpec B\n\tOdsadene"] + $this->valid();
+
+        $this->assertSame([], IssueInput::validate($v));
+        $this->assertSame("Stlpec A Stlpec B\n Odsadene", IssueInput::toCommand($v, 1)->paymentNote);
+    }
+
     public function testCommandRejectsInvalidPayment(): void
     {
         $this->expectException(InvalidArgumentException::class);

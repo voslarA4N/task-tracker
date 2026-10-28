@@ -147,11 +147,12 @@ final class IssueInput
     }
 
     /**
-     * \r\n na \n, trim, prazdny retazec na null, riadiace znaky (okrem \n a \t) sa odstrania.
+     * \r\n na \n, TAB na medzeru, trim, prazdny retazec na null, ostatne riadiace znaky (okrem \n) sa odstrania.
+     * Pravidla sa zhoduju s IssueCommand, takze zvalidovana poznamka nikdy nezhodi prikaz (WR-01).
      */
     public static function normalizeNote(string $note): ?string
     {
-        $note = str_replace(["\r\n", "\r"], "\n", $note);
+        $note = str_replace(["\r\n", "\r", "\t"], ["\n", "\n", ' '], $note);
         $note = (string) preg_replace('/[\x00-\x08\x0B-\x1F\x7F]/', '', $note);
         $note = trim($note);
 
