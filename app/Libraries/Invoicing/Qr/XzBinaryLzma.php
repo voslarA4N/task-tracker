@@ -9,21 +9,28 @@ use Throwable;
 /**
  * Raw LZMA1 cez binarku xz. proc_open s polom argumentov (bez shellu), vstup len cez stdin (T-06-17).
  *
- * Volanie bezi vnutri transakcie vystavenia (zamky FOR UPDATE), preto ma tvrdy casovy limit, neblokujuce
+ * Volanie bezi vnutri transakcie vystavenia (zamky FOR UPDATE), preto ma casovy limit necinnosti (5 s), neblokujuce
  * rury so stream_select (bez deadlocku stdout/stderr) a kazde zlyhanie I/O sa mapuje na QrPaymentFailed (WR-04).
  */
 final class XzBinaryLzma implements Lzma
 {
-    public const TIMEOUT_SECONDS = 5.0;
-    private const COMMAND        = ['xz', '--format=raw', '--lzma1=preset=9,lc=3,lp=0,pb=2,dict=128KiB', '-c'];
-    private const CHUNK          = 65536;
+    public const TIMEOUT_MS = 5000;
+    private const COMMAND   = ['xz', '--format=raw', '--lzma1=preset=9,lc=3,lp=0,pb=2,dict=128KiB', '-c'];
+    private const CHUNK     = 65536;
 
     /**
-     * @param list<string> $command prikaz (testy podstrcia iny proces)
+     * Jedno cakanie stream_select. Limit sa pocita z cakani bez aktivity (bez hodin, ktore su mimo Clock zakazane):
+     * zaseknuty xz nic nezapisuje ani necita, takze kazde kolo bez udalosti ubera cely krok.
+     */
+    private const SLICE_MS = 50;
+
+    /**
+     * @param list<string> $command   prikaz (testy podstrcia iny proces)
+     * @param int          $timeoutMs najdlhsi sucet cakani bez aktivity
      */
     public function __construct(
         private readonly array $command = self::COMMAND,
-        private readonly float $timeout = self::TIMEOUT_SECONDS,
+        private readonly int $timeoutMs = self::TIMEOUT_MS,
     ) {
     }
 
@@ -60,7 +67,7 @@ final class XzBinaryLzma implements Lzma
      */
     private function exchange(array $pipes, string $raw): array
     {
-        $deadline = microtime(true) + $this->timeout;
+        $idleMs   = 0;
         $length   = strlen($raw);
         $offset   = 0;
         $buffer   = ['out' => '', 'err' => ''];
@@ -77,19 +84,23 @@ final class XzBinaryLzma implements Lzma
         }
 
         while ($readable !== []) {
-            $left = $deadline - microtime(true);
-
-            if ($left <= 0) {
-                throw new QrPaymentFailed('xz timed out after ' . $this->timeout . ' s', QrPaymentFailed::COMPRESSION_FAILED);
+            if ($idleMs >= $this->timeoutMs) {
+                throw new QrPaymentFailed('xz timed out after ' . $this->timeoutMs . ' ms without activity', QrPaymentFailed::COMPRESSION_FAILED);
             }
 
             $r     = array_values($readable);
             $w     = $stdin === null ? [] : [$stdin];
             $e     = null;
-            $ready = @stream_select($r, $w, $e, (int) $left, (int) (($left - (int) $left) * 1_000_000));
+            $ready = @stream_select($r, $w, $e, 0, self::SLICE_MS * 1000);
 
             if ($ready === false) {
                 throw new QrPaymentFailed('xz stream_select failed', QrPaymentFailed::COMPRESSION_FAILED);
+            }
+
+            if ($ready === 0) {
+                $idleMs += self::SLICE_MS;
+
+                continue;
             }
 
             if ($stdin !== null && $w !== []) {
