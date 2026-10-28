@@ -170,7 +170,7 @@ Poradie: najprv edge a kontroly z kroku 10, potom záznamy 1-14 (nezávislé na 
 | 11 | SRV | _imaps._tcp | (nič) | `0 1 993 mail.vostack.dev` | - |
 | 12 | SRV | _submissions._tcp | (nič) | `0 1 465 mail.vostack.dev` | - |
 | 13 | TXT | @ (SPF) | `v=spf1 -all` | `v=spf1 mx -all` | - |
-| 14 | TXT | _dmarc | `v=DMARC1; p=reject...` (presná hodnota zachytená pred zmenou) | `v=DMARC1; p=none; rua=mailto:dmarc@vostack.dev` | - |
+| 14 | TXT | _dmarc | `v=DMARC1; p=reject;` (stav 2026-10-28; pred zmenou overiť digom) | `v=DMARC1; p=none; rua=mailto:dmarc@vostack.dev` | - |
 | 15 | MX | @ | `0 .` (null MX) | zmazať, potom `10 mail.vostack.dev` | - (**NAPOSLEDY**) |
 
 Nepublikovať: `_submission._tcp` (587), `_jmap/_caldavs/_carddavs/_pop3s`, `ua-auto-config` / `_ua-auto-config`, TLSA (bez DNSSEC), CAA. Null MX musí byť pred pridaním nového MX zmazaný (musí byť jediný MX) a dva `v=spf1` na jednom mene dajú permerror, preto sa záznamy 13 a 15 **nahrádzajú**.
@@ -237,7 +237,7 @@ Po nasadení a po zmene DNS (krok 13):
 
 Prvé tri kroky sú nezávislé, poradie je odporúčané:
 
-1. **DNS:** vrátiť MX `0 .`, SPF `v=spf1 -all`, `_dmarc` na zachytenú hodnotu `p=reject`, zmazať záznamy 1-12 z tabuľky v sekcii 5.
+1. **DNS:** vrátiť MX `0 .`, SPF `v=spf1 -all`, `_dmarc` na `v=DMARC1; p=reject;` (alebo hodnotu zachytenú pred zmenou), zmazať záznamy 1-12 z tabuľky v sekcii 5.
 2. **Edge:** `cp /opt/edge/nginx.conf.pre-mail /opt/edge/nginx.conf`, `cd /opt/edge && docker compose -f compose.edge.yaml exec edge nginx -t && docker compose -f compose.edge.yaml exec edge nginx -s reload`.
 3. **Stack:** `cd /opt/mail && docker compose -f compose.mail.yaml down` (volumes ostávajú; `down -v` iba na výslovnú žiadosť vlastníka).
 4. Odstrániť dva cron riadky (sekcia 4, krok 12).
