@@ -132,6 +132,20 @@ final class LegalTextsControllerTest extends AuthTestCase
         $this->assertSame('Prvá', $this->owner()->query('SELECT body FROM legal_texts WHERE id = :id:', ['id' => $this->textId])->getRow()->body);
     }
 
+    public function testStaleFormCarriesCurrentRevisionAndCanBeResaved(): void
+    {
+        $this->loginOwner();
+        $this->send(['body' => 'Prvá', 'revision' => '1'])->assertStatus(302);
+
+        $stale = $this->body($this->send(['body' => 'Moja úprava', 'revision' => '1']));
+        $this->assertStringContainsString('name="revision" value="2"', $stale);
+        $this->assertStringContainsString('>Moja úprava</textarea>', $stale);
+        $this->assertStringContainsString('id="lt-current-body">Prvá</div>', $stale);
+
+        $this->send(['body' => 'Moja úprava', 'revision' => '2'])->assertStatus(302);
+        $this->assertSame('Moja úprava', $this->owner()->query('SELECT body FROM legal_texts WHERE id = :id:', ['id' => $this->textId])->getRow()->body);
+    }
+
     private function loginOwner(): void
     {
         $user = $this->createUser();

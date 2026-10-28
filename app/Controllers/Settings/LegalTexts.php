@@ -120,6 +120,13 @@ final class LegalTexts extends BaseController
             $error  = $stale ? null : lang($e->reason === 'too_long' && $text['key'] === 'invoice_note' ? 'LegalTexts.errorNoteTooLong' : 'LegalTexts.errorBody');
             $status = $stale ? 409 : 422;
 
+            // Pri konflikte formular dostane aktualnu reviziu a aktualne znenie z DB vedla navrhu, inak by kazde dalsie
+            // ulozenie znova skoncilo 409 a jediny vychod by zahodil upraveny text (WR-06).
+            if ($stale) {
+                $text     = (new LegalTextService())->find($id) ?? $text;
+                $revision = (int) $text['revision'];
+            }
+
             return $this->response->setStatusCode($status)->setBody(view('settings/legal_texts/edit', $this->formData($text, $body, $provisional, $revision, $error, $stale)));
         }
 

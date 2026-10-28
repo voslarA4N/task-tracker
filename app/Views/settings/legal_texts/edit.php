@@ -36,6 +36,10 @@ $noteKeys = ['vat_note' => 'LegalTexts.keyVatNote', 'invoice_note' => 'LegalText
 
     <?php if ($stale) : ?>
         <div class="alert alert-danger" role="alert"><?= esc(lang('LegalTexts.errorStale')) ?></div>
+        <div class="mb-3">
+            <div class="form-label" id="lt-current-label"><?= esc(lang('LegalTexts.currentBody')) ?></div>
+            <div class="form-control bg-body-secondary text-break" aria-labelledby="lt-current-label" id="lt-current-body"><?= nl2br(esc((string) $text['body'])) ?></div>
+        </div>
     <?php endif ?>
 
     <form method="post" action="/settings/legal-texts/<?= $id ?>" data-submit-once novalidate>
