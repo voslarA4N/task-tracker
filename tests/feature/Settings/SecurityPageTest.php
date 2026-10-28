@@ -104,6 +104,7 @@ final class SecurityPageTest extends AuthTestCase
     public function testDevicesAreListedWithBadgeDatesAndRevokeModal(): void
     {
         $user    = $this->createUser();
+        $this->enrollTotp($user);
         $current = $this->trustDevice($user, self::SAFARI);
         $other   = $this->trustDevice($user, self::CHROME);
         $curRow  = $this->deviceRow($current);
@@ -122,8 +123,8 @@ final class SecurityPageTest extends AuthTestCase
         $this->assertStringContainsString('action="/settings/security/devices/' . $othRow['id'] . '/revoke"', $html);
         $this->assertStringContainsString('action="/settings/security/devices/' . $curRow['id'] . '/revoke"', $html);
         $this->assertSame(1, substr_count($html, esc(lang('Account.revokeCurrentWarning'))));
-        // dva formulare odvolania + karta hesla + modal pregenerovania kodov
-        $this->assertSame(4, substr_count($html, csrf_token()));
+        // dva formulare odvolania + karta hesla + modal pregenerovania kodov (2FA aktivna)
+        $this->assertSame(5, substr_count($html, csrf_token()));
         $this->assertStringContainsString('2026', $html);
         $this->assertStringNotContainsString($current, $html);
         $this->assertStringNotContainsString($other, $html);
