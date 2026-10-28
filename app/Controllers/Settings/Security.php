@@ -27,6 +27,7 @@ final class Security extends BaseController
     private const EVENT_LIMIT = 50;
     private const CODES_KEY   = 'settings_codes_display';
     private const TXT_NAME    = 'work-tracker-zalozne-kody.txt';
+    private const SETUP_KEY   = 'settings_totp_secret';
 
     public function index(): string
     {
@@ -108,6 +109,10 @@ final class Security extends BaseController
     {
         $user = $this->currentUser();
 
+        if (! $this->hasTotp((int) $user->id)) {
+            return redirect()->to('/settings/security');
+        }
+
         $failed = $this->reauthenticate($user, $this->postString('current_password'), 'codes');
 
         if ($failed !== null) {
@@ -135,7 +140,7 @@ final class Security extends BaseController
         $user  = $this->currentUser();
         $codes = $this->displayCodes();
 
-        if ($codes === null) {
+        if ($codes === null || ! $this->hasTotp((int) $user->id)) {
             return redirect()->to('/settings/security');
         }
 
@@ -180,11 +185,161 @@ final class Security extends BaseController
     }
 
     /**
-     * Opatovne overenie sucasnym heslom (D-19): null pri uspechu, inak 429 (zamok) alebo 422.
-     *
-     * @param string $form password alebo codes (ktora karta ukaze chybu)
+     * Zapnutie 2FA z nastaveni: zobrazi QR a tajomstvo (iba sifrovane v session).
      */
-    private function reauthenticate(User $user, string $password, string $form): ?ResponseInterface
+    public function setupTotp(): ResponseInterface
+    {
+        $user = $this->currentUser();
+
+        if ($this->hasTotp((int) $user->id)) {
+            return redirect()->to('/settings/security');
+        }
+
+        return $this->setupPage($user, $this->setupSecret(), null, 200);
+    }
+
+    public function enableTotp(): ResponseInterface
+    {
+        $user   = $this->currentUser();
+        $userId = (int) $user->id;
+
+        if ($this->hasTotp($userId)) {
+            return redirect()->to('/settings/security');
+        }
+
+        $secret = $this->setupSecret();
+        $failed = $this->passwordFailure($user, $this->postString('current_password'));
+
+        if ($failed !== null) {
+            return $this->setupPage($user, $secret, $failed[0], $failed[1]);
+        }
+
+        $svc  = new TotpService();
+        $now  = service('clock')->now();
+        $code = (string) preg_replace('/\s+/', '', $this->postString('code'));
+        $step = $svc->matchStep($secret, $code, null);
+
+        if ($step === null) {
+            $failed = $this->codeFailure($user, 'enable');
+
+            return $this->setupPage($user, $secret, $failed[0], $failed[1]);
+        }
+
+        $db = db_connect();
+        $db->query(
+            'UPDATE user_security SET totp_secret_enc = :enc:, totp_enabled_at = :now:, totp_last_step = :step:, totp_declined_at = NULL, updated_at = :now: WHERE user_id = :u: AND totp_enabled_at IS NULL',
+            ['enc' => $svc->encryptSecret($secret), 'now' => $now->format('Y-m-d H:i:sP'), 'step' => $step, 'u' => $userId],
+        );
+
+        if ($db->affectedRows() !== 1) {
+            return redirect()->to('/settings/security');
+        }
+
+        session()->remove(self::SETUP_KEY);
+        (new AuditLog())->record(AuthEvent::TotpEnrolled, true, $userId, null, 'settings');
+
+        // Zapnutie 2FA zneplatni ostatne (iba heslom chranene) relacie a dovernute zariadenia; tato relacia pokracuje.
+        $devices = new TrustedDeviceService();
+        $devices->revokeAll($userId, 'totp_enabled', $now);
+        $devices->bumpEpoch($userId, $now);
+        session()->remove('device_id');
+        session()->set([
+            'auth_epoch'    => $devices->currentEpoch($userId),
+            'last_activity' => $now->getTimestamp(),
+        ]);
+
+        if (ENVIRONMENT !== 'testing') {
+            session()->regenerate(true);
+        }
+
+        $codes = (new BackupCodeService())->generate($userId, $now);
+        session()->set(self::CODES_KEY, $svc->encryptSecret((string) json_encode($codes)));
+        (new SecurityNotifier())->notify(SecurityNotifier::TOTP_ENABLED, (string) $user->email, $this->userLocale($userId), ['at' => $now]);
+
+        return redirect()->to('/settings/security/backup-codes')->setCookie($devices->expiredCookie());
+    }
+
+    /**
+     * Vypnutie 2FA (D-03): sucasne heslo A kod z aplikacie alebo nepouzity zalozny kod.
+     */
+    public function disableTotp(): ResponseInterface
+    {
+        $user   = $this->currentUser();
+        $userId = (int) $user->id;
+
+        if (! $this->hasTotp($userId)) {
+            return redirect()->to('/settings/security');
+        }
+
+        $email = mb_strtolower((string) $user->email);
+        $now   = service('clock')->now();
+
+        if ((new LockoutService())->lockedUntil($this->request->getIPAddress(), $email, $now) !== null) {
+            (new AuditLog())->record(AuthEvent::LockedAttempt, false, $userId, $email);
+
+            return $this->errorPage($user, 'disableError', lang('Login.errorLocked'), 429);
+        }
+
+        $failed = $this->reauthenticate($user, $this->postString('current_password'), 'disable');
+
+        if ($failed !== null) {
+            return $failed;
+        }
+
+        $input = trim($this->postString('code'));
+        $plain = (string) preg_replace('/\s+/', '', $input);
+
+        if (preg_match('/^[0-9]{6}$/', $plain) === 1) {
+            $valid = $this->claimCurrentTotp($userId, $plain);
+        } else {
+            $valid = $input !== '' && (new BackupCodeService())->consume($userId, $input, $now);
+        }
+
+        if (! $valid) {
+            $failed = $this->codeFailure($user, 'disable');
+
+            return $this->errorPage($user, 'disableError', $failed[0], $failed[1]);
+        }
+
+        (new AccountRecovery())->disableTwoFactor($user, $now);
+
+        $devices = new TrustedDeviceService();
+        session()->remove('device_id');
+        session()->set([
+            'auth_epoch'    => $devices->currentEpoch($userId),
+            'last_activity' => $now->getTimestamp(),
+        ]);
+
+        if (ENVIRONMENT !== 'testing') {
+            session()->regenerate(true);
+        }
+
+        session()->setFlashdata('app_notice', ['type' => 'info', 'message' => lang('Account.twofaDisabledNotice')]);
+
+        return redirect()->to('/settings/security')->setCookie($devices->expiredCookie());
+    }
+
+    private function claimCurrentTotp(int $userId, string $code): bool
+    {
+        $row = db_connect()->table('user_security')->select('totp_secret_enc, totp_last_step')->where('user_id', $userId)->get()->getRow();
+
+        if ($row === null || $row->totp_secret_enc === null) {
+            return false;
+        }
+
+        $svc  = new TotpService();
+        $last = $row->totp_last_step === null ? null : (int) $row->totp_last_step;
+        $step = $svc->matchStep($svc->decryptSecret((string) $row->totp_secret_enc), $code, $last);
+
+        return $step !== null && $svc->claimStep($userId, $step);
+    }
+
+    /**
+     * Chybny kod: dennik, pocitadlo zamku, e-mail pri zamku. Vrati [sprava, stav].
+     *
+     * @return array{0: string, 1: int}
+     */
+    private function codeFailure(User $user, string $detail): array
     {
         $email  = mb_strtolower((string) $user->email);
         $userId = (int) $user->id;
@@ -192,12 +347,104 @@ final class Security extends BaseController
         $ip     = $this->request->getIPAddress();
         $lock   = new LockoutService();
         $audit  = new AuditLog();
-        $key    = $form === 'password' ? 'passwordError' : 'codesError';
+
+        $audit->record(AuthEvent::LoginTotpFail, false, $userId, $email, $detail);
+
+        if ($lock->registerFailure($ip, $email, $now)) {
+            $audit->record(AuthEvent::Lockout, false, $userId, $email, 'account');
+            (new SecurityNotifier())->notify(
+                SecurityNotifier::ACCOUNT_LOCKED,
+                $email,
+                $this->userLocale($userId),
+                ['at' => $now, 'ip' => $ip, 'minutes' => LockoutService::LOCK_MINUTES],
+            );
+        }
+
+        if ($lock->lockedUntil($ip, $email, service('clock')->now()) !== null) {
+            return [lang('Login.errorLocked'), 429];
+        }
+
+        return [lang('TwoFactor.errorInvalidCode'), 422];
+    }
+
+    private function hasTotp(int $userId): bool
+    {
+        $row = db_connect()->table('user_security')->select('totp_enabled_at')->where('user_id', $userId)->get()->getRow();
+
+        return $row !== null && $row->totp_enabled_at !== null;
+    }
+
+    private function setupSecret(): string
+    {
+        $svc    = new TotpService();
+        $stored = session(self::SETUP_KEY);
+
+        if (is_string($stored) && $stored !== '') {
+            return $svc->decryptSecret($stored);
+        }
+
+        $secret = $svc->newSecret();
+        session()->set(self::SETUP_KEY, $svc->encryptSecret($secret));
+
+        return $secret;
+    }
+
+    private function setupPage(User $user, string $secret, ?string $error, int $status): ResponseInterface
+    {
+        $svc = new TotpService();
+
+        return $this->response
+            ->setStatusCode($status)
+            ->setHeader('Cache-Control', 'no-store')
+            ->setBody(view('settings/totp_setup', [
+                'title'     => lang('Account.enableTitle'),
+                'qrSvg'     => $svc->qrSvg($svc->provisioningUri($secret, (string) $user->email)),
+                'secretFmt' => $svc->formatSecretForDisplay($secret),
+                'secret'    => $secret,
+                'error'     => $error,
+            ]));
+    }
+
+    /**
+     * Opatovne overenie sucasnym heslom (D-19): null pri uspechu, inak 429 (zamok) alebo 422.
+     *
+     * @param string $form password, codes alebo disable (ktora karta ukaze chybu)
+     */
+    private function reauthenticate(User $user, string $password, string $form): ?ResponseInterface
+    {
+        $failed = $this->passwordFailure($user, $password);
+
+        if ($failed === null) {
+            return null;
+        }
+
+        $key = match ($form) {
+            'password' => 'passwordError',
+            'disable'  => 'disableError',
+            default    => 'codesError',
+        };
+
+        return $this->errorPage($user, $key, $failed[0], $failed[1]);
+    }
+
+    /**
+     * Kontrola sucasneho hesla so zamkom a dennikom: null pri uspechu, inak [sprava, stav].
+     *
+     * @return array{0: string, 1: int}|null
+     */
+    private function passwordFailure(User $user, string $password): ?array
+    {
+        $email  = mb_strtolower((string) $user->email);
+        $userId = (int) $user->id;
+        $now    = service('clock')->now();
+        $ip     = $this->request->getIPAddress();
+        $lock   = new LockoutService();
+        $audit  = new AuditLog();
 
         if ($lock->lockedUntil($ip, $email, $now) !== null) {
             $audit->record(AuthEvent::LockedAttempt, false, $userId, $email);
 
-            return $this->errorPage($user, $key, lang('Login.errorLocked'), 429);
+            return [lang('Login.errorLocked'), 429];
         }
 
         $hash = (string) $user->password_hash;
@@ -219,10 +466,10 @@ final class Security extends BaseController
         }
 
         if ($lock->lockedUntil($ip, $email, service('clock')->now()) !== null) {
-            return $this->errorPage($user, $key, lang('Login.errorLocked'), 429);
+            return [lang('Login.errorLocked'), 429];
         }
 
-        return $this->errorPage($user, $key, lang('Account.reauthFailed'), 422);
+        return [lang('Account.reauthFailed'), 422];
     }
 
     private function errorPage(User $user, string $key, string $message, int $status): ResponseInterface
@@ -325,6 +572,7 @@ final class Security extends BaseController
 
         return [
             'title'           => lang('Account.securityTitle'),
+            'totpActive'      => $this->hasTotp($userId),
             'remainingCodes'  => (new BackupCodeService())->remaining($userId),
             'devices'         => $devices,
             'currentDeviceId' => is_int($deviceId) ? $deviceId : null,

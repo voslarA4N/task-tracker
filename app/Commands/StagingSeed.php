@@ -24,7 +24,7 @@ final class StagingSeed extends BaseCommand
         SeedRefused::FLAG_OFF        => 'staging.seed nie je true (povolene len v app.env stagingu)',
         SeedRefused::PRODUCTION_HOST => 'baseURL je produkcny hostitel',
         SeedRefused::NOT_PRISTINE    => 'databaza nie je prazdna',
-        SeedRefused::CREDENTIALS     => 'chybaju alebo su neplatne udaje seed admina (SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD, SEED_ADMIN_TOTP_SECRET)',
+        SeedRefused::CREDENTIALS     => 'chybaju alebo su neplatne udaje seed admina (SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD)',
     ];
 
     protected $group       = 'Staging';

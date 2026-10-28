@@ -203,12 +203,12 @@ final class TotpVerifyTest extends AuthTestCase
         $this->assertSame(1, $this->eventCount('lockout'));
     }
 
-    public function testUserWithoutTotpGoesToSetup(): void
+    public function testUserWithoutTotpGoesToGateway(): void
     {
         $this->pending(false);
         $result = $this->fetch('/2fa/verify');
         $result->assertStatus(302);
-        $this->assertStringEndsWith('/2fa/setup', $result->response()->getHeaderLine('Location'));
+        $this->assertStringEndsWith('/2fa', $result->response()->getHeaderLine('Location'));
     }
 
     public function testLoggedInUserGoesHome(): void

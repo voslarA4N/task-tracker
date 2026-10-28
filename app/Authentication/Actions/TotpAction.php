@@ -20,7 +20,9 @@ final class TotpAction implements ActionInterface, ConditionalActionInterface
     public const TYPE = 'totp_gateway';
 
     /**
-     * 2FA je povinna pre kazdeho (fail closed).
+     * Brana plati pre kazdeho: po hesle prejde kazde prihlasenie cez /2fa, kde TwoFactor::index rozhodne
+     * (overenie kodu / prihlasenie iba heslom pre pouzivatela, ktory 2FA odmietol / ponuka 2FA).
+     * Samotna 2FA je od 2026-10-28 volitelna (rozhodnutie vlastnika), brana ostava fail closed.
      */
     public function appliesTo(User $user): bool
     {

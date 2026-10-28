@@ -12,7 +12,7 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 ### Validated
 
-- [x] Prihlásenie heslom (Argon2id) s povinnou TOTP 2FA, záložnými kódmi, „zapamätať zariadenie“ na 30 dní a denníkom prihlásení (E1). Validated in Phase 2: Identita a skoré nasadenie (staging https://work-tracker.vostack.dev, UAT na iPhone 2026-10-25; 7- a 30-dňová kontrola sledovaná v STATE.md)
+- [x] Prihlásenie heslom (Argon2id) s voliteľnou TOTP 2FA (od 2026-10-28, pôvodne povinná), záložnými kódmi, „zapamätať zariadenie“ na 30 dní a denníkom prihlásení (E1). Validated in Phase 2: Identita a skoré nasadenie (staging https://work-tracker.vostack.dev, UAT na iPhone 2026-10-25; 7- a 30-dňová kontrola sledovaná v STATE.md)
 
 - [x] Viac vlastných subjektov (SK, PL, CZ) s verziami „platné od“, vlastným číselným radom, menou, jazykom a DPH režimom (E2). Validated in Phase 3: Master dáta (subjekty a klienti), nasadené na https://work-tracker.vostack.dev 2026-10-25
 
@@ -84,6 +84,7 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 | Limity obratu v tabuľke v nastaveniach (nie v kóde), obrat z vystavených faktúr podľa dátumu dodania | Limity sa menia každý rok, spôsob výpočtu sa dá nastaviť pre krajinu | — Pending |
 | Režim fakturácie a príznak limitu na klientovi, editovateľné zákonné texty | Cezhraničné pravidlá nie sú overené (riziko R1), rozhodne účtovníčka | — Pending |
 | Kurz podľa krajiny subjektu (PL: NBP, SK: ECB, CZ: ČNB) s ručným prepisom, uložený do kópie údajov | Prehľady a limity počítajú len z uložených prepočítaných súm, nikdy aktuálnym kurzom | — Pending |
+| TOTP 2FA voliteľná pre všetkých, ponuka pri prvom prihlásení, vypnutie v GUI (heslo + kód), reset hesla e-mailom a zapamätanie zariadenia aj bez 2FA | Rozhodnutie vlastníka 2026-10-28, prekonáva povinnú 2FA z Phase 2 | ✓ quick 261028-mf3 |
 | Shield + vlastná akcia TOTP. Ak Shield prekáža, vlastné prihlasovanie nad sessions CI4 | Shield nemá natívnu TOTP (riziko R4) | — Pending |
 | Bootstrap 5.3 + htmx 2 + Alpine.js, bez SPA a build pipeline | Výkon, malý JS, jednoduchá PWA | — Pending |
 | Plánovacie dokumenty v slovenčine. V1 = P0 + P1 + P2 (všetky epiky E1–E12) | Rozhodnutie používateľa pri inicializácii | — Pending |

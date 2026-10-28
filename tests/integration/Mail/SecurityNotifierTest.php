@@ -104,6 +104,8 @@ final class SecurityNotifierTest extends CIUnitTestCase
             'password_changed'         => ['password_changed'],
             'password_reset'           => ['password_reset'],
             'totp_reset'               => ['totp_reset'],
+            'totp_enabled'             => ['totp_enabled'],
+            'totp_disabled'            => ['totp_disabled'],
             'backup_codes_regenerated' => ['backup_codes_regenerated'],
             'device_trusted'           => ['device_trusted'],
             'account_locked'           => ['account_locked'],

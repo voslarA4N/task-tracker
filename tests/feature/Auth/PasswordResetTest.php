@@ -366,34 +366,26 @@ final class PasswordResetTest extends AuthTestCase
         $this->assertStringEndsWith('/login', $result->response()->getHeaderLine('Location'));
     }
 
-    public function testAccountWithoutTotpGetsNoTokenAndSameAnswer(): void
+    public function testAccountWithoutTotpGetsTokenAndCanReset(): void
     {
         $this->createUser(self::EMAIL);
 
-        $result = $this->postTo('/password/forgot', ['email' => self::EMAIL]);
+        $token = $this->requestToken();
+        $this->assertSame(1, $this->tokenCount());
+        $this->assertSame(1, $this->eventCount('password_reset_requested'));
 
-        $result->assertStatus(200);
-        $this->assertStringContainsString(esc(lang('PasswordReset.sent')), $this->body($result));
-        $this->assertSame(0, $this->tokenCount());
-        $this->assertEmpty($this->mail()->archive ?? null);
-        $this->assertSame(0, $this->eventCount('password_reset_requested'));
+        $this->assertStringNotContainsString(esc(lang('PasswordReset.invalid')), $this->body($this->get('/password/reset/' . $token)));
+        $post = $this->postTo('/password/reset/' . $token, ['password' => self::NEW_PASSWORD, 'password_confirm' => self::NEW_PASSWORD]);
+        $post->assertStatus(302);
+        $this->assertStringEndsWith('/login', $post->response()->getHeaderLine('Location'));
     }
 
-    public function testTokenStopsWorkingAfterTwoFactorReset(): void
+    public function testTwoFactorResetDeletesUnusedTokens(): void
     {
         [$user] = $this->ownerWithTotp();
-        $token  = $this->requestToken();
-        $this->owner()->query("INSERT INTO password_resets (user_id, token_hash, ip, created_at, expires_at) VALUES (?, ?, '203.0.113.9', now(), now() + interval '1 hour')", [$user->id, hash('sha256', str_repeat('ab', 32))]);
-
-        // Token vydany pred resetom 2FA nesmie viest na nastavenie noveho autentifikatora.
-        $this->owner()->query('UPDATE user_security SET totp_enabled_at = NULL, totp_secret_enc = NULL WHERE user_id = ?', [$user->id]);
-        $this->assertStringContainsString(esc(lang('PasswordReset.invalid')), $this->body($this->get('/password/reset/' . $token)));
-        $post = $this->postTo('/password/reset/' . $token, ['password' => self::NEW_PASSWORD, 'password_confirm' => self::NEW_PASSWORD]);
-        $this->assertStringContainsString(esc(lang('PasswordReset.invalid')), $this->body($post));
-        $this->assertNull((new PasswordResetService())->consume(str_repeat('ab', 32), $this->clock->now()));
+        $this->requestToken();
 
         // AccountRecovery::resetTwoFactor nepouzite tokeny rovno zmaze.
-        $this->enrollTotp($user);
         (new AccountRecovery())->resetTwoFactor($user, $this->clock->now());
         $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM password_resets WHERE used_at IS NULL')->getRow()->c);
     }

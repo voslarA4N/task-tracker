@@ -67,7 +67,7 @@ Priority: **P0** = nutné pre spustenie, **P1** = nutné vo V1, môže prísť p
 | ID | Požiadavka | Priorita |
 |---|---|---|
 | AUTH-01 | Prihlásenie e-mailom a heslom (Argon2id). | P0 |
-| AUTH-02 | Povinná TOTP 2FA (RFC 6238; Google, Microsoft Authenticator). Nastavenie cez QR kód pri prvom prihlásení. | P0 |
+| AUTH-02 | Povinná TOTP 2FA (RFC 6238; Google, Microsoft Authenticator). Nastavenie cez QR kód pri prvom prihlásení. Zmena 2026-10-28: voliteľná (rozhodnutie vlastníka). | P0 |
 | AUTH-03 | 10 jednorazových záložných kódov. Dajú sa pregenerovať. | P0 |
 | AUTH-04 | Obmedzenie počtu pokusov o prihlásenie a o zadanie TOTP. | P0 |
 | AUTH-05 | „Zapamätať zariadenie“ na 30 dní. Na dôveryhodnom zariadení sa TOTP nevyžaduje. Zariadenia sa dajú odvolať. | P0 |

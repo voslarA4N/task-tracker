@@ -104,7 +104,7 @@ Tajomstvá sú rozdelené podľa toho, kto ich potrebuje (WR-06). Bežiaci php-f
 | `.env` | interpolácia compose a `deploy.sh`: `COMPOSE_PROJECT_NAME`, `EDGE_ALIAS`, `NGINX_ROBOTS_TAG`, domény, TLS, `IMAGE_PREFIX`, **žiadne heslá** | `docker compose`, `deploy.sh`, `cert-renew.sh` | 0640 `deploy` |
 | `app.env` | CI4 runtime: `CI_ENVIRONMENT`, `app.baseURL`, `database.default.*` (app_rw), `email.*`, `encryption.key`, `auth.backupCodePepper` | php-fpm (mount ako `/var/www/html/.env`) | 0640 `deploy:82` |
 | `migrate.env` | obsah `app.env` + `database.owner.*` (app_owner) | iba `docker compose run migrate` v `deploy.sh` | 0600 `deploy` |
-| `secrets/seed_admin.env` (iba staging) | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_TOTP_SECRET` | iba jednorazový kontajner `seed` pri `STAGING_RESEED=1` (sekcia 19) | 0600 `deploy` |
+| `secrets/seed_admin.env` (iba staging) | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | iba jednorazový kontajner `seed` pri `STAGING_RESEED=1` (sekcia 19) | 0600 `deploy` |
 | `secrets/db_superuser_password`, `secrets/db_owner_password`, `secrets/db_rw_password` | jedno heslo bez nového riadku | kontajner `db` (`*_PASSWORD_FILE`), použité iba pri inicializácii prázdneho volume | 0640 `deploy:70` |
 
 `deploy.sh` pred prvým volaním dockeru overí, že súbory existujú, nie sú čitateľné pre všetkých, `.env` neobsahuje heslá ani CI4 kľúče a `app.env` neobsahuje `database.owner.*`. Inak skončí so správou a predošlý stack beží ďalej.
@@ -232,8 +232,8 @@ ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag
 ```
 
 - `user:password`: skrytý prompt, minimálne 12 znakov, heslo nesmie obsahovať časť e-mailu pred `@`. Odvolá všetky dôveryhodné zariadenia.
-- `user:reset-2fa`: zruší TOTP aj záložné kódy, 2FA sa nastaví znova pri ďalšom prihlásení (`--yes` preskočí potvrdenie). Zmaže aj nepoužité tokeny obnovy hesla.
-- Reset hesla e-mailom (`/password/forgot`) funguje iba pre účet s aktívnym TOTP (WR-04). Účet bez 2FA (nový z `user:create` pred prvým prihlásením alebo po `user:reset-2fa`) token nedostane, odpoveď stránky je rovnaká. Heslo takého účtu nastaví admin cez `user:password`.
+- `user:reset-2fa`: zruší TOTP aj záložné kódy a príznak odmietnutia, pri ďalšom prihlásení sa zobrazí ponuka 2FA (2FA je od 2026-10-28 voliteľná) (`--yes` preskočí potvrdenie). Zmaže aj nepoužité tokeny obnovy hesla.
+- Reset hesla e-mailom (`/password/forgot`) funguje pre každý aktívny účet, s 2FA aj bez nej (od 2026-10-28, rozhodnutie vlastníka; pôvodné obmedzenie WR-04 je zrušené). Obmedzenia počtu žiadostí a rovnaká odpoveď stránky ostávajú. Po resete sa účet s 2FA prihlasuje heslom aj kódom, účet bez 2FA iba heslom.
 - Limit obnovy hesla: najviac 3 e-maily za hodinu na účet a 5 na IP (WR-03), ďalšie žiadosti sa ticho zahodia (log `password_reset.throttled`).
 
 ## 13. Prvé nasadenie
@@ -431,35 +431,27 @@ Seed nie je jedna veľká transakcia (každá služba má vlastnú, ako v UI). P
 
 ### Jednorazové založenie `secrets/seed_admin.env` na serveri
 
-Admin na stagingu má pevný e-mail, heslo a TOTP tajomstvo, ktoré prežijú každý reset. Súbor vzniká iba na serveri ako `deploy` v `/opt/work-tracker-staging`, nikdy nie v gite ani v chate.
+Admin na stagingu má pevný e-mail a heslo, ktoré prežijú každý reset. Admin je bez 2FA. Súbor vzniká iba na serveri ako `deploy` v `/opt/work-tracker-staging`, nikdy nie v gite ani v chate.
 
 ```
 cd /opt/work-tracker-staging
 umask 077
 SEED_EMAIL='<tvoj e-mail pre staging>'
 SEED_PW=$(openssl rand -base64 24 | tr -d '/+=')
-SEED_TOTP=$(openssl rand 20 | base32 | tr -d '=')
-printf 'SEED_ADMIN_EMAIL = %s\nSEED_ADMIN_PASSWORD = %s\nSEED_ADMIN_TOTP_SECRET = %s\n' "$SEED_EMAIL" "$SEED_PW" "$SEED_TOTP" > secrets/seed_admin.env
+printf 'SEED_ADMIN_EMAIL = %s\nSEED_ADMIN_PASSWORD = %s\n' "$SEED_EMAIL" "$SEED_PW" > secrets/seed_admin.env
 chmod 600 secrets/seed_admin.env
-unset SEED_EMAIL SEED_PW SEED_TOTP
+unset SEED_EMAIL SEED_PW
 echo 'STAGING_RESEED = 1' >> .env
 echo 'staging.seed = true' >> app.env
 ```
 
-TOTP aktivuješ jednorazovo v aplikácii pre autentifikácie: pripoj sa interaktívne (`ssh -t`) a vypíš provisioning URI len na svoj terminál (nie do logu, nie do chatu):
+Súbor obsahuje iba e-mail a heslo. Starší riadok `SEED_ADMIN_TOTP_SECRET` sa od 2026-10-28 ignoruje a môžeš ho zmazať. Po každom resete sa admin prihlási heslom a uvidí ponuku 2FA: zvoľ "Nechcem nastavovať 2FA" (alebo si 2FA na ten deploy cyklus nastav, po ďalšom resete zmizne).
 
-```
-. <(sed 's/ *= */=/' secrets/seed_admin.env)   # alebo: grep a nastav premenné ručne
-printf 'otpauth://totp/Work%%20Tracker%%20staging:%s?secret=%s&issuer=Work%%20Tracker%%20staging\n' "$SEED_ADMIN_EMAIL" "$SEED_ADMIN_TOTP_SECRET"
-# alebo QR v termináli, ak je nainštalovaný qrencode:
-# printf 'otpauth://...' | qrencode -t ansiutf8
-```
-
-Heslo si prečítaj zo súboru rovnako len na svojom termináli. Rotácia: uprav súbor, ďalší deploy ho použije (a v autentifikátore zmeň tajomstvo). Súbor číta iba kontajner `seed`; php-fpm ani `migrate` ho nemontujú. Zálohové kódy 2FA seed nevytvára (po prihlásení ich nič nevyžaduje).
+Heslo si prečítaj zo súboru rovnako len na svojom termináli. Rotácia: uprav súbor, ďalší deploy ho použije. Súbor číta iba kontajner `seed`; php-fpm ani `migrate` ho nemontujú. Záložné kódy 2FA seed nevytvára.
 
 ### Lokálne
 
-`make reset-staging` zahodí **vývojovú** DB, znovu ju založí, zmigruje a naplní stagingovým seedom (rovnaká ochrana prostredia ako `make reset`, povolené len pre `development`/`testing`). Údaje admina sa berú z `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_TOTP_SECRET` v dev `.env` (vzor v `.env.example`). `php spark staging:seed --profile=small` je rýchly profil (3 klienti) pre testy.
+`make reset-staging` zahodí **vývojovú** DB, znovu ju založí, zmigruje a naplní stagingovým seedom (rovnaká ochrana prostredia ako `make reset`, povolené len pre `development`/`testing`). Údaje admina sa berú z `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` v dev `.env` (vzor v `.env.example`). `php spark staging:seed --profile=small` je rýchly profil (3 klienti) pre testy.
 
 ### Rozšírenie o nový modul
 

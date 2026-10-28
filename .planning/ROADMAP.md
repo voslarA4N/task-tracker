@@ -9,7 +9,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 ## Fázy
 
 - [x] **Phase 1: Základ a infraštruktúra** - Docker/WSL2, CI4, PostgreSQL roly, Money, Clock, htmx/CSP/CSRF vzory, spike mPDF (completed 2026-10-23)
-- [x] **Phase 2: Identita a skoré nasadenie** - Prihlásenie s povinnou TOTP, PWA kostra a HTTPS staging otestovaný na reálnom iPhone (completed 2026-10-25)
+- [x] **Phase 2: Identita a skoré nasadenie** - Prihlásenie s povinnou TOTP, PWA kostra a HTTPS staging otestovaný na reálnom iPhone (completed 2026-10-25) (2FA od 2026-10-28 voliteľná, rozhodnutie vlastníka)
 - [x] **Phase 3: Master dáta (subjekty a klienti)** - Verziované subjekty, klienti, právny dôvod oslobodenia, audit zmien (completed 2026-10-25)
 - [x] **Phase 4: Úlohy, fakturačné časti a dashboard** - Evidencia úloh, rozdelenie na časti po mesiacoch, dashboard, import z Excelu (completed 2026-10-26)
 - [x] **Phase 5: Fakturačné jadro** - Atómové vystavenie nemennej faktúry, číslovanie, kópia údajov, uložené PDF so sha256 (completed 2026-10-27)
@@ -69,7 +69,7 @@ Plans:
 
 ### Phase 2: Identita a skoré nasadenie
 
-**Goal**: Vlastník sa prihlási heslom a povinnou TOTP 2FA na HTTPS stagingu a nainštalovanú PWA otestuje na reálnom iPhone, takže nič sa nevystavuje bez zabezpečeného prístupu.
+**Goal**: Vlastník sa prihlási heslom a povinnou TOTP 2FA na HTTPS stagingu a nainštalovanú PWA otestuje na reálnom iPhone, takže nič sa nevystavuje bez zabezpečeného prístupu (2FA od 2026-10-28 voliteľná, rozhodnutie vlastníka).
 **Mode:** mvp
 **Depends on**: Phase 1
 **Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, AUTH-08, AUTH-09, PWA-01, NFR-02, NFR-03, NFR-08

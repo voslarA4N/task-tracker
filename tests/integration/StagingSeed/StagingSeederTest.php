@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Integration\StagingSeed;
 
 use App\Commands\StagingSeed;
-use App\Libraries\Auth\TotpService;
 use App\Libraries\Master\SeriesFormat;
 use App\Libraries\Platform\FrozenClock;
 use App\Libraries\StagingSeed\HistoryPlanner;
@@ -31,7 +30,6 @@ final class StagingSeederTest extends PgTestCase
     use MasterFixtures;
     use StreamFilterTrait;
 
-    private const TOKEN = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
     private const TODAY = '2026-03-20';
 
     protected function setUp(): void
@@ -112,13 +110,14 @@ final class StagingSeederTest extends PgTestCase
         $this->assertSame(0, (int) $db->query("SELECT count(*) AS c FROM invoices WHERE billing_month = '2026-03'")->getRow()->c);
         $this->assertGreaterThan(0, (int) $db->query("SELECT count(*) AS c FROM billing_allocations WHERE billing_month = '2026-03' AND invoice_id IS NULL")->getRow()->c);
 
-        // admin s TOTP, ktoreho tajomstvo sa da desifrovat
-        $user = $db->query("SELECT u.id, g.\"group\" AS grp, s.totp_enabled_at, s.totp_secret_enc FROM users u JOIN auth_groups_users g ON g.user_id = u.id JOIN user_security s ON s.user_id = u.id WHERE u.id = (SELECT user_id FROM auth_identities WHERE secret = 'seed.admin@example.test')")->getRowArray();
+        // admin bez 2FA a bez rozhodnutia (pri prvom prihlaseni uvidi ponuku)
+        $user = $db->query("SELECT u.id, g.\"group\" AS grp, s.totp_enabled_at, s.totp_secret_enc, s.totp_declined_at FROM users u JOIN auth_groups_users g ON g.user_id = u.id JOIN user_security s ON s.user_id = u.id WHERE u.id = (SELECT user_id FROM auth_identities WHERE secret = 'seed.admin@example.test')")->getRowArray();
 
         $this->assertNotNull($user);
         $this->assertSame('admin', $user['grp']);
-        $this->assertNotNull($user['totp_enabled_at']);
-        $this->assertSame(self::TOKEN, (new TotpService())->decryptSecret((string) $user['totp_secret_enc']));
+        $this->assertNull($user['totp_enabled_at']);
+        $this->assertNull($user['totp_secret_enc']);
+        $this->assertNull($user['totp_declined_at']);
 
         // hodiny sa po behu vratili
         $this->assertSame(self::TODAY, service('clock')->today());
@@ -175,9 +174,8 @@ final class StagingSeederTest extends PgTestCase
     private function seeder(): StagingSeeder
     {
         return new StagingSeeder($this->rw(), SeedAdminCredentials::load('/nonexistent/seed_admin.env', 'testing', [
-            'SEED_ADMIN_EMAIL'       => 'seed.admin@example.test',
-            'SEED_ADMIN_PASSWORD'    => 'Zelena-Luka-2026!',
-            'SEED_ADMIN_TOTP_SECRET' => self::TOKEN,
+            'SEED_ADMIN_EMAIL'    => 'seed.admin@example.test',
+            'SEED_ADMIN_PASSWORD' => 'Zelena-Luka-2026!',
         ]));
     }
 
