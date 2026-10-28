@@ -21,14 +21,14 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 ### Prihlásenie a bezpečnosť (E1)
 
 - [x] **AUTH-01**: Používateľ sa prihlási e-mailom a heslom (Argon2id).
-- [x] **AUTH-02**: Používateľ musí mať TOTP 2FA (RFC 6238, Google/Microsoft Authenticator). Nastaví ju cez QR kód (generovaný lokálne) pri prvom prihlásení. TOTP kód sa nedá použiť dvakrát (replay ochrana).
+- [x] **AUTH-02**: TOTP 2FA (RFC 6238, Google/Microsoft Authenticator) je voliteľná. Pri prvom prihlásení sa zobrazí ponuka „Nastaviť 2FA“ / „Nechcem nastavovať 2FA“ (voľba sa uloží), zapnutie aj vypnutie je v Nastaveniach → Bezpečnosť (vypnutie vyžaduje heslo a kód z aplikácie alebo záložný kód). QR kód sa generuje lokálne. TOTP kód sa nedá použiť dvakrát (replay ochrana). (zmena 2026-10-28, rozhodnutie vlastníka, quick 261028-mf3)
 - [x] **AUTH-03**: Používateľ dostane 10 jednorazových záložných kódov (uložených ako hash) a môže ich pregenerovať. Použitý kód sa nedá použiť znova.
 - [x] **AUTH-04**: Počet pokusov o prihlásenie a o zadanie TOTP je obmedzený.
-- [x] **AUTH-05**: Používateľ si môže „zapamätať zariadenie“ na 30 dní. Na dôveryhodnom zariadení sa TOTP nevyžaduje. Zariadenia sa dajú zobraziť a odvolať. Po 30 dňoch alebo po odvolaní sa TOTP vyžaduje znova.
-- [x] **AUTH-06**: Používateľ si obnoví heslo e-mailom (časovo obmedzený token). Obnovenie hesla neobíde TOTP.
+- [x] **AUTH-05**: Používateľ si môže „zapamätať zariadenie“ na 30 dní, s 2FA aj bez nej. Na dôveryhodnom zariadení sa heslo ani TOTP nevyžaduje. Zariadenia sa dajú zobraziť a odvolať, zapnutie aj vypnutie 2FA ich odvolá. Po 30 dňoch alebo po odvolaní sa prihlásenie vyžaduje znova. (zmena 2026-10-28, rozhodnutie vlastníka, quick 261028-mf3)
+- [x] **AUTH-06**: Používateľ si obnoví heslo e-mailom (časovo obmedzený token), aj účet bez 2FA. Obnovenie hesla neobíde TOTP u účtu, ktorý ju má zapnutú. (zmena 2026-10-28, rozhodnutie vlastníka, quick 261028-mf3)
 - [x] **AUTH-07**: Denník prihlásení zaznamenáva úspech alebo neúspech, IP adresu, zariadenie a čas.
 - [x] **AUTH-08**: Dátový model obsahuje používateľov a roly `admin` a `accountant` (UI pre `accountant` je voliteľné).
-- [x] **AUTH-09** [nové]: Bez platného TOTP alebo záložného kódu sa nedá dostať na žiadnu stránku okrem prihlásenia (stav „čaká na 2FA“ nie je prihlásenie).
+- [x] **AUTH-09** [nové]: Bez dokončeného prihlásenia (heslo, a ak má účet 2FA, aj TOTP alebo záložný kód; pri prvom prihlásení aj voľba v ponuke 2FA) sa nedá dostať na žiadnu stránku okrem prihlásenia (stav „čaká na 2FA“ nie je prihlásenie). (zmena 2026-10-28, rozhodnutie vlastníka, quick 261028-mf3)
 
 ### Môj subjekt (E2)
 
