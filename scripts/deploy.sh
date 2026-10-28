@@ -1,9 +1,12 @@
 #!/bin/sh
 # Serverový deploy (prod aj staging; spúšťa sa ako <adresár stacku>/deploy.sh,
 # /opt/work-tracker alebo /opt/work-tracker-staging).
-# Poradie: pull -> db -> záloha -> overenie zálohy -> rotácia -> migrácia ->
-# certifikát -> up -> .last-good-tag. Migrácia sa NIKDY nespustí bez overenej
-# zálohy (D-08). Pri zlyhaní zostáva bežať predošlý stack.
+# Poradie: pull -> db -> záloha -> overenie zálohy -> rotácia -> [staging: reset DB] ->
+# migrácia -> [staging: seed] -> certifikát -> up -> .last-good-tag. Migrácia sa NIKDY
+# nespustí bez overenej zálohy (D-08). Pri zlyhaní zostáva bežať predošlý stack.
+# Voliteľne STAGING_RESEED=1 v .env (iba staging, sekcia 19 v docs/ops/server.md): po zálohe sa
+# DB zahodí, znovu založí, zmigruje a naplní `php spark staging:seed`. Produkcia to odmieta
+# pred prvým volaním dockeru.
 # Povinné: IMAGE_TAG; súbory app.env, migrate.env, secrets/db_*_password (sekcia 15
 # v docs/ops/server.md); v .env COMPOSE_PROJECT_NAME a EDGE_ALIAS. Voliteľné: BACKUP_DIR
 # (default /var/backups/<názov adresára>), COMPOSE_FILE_NAME, DOCKER_CONFIG, SKIP_PULL=1
@@ -71,6 +74,42 @@ for key in COMPOSE_PROJECT_NAME EDGE_ALIAS; do
 done
 COMPOSE_PROJECT_NAME=$(env_get COMPOSE_PROJECT_NAME)
 export COMPOSE_PROJECT_NAME
+
+# Reset a seed stagingu (D-01). Tvrdé poistky ešte pred prvým volaním dockeru: produkcia (projekt,
+# doména alebo adresár) nesmie mať STAGING_RESEED ani `staging.seed = true` v app.env.
+RESEED=$(env_get STAGING_RESEED)
+APP_SEED=$(sed -n 's/^staging\.seed *= *//p' app.env | head -n1 | tr -d "'\"\r ")
+preflight_reseed() {
+  is_prod=0
+  if [ "$COMPOSE_PROJECT_NAME" = task-tracker ] || [ "$(env_get APP_DOMAIN)" = work-tracker.vostack.dev ] || [ "$HERE" = /opt/work-tracker ]; then
+    is_prod=1
+  fi
+  if [ "$is_prod" = 1 ] && { [ "$APP_SEED" = true ] || { [ -n "$RESEED" ] && [ "$RESEED" != 0 ]; }; }; then
+    echo "Produkcia nesmie mať STAGING_RESEED ani staging.seed = true v app.env. Nic sa nenasadilo." >&2
+    exit 1
+  fi
+  case "$RESEED" in
+    ''|0) return 0 ;;
+    1) ;;
+    *)
+      echo "STAGING_RESEED musí byť 1 alebo prázdne/0 (je '$RESEED'). Nic sa nenasadilo." >&2
+      exit 1
+      ;;
+  esac
+  if [ "$APP_SEED" != true ]; then
+    echo "STAGING_RESEED=1 vyžaduje 'staging.seed = true' v app.env. Nic sa nenasadilo." >&2
+    exit 1
+  fi
+  if [ ! -s secrets/seed_admin.env ]; then
+    echo "STAGING_RESEED=1 vyžaduje neprázdny secrets/seed_admin.env (docs/ops/server.md, sekcia 19). Nic sa nenasadilo." >&2
+    exit 1
+  fi
+  if [ -n "$(find secrets/seed_admin.env -perm /077 2>/dev/null)" ]; then
+    echo "secrets/seed_admin.env musí mať práva 0600 (je čitateľný pre skupinu alebo ostatných). Nic sa nenasadilo." >&2
+    exit 1
+  fi
+}
+preflight_reseed
 
 # Host: externá sieť edge a kontrola, že projekt nepatrí inému adresáru.
 preflight_host() {
@@ -145,11 +184,39 @@ ls -1 "$BACKUP_DIR"/pre-*.dump 2>/dev/null | sort -r | tail -n +15 | while read 
   rm -f "$old"
 done
 
+# Staging: po zálohe sa DB zahodí a znovu založí (faktúry odmietajú DELETE aj TRUNCATE triggerom, preto DROP).
+# Heslá rolí číta až kontajner db zo svojich secret súborov, v argumentoch nie sú.
+reseed_db() {
+  started=$(date +%s)
+  echo "Staging: reset DB (DROP + provision)"
+  if ! dc exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS task_tracker WITH (FORCE)' \
+    || ! dc exec -T db sh -c 'DB_OWNER_PASSWORD=$(cat "$DB_OWNER_PASSWORD_FILE") DB_RW_PASSWORD=$(cat "$DB_RW_PASSWORD_FILE") psql -v ON_ERROR_STOP=1 -U postgres -d postgres -v dbname=task_tracker -f /opt/provision/provision.sql'; then
+    echo "Reset staging DB zlyhal, stará verzia beží ďalej. Záloha: $DUMP" >&2
+    exit 1
+  fi
+  echo "Staging: reset DB hotový za $(( $(date +%s) - started )) s"
+}
+if [ "$RESEED" = 1 ]; then
+  reseed_db
+fi
+
 # Migrácia (stará verzia beží ďalej, `up` sa pri zlyhaní nevolá). Jednorazový kontajner
 # `migrate` má migrate.env s app_owner, bežiaci php-fpm ho nevidí (WR-06).
 if ! dc run --rm --no-deps -T migrate php spark migrate -g owner --all; then
   echo "Migrácia zlyhala, stará verzia beží ďalej. Záloha: $DUMP" >&2
   exit 1
+fi
+
+# Staging: seed ako app_rw v jednorazovom kontajneri `seed` (iba ten vidí secrets/seed_admin.env). Po behu sa
+# vlastník writable/ vráti www-data, aby php-fpm mohol zapisovať (kontajner beží ako root).
+if [ "$RESEED" = 1 ]; then
+  seed_started=$(date +%s)
+  echo "Staging: seed (php spark staging:seed)"
+  if ! dc run --rm --no-deps -T seed sh -c 'php spark staging:seed; rc=$?; chown -R www-data:www-data writable; exit $rc'; then
+    echo "Seed zlyhal, staging DB je čiastočná; stará verzia beží ďalej, ďalší deploy ju znovu vytvorí. Záloha: $DUMP" >&2
+    exit 1
+  fi
+  echo "Staging: seed hotový za $(( $(date +%s) - seed_started )) s"
 fi
 
 ensure_cert

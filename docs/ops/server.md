@@ -15,6 +15,7 @@ Jeden server Hetzner Cloud #172176757 (IP `2.31.74.48`, amd64), dva nezávislé 
 | Vetva | `main` | `develop` | |
 | Zálohy pred migráciou | `/var/backups/work-tracker` | `/var/backups/work-tracker-staging` | |
 | `NGINX_ROBOTS_TAG` | prázdne | `noindex, nofollow` | |
+| `STAGING_RESEED` (`.env`) | **chýba vždy** (deploy ho odmietne) | `1`: každý deploy zahodí DB a naplní ju seedom (sekcia 19) | |
 
 - Docker sieť `edge` (podsieť `10.250.250.0/24`, mimo predvolených poolov Dockeru) spája edge s nginx oboch stackov. Realip v stack nginx dôveruje presne tejto podsieti.
 - Pôvodné rozhodnutie fázy 2 (D-03 "staging je zároveň budúca produkcia") je prekonané: `/opt/work-tracker` je produkcia od go-live.
@@ -103,6 +104,7 @@ Tajomstvá sú rozdelené podľa toho, kto ich potrebuje (WR-06). Bežiaci php-f
 | `.env` | interpolácia compose a `deploy.sh`: `COMPOSE_PROJECT_NAME`, `EDGE_ALIAS`, `NGINX_ROBOTS_TAG`, domény, TLS, `IMAGE_PREFIX`, **žiadne heslá** | `docker compose`, `deploy.sh`, `cert-renew.sh` | 0640 `deploy` |
 | `app.env` | CI4 runtime: `CI_ENVIRONMENT`, `app.baseURL`, `database.default.*` (app_rw), `email.*`, `encryption.key`, `auth.backupCodePepper` | php-fpm (mount ako `/var/www/html/.env`) | 0640 `deploy:82` |
 | `migrate.env` | obsah `app.env` + `database.owner.*` (app_owner) | iba `docker compose run migrate` v `deploy.sh` | 0600 `deploy` |
+| `secrets/seed_admin.env` (iba staging) | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_TOTP_SECRET` | iba jednorazový kontajner `seed` pri `STAGING_RESEED=1` (sekcia 19) | 0600 `deploy` |
 | `secrets/db_superuser_password`, `secrets/db_owner_password`, `secrets/db_rw_password` | jedno heslo bez nového riadku | kontajner `db` (`*_PASSWORD_FILE`), použité iba pri inicializácii prázdneho volume | 0640 `deploy:70` |
 
 `deploy.sh` pred prvým volaním dockeru overí, že súbory existujú, nie sú čitateľné pre všetkých, `.env` neobsahuje heslá ani CI4 kľúče a `app.env` neobsahuje `database.owner.*`. Inak skončí so správou a predošlý stack beží ďalej.
@@ -173,6 +175,8 @@ chown deploy:82 app.env && chmod 0640 app.env
 chown deploy:70 secrets/db_superuser_password secrets/db_owner_password secrets/db_rw_password
 chmod 0640 secrets/db_superuser_password secrets/db_owner_password secrets/db_rw_password
 ```
+
+Staging navyše dostane (sekcia 19): `STAGING_RESEED = 1` do `.env`, `staging.seed = true` do `app.env` (práva `app.env` ostávajú 0640 `deploy:82`) a súbor `secrets/seed_admin.env`. **Produkcia tieto tri veci nemá nikdy**, `deploy.sh` ju s nimi odmietne.
 
 Pri produkcii je `NGINX_ROBOTS_TAG` prázdne alebo chýba. Poznámky: `IMAGE_TAG` nastavuje `scripts/deploy.sh`, nepatrí do `.env`. GID 82 je `www-data` v alpine php obraze, GID 70 je `postgres` v `postgres:18-alpine` (init skript číta heslá rolí ako používateľ `postgres`). Staging má vždy `email.transport = log` a `app.baseURL = 'https://work-tracker-stage.vostack.dev/'`. `email.transport = log` znamená, že e-maily sa neodosielajú, do logu idú iba metadáta. Pri zmene SMTP alebo kľúča uprav `app.env` **aj** `migrate.env` (migrácie kľúče nepotrebujú, ale CI4 sa s nimi musí spustiť rovnako).
 
@@ -393,3 +397,79 @@ IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.staging.yaml up -d --w
 ```
 
 Starý `compose.staging.yaml` má projekt `task-tracker`, znova publikuje 80/443 a používa tie isté volumes. Ak sa zmenil riadok cron, obnov ho. Nepushovať `main`, kým sa problém nevyrieší. `compose.staging.yaml` a súbory `*.pre-edge` na serveri ostávajú týždeň stabilnej prevádzky, potom sa zmažú.
+
+## 19. Staging seed (reset pri každom deployi)
+
+Staging sa pri každom deployi vráti do rovnakého stavu s vymyslenou, ale realistickou históriou od 2026-01-01 do dňa deployu: 3 subjekty (SK, CZ, PL), 8 klientov, cca 150 úloh vrátane úloh rozdelených na časti cez viac mesiacov a cca 40 faktúr vystavených skutočným `InvoiceIssuer` (bezmedzerové čísla, PDF faktúry a výkazu, QR). Aktuálny mesiac ostáva nevyfakturovaný, jeden klient má nevyfakturovaný posledný celý mesiac (scenár neskorej fakturácie). Dáta sú deterministické (pevný seed, bez Fakeru): rovnaký deň dá rovnaké čísla a sumy. Všetko beží cez aplikačné služby, nikdy cez surové INSERT do biznis tabuliek.
+
+### Čo sa deje pri deployi so `STAGING_RESEED = 1`
+
+1. Bežný postup: pull, `db`, **overená záloha** (ostáva aj na stagingu, rotácia 14; záloha syntetických dát je lacná a ak by poistka zlyhala, existuje overený dump), rotácia.
+2. `DROP DATABASE task_tracker WITH (FORCE)` a `provision.sql` (role a databáza). Tabuľky faktúr odmietajú DELETE aj TRUNCATE triggerom, preto sa maže celá DB. Heslá rolí číta kontajner `db` zo svojich secret súborov, v argumentoch ani v hostiteľskom shelli nie sú.
+3. Migrácie ako `app_owner` v kontajneri `migrate` (nezmenené).
+4. `php spark staging:seed` v jednorazovom kontajneri `seed` ako **app_rw** (`app.env`). Heslo `app_owner` ostáva len v `migrate.env`; ak by seed potreboval oprávnenie, ktoré UI nemá, vyjde to na stagingu rovnako ako by vyšlo v produkcii. Po behu sa vlastník `writable/` vráti `www-data`.
+5. `up -d --wait`, `.last-good-tag`.
+
+Čas: reset + seed pridá k deployu rádovo 20 až 30 s (seed samotný cca 15 s lokálne, limit je 60 s). `deploy.sh` vypíše trvanie resetu a seedu a `spark staging:seed` trvanie modulov a počty riadkov.
+
+### Poistky proti seedovaniu produkcie
+
+Navzájom nezávislé vrstvy:
+
+| Vrstva | Pravidlo |
+|--------|----------|
+| `deploy.sh`, pred akýmkoľvek volaním dockeru | `STAGING_RESEED` musí byť presne `1` (iné hodnoty než prázdne/`0` odmietne); odmietne sa pri `COMPOSE_PROJECT_NAME = task-tracker`, `APP_DOMAIN = work-tracker.vostack.dev` alebo adresári `/opt/work-tracker` |
+| `deploy.sh` | produkcia s `staging.seed = true` v `app.env` sa odmietne aj bez `STAGING_RESEED` (skopírovaný staging `app.env`) |
+| `deploy.sh` | vyžaduje `staging.seed = true` v `app.env` a neprázdny `secrets/seed_admin.env` s právami 0600 |
+| `spark staging:seed` | odmietne bez `staging.seed = true` (predvolene vypnuté), pri `app.baseURL` s hostom `work-tracker.vostack.dev`, pri neprázdnej DB (faktúry, subjekty, klienti, úlohy alebo používatelia) a v produkcii bez súboru s údajmi admina |
+
+Pri akomkoľvek odmietnutí deploy skončí so správou `Nic sa nenasadilo` a predošlý stack beží ďalej.
+
+### Zlyhanie seedu
+
+Seed nie je jedna veľká transakcia (každá služba má vlastnú, ako v UI). Pri chybe príkaz skončí nenulovým kódom a `deploy.sh` sa zastaví **pred** `up`: staré kontajnery bežia ďalej proti čiastočne naplnenej DB a `.last-good-tag` sa nemení. Ďalší deploy DB znovu vytvorí. Ručne: `docker compose -f compose.server.yaml run --rm --no-deps seed php spark staging:seed` na čerstvo vytvorenej DB (vyžaduje prázdnu DB, inak odmietne).
+
+### Jednorazové založenie `secrets/seed_admin.env` na serveri
+
+Admin na stagingu má pevný e-mail, heslo a TOTP tajomstvo, ktoré prežijú každý reset. Súbor vzniká iba na serveri ako `deploy` v `/opt/work-tracker-staging`, nikdy nie v gite ani v chate.
+
+```
+cd /opt/work-tracker-staging
+umask 077
+SEED_EMAIL='<tvoj e-mail pre staging>'
+SEED_PW=$(openssl rand -base64 24 | tr -d '/+=')
+SEED_TOTP=$(openssl rand 20 | base32 | tr -d '=')
+printf 'SEED_ADMIN_EMAIL = %s\nSEED_ADMIN_PASSWORD = %s\nSEED_ADMIN_TOTP_SECRET = %s\n' "$SEED_EMAIL" "$SEED_PW" "$SEED_TOTP" > secrets/seed_admin.env
+chmod 600 secrets/seed_admin.env
+unset SEED_EMAIL SEED_PW SEED_TOTP
+echo 'STAGING_RESEED = 1' >> .env
+echo 'staging.seed = true' >> app.env
+```
+
+TOTP aktivuješ jednorazovo v aplikácii pre autentifikácie: pripoj sa interaktívne (`ssh -t`) a vypíš provisioning URI len na svoj terminál (nie do logu, nie do chatu):
+
+```
+. <(sed 's/ *= */=/' secrets/seed_admin.env)   # alebo: grep a nastav premenné ručne
+printf 'otpauth://totp/Work%%20Tracker%%20staging:%s?secret=%s&issuer=Work%%20Tracker%%20staging\n' "$SEED_ADMIN_EMAIL" "$SEED_ADMIN_TOTP_SECRET"
+# alebo QR v termináli, ak je nainštalovaný qrencode:
+# printf 'otpauth://...' | qrencode -t ansiutf8
+```
+
+Heslo si prečítaj zo súboru rovnako len na svojom termináli. Rotácia: uprav súbor, ďalší deploy ho použije (a v autentifikátore zmeň tajomstvo). Súbor číta iba kontajner `seed`; php-fpm ani `migrate` ho nemontujú. Zálohové kódy 2FA seed nevytvára (po prihlásení ich nič nevyžaduje).
+
+### Lokálne
+
+`make reset-staging` zahodí **vývojovú** DB, znovu ju založí, zmigruje a naplní stagingovým seedom (rovnaká ochrana prostredia ako `make reset`, povolené len pre `development`/`testing`). Údaje admina sa berú z `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_TOTP_SECRET` v dev `.env` (vzor v `.env.example`). `php spark staging:seed --profile=small` je rýchly profil (3 klienti) pre testy.
+
+### Rozšírenie o nový modul
+
+Seed je poradie modulov (`App\Libraries\StagingSeed\StagingSeeder::MODULES`: `AdminUser`, `MasterData`, `Tasks`, `Invoices`). Nová fáza pridá svoj modul takto:
+
+1. Vytvor `app/Libraries/StagingSeed/Modules/<Nazov>.php` implementujúci `SeedModule` (`name()`, `run(SeedContext $ctx)`).
+2. Ak modul potrebuje plánované dáta, rozšír `HistoryPlan` a `HistoryPlanner` (zachovaj determinizmus: iba seedovaný `Randomizer`, žiadny Faker ani reálny čas, všetky dátumy najviac do `today`).
+3. Zapisuj iba cez aplikačné služby (nie surové SQL do biznis tabuliek) a pred každou udalosťou nastav `$ctx->clock->at('YYYY-MM-DDTHH:MM:SS')`, aby `created_at`, audit a dokumenty nesli fiktívny čas. ID z predchádzajúcich modulov získaš cez `$ctx->id('client'|'entity'|'task'|'part'|'user', $kluc)`.
+4. Pridaj triedu na koniec `StagingSeeder::MODULES`, za moduly, na ktorých závisí.
+5. Doplň `tests/unit/StagingSeed/HistoryPlannerTest.php` a tvrdenia v `tests/integration/StagingSeed/StagingSeederTest.php` (počty, súčty, dátumy).
+6. Celkový čas seedu drž v rozpočte (reset + seed do cca 60 s); `staging:seed` vypisuje čas po moduloch.
+
+Plánované moduly: `Payments` (fáza 7, úhrady), `Fx` (fáza 8, cudzomenové faktúry a kurzy), `CreditNotes` (fáza 9, dobropisy), `Limits` (fáza 10, daňové limity obratu). Do tej doby fakturujú iba v mene subjektu (klient a subjekt majú rovnakú menu).

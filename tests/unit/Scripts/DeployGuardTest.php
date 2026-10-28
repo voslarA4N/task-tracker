@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Scripts;
 
 use CodeIgniter\Test\CIUnitTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use RuntimeException;
 
@@ -38,6 +39,9 @@ final class DeployGuardTest extends CIUnitTestCase
             ;;
           "ps "*)
             [ -z "${FAKE_PS_WORKDIR-}" ] || printf '%s\n' "$FAKE_PS_WORKDIR"
+            ;;
+          *"staging:seed"*)
+            [ -z "${FAKE_SEED_FAIL-}" ] || exit 1
             ;;
           *migrate*)
             [ -z "${FAKE_MIGRATE_FAIL-}" ] || exit 1
@@ -265,6 +269,149 @@ final class DeployGuardTest extends CIUnitTestCase
 
         $this->assertSame('sha-test', trim((string) file_get_contents($this->dir . '/.last-good-tag')));
         $this->assertCount(14, glob($this->dir . '/backups/pre-*.dump'));
+    }
+
+    public function testWithoutStagingReseedNoResetOrSeedRuns(): void
+    {
+        // regresia: aj s `staging.seed = true` v app.env sa bez STAGING_RESEED nic nemaze ani nenaplna
+        file_put_contents($this->dir . '/app.env', "staging.seed = true\n", FILE_APPEND);
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertSame(0, $code, $err);
+        $log = $this->log();
+        $this->assertStringNotContainsString('DROP DATABASE', $log);
+        $this->assertStringNotContainsString('provision.sql', $log);
+        $this->assertStringNotContainsString('staging:seed', $log);
+        $this->assertStringNotContainsString('seed_admin', $log);
+    }
+
+    public function testStagingReseedRunsResetMigrateAndSeedInOrder(): void
+    {
+        $this->enableReseed();
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertSame(0, $code, $err);
+
+        $log      = $this->log();
+        $previous = -1;
+
+        foreach (['pg_dump', 'pg_restore -l', 'DROP DATABASE IF EXISTS task_tracker WITH (FORCE)', 'provision.sql', 'run --rm --no-deps -T migrate php spark migrate -g owner --all', 'run --rm --no-deps -T seed', 'staging:seed', 'up -d --wait --remove-orphans'] as $step) {
+            $pos = strpos($log, $step);
+            $this->assertNotFalse($pos, "chyba krok: {$step}");
+            $this->assertGreaterThan($previous, $pos, "zle poradie kroku: {$step}");
+            $previous = $pos;
+        }
+
+        $this->assertSame('sha-test', trim((string) file_get_contents($this->dir . '/.last-good-tag')));
+        // heslo seed admina ani db hesla nie su v ziadnom argumente dockeru
+        $this->assertStringNotContainsString('fake-db_', $log);
+        $this->assertStringContainsString('DB_OWNER_PASSWORD=$(cat "$DB_OWNER_PASSWORD_FILE")', $log);
+    }
+
+    #[DataProvider('provideStagingReseedRefusalsHappenBeforeAnyDockerCall')]
+    public function testStagingReseedRefusalsHappenBeforeAnyDockerCall(string $case): void
+    {
+        $this->enableReseed();
+
+        switch ($case) {
+            case 'project':
+                $this->setEnvKey('COMPOSE_PROJECT_NAME', 'task-tracker');
+                break;
+
+            case 'domain':
+                $this->setEnvKey('APP_DOMAIN', 'work-tracker.vostack.dev');
+                break;
+
+            case 'missing':
+                unlink($this->dir . '/secrets/seed_admin.env');
+                break;
+
+            case 'perm':
+                chmod($this->dir . '/secrets/seed_admin.env', 0o644);
+                break;
+
+            case 'flag':
+                $this->writePrivate('/app.env', "CI_ENVIRONMENT = production\ndatabase.default.username = app_rw\n");
+                break;
+
+            case 'typo':
+                $this->setEnvKey('STAGING_RESEED', 'yes');
+                break;
+        }
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertNotSame(0, $code);
+        $this->assertSame("logout ghcr.io\n", $this->log());
+        $this->assertStringContainsString('Nic sa nenasadilo', $err);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideStagingReseedRefusalsHappenBeforeAnyDockerCall(): iterable
+    {
+        yield 'production project' => ['project'];
+
+        yield 'production domain' => ['domain'];
+
+        yield 'missing seed_admin.env' => ['missing'];
+
+        yield 'seed_admin.env readable by others' => ['perm'];
+
+        yield 'app.env without staging.seed' => ['flag'];
+
+        yield 'typo value' => ['typo'];
+    }
+
+    public function testProductionWithSeedFlagInAppEnvIsRefused(): void
+    {
+        $this->setEnvKey('COMPOSE_PROJECT_NAME', 'task-tracker');
+        file_put_contents($this->dir . '/app.env', "staging.seed = true\n", FILE_APPEND);
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertNotSame(0, $code);
+        $this->assertSame("logout ghcr.io\n", $this->log());
+        $this->assertStringContainsString('Produkcia', $err);
+    }
+
+    public function testProductionDirectoryIsHardcodedAsRefusedForReseed(): void
+    {
+        $script = (string) file_get_contents(ROOTPATH . 'scripts/deploy.sh');
+
+        $this->assertStringContainsString('"$HERE" = /opt/work-tracker ]', $script);
+    }
+
+    public function testFailedSeedKeepsOldStack(): void
+    {
+        file_put_contents($this->dir . '/.last-good-tag', "sha-old\n");
+        $this->enableReseed();
+
+        [$code, $err] = $this->runDeploy(['FAKE_SEED_FAIL' => '1']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertStringContainsString('staging:seed', $this->log());
+        $this->assertStringNotContainsString('up -d --wait --remove-orphans', $this->log());
+        $this->assertSame("sha-old\n", file_get_contents($this->dir . '/.last-good-tag'));
+        $this->assertStringContainsString('Seed zlyhal', $err);
+    }
+
+    private function enableReseed(): void
+    {
+        file_put_contents($this->dir . '/.env', "STAGING_RESEED = 1\n", FILE_APPEND);
+        file_put_contents($this->dir . '/app.env', "staging.seed = true\n", FILE_APPEND);
+        $this->writePrivate('/secrets/seed_admin.env', "SEED_ADMIN_EMAIL = a@b.example\n");
+    }
+
+    private function setEnvKey(string $key, string $value): void
+    {
+        $lines   = file($this->dir . '/.env', FILE_IGNORE_NEW_LINES) ?: [];
+        $lines   = array_values(array_filter($lines, static fn (string $l): bool => ! str_starts_with($l, $key . ' ')));
+        $lines[] = $key . ' = ' . $value;
+        file_put_contents($this->dir . '/.env', implode("\n", $lines) . "\n");
     }
 
     private function writeLetsEncryptEnv(): void

@@ -102,6 +102,23 @@ services:
         condition: service_healthy
     command: ["php", "spark", "migrate", "-g", "owner", "--all"]
 
+  # Iba staging, iba na vyziadanie z deploy.sh (STAGING_RESEED=1): `php spark staging:seed` ako app_rw
+  # (app.env, bez migrate.env). Jediny kontajner, ktory vidi secrets/seed_admin.env (heslo a TOTP seed admina);
+  # php a migrate ho nemontuju. Bezi ako root (entrypoint nezhadzuje prava), subor 0600 deploy je preto citatelny.
+  seed:
+    image: ${IMAGE_PREFIX:?}-php:${IMAGE_TAG:?}
+    profiles: ["seed"]
+    environment:
+      TZ: Europe/Bratislava
+    volumes:
+      - ./app.env:/var/www/html/.env:ro
+      - ./secrets/seed_admin.env:/run/secrets/seed_admin.env:ro
+      - writable:/var/www/html/writable
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["php", "spark", "staging:seed"]
+
   # Iba na vyziadanie: docker compose -f compose.server.yaml run --rm certbot ...
   certbot:
     image: certbot/dns-cloudflare:v5.8.0
