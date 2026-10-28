@@ -117,8 +117,14 @@ preflight_host() {
     echo "Chýba docker sieť edge (docs/ops/server.md, sekcia Edge proxy). Nic sa nenasadilo." >&2
     exit 1
   fi
-  dirs=$(docker ps -a --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" \
-    --format '{{index .Labels "com.docker.compose.project.working_dir"}}' | sort -u)
+  # V `docker ps` je .Labels reťazec, jeden label vracia iba {{.Label "..."}}. Chyba šablóny
+  # nesmie kontrolu potichu preskočiť, preto sa výstup a kód dockeru kontrolujú zvlášť.
+  if ! dirs=$(docker ps -a --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" \
+    --format '{{.Label "com.docker.compose.project.working_dir"}}'); then
+    echo "Nepodarilo sa overiť adresár projektu $COMPOSE_PROJECT_NAME (docker ps). Nic sa nenasadilo." >&2
+    exit 1
+  fi
+  dirs=$(printf '%s\n' "$dirs" | sort -u)
   for d in $dirs; do
     if [ -n "$d" ] && [ "$d" != "$HERE" ]; then
       echo "Projekt $COMPOSE_PROJECT_NAME už beží z iného adresára ($d), tento deploy je v $HERE. Nic sa nenasadilo." >&2
@@ -189,6 +195,7 @@ done
 reseed_db() {
   started=$(date +%s)
   echo "Staging: reset DB (DROP + provision)"
+  # shellcheck disable=SC2016  # $(cat ...) sa zamerne rozbali az v kontajneri db (heslá nie sú v hostiteľskom shelli)
   if ! dc exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS task_tracker WITH (FORCE)' \
     || ! dc exec -T db sh -c 'DB_OWNER_PASSWORD=$(cat "$DB_OWNER_PASSWORD_FILE") DB_RW_PASSWORD=$(cat "$DB_RW_PASSWORD_FILE") psql -v ON_ERROR_STOP=1 -U postgres -d postgres -v dbname=task_tracker -f /opt/provision/provision.sql'; then
     echo "Reset staging DB zlyhal, stará verzia beží ďalej. Záloha: $DUMP" >&2
@@ -212,6 +219,7 @@ fi
 if [ "$RESEED" = 1 ]; then
   seed_started=$(date +%s)
   echo "Staging: seed (php spark staging:seed)"
+  # shellcheck disable=SC2016  # $? sa rozbali v kontajneri seed
   if ! dc run --rm --no-deps -T seed sh -c 'php spark staging:seed; rc=$?; chown -R www-data:www-data writable; exit $rc'; then
     echo "Seed zlyhal, staging DB je čiastočná; stará verzia beží ďalej, ďalší deploy ju znovu vytvorí. Záloha: $DUMP" >&2
     exit 1
