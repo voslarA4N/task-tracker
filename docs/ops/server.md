@@ -1,30 +1,53 @@
-# Staging runbook: work-tracker.vostack.dev
+# Server runbook: produkcia a staging
 
 ## 1. Prehľad
 
-- D-01: doména `work-tracker.vostack.dev` (DNS a proxy v Cloudflare).
-- D-02: server Hetzner Cloud #172176757, IP `2.31.74.48`.
-- D-03: staging je zároveň budúca produkcia (rovnaké obrazy, rovnaký compose).
-- D-04: architektúra amd64, obrazy z GHCR (`ghcr.io/voslara4n/task-tracker-php`, `-nginx`).
-- Projektový adresár na serveri: `/opt/work-tracker`, compose súbor `compose.staging.yaml`.
+Jeden server Hetzner Cloud #172176757 (IP `2.31.74.48`, amd64), dva nezávislé stacky a spoločný edge proxy. Obrazy z GHCR (`ghcr.io/voslara4n/task-tracker-php`, `-nginx`), rovnaký tag `sha-<commit>` pre oba stacky.
+
+| | Produkcia | Staging | Edge |
+|---|---|---|---|
+| Doména | `work-tracker.vostack.dev` | `work-tracker-stage.vostack.dev` | |
+| Adresár | `/opt/work-tracker` | `/opt/work-tracker-staging` | `/opt/edge` |
+| Compose projekt (`COMPOSE_PROJECT_NAME`) | `task-tracker` (nemeniť, drží volumes `task-tracker_pgdata`, `task-tracker_writable`) | `task-tracker-staging` | `edge` |
+| Alias nginx v sieti `edge` (`EDGE_ALIAS`) | `wt-prod-nginx` | `wt-stage-nginx` | |
+| Compose súbor | `compose.server.yaml` | `compose.server.yaml` | `compose.edge.yaml` |
+| GitHub environment | `production` (povinné schválenie vlastníka) | `staging` | |
+| Vetva | `main` | `develop` | |
+| Zálohy pred migráciou | `/var/backups/work-tracker` | `/var/backups/work-tracker-staging` | |
+| `NGINX_ROBOTS_TAG` | prázdne | `noindex, nofollow` | |
+
+- Docker sieť `edge` (podsieť `10.250.250.0/24`, mimo predvolených poolov Dockeru) spája edge s nginx oboch stackov. Realip v stack nginx dôveruje presne tejto podsieti.
+- Pôvodné rozhodnutie fázy 2 (D-03 "staging je zároveň budúca produkcia") je prekonané: `/opt/work-tracker` je produkcia od go-live.
+- Architektúra amd64, obrazy z GHCR (D-04 fázy 2).
+
+## Vetvový model
+
+1. Práca na `feature/<nazov>`; push a PR spúšťajú iba job `check`.
+2. PR `feature/*` -> `develop`; po merge sa `develop` nasadí na **staging** (`work-tracker-stage.vostack.dev`).
+3. Overenie na stagingu, potom PR `develop` -> `main`.
+4. Po merge do `main` čaká deploy na schválenie vlastníka v environmente `production`, potom nasadí tú istú verziu na **produkciu**.
+5. Hotfix: `hotfix/<nazov>` z `main`, PR do `main`, potom `main` zlúčiť späť do `develop`.
+
+Environment `production` má deployment branch policy iba `main`, `staging` iba `develop`. Oba majú vlastné secrets `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`, `DEPLOY_HOST`, `DEPLOY_USER` (rovnaké hodnoty).
 
 ## 2. Cloudflare
 
 V Cloudflare -> `vostack.dev`:
 
-- DNS -> Records: `A` záznam `work-tracker` -> `2.31.74.48`, **Proxied** (oranžový obláčik).
+- DNS -> Records: `A` záznamy `work-tracker` a `work-tracker-stage` -> `2.31.74.48`, obe **Proxied** (oranžový obláčik).
 - SSL/TLS: režim **Full (strict)**, Always Use HTTPS zapnuté, Minimum TLS Version 1.2.
 - Speed -> Optimization: **Rocket Loader OFF**.
 - Scrape Shield: **Email Obfuscation OFF**.
 - Security -> Bots: **Bot Fight Mode OFF** (inak výzvy rozbijú htmx a service worker, Pitfall 8).
 - HSTS v Cloudflare nechať vypnuté, hlavičku posiela nginx (`NGINX_HSTS_VALUE`).
+- Nastavenia sú na úrovni zóny, platia pre oba hostname rovnako.
 
 ## 3. TLS podľa rozhodnutia O-4 (02-01-SUMMARY.md): `letsencrypt`
 
 ### Vetva `letsencrypt` (zvolená)
 
 - Cloudflare -> My Profile -> API Tokens -> Create Token. Oprávnenie iba `Zone:DNS:Edit`, zdroje: iba zóna `vostack.dev`.
-- Na serveri (po bootstrape, sekcia 5) vytvor `/opt/work-tracker/secrets/cloudflare.ini` s právami 0600 a jediným riadkom:
+- Na serveri (po bootstrape, sekcia 5) vytvor `<adresár stacku>/secrets/cloudflare.ini` (staging môže mať kópiu tokenu produkcie, token je viazaný na zónu) s právami 0600 a jediným riadkom:
 
 ```
 dns_cloudflare_api_token = <token>
@@ -59,6 +82,8 @@ curl -s https://www.cloudflare.com/ips-v6
 
 Outbound ponechať povolený.
 
+Porty 80 a 443 publikuje iba kontajner edge (sekcia Edge proxy); stack nginx nemá žiadne publikované porty.
+
 ## 5. Bootstrap servera
 
 Z koreňa repozitára na vývojovom stroji (verejný kľúč je `~/.ssh/work_tracker_deploy.pub`):
@@ -73,19 +98,20 @@ Skript je idempotentný. Nainštaluje Docker Engine a compose plugin z oficiáln
 
 Tajomstvá sú rozdelené podľa toho, kto ich potrebuje (WR-06). Bežiaci php-fpm vidí iba heslo `app_rw`, heslo `app_owner` má iba jednorazový kontajner `migrate` a heslo superusera iba DB pri inicializácii.
 
-| Súbor v `/opt/work-tracker` | Obsah | Kto ho číta | Práva |
+| Súbor v `<adresár stacku>` | Obsah | Kto ho číta | Práva |
 |------------------------------|-------|-------------|-------|
-| `.env` | interpolácia compose a `deploy.sh`: domény, TLS, `IMAGE_PREFIX`, **žiadne heslá** | `docker compose`, `deploy.sh`, `cert-renew.sh` | 0640 `deploy` |
+| `.env` | interpolácia compose a `deploy.sh`: `COMPOSE_PROJECT_NAME`, `EDGE_ALIAS`, `NGINX_ROBOTS_TAG`, domény, TLS, `IMAGE_PREFIX`, **žiadne heslá** | `docker compose`, `deploy.sh`, `cert-renew.sh` | 0640 `deploy` |
 | `app.env` | CI4 runtime: `CI_ENVIRONMENT`, `app.baseURL`, `database.default.*` (app_rw), `email.*`, `encryption.key`, `auth.backupCodePepper` | php-fpm (mount ako `/var/www/html/.env`) | 0640 `deploy:82` |
 | `migrate.env` | obsah `app.env` + `database.owner.*` (app_owner) | iba `docker compose run migrate` v `deploy.sh` | 0600 `deploy` |
 | `secrets/db_superuser_password`, `secrets/db_owner_password`, `secrets/db_rw_password` | jedno heslo bez nového riadku | kontajner `db` (`*_PASSWORD_FILE`), použité iba pri inicializácii prázdneho volume | 0640 `deploy:70` |
 
 `deploy.sh` pred prvým volaním dockeru overí, že súbory existujú, nie sú čitateľné pre všetkých, `.env` neobsahuje heslá ani CI4 kľúče a `app.env` neobsahuje `database.owner.*`. Inak skončí so správou a predošlý stack beží ďalej.
 
-Nová inštalácia: vytvor súbory ako `deploy` priamo na serveri, tajomstvá generuj tam (nikdy ich nepíš do gitu ani chatu):
+Nová inštalácia: vytvor súbory ako `deploy` priamo na serveri, tajomstvá generuj tam (nikdy ich nepíš do gitu ani chatu). Blok je parametrizovaný: produkcia `DIR=/opt/work-tracker DOMAIN=work-tracker.vostack.dev PROJECT=task-tracker ALIAS=wt-prod-nginx ROBOTS=`, staging `DIR=/opt/work-tracker-staging DOMAIN=work-tracker-stage.vostack.dev PROJECT=task-tracker-staging ALIAS=wt-stage-nginx ROBOTS='noindex, nofollow'`. **Staging dostane vlastné čerstvé heslá, `encryption.key` a pepper, nikdy nekopíruj tajomstvá produkcie.**
 
 ```
-cd /opt/work-tracker
+DIR=/opt/work-tracker-staging DOMAIN=work-tracker-stage.vostack.dev PROJECT=task-tracker-staging ALIAS=wt-stage-nginx ROBOTS='noindex, nofollow'
+cd "$DIR"
 umask 077
 DBPW_SU=$(openssl rand -hex 24)
 DBPW_OWNER=$(openssl rand -hex 24)
@@ -96,19 +122,23 @@ printf '%s' "$DBPW_SU" > secrets/db_superuser_password
 printf '%s' "$DBPW_OWNER" > secrets/db_owner_password
 printf '%s' "$DBPW_RW" > secrets/db_rw_password
 cat > .env <<ENV
-APP_DOMAIN = work-tracker.vostack.dev
+COMPOSE_PROJECT_NAME = $PROJECT
+EDGE_ALIAS = $ALIAS
+NGINX_ROBOTS_TAG = $ROBOTS
+
+APP_DOMAIN = $DOMAIN
 NGINX_HSTS_VALUE = max-age=31536000
 
 TLS_MODE = letsencrypt
-SSL_CERT = /etc/letsencrypt/live/work-tracker.vostack.dev/fullchain.pem
-SSL_KEY = /etc/letsencrypt/live/work-tracker.vostack.dev/privkey.pem
+SSL_CERT = /etc/letsencrypt/live/$DOMAIN/fullchain.pem
+SSL_KEY = /etc/letsencrypt/live/$DOMAIN/privkey.pem
 LE_EMAIL = <tvoj e-mail>
 
 IMAGE_PREFIX = ghcr.io/voslara4n/task-tracker
 ENV
 cat > app.env <<ENV
 CI_ENVIRONMENT = production
-app.baseURL = 'https://work-tracker.vostack.dev/'
+app.baseURL = 'https://$DOMAIN/'
 
 database.default.hostname = db
 database.default.database = task_tracker
@@ -119,7 +149,7 @@ database.default.port = 5432
 
 email.protocol = smtp
 email.transport = log
-email.fromEmail = noreply@work-tracker.vostack.dev
+email.fromEmail = noreply@$DOMAIN
 email.fromName = 'Work Tracker'
 
 encryption.key = hex2bin:$ENC
@@ -144,7 +174,7 @@ chown deploy:70 secrets/db_superuser_password secrets/db_owner_password secrets/
 chmod 0640 secrets/db_superuser_password secrets/db_owner_password secrets/db_rw_password
 ```
 
-Poznámky: `IMAGE_TAG` nastavuje `scripts/deploy.sh`, nepatrí do `.env`. GID 82 je `www-data` v alpine php obraze, GID 70 je `postgres` v `postgres:18-alpine` (init skript číta heslá rolí ako používateľ `postgres`). `email.transport = log` znamená, že e-maily sa neodosielajú, do logu idú iba metadáta. Pri zmene SMTP alebo kľúča uprav `app.env` **aj** `migrate.env` (migrácie kľúče nepotrebujú, ale CI4 sa s nimi musí spustiť rovnako).
+Pri produkcii je `NGINX_ROBOTS_TAG` prázdne alebo chýba. Poznámky: `IMAGE_TAG` nastavuje `scripts/deploy.sh`, nepatrí do `.env`. GID 82 je `www-data` v alpine php obraze, GID 70 je `postgres` v `postgres:18-alpine` (init skript číta heslá rolí ako používateľ `postgres`). Staging má vždy `email.transport = log` a `app.baseURL = 'https://work-tracker-stage.vostack.dev/'`. `email.transport = log` znamená, že e-maily sa neodosielajú, do logu idú iba metadáta. Pri zmene SMTP alebo kľúča uprav `app.env` **aj** `migrate.env` (migrácie kľúče nepotrebujú, ale CI4 sa s nimi musí spustiť rovnako).
 
 ## 7. Tajomstvá mimo servera
 
@@ -152,19 +182,21 @@ Ulož do správcu hesiel: `encryption.key`, `auth.backupCodePepper` (z `app.env`
 
 ## 8. GitHub
 
-Environment `staging` v `voslarA4N/task-tracker` a štyri secrets (nastavuje Claude cez `gh`): `DEPLOY_SSH_KEY` (privátny ed25519 kľúč `~/.ssh/work_tracker_deploy`), `DEPLOY_KNOWN_HOSTS` (overený riadok z `ssh-keyscan`), `DEPLOY_HOST` (`2.31.74.48`), `DEPLOY_USER` (`deploy`). Používateľ `deploy` je v skupine `docker`, čo je ekvivalent roota (akceptované riziko, jediný používateľ a server, kľúč iba v GitHub secrets a na dev stroji).
+Environmenty `production` a `staging` v `voslarA4N/task-tracker`, každý so štyrmi secrets (nastavuje Claude cez `gh`): `DEPLOY_SSH_KEY` (privátny ed25519 kľúč `~/.ssh/work_tracker_deploy`), `DEPLOY_KNOWN_HOSTS` (overený riadok z `ssh-keyscan`), `DEPLOY_HOST` (`2.31.74.48`), `DEPLOY_USER` (`deploy`). Používateľ `deploy` je v skupine `docker`, čo je ekvivalent roota (akceptované riziko, jediný používateľ a server, kľúč iba v GitHub secrets a na dev stroji).
 
 ## 9. Nasadenie a rollback
 
-- Nasadenie robí `scripts/deploy.sh` (plán 02-07) cez SSH z GitHub Actions.
-- Posledný fungujúci tag je v `/opt/work-tracker/.last-good-tag`.
-- Pred migráciou sa robí `pg_dump` do `/var/backups/work-tracker`.
+- Nasadenie robí `scripts/deploy.sh` cez SSH z GitHub Actions (`develop` -> staging, `main` -> produkcia). Skript odmietne beh, ak chýba `COMPOSE_PROJECT_NAME`/`EDGE_ALIAS`, sieť `edge`, alebo projekt už beží z iného adresára. Každý stack má vlastný riadok cron `cert-renew.sh`, vlastný `DOCKER_CONFIG` (`<adresár>/.docker`) a vlastný `BACKUP_DIR`.
+- Posledný fungujúci tag je v `<adresár stacku>/.last-good-tag`.
+- Pred migráciou sa robí `pg_dump` do `/var/backups/<názov adresára>`.
 - Obnova: `pg_restore --clean --if-exists -d task_tracker <súbor>` v kontajneri `db`.
 
 ## 10. Prvý admin
 
+Produkcia (pre staging rovnako v `/opt/work-tracker-staging`):
+
 ```
-ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.staging.yaml exec php php spark user:create <e-mail> --admin'
+ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.server.yaml exec php php spark user:create <e-mail> --admin'
 ```
 
 Heslo sa zadáva iba interaktívne (D-09), pre interaktívny prompt použi `ssh -t`.
@@ -186,13 +218,13 @@ Stav k 2026-10-24 (overil Claude):
 - GitHub environment `staging`: všetky štyri secrets `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`, `DEPLOY_HOST`, `DEPLOY_USER` nastavené (DEPLOY_SSH_KEY vlastník 2026-10-24).
 - Príprava je hotová, ďalší krok je prvý deploy (plán 02-09).
 
-## 12. Správa používateľa na stagingu
+## 12. Správa používateľa
 
-Na stagingu je `email.transport = log` (O-3), reset hesla e-mailom sa preto nedá dokončiť. Náhrada:
+Na serveri je `email.transport = log` (O-3), reset hesla e-mailom sa preto nedá dokončiť. Náhrada:
 
 ```
-ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.staging.yaml exec php php spark user:password <e-mail>'
-ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.staging.yaml exec php php spark user:reset-2fa <e-mail>'
+ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.server.yaml exec php php spark user:password <e-mail>'
+ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.server.yaml exec php php spark user:reset-2fa <e-mail>'
 ```
 
 - `user:password`: skrytý prompt, minimálne 12 znakov, heslo nesmie obsahovať časť e-mailu pred `@`. Odvolá všetky dôveryhodné zariadenia.
@@ -219,19 +251,21 @@ Výsledky:
 
 Dátum: 2026-10-24. Celá fáza 2 je nasadená automaticky z `main` (D-07): HEAD `ba9b92f`, GitHub Actions run 40132767378 (`check` aj `deploy` zelené), `IMAGE_TAG` = `sha-ba9b92f689e80dff486c4d57865e3b48860d5dcf`, zhodné s `/opt/work-tracker/.last-good-tag`. V tomto pláne sa nepushovalo, nasadenie už bolo hotové. Lokálne `make check` (335 testov) a `node --test tests/js/*.test.js` (26 testov) zelené.
 
-Smoke s dočasným účtom (skupina `accountant`, náhodné heslo iba v premennej shellu): `SMOKE OK`, vrátane riadku `po hesle 302/303 /2fa a nová session cookie` = OK (nie skip). Prvý beh tohto riadku zlyhal, lebo staging vracia `HTTP/2 303`, nie 302; regenerácia session bola správna (cookie `__Host-ci_session` sa po hesle zmenila, `Location: /2fa`). Opravené uvoľnením kontroly v `scripts/smoke-staging.sh` na 302 alebo 303.
+Smoke s dočasným účtom (skupina `accountant`, náhodné heslo iba v premennej shellu): `SMOKE OK`, vrátane riadku `po hesle 302/303 /2fa a nová session cookie` = OK (nie skip). Prvý beh tohto riadku zlyhal, lebo staging vracia `HTTP/2 303`, nie 302; regenerácia session bola správna (cookie `__Host-ci_session` sa po hesle zmenila, `Location: /2fa`). Opravené uvoľnením kontroly v `scripts/smoke-server.sh` na 302 alebo 303.
 
 Pamäť v pokoji (`docker stats --no-stream`, 5 minút po poslednej aktivite): nginx 4,5 MiB, php 22,3 MiB, db 31,6 MiB, spolu približne 58 MiB (< 512 MiB, NFR-02).
 
 Dočasné smoke účty `smoke+*@work-tracker.invalid` boli po každom behu zmazané (`DELETE FROM users`), overené: `SELECT count(*) FROM auth_identities WHERE secret LIKE 'smoke+%'` = 0.
 
-Poznámka k príkazom: `docker compose -f compose.staging.yaml` na serveri vyžaduje `IMAGE_TAG` (napr. `export IMAGE_TAG=$(cat /opt/work-tracker/.last-good-tag)`), inak zlyhá na interpolácii.
+Poznámka k príkazom: `docker compose -f compose.server.yaml` (do cut-overu `compose.staging.yaml`) na serveri vyžaduje `IMAGE_TAG` (napr. `export IMAGE_TAG=$(cat /opt/work-tracker/.last-good-tag)`), inak zlyhá na interpolácii.
+
+Historické sekcie 11 až 15 popisujú stav pred zavedením edge a stagingu (v nich `staging` znamená dnešnú produkciu).
 
 Ďalší krok: UAT na iPhone podľa `docs/ops/iphone-uat.md`.
 
 ## 15. Oddelenie tajomstiev na existujúcom serveri (WR-06, vykoná vlastník)
 
-Dôvod: do 2026-10-25 bol jediný `.env` (0640 `deploy:82`) mountovaný do php kontajnera, takže každý PHP-FPM worker videl heslo superusera `postgres` aj `app_owner` (vlastník schémy môže meniť insert-only `auth_events`). Od commitu s opravou WR-06 `compose.staging.yaml` mountuje do php iba `app.env`, migrácie bežia v kontajneri `migrate` s `migrate.env` a DB dostáva heslá ako súbory. **Kým tieto kroky nie sú hotové, `deploy.sh` skončí hneď na začiatku** (`Stare rozlozenie tajomstiev ...`), nič nenasadí a bežiaci stack sa nezmení. Obnova certifikátu (`cert-renew.sh`) funguje aj medzitým.
+Dôvod: do 2026-10-25 bol jediný `.env` (0640 `deploy:82`) mountovaný do php kontajnera, takže každý PHP-FPM worker videl heslo superusera `postgres` aj `app_owner` (vlastník schémy môže meniť insert-only `auth_events`). Od commitu s opravou WR-06 compose súbor mountuje do php iba `app.env`, migrácie bežia v kontajneri `migrate` s `migrate.env` a DB dostáva heslá ako súbory. **Kým tieto kroky nie sú hotové, `deploy.sh` skončí hneď na začiatku** (`Stare rozlozenie tajomstiev ...`), nič nenasadí a bežiaci stack sa nezmení. Obnova certifikátu (`cert-renew.sh`) funguje aj medzitým.
 
 Kroky ako `deploy` na serveri, nič z nich nevypisuje hodnoty. Heslá sa nemenia, iba presúvajú, preto netreba meniť roly v DB.
 
@@ -281,17 +315,17 @@ Potom spusti nasadenie (push na `main` alebo opätovné spustenie workflow). `de
 
 ```
 export IMAGE_TAG=$(cat .last-good-tag)
-docker compose -f compose.staging.yaml exec -T php sh -c "grep -c 'owner\|SUPERUSER' /var/www/html/.env; env | grep -ci password"   # 0 a 0
-docker compose -f compose.staging.yaml exec -T db sh -c 'env | grep -c "^POSTGRES_PASSWORD="'                                      # 0
+docker compose -f compose.server.yaml exec -T php sh -c "grep -c 'owner\|SUPERUSER' /var/www/html/.env; env | grep -ci password"   # 0 a 0
+docker compose -f compose.server.yaml exec -T db sh -c 'env | grep -c "^POSTGRES_PASSWORD="'                                      # 0
 ```
 
-Keď je staging po nasadení v poriadku (smoke OK, prihlásenie funguje), zmaž zálohu `rm .env.pre-wr06`. Návrat pred dokončením: `mv .env.pre-wr06 .env` a nasadiť commit pred WR-06 (`app.env`, `migrate.env` a `secrets/db_*` môžu zostať, starý compose ich nepoužíva).
+Keď je server po nasadení v poriadku (smoke OK, prihlásenie funguje), zmaž zálohu `rm .env.pre-wr06`. Návrat pred dokončením: `mv .env.pre-wr06 .env` a nasadiť commit pred WR-06 (`app.env`, `migrate.env` a `secrets/db_*` môžu zostať, starý compose ich nepoužíva).
 
 Na DB volume sa nič nemení: `POSTGRES_PASSWORD_FILE` a `DB_*_PASSWORD_FILE` sa použijú iba pri inicializácii prázdneho volume. Pri obnove servera od nuly stačí sekcia 6.
 
 ## 16. Nasadenie fázy 6 (dokumenty)
 
-Postup pre vlastníka po nasadení fázy 6 (faktúry a výkazy v PDF, zákonné texty). Vzorové PDF slúžia účtovníčke a na ručné overenie QR (D-23).
+Postup pre vlastníka po nasadení fázy 6 na produkciu (najprv ho overiť na stagingu: merge do `develop`, skontrolovať, až potom do `main`; faktúry a výkazy v PDF, zákonné texty). Vzorové PDF slúžia účtovníčke a na ručné overenie QR (D-23).
 
 1. **Rebuild obrazu kvôli `xz`** (PAY by square QR ho potrebuje): `docker compose build php`, potom kontrola `docker compose exec php xz --version` (musí vypísať verziu).
 2. **Migrácie** bežia automaticky pri deployi (`spark migrate -g owner --all`). Nové sú `RequireReportDocument` a `AddLegalTextsRevision`; existujúce faktúry sa nedotknú (produkcia má len externú FA 208-2026, vlastné faktúry `inv-1` neexistujú).
@@ -300,3 +334,62 @@ Postup pre vlastníka po nasadení fázy 6 (faktúry a výkazy v PDF, zákonné 
 5. **Ručný UAT QR**: SK vzor naskenuj aspoň dvoma slovenskými bankovými aplikáciami (IBAN, suma, VS, splatnosť), CZ vzor českou a PL vzor poľskou aplikáciou. Vystav aj testovaciu PL faktúru so sumou nad 9 999,99 PLN. Zapíš aplikáciu, verziu a výsledok (OK/chyba) a pri SK hodnotu `PayBySquare::VERSION`; chyby zapíš ako gap pre `/gsd-plan-phase 6 --gaps`.
 6. **Núdzový postup, ak `xz` chýba**: SK faktúry sa nevystavia (chyba `qr_failed`), v DB sa nič nezapíše (vystavenie je transakčné). Oprava: `docker compose build php` a nové nasadenie, potom vystavenie zopakovať.
 
+## 17. Edge proxy
+
+Jediný kontajner, ktorý publikuje porty 80 a 443 (D-02). Súbory: `docker/edge/nginx.conf`, `compose.edge.yaml`; na serveri v `/opt/edge/` ako `nginx.conf` a `compose.edge.yaml` (CI ich nenasadzuje, kopírujú sa ručne).
+
+- Port 443: `stream` s `ssl_preread`, smerovanie podľa SNI na `wt-prod-nginx:443` alebo `wt-stage-nginx:443` bez rozbalenia TLS, takže každý stack má vlastný certifikát (Let's Encrypt DNS-01), hlavičky aj CSP a HTTP/2 sa dohaduje priamo so stackom. Neznámy alebo chýbajúci SNI sa zatvorí. Mená sa rozlišujú za behu, zastavený stack nezhodí edge.
+- Port 80: `301` na `https://$host$request_uri`.
+
+Jednorazová inštalácia (ako `deploy`, po kontrole kolízií podsiete cez `docker network ls` a `ip route`):
+
+```
+docker network create --driver bridge --subnet 10.250.250.0/24 edge
+# súbory skopírovať do /opt/edge: nginx.conf (docker/edge/nginx.conf) a compose.edge.yaml
+cd /opt/edge && docker compose -f compose.edge.yaml up -d
+```
+
+Nový hostname: pridať riadok do `map` v `nginx.conf`, potom `docker compose -f compose.edge.yaml exec edge nginx -s reload`.
+
+Skutočná IP klienta: Cloudflare -> edge (`proxy_protocol on`) -> stack nginx (`listen 443 ssl proxy_protocol`). `docker/nginx/realip/edge.conf` prijíma `CF-Connecting-IP` iba z `10.250.250.0/24` (edge) a `docker/nginx/http.d/cf-peer.conf` (`geo $proxy_protocol_addr $cf_peer`) vráti `444`, ak PROXY zdroj nie je rozsah Cloudflare (ochrana pred podvrhnutím hlavičky). Vďaka tomu zostáva `$binary_remote_addr` (limit prihlasovania AUTH-04) adresou klienta. Rozsahy Cloudflare udržiava `sh scripts/cf-ips-check.sh [--write]` (zapisuje `docker/nginx/http.d/cf-peer.conf`).
+
+Lokálny test celého reťazca (HTTP/2 cez edge, realip, zatvorenie neznámeho SNI, presmerovanie 80, noindex, zahodenie PROXY zdroja mimo Cloudflare): `sh scripts/edge-selftest.sh`.
+
+## 18. Prechod produkcie na edge (cut-over)
+
+Jednorazový postup, výpadok produkcie menej ako 1 minúta (Cloudflare medzitým ukazuje 52x). `X` = celý SHA commitu s edge zmenami, ktorý už nasadil staging (obrazy `sha-X` sú na serveri stiahnuté).
+
+Predpoklady: sieť `edge` vytvorená, súbory v `/opt/edge` skopírované, edge **nespustený**, staging nasadený a overený, DNS `work-tracker-stage` existuje.
+
+Ako `deploy` v `/opt/work-tracker`:
+
+```
+cd /opt/work-tracker
+cp compose.staging.yaml compose.staging.yaml.pre-edge
+cp deploy.sh deploy.sh.pre-edge
+cp cert-renew.sh cert-renew.sh.pre-edge
+cp .env .env.pre-edge
+cp .last-good-tag .last-good-tag.pre-edge
+# z repozitára na tagu X: compose.server.yaml, scripts/deploy.sh, scripts/cert-renew.sh do /opt/work-tracker (scp)
+printf 'COMPOSE_PROJECT_NAME = task-tracker\nEDGE_ALIAS = wt-prod-nginx\n' >> .env
+IMAGE_TAG=sha-X docker compose -f compose.server.yaml config | grep -E '^name: task-tracker$'
+docker volume ls | grep task-tracker_pgdata
+IMAGE_TAG=sha-X SKIP_PULL=1 sh ./deploy.sh && (cd /opt/edge && docker compose -f compose.edge.yaml up -d)
+```
+
+`deploy.sh` s `SKIP_PULL=1` urobí overenú zálohu, no-op migráciu a prevytvorí nginx bez host portov (tu začína výpadok); edge ho ukončí. Príkaz sa píše na jeden riadok, aby výpadok trval čo najkratšie.
+
+Overenie: `SSH_TARGET=deploy@2.31.74.48 SMOKE_PROJECT=task-tracker ORIGIN_IP=2.31.74.48 sh scripts/smoke-server.sh work-tracker.vostack.dev` a to isté pre `work-tracker-stage.vostack.dev` so `SMOKE_PROJECT=task-tracker-staging SMOKE_EXPECT_NOINDEX=1`; prihlásenie na produkcii; `crontab -l` má jeden riadok `cert-renew.sh` na stack.
+
+### Rollback
+
+```
+cd /opt/edge && docker compose -f compose.edge.yaml down
+cd /opt/work-tracker
+cp deploy.sh.pre-edge deploy.sh
+cp cert-renew.sh.pre-edge cert-renew.sh
+cp .last-good-tag.pre-edge .last-good-tag
+IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.staging.yaml up -d --wait --remove-orphans
+```
+
+Starý `compose.staging.yaml` má projekt `task-tracker`, znova publikuje 80/443 a používa tie isté volumes. Ak sa zmenil riadok cron, obnov ho. Nepushovať `main`, kým sa problém nevyrieší. `compose.staging.yaml` a súbory `*.pre-edge` na serveri ostávajú týždeň stabilnej prevádzky, potom sa zmažú.
