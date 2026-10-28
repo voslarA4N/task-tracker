@@ -51,8 +51,13 @@ final class PolishZbpQrTest extends CIUnitTestCase
     {
         $s                     = $this->snap();
         $s['entity']['tax_id'] = null;
-        $this->expectException(QrPaymentFailed::class);
-        (new PolishZbpQr())->encode($s);
+
+        try {
+            (new PolishZbpQr())->encode($s);
+            $this->fail('Expected QrPaymentFailed');
+        } catch (QrPaymentFailed $e) {
+            $this->assertSame(QrPaymentFailed::NIP_INVALID, $e->reason);
+        }
     }
 
     public function testLongNumberFailsAndTitleFits(): void

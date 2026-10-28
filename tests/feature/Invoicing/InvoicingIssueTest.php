@@ -289,7 +289,7 @@ final class InvoicingIssueTest extends AuthTestCase
         $lzma = new class () implements Lzma {
             public function compress(string $raw): string
             {
-                throw new QrPaymentFailed('boom');
+                throw new QrPaymentFailed('boom', QrPaymentFailed::COMPRESSION_FAILED);
             }
         };
         $issuer = new InvoiceIssuer($this->rw(), null, new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2'), 'rep-1' => new FakePdfRenderer('rep-1')]), new SnapshotBuilder($this->rw(), null, null, null, new QrPaymentBuilder(new PayBySquare($lzma))));
@@ -300,6 +300,8 @@ final class InvoicingIssueTest extends AuthTestCase
 
         $result->assertStatus(500);
         $this->assertStringContainsString('QR kód pre platbu sa nepodarilo vytvoriť', $this->body($result));
+        $this->assertStringContainsString('nástroj xz chýba alebo zlyhal', $this->body($result));
+        $this->assertStringNotContainsString('Skontrolujte IBAN', $this->body($result));
         $this->assertSame(0, $this->invoiceCount());
     }
 }

@@ -108,6 +108,24 @@ final class InvoiceDraftServiceTest extends PgTestCase
         $this->assertFalse($cash->zbpAmountWarning);
     }
 
+    public function testDeterministicQrFailureIsReportedInPreview(): void
+    {
+        $s = $this->issueSetup(['country' => 'PL']);
+        $d = $this->service()->draft($s['client'], '2026-10', $s['entity'], null, null, null);
+
+        $this->assertSame([['reason' => 'qr_failed', 'context' => ['qr_reason' => 'nip_invalid']]], $d->errors);
+        $this->assertFalse($d->canIssue);
+
+        $cash = $this->service()->draft($s['client'], '2026-10', $s['entity'], null, null, null, 'cash');
+        $this->assertSame([], $cash->errors);
+        $this->assertTrue($cash->canIssue);
+
+        $this->owner()->query("UPDATE entity_versions SET tax_id = '1234563218' WHERE entity_id = :e:", ['e' => $s['entity']]);
+        $fixed = $this->service()->draft($s['client'], '2026-10', $s['entity'], null, null, null);
+        $this->assertSame([], $fixed->errors);
+        $this->assertTrue($fixed->canIssue);
+    }
+
     public function testEndedEntityIsNotOffered(): void
     {
         $s     = $this->issueSetup();

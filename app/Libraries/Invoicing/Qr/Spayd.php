@@ -27,11 +27,11 @@ final class Spayd
         $amount = (string) $totals['total'];
 
         if (preg_match('/^\d+\.\d{2}$/', $amount) !== 1 || strlen($amount) > 10) {
-            throw new QrPaymentFailed('SPAYD amount invalid or longer than 10 characters.');
+            throw new QrPaymentFailed('SPAYD amount invalid or longer than 10 characters.', QrPaymentFailed::AMOUNT_INVALID);
         }
 
         if (strlen($acc) > 46) {
-            throw new QrPaymentFailed('SPAYD ACC longer than 46 characters.');
+            throw new QrPaymentFailed('SPAYD ACC longer than 46 characters.', QrPaymentFailed::IBAN_INVALID);
         }
 
         $msg = mb_strtoupper(PayBySquare::ascii(trim((string) ($labels['invoice'] ?? '') . ' ' . (string) $snapshot['number'])));

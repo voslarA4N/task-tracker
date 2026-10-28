@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries\Invoicing;
 
 use App\Libraries\Invoicing\Qr\PolishZbpQr;
+use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use App\Libraries\Master\EntityDirectory;
 use App\Libraries\Master\EntityVersionResolver;
 use App\Libraries\Master\InvalidSeriesFormat;
@@ -156,6 +157,22 @@ final class InvoiceDraftService
         $defaultNote = is_array($texts['invoice_note'] ?? null) ? $texts['invoice_note'] : null;
         $note        = $noteDirty ? IssueInput::normalizeNote((string) $paymentNote) : ($defaultNote['body'] ?? null);
         $provisional = (bool) ($texts['vat_note']['provisional'] ?? false) || (! $noteDirty && (bool) ($defaultNote['provisional'] ?? false));
+
+        // Skusobny QR s najdlhsim moznym cislom radu: deterministicke zlyhanie (NIP, IBAN, suma, xz) sa ukaze uz v nahlade (WR-03).
+        if (is_array($snapshot) && $method === 'transfer' && $seriesFmt !== null && $errors === []) {
+            $probeNumber = self::longestNumber($seriesFmt, $issue);
+
+            if ($probeNumber !== '') {
+                $probe                      = $snapshot;
+                $probe['payment']['method'] = $method;
+
+                try {
+                    $this->builder->withNumber($probe, $probeNumber);
+                } catch (QrPaymentFailed $e) {
+                    $errors[] = ['reason' => 'qr_failed', 'context' => ['qr_reason' => $e->reason]];
+                }
+            }
+        }
 
         $zbpApplies       = is_array($snapshot) && $method === 'transfer' && PolishZbpQr::applies($snapshot);
         $zbpWarning       = $zbpApplies && $seriesFmt !== null && ! PolishZbpQr::titleFits(self::longestNumber($seriesFmt, $issue));

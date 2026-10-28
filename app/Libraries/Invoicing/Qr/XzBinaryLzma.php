@@ -17,7 +17,7 @@ final class XzBinaryLzma implements Lzma
         $proc  = @proc_open(self::COMMAND, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
 
         if (! is_resource($proc)) {
-            throw new QrPaymentFailed('xz is not runnable');
+            throw new QrPaymentFailed('xz is not runnable', QrPaymentFailed::COMPRESSION_FAILED);
         }
 
         fwrite($pipes[0], $raw);
@@ -28,7 +28,7 @@ final class XzBinaryLzma implements Lzma
         fclose($pipes[2]);
 
         if (proc_close($proc) !== 0 || $out === '') {
-            throw new QrPaymentFailed('xz failed: ' . $err);
+            throw new QrPaymentFailed('xz failed: ' . $err, QrPaymentFailed::COMPRESSION_FAILED);
         }
 
         return $out;

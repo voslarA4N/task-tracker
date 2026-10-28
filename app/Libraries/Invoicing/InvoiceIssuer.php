@@ -196,9 +196,9 @@ final class InvoiceIssuer
         try {
             $snapshot = $this->builder->withNumber($snapshot, $allocated->number);
         } catch (QrPaymentFailed $e) {
-            log_message('error', 'QR payment failed: ' . $e->getMessage());
+            log_message('error', 'QR payment failed (' . $e->reason . '): ' . $e->getMessage());
 
-            throw new IssueRejected('qr_failed');
+            throw new IssueRejected('qr_failed', ['qr_reason' => $e->reason]);
         }
 
         // 9. PDF vnutri transakcie

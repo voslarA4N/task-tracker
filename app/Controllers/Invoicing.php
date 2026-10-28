@@ -181,7 +181,7 @@ final class Invoicing extends BaseController
                 return $this->renderPreview(false, $raw, 422, [['message' => lang('Invoicing.errorSequence', [$format])]]);
 
             case 'qr_failed':
-                return $this->renderPreview(false, $raw, 500, [['message' => lang('Invoicing.errorQrFailed')]]);
+                return $this->renderPreview(false, $raw, 500, [['message' => lang('Invoicing.errorQrFailed', [self::qrReasonMessage($e->context)])]]);
 
             case 'report_failed':
                 return $this->renderPreview(false, $raw, 500, [['message' => lang('Invoicing.errorReportFailed')]]);
@@ -211,7 +211,26 @@ final class Invoicing extends BaseController
             'version_not_found'  => lang('Invoicing.errorVersion'),
             'amount_mismatch'    => lang('Invoicing.errorAmountMismatch'),
             'entity_inactive'    => lang('Invoicing.errorEntityInactive', [self::dateLabel($text('date'))]),
+            'qr_failed'          => lang('Invoicing.errorQrPreview', [self::qrReasonMessage($context)]),
             default              => lang('Invoicing.errorGeneric'),
+        };
+    }
+
+    /**
+     * Konkretna pricina zlyhania QR (QrPaymentFailed::REASONS) ako veta s polom na opravu (WR-03).
+     *
+     * @param array<string, mixed> $context
+     */
+    public static function qrReasonMessage(array $context): string
+    {
+        return match ($context['qr_reason'] ?? null) {
+            'nip_invalid'        => lang('Invoicing.qrReasonNip'),
+            'iban_invalid'       => lang('Invoicing.qrReasonIban'),
+            'amount_invalid'     => lang('Invoicing.qrReasonAmount'),
+            'title_too_long'     => lang('Invoicing.qrReasonTitle'),
+            'payload_too_long'   => lang('Invoicing.qrReasonPayload'),
+            'compression_failed' => lang('Invoicing.qrReasonCompression'),
+            default              => lang('Invoicing.qrReasonOther'),
         };
     }
 

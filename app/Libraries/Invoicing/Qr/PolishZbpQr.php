@@ -57,29 +57,29 @@ final class PolishZbpQr
         $nip    = (string) preg_replace('/^PL/i', '', (string) preg_replace('/[\s-]/', '', (string) ($entity['tax_id'] ?? '')));
 
         if (preg_match('/^\d{10}$/', $nip) !== 1) {
-            throw new QrPaymentFailed('Entity NIP missing or invalid for ZBP QR.');
+            throw new QrPaymentFailed('Entity NIP missing or invalid for ZBP QR.', QrPaymentFailed::NIP_INVALID);
         }
 
         if (! self::titleFits($number)) {
-            throw new QrPaymentFailed('Invoice number longer than ' . self::TITLE_MAX . ' characters.');
+            throw new QrPaymentFailed('Invoice number longer than ' . self::TITLE_MAX . ' characters.', QrPaymentFailed::TITLE_TOO_LONG);
         }
 
         $iban = str_replace(' ', '', (string) $bank['iban']);
 
         if (preg_match('/^PL(\d{26})$/', $iban, $m) !== 1) {
-            throw new QrPaymentFailed('IBAN is not a Polish NRB.');
+            throw new QrPaymentFailed('IBAN is not a Polish NRB.', QrPaymentFailed::IBAN_INVALID);
         }
 
         $total = (string) ((array) $snapshot['totals'])['total'];
 
         if (preg_match('/^(\d+)\.(\d{2})$/', $total, $a) !== 1) {
-            throw new QrPaymentFailed('ZBP amount invalid.');
+            throw new QrPaymentFailed('ZBP amount invalid.', QrPaymentFailed::AMOUNT_INVALID);
         }
 
         $grosze = ltrim($a[1] . $a[2], '0');
 
         if (strlen($grosze) > self::AMOUNT_MAX_GROSZE_DIGITS) {
-            throw new QrPaymentFailed('ZBP amount exceeds 9999.99 PLN.');
+            throw new QrPaymentFailed('ZBP amount exceeds 9999.99 PLN.', QrPaymentFailed::AMOUNT_INVALID);
         }
 
         $grosze = str_pad($grosze === '' ? '0' : $grosze, self::AMOUNT_MAX_GROSZE_DIGITS, '0', STR_PAD_LEFT);
@@ -90,7 +90,7 @@ final class PolishZbpQr
         $out = implode('|', [$nip, 'PL', $m[1], $grosze, $name, $title, '', '', '']);
 
         if (mb_strlen($out) > 160) {
-            throw new QrPaymentFailed('ZBP payload longer than 160 characters.');
+            throw new QrPaymentFailed('ZBP payload longer than 160 characters.', QrPaymentFailed::PAYLOAD_TOO_LONG);
         }
 
         return $out;

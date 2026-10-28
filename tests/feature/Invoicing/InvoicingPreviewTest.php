@@ -374,4 +374,14 @@ final class InvoicingPreviewTest extends AuthTestCase
         $this->assertStringContainsString($qrHidden, $cash);
         $this->assertStringContainsString($noShown, $cash);
     }
+
+    public function testPreviewNamesQrCauseForPlEntityWithoutNip(): void
+    {
+        $s    = $this->issueSetup(['country' => 'PL']);
+        $html = $this->body($this->get('/invoices/new?client=' . $s['client'] . '&month=2026-10'));
+
+        $this->assertStringContainsString('QR kód pre platbu sa nedá vytvoriť', $html);
+        $this->assertStringContainsString('Subjekt nemá platné NIP', $html);
+        $this->assertStringNotContainsString('Skontrolujte IBAN', $html);
+    }
 }

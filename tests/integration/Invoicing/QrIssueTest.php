@@ -116,6 +116,7 @@ final class QrIssueTest extends PgTestCase
             $this->fail('Expected IssueRejected');
         } catch (IssueRejected $e) {
             $this->assertSame('qr_failed', $e->reason);
+            $this->assertSame(['qr_reason' => 'nip_invalid'], $e->context);
         }
 
         $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM invoices')->getRow()->c);
