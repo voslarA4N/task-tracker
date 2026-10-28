@@ -120,10 +120,19 @@ sh scripts/mail-provision.sh --init >/dev/null
 STALWART_RECOVERY_ADMIN=admin:$BOOT_PW dc up -d unbound stalwart >/dev/null
 export STALWART_BOOTSTRAP_USER=admin STALWART_BOOTSTRAP_PASSWORD=$BOOT_PW
 sh scripts/mail-provision.sh >/dev/null && ok "provisioning (bootstrap, 1. beh)" || { fail "provisioning 1. beh"; exit 1; }
-STATE1=$(for o in Domain Account NetworkListener AllowedIp Certificate; do sh scripts/mail-provision.sh --cli query $o | sort; done)
+# Hlavicka tabulky CLI nie je stabilna (stlpec "Description" vs "Full Name" pri tych istych hodnotach),
+# preto sa porovnavaju iba riadky s datami.
+state() { for o in Domain Account NetworkListener AllowedIp Certificate; do sh scripts/mail-provision.sh --cli query "$o" | grep -v '^Id ' | sort; done; }
+STATE1=$(state)
 sh scripts/mail-provision.sh >/dev/null && ok "provisioning (2. beh)" || fail "provisioning 2. beh"
-STATE2=$(for o in Domain Account NetworkListener AllowedIp Certificate; do sh scripts/mail-provision.sh --cli query $o | sort; done)
-[ "$STATE1" = "$STATE2" ] && ok "provisioning idempotentny (ziadne duplicity, rovnake id)" || fail "provisioning nie je idempotentny"
+STATE2=$(state)
+if [ "$STATE1" = "$STATE2" ]; then
+  ok "provisioning idempotentny (ziadne duplicity, rovnake id)"
+else
+  fail "provisioning nie je idempotentny"
+  printf '%s\n' "$STATE1" > "$TMPD/state1"; printf '%s\n' "$STATE2" > "$TMPD/state2"
+  diff "$TMPD/state1" "$TMPD/state2" | head -40 >&2 || true
+fi
 unset STALWART_BOOTSTRAP_USER STALWART_BOOTSTRAP_PASSWORD
 
 # obnova bez recovery admina; dalsi beh uz ako stalwart-admin
