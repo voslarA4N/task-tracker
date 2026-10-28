@@ -27,6 +27,8 @@ use Throwable;
  */
 final class Invoicing extends BaseController
 {
+    private const PAYMENT_FIELDS = ['payment_method', 'payment_note', 'payment_note_dirty'];
+
     public function new(): ResponseInterface
     {
         return $this->render(false);
@@ -381,7 +383,9 @@ final class Invoicing extends BaseController
             $data['entities']   = $draft->entities;
             $data['monthLabel'] = mb_strtolower(BillingMonth::label($month, $request->getLocale()));
             $data['values']     = $this->selection($draft);
-            $data['refresh']    = '/fragments/invoice-preview?' . http_build_query($data['values']);
+            // Platobne polia nie su v URL obnovy: posiela ich hx-include z aktualneho formulara, inak by presun
+            // casti prepisal rozpisanu poznamku a formu uhrady hodnotami z casu vykreslenia (WR-07).
+            $data['refresh'] = '/fragments/invoice-preview?' . http_build_query(array_diff_key($data['values'], array_flip(self::PAYMENT_FIELDS)));
 
             foreach ($clients as $c) {
                 if ((int) $c['id'] === $clientId) {

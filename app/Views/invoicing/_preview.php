@@ -25,7 +25,7 @@ $empty = lang('Tasks.empty');
 $query = http_build_query($values);
 $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-preview" hx-trigger="change" hx-target="#inv-preview" hx-swap="outerHTML" hx-push-url="true" hx-include="' . $include . ', #inv-payment-method, #inv-payment-note, #inv-payment-note-dirty"';
 ?>
-<div id="inv-preview"<?php if (($refresh ?? '') !== '') : ?> hx-get="<?= htmlspecialchars($refresh, ENT_QUOTES, 'UTF-8') ?>" hx-trigger="allocationChanged from:body" hx-target="#inv-preview" hx-swap="outerHTML"<?php endif ?>>
+<div id="inv-preview"<?php if (($refresh ?? '') !== '') : ?> hx-get="<?= htmlspecialchars($refresh, ENT_QUOTES, 'UTF-8') ?>" hx-trigger="allocationChanged from:body" hx-target="#inv-preview" hx-swap="outerHTML" hx-include="#inv-payment-method, #inv-payment-note, #inv-payment-note-dirty"<?php endif ?>>
 <?php if (is_array($notice ?? null)) : ?>
     <div class="alert alert-success" role="alert" aria-live="polite"><?= esc((string) ($notice['message'] ?? '')) ?></div>
 <?php endif ?>

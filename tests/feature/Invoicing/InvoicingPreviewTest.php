@@ -384,4 +384,20 @@ final class InvoicingPreviewTest extends AuthTestCase
         $this->assertStringContainsString('Subjekt nemá platné NIP', $html);
         $this->assertStringNotContainsString('Skontrolujte IBAN', $html);
     }
+
+    public function testAllocationRefreshIncludesLivePaymentFieldsInsteadOfStaleUrlValues(): void
+    {
+        $s    = $this->issueSetup();
+        $html = $this->body($this->fragment('/fragments/invoice-preview?client=' . $s['client'] . '&month=2026-10&payment_method=cash&payment_note=Stara&payment_note_dirty=1'));
+
+        $this->assertSame(1, preg_match('/<div id="inv-preview" hx-get="([^"]*)" hx-trigger="allocationChanged from:body"[^>]*>/', $html, $m));
+        $this->assertStringContainsString('hx-include="#inv-payment-method, #inv-payment-note, #inv-payment-note-dirty"', $m[0]);
+        $refresh = html_entity_decode($m[1], ENT_QUOTES);
+        $this->assertStringNotContainsString('payment_', $refresh);
+
+        // htmx pripoji aktualne hodnoty z formulara k URL obnovy
+        $after = $this->body($this->fragment($refresh . '&payment_method=card&payment_note=Nova&payment_note_dirty=1'));
+        $this->assertStringContainsString('<option value="card" selected>', $after);
+        $this->assertStringContainsString('>Nova</textarea>', $after);
+    }
 }
