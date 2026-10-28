@@ -288,3 +288,15 @@ docker compose -f compose.staging.yaml exec -T db sh -c 'env | grep -c "^POSTGRE
 Keď je staging po nasadení v poriadku (smoke OK, prihlásenie funguje), zmaž zálohu `rm .env.pre-wr06`. Návrat pred dokončením: `mv .env.pre-wr06 .env` a nasadiť commit pred WR-06 (`app.env`, `migrate.env` a `secrets/db_*` môžu zostať, starý compose ich nepoužíva).
 
 Na DB volume sa nič nemení: `POSTGRES_PASSWORD_FILE` a `DB_*_PASSWORD_FILE` sa použijú iba pri inicializácii prázdneho volume. Pri obnove servera od nuly stačí sekcia 6.
+
+## 16. Nasadenie fázy 6 (dokumenty)
+
+Postup pre vlastníka po nasadení fázy 6 (faktúry a výkazy v PDF, zákonné texty). Vzorové PDF slúžia účtovníčke a na ručné overenie QR (D-23).
+
+1. **Rebuild obrazu kvôli `xz`** (PAY by square QR ho potrebuje): `docker compose build php`, potom kontrola `docker compose exec php xz --version` (musí vypísať verziu).
+2. **Migrácie** bežia automaticky pri deployi (`spark migrate -g owner --all`). Nové sú `RequireReportDocument` a `AddLegalTextsRevision`; existujúce faktúry sa nedotknú (produkcia má len externú FA 208-2026, vlastné faktúry `inv-1` neexistujú).
+3. **Vzorové PDF**: `docker compose exec -u www-data php php spark documents:samples` vytvorí súbory `writable/samples/{profil}-{jazyk}-faktura.pdf` a `...-vykaz.pdf` (profily sk, cz, pl, pl_eu_b2b, pl_non_eu, každý v jazyku profilu a v `en`). Príkaz len číta aktuálne znenia zákonných textov, nič nezapisuje do DB, všetky strany majú štítok VZOR. Voľby `--profile`, `--language`, `--out <podadresár>`. Súbory skopíruj z kontajnera (`docker compose cp php:/var/www/html/writable/samples ./samples`). Meranie výkonu (nepatrí do `make test`): `docker compose exec -T -u www-data php vendor/bin/phpunit --group performance` (skupina `performance`, každé PDF pod 2 s, peak pamäte pod 128 MB); spúšťa sa pred `/gsd-verify-work`.
+4. **Účtovníčka**: pošli vzory, prejdite otvorené otázky 1 až 7 z `06-CONTEXT.md`, po potvrdení uprav znenia v Nastavenia → Zákonné texty a zaškrtni „Potvrdené účtovníčkou“.
+5. **Ručný UAT QR**: SK vzor naskenuj aspoň dvoma slovenskými bankovými aplikáciami (IBAN, suma, VS, splatnosť), CZ vzor českou a PL vzor poľskou aplikáciou. Vystav aj testovaciu PL faktúru so sumou nad 9 999,99 PLN. Zapíš aplikáciu, verziu a výsledok (OK/chyba) a pri SK hodnotu `PayBySquare::VERSION`; chyby zapíš ako gap pre `/gsd-plan-phase 6 --gaps`.
+6. **Núdzový postup, ak `xz` chýba**: SK faktúry sa nevystavia (chyba `qr_failed`), v DB sa nič nezapíše (vystavenie je transakčné). Oprava: `docker compose build php` a nové nasadenie, potom vystavenie zopakovať.
+
