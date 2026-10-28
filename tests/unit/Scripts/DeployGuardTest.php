@@ -38,6 +38,9 @@ final class DeployGuardTest extends CIUnitTestCase
             [ -z "${FAKE_NO_IMAGE-}" ] || exit 1
             ;;
           "ps "*)
+            # Ako skutočný docker: .Labels je v `docker ps` reťazec, index na ňom zlyhá.
+            case "$*" in *"index .Labels"*) echo 'failed to execute template' >&2; exit 1 ;; esac
+            [ -z "${FAKE_PS_FAIL-}" ] || exit 1
             [ -z "${FAKE_PS_WORKDIR-}" ] || printf '%s\n' "$FAKE_PS_WORKDIR"
             ;;
           *"staging:seed"*)
@@ -185,6 +188,15 @@ final class DeployGuardTest extends CIUnitTestCase
         $this->assertStringNotContainsString('pull', $this->log());
         $this->assertStringContainsString('/other', $err);
         $this->assertStringContainsString(realpath($this->dir) ?: $this->dir, $err);
+    }
+
+    public function testFailingProjectDirectoryCheckFailsBeforePull(): void
+    {
+        [$code, $err] = $this->runDeploy(['FAKE_PS_FAIL' => '1']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertStringNotContainsString('pull', $this->log());
+        $this->assertStringContainsString('docker ps', $err);
     }
 
     public function testSkipPullInspectsImagesInsteadOfPulling(): void
