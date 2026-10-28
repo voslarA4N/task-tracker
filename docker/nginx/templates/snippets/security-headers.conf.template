@@ -3,3 +3,5 @@ add_header Strict-Transport-Security "${NGINX_HSTS_VALUE}" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+# Staging nastavuje "noindex, nofollow" (NGINX_ROBOTS_TAG); prazdna hodnota = hlavicka sa neposle.
+add_header X-Robots-Tag "${NGINX_ROBOTS_TAG}" always;

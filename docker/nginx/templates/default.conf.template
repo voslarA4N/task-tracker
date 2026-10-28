@@ -1,5 +1,9 @@
 server_tokens off;
 
+# Http-level snippety (geo $cf_peer z PROXY protocol). Iba server obraz; dev adresar nema,
+# prazdny glob nginx toleruje.
+include /etc/nginx/http.d/*.conf;
+
 # Limit pokusov na prihlasovacie URL (AUTH-04): kluc iba pre /login, /2fa, /password.
 # Prazdny kluc = bez limitu. Kluc sa pocita z normalizovaneho $uri (dekodovane %XX,
 # zlucene lomky, vyriesene ./..), nie zo suroveho $request_uri (WR-01: //login,
@@ -23,7 +27,8 @@ server {
 }
 
 server {
-    listen 443 ssl default_server;
+    # Server: PROXY protocol z edge (NGINX_PROXY_PROTOCOL=proxy_protocol); dev: prazdne.
+    listen 443 ssl default_server ${NGINX_PROXY_PROTOCOL};
     http2 on;
     server_name ${APP_DOMAIN};
     # Predvolene zapnute; $uri pre $auth_limit_key na tom zavisi (WR-01).
@@ -34,7 +39,7 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_session_cache shared:SSL:1m;
 
-    # Skutocna IP klienta z Cloudflare (staging obraz); v dev je adresar prazdny.
+    # Skutocna IP klienta z CF-Connecting-IP cez edge (server obraz); v dev je adresar prazdny.
     include /etc/nginx/realip.d/*.conf;
 
     root /var/www/html/public;

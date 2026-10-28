@@ -3,7 +3,7 @@
 # Samotny tento subor NEPOUZIVAT na nasadenie: php nema .env ani tajomstva,
 # writable/ nie je na volume (sessions, logy, PDF by sa stratili pri rebuild-e),
 # nginx nema porty, certifikaty ani public/. Staging/produkcia pouziva
-# compose.staging.yaml (Phase 2); finalny hardening pride vo Phase 12
+# compose.server.yaml (Phase 2); finalny hardening pride vo Phase 12
 # (WR-03/WR-04 ostavaju odlozene).
 name: task-tracker
 
@@ -32,6 +32,9 @@ services:
       NGINX_HSTS_VALUE: ${NGINX_HSTS_VALUE:-max-age=31536000}
       SSL_CERT: ${SSL_CERT:-/etc/nginx/certs/work-tracker.loc.pem}
       SSL_KEY: ${SSL_KEY:-/etc/nginx/certs/work-tracker.loc-key.pem}
+      # Spolocna sablona so serverom: dev nema edge ani PROXY protocol.
+      NGINX_PROXY_PROTOCOL: ""
+      NGINX_ROBOTS_TAG: ${NGINX_ROBOTS_TAG:-}
 
   db:
     image: postgres:18-alpine
