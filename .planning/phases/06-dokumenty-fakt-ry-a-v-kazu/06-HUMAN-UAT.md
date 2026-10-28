@@ -20,7 +20,7 @@ result: [pending]
 ### 2. QR PAY by square (SK)
 Naskenovať QR na SK vzore dvoma slovenskými bankovými aplikáciami.
 expected: suma, IBAN, VS a správa sedia; zapísať akceptovanú `PayBySquare::VERSION` a EOPM
-result: [pending]
+result: issue → opravené (2026-10-28). ČSOB SK: hlavička 1.1.0 aj 1.2.0 nerozpoznaná, rozpozná iba 1.0.0; pri vyplnenej ulici/meste príjemcu hlási chybu adresného riadku, s prázdnymi poliami alebo iba s menom bez chyby. Obsah 1.1.0 bol bajtovo zhodný s referenčnou knižnicou bysquare 4.1.0 a QR z PDF čitateľný (zbar), problém bol iba vo verzii a adrese. Oprava: `PayBySquare::VERSION = 0x00`, ulica a mesto prázdne, meno ostáva; zlatý vektor v PayBySquareTest. EOPM (xz raw) aplikácia akceptuje. Druhá slovenská aplikácia: [pending]
 
 ### 3. QR SPAYD (CZ) a ZBP (PL), vrátane sumy nad 9 999,99 PLN
 Naskenovať CZ vzor českou a PL vzor poľskou aplikáciou; vystaviť testovaciu PL faktúru (PLN, PL IBAN) nad 9 999,99 PLN.
