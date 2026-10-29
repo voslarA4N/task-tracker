@@ -122,6 +122,11 @@ class InvoiceMailer
         $draft   = $this->draft($cmd->invoiceId, $cmd->kind);
         $invoice = $draft['invoice'];
 
+        // 3b. upomienka iba pri nenulovom zostatku (D-24, T-07-57)
+        if ($cmd->kind === 'reminder' && bccomp((string) ($invoice['balance'] ?? '0'), '0', 2) <= 0) {
+            throw new SendRejected('no_balance');
+        }
+
         // 4. odosielatel
         $sender = $draft['sender'];
 
@@ -134,7 +139,8 @@ class InvoiceMailer
         // 5. prilohy: iba ulozene bajty (T-07-14)
         $attachments = $this->loadAttachments($cmd, $invoice, $draft['language']);
 
-        // 6. sprava
+        // 6. sprava (upomienka sa zaradi do vlakna povodneho odoslania, D-12)
+        $replyTo   = $cmd->kind === 'reminder' ? $this->threadMessageId($cmd->invoiceId) : null;
         $messageId = $this->mailer->messageIdFor();
         $message   = new OutgoingMessage(
             kind: $cmd->kind,
@@ -149,7 +155,7 @@ class InvoiceMailer
             htmlBody: TemplateRenderer::html($cmd->body),
             attachments: array_map(static fn (array $a): array => ['name' => $a['name'], 'bytes' => $a['bytes'], 'mime' => 'application/pdf'], $attachments),
             messageId: $messageId,
-            inReplyTo: null,
+            inReplyTo: $cmd->kind === 'reminder' ? $replyTo : null,
         );
 
         // 7. SMTP mimo transakcie (D-04, T-07-20)
@@ -174,6 +180,7 @@ class InvoiceMailer
             'body_sha256'    => hash('sha256', $cmd->body),
             'attachments'    => json_encode(array_map(static fn (array $a): array => ['kind' => $a['kind'], 'name' => $a['name'], 'sha256' => $a['sha256'], 'size' => strlen($a['bytes'])], $attachments), JSON_THROW_ON_ERROR),
             'message_id'     => $messageId,
+            'in_reply_to'    => $replyTo,
             'smtp_response'  => $outcome->smtpResponse,
             'transport'      => $outcome->transport,
             'counts_as_sent' => $counts ? 'true' : 'false',
@@ -250,9 +257,9 @@ class InvoiceMailer
     {
         $result = $this->db->query(
             'INSERT INTO invoice_sends (invoice_id, kind, sent_at, recipients, bcc, from_email, from_name, reply_to, subject, body_sha256, attachments,
-                    message_id, smtp_response, transport, counts_as_sent, request_key, created_at, created_by)
+                    message_id, in_reply_to, smtp_response, transport, counts_as_sent, request_key, created_at, created_by)
              VALUES (:invoice_id:, :kind:, :sent_at:, CAST(:recipients: AS jsonb), CAST(:bcc: AS jsonb), :from_email:, :from_name:, :reply_to:, :subject:, :body_sha256:,
-                    CAST(:attachments: AS jsonb), :message_id:, :smtp_response:, :transport:, CAST(:counts_as_sent: AS boolean), CAST(:request_key: AS uuid), :created_at:, :created_by:)
+                    CAST(:attachments: AS jsonb), :message_id:, :in_reply_to:, :smtp_response:, :transport:, CAST(:counts_as_sent: AS boolean), CAST(:request_key: AS uuid), :created_at:, :created_by:)
              RETURNING id',
             $row,
         );
@@ -377,6 +384,21 @@ class InvoiceMailer
         }
 
         return false;
+    }
+
+    /**
+     * Message-ID posledneho nezruseneho odoslania faktury (preferuje odoslania pocitane ako klientske).
+     */
+    private function threadMessageId(int $invoiceId): ?string
+    {
+        $row = $this->db->query(
+            "SELECT s.message_id FROM invoice_sends s LEFT JOIN invoice_send_voids v ON v.send_id = s.id
+             WHERE s.invoice_id = :i: AND v.id IS NULL AND s.kind IN ('invoice', 'resend') AND s.message_id IS NOT NULL AND s.message_id <> ''
+             ORDER BY s.counts_as_sent DESC, s.sent_at DESC, s.id DESC LIMIT 1",
+            ['i' => $invoiceId],
+        )->getRowArray();
+
+        return $row === null ? null : (string) $row['message_id'];
     }
 
     private function findByRequestKey(string $key): ?SendResult
