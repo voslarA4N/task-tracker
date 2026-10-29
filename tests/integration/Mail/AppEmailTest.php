@@ -10,8 +10,8 @@ use App\Libraries\Mail\SendOutcome;
 use App\Libraries\Platform\Uuid;
 use CodeIgniter\Test\CIUnitTestCase;
 use Config\Email as EmailConfig;
-use Error;
 use PHPUnit\Framework\Attributes\Group;
+use ReflectionProperty;
 use Tests\Support\CapturingEmail;
 
 /**
@@ -136,20 +136,9 @@ final class AppEmailTest extends CIUnitTestCase
         $outcome = new SendOutcome(true, 'log', null);
         $message = new OutgoingMessage('invoice', 'a@b.test', 'A', null, ['c@d.test'], [], [], 's', 't', 'h', [], '<x@y>', null);
 
-        try {
-            // @phpstan-ignore-next-line
-            $outcome->ok = false;
-            $this->fail('SendOutcome musi byt readonly');
-        } catch (Error) {
-            $this->assertTrue($outcome->ok);
-        }
-
-        try {
-            // @phpstan-ignore-next-line
-            $message->subject = 'x';
-            $this->fail('OutgoingMessage musi byt readonly');
-        } catch (Error) {
-            $this->assertSame('s', $message->subject);
-        }
+        $this->assertTrue((new ReflectionProperty(SendOutcome::class, 'ok'))->isReadOnly());
+        $this->assertTrue((new ReflectionProperty(OutgoingMessage::class, 'subject'))->isReadOnly());
+        $this->assertTrue($outcome->ok);
+        $this->assertSame('s', $message->subject);
     }
 }

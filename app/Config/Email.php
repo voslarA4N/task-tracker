@@ -28,6 +28,16 @@ class Email extends BaseConfig
     public string $transport = 'smtp';
 
     /**
+     * Povolene domeny adresy From (CSV), D-27. Env: email.allowedFromDomains
+     */
+    public string $allowedFromDomains = 'vostack.dev';
+
+    /**
+     * SMTP obalka (MAIL FROM) = ucet aplikacie; prazdne = fromEmail. Env: email.envelopeFrom
+     */
+    public string $envelopeFrom = '';
+
+    /**
      * The server path to Sendmail.
      */
     public string $mailPath = '/usr/sbin/sendmail';
@@ -60,7 +70,7 @@ class Email extends BaseConfig
     /**
      * SMTP Timeout (in seconds)
      */
-    public int $SMTPTimeout = 5;
+    public int $SMTPTimeout = 15;
 
     /**
      * Enable persistent SMTP connections
