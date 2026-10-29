@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Completed 07-12-PLAN.md
-last_updated: "2026-10-29T18:01:32.292Z"
+last_updated: "2026-10-29T18:09:52.367Z"
 last_activity: 2026-10-29
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 85
-  completed_plans: 83
+  completed_plans: 84
   percent: 50
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 07 (doru-enie-hrady-a-upomienky) — EXECUTING
-Plan: 13 of 14
+Plan: 14 of 14
 Status: Ready to execute
 Last activity: 2026-10-29
 
@@ -89,6 +89,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 06 P06 | 40min | 3 tasks | 16 files |
 | Phase 07 P04 | 75min | 2 tasks | 17 files |
 | Phase 07 P10 | 45min | 2 tasks | 14 files |
+| Phase 07 P13 | 40min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,7 @@ Recent decisions affecting current work:
 - [Phase 06]: previewToken omits whole payment section; legal.texts.invoice_note stays in token
 - [Phase 06]: D-19 refined: ZBP number >32 chars gives no QR; missing PL NIP still qr_failed
 - [Phase 07]: Payment guard: pg_advisory_xact_lock(hashtext('payments'), invoice_id); void as insert-only payment_voids; total=0 never auto-paid
+- [Phase 07]: Reminder threads via latest non-voided invoice/resend message_id; no_balance guard server-side
 
 ### Pending Todos
 
