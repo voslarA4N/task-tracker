@@ -201,6 +201,23 @@ final class ManualSendService
         $this->db->query("SELECT pg_advisory_xact_lock(hashtext('invoice_sends'), :id:)", ['id' => $invoiceId]);
     }
 
+    /**
+     * Id zaznamu, ktory uz vznikol pod tym istym request_key pre tuto fakturu (opakovany POST, WR-02).
+     */
+    public function replayFor(int $invoiceId, string $requestKey): ?int
+    {
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/Di', $requestKey) !== 1) {
+            return null;
+        }
+
+        $row = $this->db->query(
+            "SELECT id FROM invoice_sends WHERE request_key = CAST(:k: AS uuid) AND invoice_id = :i: AND kind = 'manual'",
+            ['k' => $requestKey, 'i' => $invoiceId],
+        )->getRowArray();
+
+        return $row === null ? null : (int) $row['id'];
+    }
+
     private function replayOf(string $requestKey): ?int
     {
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/Di', $requestKey) !== 1) {

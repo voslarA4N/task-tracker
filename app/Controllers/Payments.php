@@ -9,6 +9,7 @@ use App\Libraries\Platform\Uuid;
 use App\Libraries\Receivables\InvoiceStatusQueries;
 use App\Libraries\Receivables\PaymentRejected;
 use App\Libraries\Receivables\PaymentService;
+use App\Libraries\Receivables\RecordedPayment;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\ResponseInterface;
 use IntlDateFormatter;
@@ -33,6 +34,13 @@ final class Payments extends BaseController
 
     public function record(int $id): ResponseInterface
     {
+        // Opakovany POST (strata odpovede) vrati povodny vysledok skor, nez stavova brana odmietne zaplatenu fakturu (WR-02)
+        $replay = (new PaymentService())->replayFor($id, $this->post('request_key'));
+
+        if ($replay !== null) {
+            return $this->done($this->recordedMessage($replay, $this->currency($id)), $this->returnTo($this->post('return_to'), $id));
+        }
+
         $ctx    = $this->context($id);
         $values = [
             'paid_on'     => $this->post('paid_on'),
@@ -63,11 +71,14 @@ final class Payments extends BaseController
             return $this->rejected($e, $ctx, $values);
         }
 
-        $message = $result->statusAfter === 'paid'
-            ? lang('Payments.recordedPaid')
-            : lang('Payments.recorded', [MoneyFormat::format($result->amount, $ctx['currency'])]);
+        return $this->done($this->recordedMessage($result, $ctx['currency']), $values['return_to']);
+    }
 
-        return $this->done($message, $values['return_to']);
+    private function recordedMessage(RecordedPayment $result, string $currency): string
+    {
+        return $result->statusAfter === 'paid'
+            ? lang('Payments.recordedPaid')
+            : lang('Payments.recorded', [MoneyFormat::format($result->amount, $currency)]);
     }
 
     public function impact(int $id): ResponseInterface

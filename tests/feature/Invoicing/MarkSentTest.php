@@ -134,6 +134,25 @@ final class MarkSentTest extends AuthTestCase
         $this->assertNoInline($html);
     }
 
+    public function testReplayAfterMarkReturnsOriginalResultNot404(): void
+    {
+        $this->login();
+        $inv  = $this->issuedInvoice();
+        $data = ['request_key' => $this->uuid4()];
+
+        $this->mark($inv['id'], $data)->assertStatus(200);
+
+        // invoice je uz 'sent', opakovany POST s tym istym klucom nesmie skoncit 404 (WR-02)
+        $again = $this->mark($inv['id'], $data);
+        $again->assertStatus(200);
+        $this->assertSame('/invoices/' . $inv['id'], $again->response()->getHeaderLine('HX-Location'));
+        $this->assertSame(1, $this->rows('invoice_sends'));
+
+        // novy kluc na uz odoslanej fakture ostava 404
+        $this->expectException(PageNotFoundException::class);
+        $this->mark($inv['id']);
+    }
+
     public function testFutureDateIs422AndPostWithoutCsrfIs403(): void
     {
         $this->login();

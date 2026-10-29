@@ -253,6 +253,26 @@ final class PaymentService
         $this->db->query("SELECT pg_advisory_xact_lock(hashtext('payments'), :id:)", ['id' => $invoiceId]);
     }
 
+    /**
+     * Predchadzajuci vysledok zapisu pod tym istym request_key pre tuto fakturu (opakovany POST, WR-02).
+     * Kontrolor ho vola pred kontrolou stavu, aby opakovanie po plnej uhrade nevratilo 404.
+     */
+    public function replayFor(int $invoiceId, string $requestKey): ?RecordedPayment
+    {
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/Di', $requestKey) !== 1) {
+            return null;
+        }
+
+        $p = $this->db->query(
+            'SELECT p.id, p.amount, v.status, v.balance
+             FROM payments p JOIN invoice_status_v v ON v.id = p.invoice_id
+             WHERE p.request_key = CAST(:k: AS uuid) AND p.invoice_id = :i:',
+            ['k' => $requestKey, 'i' => $invoiceId],
+        )->getRowArray();
+
+        return $p === null ? null : new RecordedPayment((int) $p['id'], (string) $p['amount'], (string) $p['balance'], (string) $p['status'], true);
+    }
+
     private function replayOf(string $requestKey): ?RecordedPayment
     {
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/Di', $requestKey) !== 1) {

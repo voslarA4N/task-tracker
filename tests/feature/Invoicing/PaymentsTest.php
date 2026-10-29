@@ -225,6 +225,36 @@ final class PaymentsTest extends AuthTestCase
         $this->assertSame(1, $this->rows('payments'));
     }
 
+    public function testReplayAfterFullPaymentReturnsOriginalResultNot404(): void
+    {
+        $this->login();
+        $inv  = $this->issuedInvoice();
+        $data = ['request_key' => $this->key()];
+
+        $this->pay($inv['id'], $data)->assertStatus(200);
+        $this->assertSame('paid', $this->owner()->query('SELECT status FROM invoice_status_v WHERE id = ?', [$inv['id']])->getRow()->status);
+
+        // odpoved sa stratila, pouzivatel posle formular znova (WR-02), aj bez htmx
+        $again = $this->pay($inv['id'], $data);
+        $again->assertStatus(200);
+        $this->assertSame('/invoices/' . $inv['id'], $again->response()->getHeaderLine('HX-Location'));
+        $this->assertSame('Faktúra je uhradená.', session()->getFlashdata('app_notice')['message'] ?? '');
+
+        $this->pay($inv['id'], $data, true, false)->assertRedirectTo('/invoices/' . $inv['id']);
+        $this->assertSame(1, $this->rows('payments'));
+    }
+
+    public function testRequestKeyOfOtherInvoiceIsNotReplayed(): void
+    {
+        $this->login();
+        $inv  = $this->issuedInvoice();
+        $data = ['request_key' => $this->key()];
+        $this->pay($inv['id'], $data);
+
+        $this->expectException(PageNotFoundException::class);
+        $this->pay(999999, $data);
+    }
+
     public function testForeignReturnToFallsBackToDetail(): void
     {
         $this->login();

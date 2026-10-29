@@ -72,6 +72,11 @@ final class InvoiceDelivery extends BaseController
 
     public function markSent(int $id): ResponseInterface
     {
+        // Opakovany POST po uspechu vrati povodny vysledok, nie 404 zo stavovej brany (WR-02)
+        if ((new ManualSendService())->replayFor($id, $this->post('request_key')) !== null) {
+            return $this->done(lang('Deliveries.markedSent'), '/invoices/' . $id);
+        }
+
         $invoice = $this->markable($id);
         $values  = [
             'date'        => $this->post('date'),
