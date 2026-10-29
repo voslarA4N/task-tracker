@@ -72,7 +72,9 @@ final class ManualSendServiceTest extends PgTestCase
         $this->assertSame('manual', $row['kind']);
         $this->assertSame('none', $row['transport']);
         $this->assertContains($row['counts_as_sent'], [true, 't']);
-        $this->assertSame(['to' => [], 'cc' => []], json_decode((string) $row['recipients'], true));
+        $recipients = json_decode((string) $row['recipients'], true);
+        $this->assertSame([], $recipients['to']);
+        $this->assertSame([], $recipients['cc']);
         $this->assertSame('Odovzdané osobne', $row['note']);
         $this->assertStringStartsWith('2026-10-27 10:00:00', (string) $row['sent_at']);
         $this->assertSame('sent', $this->invoiceStatus($inv['id']));
