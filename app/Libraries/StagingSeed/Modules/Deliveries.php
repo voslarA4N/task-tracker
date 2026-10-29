@@ -8,6 +8,7 @@ use App\Libraries\Delivery\InvoiceMailer;
 use App\Libraries\Delivery\ManualSendService;
 use App\Libraries\Delivery\SendCommand;
 use App\Libraries\Delivery\SendRejected;
+use App\Libraries\Platform\Money;
 use App\Libraries\Platform\Uuid;
 use App\Libraries\Receivables\PaymentRejected;
 use App\Libraries\Receivables\PaymentService;
@@ -103,12 +104,12 @@ final class Deliveries implements SeedModule
     }
 
     /**
-     * Polovica sumy faktury (bcmath, 2 desatinne miesta), zostatok ostane.
+     * Polovica sumy faktury (Money, 2 desatinne miesta), zostatok ostane.
      */
     private function half(SeedContext $ctx, int $invoiceId): string
     {
         $total = (string) $ctx->db->query('SELECT total FROM invoices WHERE id = :i:', ['i' => $invoiceId])->getRow()->total;
 
-        return bcdiv($total, '2', 2);
+        return Money::of($total)->timesHours('0.5')->toDecimalString();
     }
 }
