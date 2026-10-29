@@ -18,6 +18,7 @@ use CodeIgniter\Database\BaseConnection;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Database;
 use InvalidArgumentException;
+use Throwable;
 
 /**
  * Odoslanie faktury a vykazu e-mailom (MAIL-01, INV-06). Prilohy su vzdy presne ulozene bajty z invoice_documents
@@ -31,6 +32,7 @@ class InvoiceMailer
     public const MAX_BODY               = 4000;
     public const REQUEST_KEY_CONSTRAINT = 'invoice_sends_request_key_key';
     private const KINDS                 = ['invoice', 'resend', 'reminder'];
+    private const UNRECORDED_TTL        = 7 * 86400;
 
     /**
      * @var BaseConnection<mixed, mixed>
@@ -109,11 +111,43 @@ class InvoiceMailer
             throw new InvalidArgumentException('Invalid request key.');
         }
 
-        // 1. idempotencia (D-11)
+        // 1. idempotencia (D-11): rychla cesta bez zamku
         $previous = $this->findByRequestKey($cmd->requestKey);
 
         if ($previous !== null) {
             return $previous;
+        }
+
+        // 1b. zamok na request_key cez cele odoslanie (WR-03): subezny POST s tym istym klucom pocka
+        //     a dostane vysledok prveho, namiesto druheho dorucenia klientovi
+        $this->db->query("SELECT pg_advisory_lock(hashtext('invoice_sends_rk'), hashtext(:k:))", ['k' => $cmd->requestKey]);
+
+        try {
+            return $this->sendLocked($cmd);
+        } finally {
+            try {
+                $this->db->query("SELECT pg_advisory_unlock(hashtext('invoice_sends_rk'), hashtext(:k:))", ['k' => $cmd->requestKey]);
+            } catch (Throwable $e) {
+                // spojenie padlo: session zamok zanikne s nim, povodnu vynimku neprekryvat
+                log_message('error', 'mail.unlock_failed: ' . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * @throws SendRejected
+     */
+    private function sendLocked(SendCommand $cmd): SendResult
+    {
+        $previous = $this->findByRequestKey($cmd->requestKey);
+
+        if ($previous !== null) {
+            return $previous;
+        }
+
+        // e-mail pod tymto klucom uz odisiel, len zaznam zlyhal: opakovanie ho neposle znova (WR-03)
+        if (cache()->get(self::unrecordedKey($cmd->requestKey)) !== null) {
+            throw new SendRejected('record_failed');
         }
 
         // 2. validacia nedoveryhodneho vstupu (T-07-13, T-07-17a)
@@ -217,6 +251,7 @@ class InvoiceMailer
             }
 
             log_message('critical', sprintf('mail.sent_unrecorded invoice=%d message_id=%s', $cmd->invoiceId, $messageId));
+            cache()->save(self::unrecordedKey($cmd->requestKey), $messageId, self::UNRECORDED_TTL);
 
             throw new SendRejected('record_failed');
         }
@@ -400,6 +435,14 @@ class InvoiceMailer
         )->getRowArray();
 
         return $row === null ? null : (string) $row['message_id'];
+    }
+
+    /**
+     * Kluc cache pre e-mail, ktory odisiel bez zaznamu (record_failed).
+     */
+    public static function unrecordedKey(string $requestKey): string
+    {
+        return 'invoice_send_unrecorded_' . strtolower($requestKey);
     }
 
     private function findByRequestKey(string $key): ?SendResult

@@ -370,7 +370,8 @@ final class InvoiceDelivery extends BaseController
                 $alert  = lang('Deliveries.errorSmtp');
         }
 
-        return $this->panel('invoices/_delivery_form', $status, $draft, $values, $errors, $alert, $kind);
+        // po record_failed e-mail uz odisiel: ziadne „Skusit znova“; rovnaky request_key ho ani neposle znova (WR-03)
+        return $this->panel('invoices/_delivery_form', $status, $draft, $values, $errors, $alert, $kind, $status === 502 && $e->reason !== 'record_failed');
     }
 
     /**
@@ -378,7 +379,7 @@ final class InvoiceDelivery extends BaseController
      * @param array<string, string> $values
      * @param array<string, string> $errors
      */
-    private function panel(string $fragment, int $status, array $draft, array $values, array $errors, ?string $alert, string $kind): ResponseInterface
+    private function panel(string $fragment, int $status, array $draft, array $values, array $errors, ?string $alert, string $kind, ?bool $retry = null): ResponseInterface
     {
         $invoice = (array) $draft['invoice'];
         $client  = db_connect()->query('SELECT name FROM clients WHERE id = :id:', ['id' => (int) $invoice['client_id']])->getRowArray();
@@ -391,7 +392,7 @@ final class InvoiceDelivery extends BaseController
             'alert'      => $alert,
             'kind'       => $kind,
             'backUrl'    => '/invoices/' . (int) $invoice['id'],
-            'retry'      => $status === 502,
+            'retry'      => $retry ?? $status === 502,
         ], 'invoices/delivery_page');
 
         return $this->response->setStatusCode($status)->setHeader('Vary', 'HX-Request')->setBody($body);

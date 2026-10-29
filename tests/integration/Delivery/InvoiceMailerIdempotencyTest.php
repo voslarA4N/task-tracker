@@ -119,4 +119,68 @@ final class InvoiceMailerIdempotencyTest extends PgTestCase
         $this->assertFalse(TestLogger::didLog('critical', 'TAJNETELO', false));
         $this->assertSame(0, $this->sendCount());
     }
+
+    private function advisoryLocksOf(string $sql): int
+    {
+        return (int) $this->rw()->query($sql)->getRow()->c;
+    }
+
+    public function testConcurrentSendWithSameKeyWaitsForLockBeforeSmtp(): void
+    {
+        $inv = $this->issuedInvoice();
+        $cmd = $this->sendCommand($inv['id']);
+
+        // iny request s tym istym klucom prave posiela (drzi zamok), WR-03
+        $this->owner()->query("SELECT pg_advisory_lock(hashtext('invoice_sends_rk'), hashtext(:k:))", ['k' => $cmd->requestKey]);
+        $this->rw()->query("SET lock_timeout = '200ms'");
+
+        try {
+            $this->mailer()->send($cmd);
+            $this->fail('Expected lock timeout');
+        } catch (DatabaseException $e) {
+            // caka na zamok, nic neposlal
+            $this->assertStringContainsString('lock timeout', $e->getMessage());
+        } finally {
+            $this->rw()->query('RESET lock_timeout');
+            $this->owner()->query("SELECT pg_advisory_unlock(hashtext('invoice_sends_rk'), hashtext(:k:))", ['k' => $cmd->requestKey]);
+        }
+
+        $this->assertSame(0, $this->emailFactoryCalls);
+        $this->assertSame(0, $this->sendCount());
+
+        // po uvolneni zamku prebehne normalne a zamok po sebe uvolni
+        $this->assertFalse($this->mailer()->send($cmd)->replay);
+        $this->assertSame(1, $this->emailFactoryCalls);
+        $this->assertSame(0, $this->advisoryLocksOf("SELECT count(*) AS c FROM pg_locks WHERE locktype = 'advisory' AND pid = pg_backend_pid()"));
+    }
+
+    public function testRetryAfterRecordFailedDoesNotSendAgain(): void
+    {
+        $inv     = $this->issuedInvoice();
+        $cmd     = $this->sendCommand($inv['id']);
+        $failing = new class ($this->rw(), $this->capturingMailer()) extends InvoiceMailer {
+            protected function insertSend(array $row): int
+            {
+                throw new DatabaseException('connection lost');
+            }
+        };
+
+        try {
+            foreach ([$failing, $this->mailer()] as $mailer) {
+                try {
+                    $mailer->send($cmd);
+                    $this->fail('Expected SendRejected');
+                } catch (SendRejected $e) {
+                    $this->assertSame('record_failed', $e->reason);
+                }
+            }
+
+            // e-mail odisiel iba raz, opakovanie s tym istym klucom nic neposlalo (WR-03)
+            $this->assertSame(1, $this->emailFactoryCalls);
+            $this->assertSame(0, $this->sendCount());
+            $this->assertSame(0, $this->advisoryLocksOf("SELECT count(*) AS c FROM pg_locks WHERE locktype = 'advisory' AND pid = pg_backend_pid()"));
+        } finally {
+            cache()->delete(InvoiceMailer::unrecordedKey($cmd->requestKey));
+        }
+    }
 }
