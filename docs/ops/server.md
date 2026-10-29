@@ -154,6 +154,7 @@ email.protocol = smtp
 email.transport = log
 email.fromEmail = noreply@$DOMAIN
 email.fromName = 'Work Tracker'
+# Produkcia od fázy 7: blok email.* nahraď podľa sekcie 20.
 
 encryption.key = hex2bin:$ENC
 auth.backupCodePepper = $PEPPER
@@ -313,7 +314,7 @@ chmod 0640 secrets/db_superuser_password secrets/db_owner_password secrets/db_rw
 Očakávané kľúče po kroku 5:
 
 - `.env`: `APP_DOMAIN`, `NGINX_HSTS_VALUE`, `TLS_MODE`, `SSL_CERT`, `SSL_KEY`, `LE_EMAIL`, `IMAGE_PREFIX`.
-- `app.env`: `CI_ENVIRONMENT`, `app.baseURL`, šesť `database.default.*`, štyri `email.*`, `encryption.key`, `auth.backupCodePepper`.
+- `app.env`: `CI_ENVIRONMENT`, `app.baseURL`, šesť `database.default.*`, štyri `email.*` (produkcia má od fázy 7 plný blok `email.*` podľa sekcie 20), `encryption.key`, `auth.backupCodePepper`.
 - `migrate.env`: to isté ako `app.env` + šesť `database.owner.*`.
 
 Potom spusti nasadenie (push na `main` alebo opätovné spustenie workflow). `deploy.sh` prejde kontrolou, migrácia pobeží v `migrate`, php sa reštartuje s `app.env`. Overenie po nasadení (vypíše iba počty):
@@ -468,3 +469,31 @@ Seed je poradie modulov (`App\Libraries\StagingSeed\StagingSeeder::MODULES`: `Ad
 6. Celkový čas seedu drž v rozpočte (reset + seed do cca 60 s); `staging:seed` vypisuje čas po moduloch.
 
 Plánované moduly: `Payments` (fáza 7, úhrady), `Fx` (fáza 8, cudzomenové faktúry a kurzy), `CreditNotes` (fáza 9, dobropisy), `Limits` (fáza 10, daňové limity obratu). Do tej doby fakturujú iba v mene subjektu (klient a subjekt majú rovnakú menu).
+
+## 20. Nasadenie fázy 7 (e-mail, úhrady, upomienky)
+
+Odosielanie faktúr a upomienok ide z produkcie cez vlastný Stalwart (D-01). Najprv over na stagingu (merge do `develop`), až potom `main`.
+
+1. **Produkcia, `.env`:** do `/opt/work-tracker/.env` pridaj riadok `MAIL_NETWORK=mail`. `deploy.sh` vtedy pridá overlay `compose.server.mail.yaml` (php sa pripojí do externej siete `mail`) a pred zálohou overí, že sieť na hoste existuje (inak skončí s hláškou „Chýba docker sieť mail“ a beží predošlý stack).
+2. **Produkcia, `app.env` aj `migrate.env`:** nahraď blok `email.*` týmto (práva ostávajú 0640):
+
+   ```
+   email.protocol = smtp
+   email.transport = smtp
+   email.SMTPHost = mail.vostack.dev
+   email.SMTPPort = 465
+   email.SMTPCrypto = ssl
+   email.SMTPUser = noreply@vostack.dev
+   email.SMTPPass = <heslo zo /opt/mail/secrets/noreply_password>
+   email.fromEmail = noreply@vostack.dev
+   email.fromName = 'Work Tracker'
+   email.envelopeFrom = noreply@vostack.dev
+   email.allowedFromDomains = vostack.dev
+   email.SMTPTimeout = 15
+   ```
+
+   Heslo prečítaj priamo na serveri zo `/opt/mail/secrets/noreply_password`. Nikdy ho nekopíruj do gitu ani do chatu. Certifikát sa overuje (alias `mail.vostack.dev` v sieti `mail`), overenie sa nevypína.
+3. **Staging:** žiadna zmena. `email.transport = log`, `email.allowedFromDomains = vostack.dev`, `MAIL_NETWORK` sa nenastavuje a sieť `mail` sa nepripája (D-02).
+4. **Overenie po deployi:** `docker compose -f compose.server.yaml -f compose.server.mail.yaml exec php php -r "var_dump((bool) @fsockopen('ssl://mail.vostack.dev', 465, \$e, \$s, 5));"` vráti `bool(true)`. Potom odošli faktúru na vlastný Gmail a v „Show original“ skontroluj SPF, DKIM a DMARC PASS (DMARC je zatiaľ `p=none`, sprísnenie 2026-11-19 podľa `docs/ops/mail.md`).
+5. **Migrácie fázy 7** (`email_templates`, `invoice_sends`, `payments`, rozšírenie `invoice_status_v`, odosielateľ pri subjekte) bežia automaticky pri deployi. Existujúce faktúry ostávajú v stave Vystavená.
+6. **Rollback:** odstráň `MAIL_NETWORK` z `.env`, nastav `email.transport = log` v `app.env` a nasaď znova.

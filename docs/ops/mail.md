@@ -183,7 +183,11 @@ Nepublikovať: `_submission._tcp` (587), `_jmap/_caldavs/_carddavs/_pop3s`, `ua-
 - **Thunderbird:** autoconfig (`https://autoconfig.vostack.dev/mail/config-v1.1.xml`), stačí zadať adresu a heslo.
 - **Outlook:** autodiscover (`POST /autodiscover/autodiscover.xml`); `autodiscover.json` odkazuje na `https://mail.vostack.dev/...`, ktorá je mimo whitelistu, preto pri problémoch zadať IMAP/SMTP ručne ako vyššie.
 - **Webmail:** `https://webmail.vostack.dev/` (Roundcube, prihlásenie celou adresou).
-- **Aplikácia (fáza 7):** pripojiť php kontajnery do siete `mail` a posielať cez `ssl://mail.vostack.dev:465` (overený certifikát vďaka aliasu `mail.vostack.dev` v sieti `mail`, bez hairpin NAT) ako `noreply@vostack.dev`. Sieť `10.250.251.0/24` je v `AllowedIp`, takže ju auto-ban neblokuje.
+- **Aplikácia (fáza 7):** produkčný php sa do siete `mail` pripája overlayom `compose.server.mail.yaml`, ktorý `scripts/deploy.sh` pridá pri `MAIL_NETWORK=mail` v `/opt/work-tracker/.env` (staging kľúč nemá a ostáva na `log`). Posiela cez `ssl://mail.vostack.dev:465` (overený certifikát vďaka aliasu `mail.vostack.dev` v sieti `mail`, bez hairpin NAT) ako `noreply@vostack.dev`. Sieť `10.250.251.0/24` je v `AllowedIp`, takže ju auto-ban neblokuje. Konkrétny postup a blok `email.*`: `docs/ops/server.md`, sekcia 20.
+
+### Ďalší odosielateľ na vostack.dev (D-27)
+
+Aplikácia posiela obálku (MAIL FROM) vždy ako `noreply@vostack.dev` (`email.envelopeFrom`) a hlavičku From podľa nastavení subjektu (povolené iba domény z `email.allowedFromDomains`). Ak Stalwart odmietne správu kvôli hlavičke From (5xx v logu aplikácie `mail.failed`), pridaj adresu ako alias účtu `u-noreply` v `docker/mail/stalwart/plan.ndjson` (`"aliases":{"0":{"name":"<lokálna časť>","domainId":"#dom"}}`, vzor je účet `u-info`) a spusti `sh scripts/mail-provision.sh`. Nastavenie `mustMatchSender` nevypínaj. Tvar aliasu je overený na `u-info`; správanie kontroly hlavičky From v Stalwart 1.0.1 nie je overené a overí sa prvým odoslaním na produkcii (MEDIUM).
 
 ## 7. Bežná prevádzka
 
