@@ -53,6 +53,12 @@ $none     = lang('Deliveries.none');
                         <div class="small<?= $voided ? ' text-decoration-line-through' : '' ?>"><?= esc(lang('Deliveries.historyTo', [$to])) ?><?= $cc !== '' ? ' · ' . esc(lang('Deliveries.historyCc', [$cc])) : '' ?></div>
                         <?php if ($subject !== '') : ?><div class="small text-body-secondary"><?= esc($subject) ?></div><?php endif ?>
                     <?php endif ?>
+                    <?php if ($manual && ! empty($h['note'])) : ?>
+                        <div class="small<?= $voided ? ' text-decoration-line-through' : '' ?>"><?= esc(lang('Deliveries.historyNote', [(string) $h['note']])) ?></div>
+                    <?php endif ?>
+                    <?php if ($manual && ! $voided) : ?>
+                        <a class="btn btn-link btn-touch px-0" href="/sends/<?= (int) $h['id'] ?>/void" hx-get="/sends/<?= (int) $h['id'] ?>/void" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.voidMarkCta')) ?></a>
+                    <?php endif ?>
                     <?php if ($voided && ! empty($h['void_reason'])) : ?>
                         <div class="small text-body-secondary"><?= esc(lang('Deliveries.historyVoidReason', [(string) $h['void_reason']])) ?></div>
                     <?php endif ?>

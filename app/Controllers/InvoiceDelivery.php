@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\Delivery\InvoiceMailer;
+use App\Libraries\Delivery\ManualSendService;
 use App\Libraries\Delivery\SendCommand;
 use App\Libraries\Delivery\SendRejected;
 use App\Libraries\Master\CcEmails;
@@ -12,6 +13,7 @@ use App\Libraries\Platform\Uuid;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\ResponseInterface;
+use IntlDateFormatter;
 
 /**
  * Odoslanie vystavenej faktury a vykazu klientovi e-mailom (MAIL-01, D-05).
@@ -38,6 +40,157 @@ final class InvoiceDelivery extends BaseController
     public function resend(int $id): ResponseInterface
     {
         return $this->submit($id, 'resend');
+    }
+
+    /**
+     * Rucne oznacenie ako odoslanej (D-29).
+     */
+    public function markSentForm(int $id): ResponseInterface
+    {
+        $invoice = $this->markable($id);
+
+        return $this->markPanel('invoices/_mark_sent_sheet', 200, $invoice, [
+            'date'        => service('clock')->today(),
+            'note'        => '',
+            'request_key' => Uuid::v4(),
+        ], [], null);
+    }
+
+    public function markSent(int $id): ResponseInterface
+    {
+        $invoice = $this->markable($id);
+        $values  = [
+            'date'        => $this->post('date'),
+            'note'        => $this->post('note'),
+            'request_key' => $this->post('request_key'),
+        ];
+
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/D', $values['request_key']) !== 1) {
+            return $this->markPanel('invoices/_mark_sent_form', 422, $invoice, array_merge($values, ['request_key' => Uuid::v4()]), [], lang('Deliveries.errorRequest'));
+        }
+
+        try {
+            (new ManualSendService())->markSent($id, $values['date'], $values['note'], $values['request_key'], auth()->id() === null ? null : (int) auth()->id());
+        } catch (SendRejected $e) {
+            if (in_array($e->reason, self::NOT_FOUND_REASONS, true)) {
+                throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
+            }
+
+            return match ($e->reason) {
+                'future_date'   => $this->markPanel('invoices/_mark_sent_form', 422, $invoice, $values, ['date' => lang('Deliveries.errorSentFuture')], null),
+                'note_too_long' => $this->markPanel('invoices/_mark_sent_form', 422, $invoice, $values, ['note' => lang('Deliveries.errorMarkNote')], null),
+                'already_sent'  => $this->markPanel('invoices/_mark_sent_form', 409, $invoice, $values, [], lang('Deliveries.errorAlreadySent')),
+                default         => $this->markPanel('invoices/_mark_sent_form', 422, $invoice, $values, ['date' => lang('Deliveries.errorSentDate')], null),
+            };
+        }
+
+        return $this->done(lang('Deliveries.markedSent'), '/invoices/' . $id);
+    }
+
+    public function voidSendForm(int $sendId): ResponseInterface
+    {
+        return $this->voidPanel(200, $this->manualSend($sendId), '', null, null, true);
+    }
+
+    public function voidSend(int $sendId): ResponseInterface
+    {
+        $send   = $this->manualSend($sendId);
+        $reason = $this->post('reason');
+
+        try {
+            $invoiceId = (new ManualSendService())->voidManual($sendId, $reason, auth()->id() === null ? null : (int) auth()->id());
+        } catch (SendRejected $e) {
+            return match ($e->reason) {
+                'not_found', 'not_manual' => throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound')),
+                'already_voided'          => $this->voidPanel(409, $send, $reason, null, lang('Deliveries.errorVoidAlready')),
+                'note_too_long'           => $this->voidPanel(422, $send, $reason, lang('Deliveries.errorVoidReasonLong')),
+                default                   => $this->voidPanel(422, $send, $reason, lang('Deliveries.errorVoidReason')),
+            };
+        }
+
+        return $this->done(lang('Deliveries.voidMarkDone'), '/invoices/' . $invoiceId);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function markable(int $id): array
+    {
+        $row = db_connect()->query(
+            'SELECT i.id, i.number, i.origin, i.type, v.status FROM invoices i JOIN invoice_status_v v ON v.id = i.id WHERE i.id = :id:',
+            ['id' => $id],
+        )->getRowArray();
+
+        if ($row === null || $row['origin'] !== 'issued' || $row['type'] !== 'invoice' || $row['status'] !== 'issued') {
+            throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
+        }
+
+        return $row;
+    }
+
+    /**
+     * @return array{id: int, invoice_id: int, sent_at: string}
+     */
+    private function manualSend(int $sendId): array
+    {
+        $row = db_connect()->query('SELECT id, invoice_id, kind, sent_at FROM invoice_sends WHERE id = :id:', ['id' => $sendId])->getRowArray();
+
+        if ($row === null || $row['kind'] !== 'manual') {
+            throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
+        }
+
+        return ['id' => (int) $row['id'], 'invoice_id' => (int) $row['invoice_id'], 'sent_at' => (string) $row['sent_at']];
+    }
+
+    /**
+     * @param array<string, mixed>  $invoice
+     * @param array<string, string> $values
+     * @param array<string, string> $errors
+     */
+    private function markPanel(string $fragment, int $status, array $invoice, array $values, array $errors, ?string $alert = null): ResponseInterface
+    {
+        $body = htmx_view($fragment, [
+            'invoice' => $invoice,
+            'today'   => service('clock')->today(),
+            'values'  => $values,
+            'errors'  => $errors,
+            'alert'   => $alert,
+            'backUrl' => '/invoices/' . (int) $invoice['id'],
+        ], 'invoices/mark_sent_page');
+
+        return $this->response->setStatusCode($status)->setHeader('Vary', 'HX-Request')->setBody($body);
+    }
+
+    /**
+     * @param array{id: int, invoice_id: int, sent_at: string} $send
+     */
+    private function voidPanel(int $status, array $send, string $reason, ?string $error, ?string $alert = null, bool $sheet = false): ResponseInterface
+    {
+        $fmt  = new IntlDateFormatter(service('request')->getLocale(), IntlDateFormatter::MEDIUM, IntlDateFormatter::NONE, 'Europe/Bratislava');
+        $data = [
+            'send'    => $send,
+            'sentOn'  => (string) $fmt->format(service('clock')->now()->modify($send['sent_at'])),
+            'reason'  => $reason,
+            'error'   => $error,
+            'alert'   => $alert,
+            'void'    => true,
+            'backUrl' => '/invoices/' . $send['invoice_id'],
+            'invoice' => ['id' => $send['invoice_id']],
+        ];
+        $body = $sheet && is_htmx_fragment_request() ? view('invoices/_send_void_sheet', $data) : htmx_view('invoices/_send_void_form', $data, 'invoices/mark_sent_page');
+
+        return $this->response->setStatusCode($status)->setHeader('Vary', 'HX-Request')->setBody($body);
+    }
+
+    private function done(string $message, string $to): ResponseInterface
+    {
+        session()->setFlashdata('app_notice', ['type' => 'success', 'message' => $message]);
+
+        if (is_htmx()) {
+            return $this->response->setStatusCode(200)->setHeader('HX-Location', $to)->setHeader('HX-Trigger', 'allocationChanged')->setBody('');
+        }
+
+        return redirect()->to($to);
     }
 
     private function form(int $id, string $kind): ResponseInterface

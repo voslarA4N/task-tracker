@@ -91,6 +91,7 @@ $history = (array) ($invoice['history'] ?? []);
             <div class="inv-docs mt-3">
                 <?php if ($canSend) : ?>
                     <a class="btn btn-primary btn-touch" href="/invoices/<?= $id ?>/send" hx-get="/invoices/<?= $id ?>/send" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.sendCta')) ?></a>
+                    <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/mark-sent" hx-get="/invoices/<?= $id ?>/mark-sent" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.markSentCta')) ?></a>
                 <?php endif ?>
 <?php if ($payPrimary) : ?>
                 <?php if ($canPay) : ?>
