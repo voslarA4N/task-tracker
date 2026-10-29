@@ -22,10 +22,30 @@ final class InvoiceDelivery extends BaseController
 
     public function sendForm(int $id): ResponseInterface
     {
+        return $this->form($id, 'invoice');
+    }
+
+    public function resendForm(int $id): ResponseInterface
+    {
+        return $this->form($id, 'resend');
+    }
+
+    public function send(int $id): ResponseInterface
+    {
+        return $this->submit($id, 'invoice');
+    }
+
+    public function resend(int $id): ResponseInterface
+    {
+        return $this->submit($id, 'resend');
+    }
+
+    private function form(int $id, string $kind): ResponseInterface
+    {
         $mailer = new InvoiceMailer();
 
         try {
-            $draft = $mailer->draft($id, 'invoice');
+            $draft = $mailer->draft($id, $kind);
         } catch (SendRejected) {
             throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
         }
@@ -36,10 +56,10 @@ final class InvoiceDelivery extends BaseController
             'subject'     => $draft['subject'],
             'body'        => $draft['body'],
             'request_key' => Uuid::v4(),
-        ], [], null);
+        ], [], null, $kind);
     }
 
-    public function send(int $id): ResponseInterface
+    private function submit(int $id, string $kind): ResponseInterface
     {
         $request = $this->request;
         assert($request instanceof IncomingRequest);
@@ -47,7 +67,7 @@ final class InvoiceDelivery extends BaseController
         $mailer = new InvoiceMailer();
 
         try {
-            $draft = $mailer->draft($id, 'invoice');
+            $draft = $mailer->draft($id, $kind);
         } catch (SendRejected) {
             throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
         }
@@ -61,12 +81,12 @@ final class InvoiceDelivery extends BaseController
         ];
 
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/D', $values['request_key']) !== 1) {
-            return $this->panel('invoices/_delivery_form', 422, $draft, array_merge($values, ['request_key' => Uuid::v4()]), [], lang('Deliveries.errorRequest'));
+            return $this->panel('invoices/_delivery_form', 422, $draft, array_merge($values, ['request_key' => Uuid::v4()]), [], lang('Deliveries.errorRequest'), $kind);
         }
 
         $command = new SendCommand(
             invoiceId: $id,
-            kind: 'invoice',
+            kind: $kind,
             to: CcEmails::parse($values['to']),
             cc: CcEmails::parse($values['cc']),
             subject: trim($values['subject']),
@@ -82,7 +102,7 @@ final class InvoiceDelivery extends BaseController
                 throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
             }
 
-            return $this->rejected($e, $draft, $values);
+            return $this->rejected($e, $draft, $values, $kind);
         }
 
         $message = $result->transport === 'log'
@@ -101,7 +121,7 @@ final class InvoiceDelivery extends BaseController
      * @param array<string, mixed>  $draft
      * @param array<string, string> $values
      */
-    private function rejected(SendRejected $e, array $draft, array $values): ResponseInterface
+    private function rejected(SendRejected $e, array $draft, array $values, string $kind): ResponseInterface
     {
         $errors = [];
         $alert  = null;
@@ -147,7 +167,7 @@ final class InvoiceDelivery extends BaseController
                 $alert  = lang('Deliveries.errorSmtp');
         }
 
-        return $this->panel('invoices/_delivery_form', $status, $draft, $values, $errors, $alert);
+        return $this->panel('invoices/_delivery_form', $status, $draft, $values, $errors, $alert, $kind);
     }
 
     /**
@@ -155,7 +175,7 @@ final class InvoiceDelivery extends BaseController
      * @param array<string, string> $values
      * @param array<string, string> $errors
      */
-    private function panel(string $fragment, int $status, array $draft, array $values, array $errors, ?string $alert): ResponseInterface
+    private function panel(string $fragment, int $status, array $draft, array $values, array $errors, ?string $alert, string $kind): ResponseInterface
     {
         $invoice = (array) $draft['invoice'];
         $client  = db_connect()->query('SELECT name FROM clients WHERE id = :id:', ['id' => (int) $invoice['client_id']])->getRowArray();
@@ -166,6 +186,7 @@ final class InvoiceDelivery extends BaseController
             'values'     => $values,
             'errors'     => $errors,
             'alert'      => $alert,
+            'kind'       => $kind,
             'backUrl'    => '/invoices/' . (int) $invoice['id'],
             'retry'      => $status === 502,
         ], 'invoices/delivery_page');

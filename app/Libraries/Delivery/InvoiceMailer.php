@@ -64,7 +64,8 @@ class InvoiceMailer
         $lang    = (string) $invoice['doc_language'];
         $client  = $this->db->query('SELECT invoice_email, cc_emails FROM clients WHERE id = :id:', ['id' => (int) $invoice['client_id']])->getRowArray();
         $email   = trim((string) ($client['invoice_email'] ?? ''));
-        $cc      = $this->decodeList($client['cc_emails'] ?? '[]');
+        $cc      = $kind === 'resend' ? [] : $this->decodeList($client['cc_emails'] ?? '[]');
+        $allCc   = $this->decodeList($client['cc_emails'] ?? '[]');
 
         $template = (new EmailTemplateService($this->db, $this->audit))->effective($kind === 'reminder' ? 'reminder' : 'invoice', $lang);
         $rendered = (new TemplateRenderer())->render($template['subject'], $template['body'], TemplateContext::values($invoice, service('clock')->today()));
@@ -93,7 +94,7 @@ class InvoiceMailer
             'body'          => $rendered['text'],
             'sender'        => (new SenderIdentity($this->db))->resolve((int) $invoice['entity_id']),
             'attachments'   => $attachments,
-            'client_emails' => array_merge($email !== '' ? [$email] : [], $cc),
+            'client_emails' => array_merge($email !== '' ? [$email] : [], $allCc),
             'fallback'      => $template['fallback'],
         ];
     }
@@ -223,7 +224,7 @@ class InvoiceMailer
     public function history(int $invoiceId): array
     {
         $rows = $this->db->query(
-            'SELECT s.id, s.kind, s.sent_at, s.recipients, s.bcc, s.from_email, s.from_name, s.reply_to, s.subject, s.attachments, s.message_id,
+            'SELECT s.id, s.kind, s.sent_at, s.recipients, s.bcc, s.from_email, s.from_name, s.reply_to, s.subject, s.attachments, s.message_id, s.smtp_response,
                     s.transport, s.counts_as_sent, s.note, s.created_by, (v.id IS NOT NULL) AS voided, v.reason AS void_reason, v.voided_at
              FROM invoice_sends s LEFT JOIN invoice_send_voids v ON v.send_id = s.id
              WHERE s.invoice_id = :i: ORDER BY s.sent_at DESC, s.id DESC',

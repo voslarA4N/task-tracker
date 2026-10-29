@@ -137,6 +137,77 @@
         toggle: function () { this.acked = this.$event.target.checked; }
       };
     });
+    /* Editor adresatov e-mailu (To/CC): zoznam adries po riadkoch, bez JS ostava textove pole s ciarkami. */
+    window.Alpine.data('dlRecipients', function () {
+      function parse(text) {
+        var out = [];
+        String(text || '').split(/[,;\s]+/).forEach(function (a) {
+          a = a.trim().toLowerCase();
+          if (a !== '' && out.indexOf(a) === -1) { out.push(a); }
+        });
+        return out;
+      }
+      return {
+        list: [],
+        union: [],
+        enhanced: false,
+        clients: [],
+        init: function () {
+          var self = this;
+          var form = this.$el.closest('form');
+          this.raw = this.$el.querySelector('[data-dl-raw]');
+          this.list = parse(this.raw ? this.raw.value : '');
+          this.clients = parse(form && form.dataset ? form.dataset.clientEmails : '');
+          this.enhanced = true;
+          var wrap = this.$el.querySelector('[data-dl-rawwrap]') || this.raw;
+          if (wrap) { wrap.classList.add('d-none'); }
+          if (form && form.addEventListener) {
+            form.addEventListener('dl-change', function () { self.refresh(); });
+          }
+          this.refresh();
+        },
+        refresh: function () {
+          var form = this.$el.closest('form');
+          var all = [];
+          if (form && form.querySelectorAll) {
+            form.querySelectorAll('[data-dl-raw]').forEach(function (r) {
+              parse(r.value).forEach(function (a) { if (all.indexOf(a) === -1) { all.push(a); } });
+            });
+          } else {
+            all = this.list.slice();
+          }
+          this.union = all;
+        },
+        sync: function () {
+          if (this.raw) { this.raw.value = this.list.join(', '); }
+          this.refresh();
+          var form = this.$el.closest('form');
+          if (form && form.dispatchEvent && typeof CustomEvent === 'function') {
+            form.dispatchEvent(new CustomEvent('dl-change'));
+          }
+        },
+        add: function () {
+          var input = this.$el.querySelector('[data-dl-new]');
+          if (!input) { return; }
+          var addr = String(input.value || '').trim().toLowerCase();
+          if (addr === '' || addr.indexOf('@') < 1 || this.list.indexOf(addr) !== -1) { return; }
+          this.list = this.list.concat([addr]);
+          input.value = '';
+          this.sync();
+        },
+        remove: function () {
+          var addr = this.$event.currentTarget.dataset.addr;
+          this.list = this.list.filter(function (a) { return a !== addr; });
+          this.sync();
+        },
+        get notEnhanced() { return !this.enhanced; },
+        get warnOutside() {
+          var clients = this.clients;
+          return this.union.length > 0 && !this.union.some(function (a) { return clients.indexOf(a) !== -1; });
+        },
+        get noWarn() { return !this.warnOutside; }
+      };
+    });
     /* Formular klienta: vypnutie hodnoty identifikatora pri type "none", povinne IC DPH pri eu_b2b. */
     window.Alpine.data('clientForm', function () {
       return {

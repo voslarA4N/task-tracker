@@ -40,17 +40,8 @@ $status = (string) ($invoice['status'] ?? 'issued');
     default            => ['Invoices.statusIssued', 'text-bg-secondary'],
 };
 $canSend = ! $external && $status === 'issued';
+$canResend = ! $external && in_array($status, ['sent', 'partially_paid', 'paid'], true);
 $history = (array) ($invoice['history'] ?? []);
-$sentAt  = $invoice['sent_at'] ?? null;
-$dateFmt = new IntlDateFormatter($locale, IntlDateFormatter::MEDIUM, IntlDateFormatter::SHORT, 'Europe/Bratislava');
-$fmtTs   = static function (mixed $v) use ($dateFmt): string {
-    if (! is_string($v) || $v === '') {
-        return '';
-    }
-
-    return (string) $dateFmt->format(service('clock')->now()->modify($v));
-};
-$kindKeys = ['invoice' => 'Deliveries.kindInvoice', 'resend' => 'Deliveries.kindResend', 'reminder' => 'Deliveries.kindReminder', 'manual' => 'Deliveries.kindManual'];
 ?>
 <?= $this->extend('layouts/app') ?>
 
@@ -90,6 +81,9 @@ $kindKeys = ['invoice' => 'Deliveries.kindInvoice', 'resend' => 'Deliveries.kind
             <div class="inv-docs mt-3">
                 <?php if ($canSend) : ?>
                     <a class="btn btn-primary btn-touch" href="/invoices/<?= $id ?>/send" hx-get="/invoices/<?= $id ?>/send" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.sendCta')) ?></a>
+                <?php endif ?>
+                <?php if ($canResend) : ?>
+                    <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/resend" hx-get="/invoices/<?= $id ?>/resend" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.resendCta')) ?></a>
                 <?php endif ?>
                 <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/pdf" target="_blank" rel="noopener noreferrer"><?= esc(lang('Invoices.invoicePdf')) ?></a>
                 <?php if ($reportDoc !== null || $schema >= 2) : ?>
@@ -131,27 +125,7 @@ $kindKeys = ['invoice' => 'Deliveries.kindInvoice', 'resend' => 'Deliveries.kind
     </section>
 
     <?php if (! $external) : ?>
-        <section class="app-card mb-4" aria-labelledby="inv-send-title">
-            <h2 class="h5 mb-2" id="inv-send-title"><?= esc(lang('Deliveries.historyTitle')) ?></h2>
-            <?php if ($history === []) : ?>
-                <p class="fw-semibold mb-1"><?= esc(lang('Deliveries.historyEmptyTitle')) ?></p>
-                <p class="small text-body-secondary mb-0"><?= esc(lang('Deliveries.historyEmptyBody')) ?></p>
-            <?php else : ?>
-                <?php if ($sentAt !== null) : ?>
-                    <p class="small text-body-secondary mb-2"><?= esc(lang('Deliveries.historySummary', [$fmtTs($sentAt), (int) $invoice['send_count']])) ?></p>
-                <?php endif ?>
-                <ul class="dl-history list-unstyled mb-0">
-                    <?php foreach ($history as $h) : ?>
-                        <?php $rec = (array) $h['recipients']; ?>
-                        <li class="dl-history-row">
-                            <div class="fw-semibold"><?= esc(lang($kindKeys[(string) $h['kind']] ?? 'Deliveries.kindInvoice')) ?><?= $h['voided'] ? ' · ' . esc(lang('Deliveries.historyVoided')) : '' ?></div>
-                            <div class="small text-body-secondary"><?= esc($fmtTs($h['sent_at'])) ?></div>
-                            <div class="small"><?= esc(lang('Deliveries.historyTo', [implode(', ', array_map('strval', array_merge((array) ($rec['to'] ?? []), (array) ($rec['cc'] ?? []))))])) ?></div>
-                        </li>
-                    <?php endforeach ?>
-                </ul>
-            <?php endif ?>
-        </section>
+        <?= view('invoices/_history', ['invoice' => $invoice, 'history' => $history, 'locale' => $locale]) ?>
 
         <section class="app-card mb-4" aria-labelledby="inv-data-title">
             <h2 class="h5 mb-2" id="inv-data-title"><?= esc(lang('Invoices.labelDetails')) ?></h2>
