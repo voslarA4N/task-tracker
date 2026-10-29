@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\Master\ClientService;
+use App\Libraries\Receivables\InvoiceStatusQueries;
 use App\Libraries\Work\DashboardFilter;
 use App\Libraries\Work\LastClient;
 use App\Libraries\Work\TaskQueries;
@@ -60,6 +61,7 @@ final class Home extends BaseController
             'client'  => $client,
             'clients' => $service->listAll(false),
             'data'    => (new TaskQueries())->dashboard($filter->month, $filter->clientId),
+            'overdue' => (new InvoiceStatusQueries())->overdue(service('clock')->today(), $filter->clientId, 10),
         ];
     }
 }

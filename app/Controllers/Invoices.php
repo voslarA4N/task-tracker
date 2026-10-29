@@ -17,7 +17,9 @@ final class Invoices extends BaseController
 {
     public function index(): ResponseInterface
     {
-        $result = (new InvoiceQueries())->list(100);
+        $status = (string) $this->request->getGet('status');
+        $status = in_array($status, ['', 'issued', 'sent', 'partially_paid', 'paid', 'overdue'], true) ? $status : '';
+        $result = (new InvoiceQueries())->list(100, $status === '' ? null : $status, service('clock')->today());
         $fmt    = $this->dateFormatter();
 
         $rows = array_map(static function (array $r) use ($fmt): array {
@@ -26,7 +28,7 @@ final class Invoices extends BaseController
             return $r;
         }, $result['rows']);
 
-        $body = htmx_view('invoices/_list', ['rows' => $rows, 'truncated' => $result['truncated']], 'invoices/index');
+        $body = htmx_view('invoices/_list', ['rows' => $rows, 'truncated' => $result['truncated'], 'status' => $status], 'invoices/index');
 
         return $this->response->setHeader('Vary', 'HX-Request')->setBody($body);
     }

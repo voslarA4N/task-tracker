@@ -44,7 +44,7 @@ final class OverdueQueriesTest extends PgTestCase
     private function invoice(string $due, ?int $client = null, string $rate = '135.00', string $amount = '1080.00'): int
     {
         $client ??= $this->client;
-        ++$this->seq;
+        $this->seq++;
         $alloc = $this->createAllocation($this->createTask($client), '8.00', '2026-10', ['rate' => $rate, 'amount' => $amount]);
 
         return $this->insertIssuedInvoiceRaw($client, $this->entity, '2026-10', [$alloc], '%PDF-1.4 test', ['due_date' => $due, 'number' => '2026100' . sprintf('%02d', $this->seq)]);

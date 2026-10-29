@@ -71,7 +71,7 @@ final class InvoiceStatusQueries
         $where = '';
 
         if ($clientId !== null) {
-            $where         = ' AND i.client_id = :client:';
+            $where           = ' AND i.client_id = :client:';
             $binds['client'] = $clientId;
         }
 
@@ -107,7 +107,7 @@ final class InvoiceStatusQueries
         $where = '';
 
         if ($clientId !== null) {
-            $where         = ' AND client_id = :client:';
+            $where           = ' AND client_id = :client:';
             $binds['client'] = $clientId;
         }
 

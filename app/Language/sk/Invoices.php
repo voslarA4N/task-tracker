@@ -55,4 +55,10 @@ return [
     'statusPaid'          => 'Uhradená',
     'statusOverdue'       => 'Po splatnosti · {0, plural, one{# deň} few{# dni} other{# dní}}',
     'issuedSendHint'      => 'Faktúra {0} je vystavená. Odošlite ju klientovi.',
+    'filterStatus'        => 'Stav',
+    'filterAll'           => 'Všetky',
+    'filterOverdue'       => 'Po splatnosti',
+    'filterApply'         => 'Filtrovať',
+    'emptyFiltered'       => 'Žiadne faktúry v tomto stave.',
+    'balanceLeft'         => 'zostatok {0}',
 ];

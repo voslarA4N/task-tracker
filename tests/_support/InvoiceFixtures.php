@@ -31,7 +31,6 @@ trait InvoiceFixtures
                     'ref'    => $ref,
                     'client' => $clientId,
                     'month'  => $month,
-                    'due'    => (string) ($overrides['due_date'] ?? '2026-11-10'),
                     'ccy'    => trim((string) $allocs[0]->currency),
                     'total'  => $total,
                     'n'      => count($allocs),

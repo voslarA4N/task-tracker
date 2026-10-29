@@ -55,4 +55,10 @@ return [
     'statusPaid'          => 'Paid',
     'statusOverdue'       => 'Overdue · {0, plural, one{# day} other{# days}}',
     'issuedSendHint'      => 'Invoice {0} is issued. Send it to the client.',
+    'filterStatus'        => 'Status',
+    'filterAll'           => 'All',
+    'filterOverdue'       => 'Overdue',
+    'filterApply'         => 'Filter',
+    'emptyFiltered'       => 'No invoices in this status.',
+    'balanceLeft'         => 'balance {0}',
 ];

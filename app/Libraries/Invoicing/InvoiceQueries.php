@@ -32,8 +32,8 @@ final class InvoiceQueries
     public function list(int $limit = 100, ?string $status = null, ?string $today = null): array
     {
         $today ??= service('clock')->today();
-        $cond    = "(i.origin = 'issued' AND i.type = 'invoice' AND i.balance > 0 AND i.due_date < CAST(:today: AS date))";
-        $where   = '';
+        $cond  = "(i.origin = 'issued' AND i.type = 'invoice' AND i.balance > 0 AND i.due_date < CAST(:today: AS date))";
+        $where = '';
 
         if (in_array($status, ['issued', 'sent', 'partially_paid', 'paid'], true)) {
             $where = ' WHERE i.status = :status:';
