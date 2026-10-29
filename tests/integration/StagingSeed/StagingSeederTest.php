@@ -123,6 +123,45 @@ final class StagingSeederTest extends PgTestCase
         $this->assertSame(self::TODAY, service('clock')->today());
     }
 
+    public function testSeedsDeliveriesAndPaymentsThroughServicesWithoutSending(): void
+    {
+        Services::injectMock('clock', new FrozenClock('2026-10-28T12:00:00+01:00'));
+
+        $before = config('Email')->transport;
+        $plan   = HistoryPlanner::build(Profile::full(), '2026-10-28');
+        $result = $this->seeder()->run(Profile::full());
+        $db     = $this->rw();
+
+        $this->assertSame($before, config('Email')->transport);
+        $this->assertGreaterThan(0, $result['counts']['invoice_sends']);
+        $this->assertGreaterThan(0, $result['counts']['payments']);
+
+        $transports = array_column($db->query('SELECT DISTINCT transport FROM invoice_sends')->getResultArray(), 'transport');
+        sort($transports);
+        $this->assertSame(['log', 'none'], $transports);
+
+        $this->assertSame(1, (int) $db->query('SELECT count(*) AS c FROM payment_voids')->getRow()->c);
+
+        $statuses = array_column($db->query('SELECT DISTINCT status FROM invoice_status_v')->getResultArray(), 'status');
+
+        foreach (['sent', 'paid', 'partially_paid'] as $status) {
+            $this->assertContains($status, $statuses);
+        }
+
+        $this->assertGreaterThan(0, (int) $db->query("SELECT count(*) AS c FROM invoice_status_v WHERE status IN ('sent','partially_paid') AND due_date < '2026-10-28'")->getRow()->c);
+        $this->assertGreaterThan(0, (int) $db->query("SELECT count(*) AS c FROM invoice_sends WHERE kind = 'reminder' AND in_reply_to IS NOT NULL AND in_reply_to <> ''")->getRow()->c);
+
+        // fiktivny cas udalosti, nie realny cas behu
+        $this->assertSame(0, (int) $db->query("SELECT count(*) AS c FROM invoice_sends WHERE created_at > '2026-10-29'")->getRow()->c);
+        $this->assertSame(0, (int) $db->query("SELECT count(*) AS c FROM payments WHERE created_at > '2026-10-29'")->getRow()->c);
+
+        foreach (['invoice_send', 'payment'] as $type) {
+            $this->assertGreaterThan(0, (int) $db->query('SELECT count(*) AS c FROM audit_log WHERE entity_type = :t:', ['t' => $type])->getRow()->c, $type);
+        }
+
+        $this->assertSame(count($plan->deliveries), array_sum($result['notes']['deliveries']));
+    }
+
     public function testFullProfileIssuesEveryPlannedInvoiceOnDeployDay(): void
     {
         // profil, ktory sa nasadzuje: ziadne odmietnutie vystavenia (QR, limity ZBP, verzia SK subjektu z 2026-07-01)

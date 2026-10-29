@@ -79,6 +79,7 @@ final class Invoices implements SeedModule
                 throw new RuntimeException('Seed invoice ' . $inv['key'] . ' rejected: ' . $e->reason, 0, $e);
             }
 
+            $ctx->put('invoice', $inv['key'], $result->id);
             $issued[] = $result->number;
         }
 

@@ -54,7 +54,9 @@ final class HistoryPlanner
         $clients  = $this->clients();
         $tasks    = $this->tasks($clients);
 
-        return new HistoryPlan($this->today, $this->seed, $entities, $clients, $tasks, $this->invoices($clients, $tasks, $entities));
+        $invoices = $this->invoices($clients, $tasks, $entities);
+
+        return new HistoryPlan($this->today, $this->seed, $entities, $clients, $tasks, $invoices, $this->deliveries($invoices));
     }
 
     /**
@@ -336,6 +338,80 @@ final class HistoryPlanner
         }
 
         return $out;
+    }
+
+    /**
+     * Dorucenia a uhrady (D-25), deterministicky podla poradia faktur (1-based i):
+     * kazda faktura sa odosle 1 pracovny den po vystaveni, kazda 7. (ak nie je aj 6.) sa oznaci rucne;
+     * faktury so splatnostou aspon 20 dni pred dnes sa uhradia 3 dni pred splatnostou, kazda 5. iba polovicou,
+     * kazda 6. ostane neuhradena a dostane upomienku 7 dni po splatnosti; prva plne uhradena sa storno-uje a zada sa znova.
+     *
+     * @param list<array<string, mixed>> $invoices
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function deliveries(array $invoices): array
+    {
+        $events = [];
+        $cutoff = $this->addDays($this->today, -20);
+        $voided = false;
+        $stamp  = static fn (string $date, string $time): string => $date . 'T' . $time;
+
+        foreach ($invoices as $n => $inv) {
+            $i        = $n + 1;
+            $key      = (string) $inv['key'];
+            $sendDate = $this->nextWorkday($this->addDays((string) $inv['issue_date'], 1));
+            $sent     = $sendDate <= $this->today;
+
+            if ($sent) {
+                $manual   = $i % 7 === 0 && $i % 6 !== 0;
+                $events[] = $manual
+                    ? ['invoice' => $key, 'type' => 'manual', 'at' => $stamp($sendDate, '10:00:00'), 'note' => 'Odovzdané osobne']
+                    : ['invoice' => $key, 'type' => 'send', 'at' => $stamp($sendDate, '10:00:00')];
+            }
+
+            $due = (string) $inv['due_date'];
+
+            if (! $sent || $due > $cutoff) {
+                continue;
+            }
+
+            if ($i % 6 === 0) {
+                $events[] = ['invoice' => $key, 'type' => 'reminder', 'at' => $stamp($this->addDays($due, 7), '09:00:00')];
+
+                continue;
+            }
+
+            $payDate = max($this->addDays($due, -3), $sendDate);
+            $ref     = 'P' . $key;
+
+            if ($i % 5 === 0) {
+                $events[] = ['invoice' => $key, 'type' => 'payment', 'at' => $stamp($payDate, '11:00:00'), 'partial' => true, 'ref' => $ref];
+
+                continue;
+            }
+
+            if (! $voided) {
+                $voided   = true;
+                $events[] = ['invoice' => $key, 'type' => 'payment', 'at' => $stamp($payDate, '11:00:00'), 'amount' => null, 'ref' => $ref . 'x'];
+                $events[] = ['invoice' => $key, 'type' => 'payment_void', 'at' => $stamp($payDate, '15:00:00'), 'reason' => 'Zadané omylom', 'ref' => $ref . 'x'];
+                $payDate  = $this->addDays($payDate, 1);
+            }
+
+            $events[] = ['invoice' => $key, 'type' => 'payment', 'at' => $stamp($payDate, '11:00:00'), 'amount' => null, 'ref' => $ref];
+        }
+
+        foreach ($events as $seq => $e) {
+            $events[$seq]['seq'] = $seq;
+        }
+
+        usort($events, static fn (array $a, array $b): int => [$a['at'], $a['seq']] <=> [$b['at'], $b['seq']]);
+
+        return array_map(static function (array $e): array {
+            unset($e['seq']);
+
+            return $e;
+        }, $events);
     }
 
     /**
