@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\Invoicing\DocumentFilename;
 use App\Libraries\Invoicing\DocumentIntegrityError;
 use App\Libraries\Invoicing\DocumentStore;
 use App\Libraries\Invoicing\InvoiceQueries;
@@ -91,17 +92,13 @@ final class Invoices extends BaseController
             return $this->response->setStatusCode(500)->setBody(lang($errorKey));
         }
 
-        $prefixes = $kind === 'report'
-            ? ['sk' => 'vykaz-', 'cs' => 'vykaz-', 'pl' => 'wykaz-', 'en' => 'report-']
-            : ['sk' => 'faktura-', 'cs' => 'faktura-', 'pl' => 'faktura-', 'en' => 'invoice-'];
-        $prefix      = $prefixes[trim((string) $row['doc_language'])] ?? ($kind === 'report' ? 'vykaz-' : 'faktura-');
-        $name        = preg_replace('/[^A-Za-z0-9._-]/', '_', (string) $row['number']);
+        $filename    = DocumentFilename::for($kind, trim((string) $row['doc_language']), (string) $row['number']);
         $disposition = $this->request->getGet('download') === '1' ? 'attachment' : 'inline';
 
         return $this->response
             ->setStatusCode(200)
             ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', $disposition . '; filename="' . $prefix . $name . '.pdf"')
+            ->setHeader('Content-Disposition', $disposition . '; filename="' . $filename . '"')
             ->setHeader('Cache-Control', 'private, no-store')
             ->setHeader('ETag', '"' . $doc->sha256 . '"')
             ->setHeader('X-Content-Type-Options', 'nosniff')
