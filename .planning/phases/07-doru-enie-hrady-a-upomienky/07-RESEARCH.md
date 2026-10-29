@@ -235,12 +235,16 @@ Nie je rename/refactor fáza; vynechané. Poznámka: `entities` dostane nové st
 | A8 | Stalwart limit veľkosti správy ~25 MB | Pitfall 9 | zanedbateľné |
 | A9 | BCC nejde do viditeľných hlavičiek pri smtp protokole | Pattern 2 | únik BCC adresy klientovi; overiť testom cez Mailpit (hlavičky správy) |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Message-ID v CI4** — vyriešiť spike-om v prvej úlohe (Wave 0). Ak je override nemožný, použiť `symfony/mailer` (vyžaduje potvrdenie vlastníka: nová závislosť).
+   RESOLVED: Plánovač overil zdroj CI4 v4.7.5 (`system/Email/Email.php`): `getMessageID()` je `protected` a `buildHeaders()` ho volá, preto `App\Libraries\Mail\AppEmail` prepisuje `getMessageID()`. Potvrdí spike v 07-01 (Task 1 `AppMailerMessageTest`, Task 2 `MailpitDeliveryTest`). `symfony/mailer` je iba záloha a len so súhlasom vlastníka (žiadna nová závislosť v pláne).
 2. **Alias schéma Stalwart v1.0.1** — overiť v `docker/mail/stalwart/config.json`/admin API, kde sa zapisujú aliasy (nepodarilo sa overiť z oficiálnych docs).
+   RESOLVED: Alias netreba pre bežné odosielanie: SMTP obálka (MAIL FROM) je vždy SMTP účet aplikácie cez `AppEmail::sendCommand('from')` override a `email.envelopeFrom` (07-01; A4 bol nesprávny, CI4 posiela MAIL FROM z hlavičky From). Postup s aliasom v Stalwarte pre ďalšiu From adresu je zdokumentovaný ako záloha v 07-03 (`docs/ops/mail.md`, `docs/ops/server.md` sekcia 20); From doména je obmedzená allowlistom `email.allowedFromDomains` (07-04 `SenderIdentity`, 07-07).
 3. **Faktúra s `total = 0`** — stav? Odporúčanie: nikdy „uhradená“ automaticky.
+   RESOLVED: Nikdy automaticky „uhradená“: pohľad v2 má podmienku `i.total > 0` pre `paid` a na faktúru so zostatkom 0 sa úhrada zapísať nedá (`already_paid`) (07-09). Odoslanie je povolené ako pri iných faktúrach (07-04).
 4. **Tvar ručného „odoslaná“** — odporúčanie: `invoice_sends.kind='manual'` + `invoice_send_voids`; plán rozhodne.
+   RESOLVED: `invoice_sends.kind = 'manual'` s `transport = 'none'` (CHECK) a storno cez insert-only `invoice_send_voids`; tabuľky a pohľad vznikajú v 07-04, služba a UI v 07-11.
 
 ## Environment Availability
 

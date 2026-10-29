@@ -351,39 +351,45 @@ Plans:
   4. Faktúra prechádza stavmi vystavená, odoslaná, uhradená; „po splatnosti“ sa odvodzuje a dashboard ukazuje zoznam faktúr po splatnosti.
   5. Používateľ zaznamená jednu alebo viac úhrad (dátum, voliteľne suma) a stav „čiastočne uhradená“ a zostatok sa odvodia zo súčtu úhrad.
 
-**Plans**: 11 plans (7 vĺn)
+**Plans**: 14 plans (8 vĺn)
 Plans:
 **Wave 1**
 
-- [ ] 07-01-PLAN.md — Spike a základ odosielania: AppEmail (Message-ID, BCC, obálka), AppMailer::sendMessage, šablóny e-mailov v DB so seedom, jednotné názvy PDF (vlna 1)
-- [ ] 07-02-PLAN.md — Infra: produkčný php do siete mail (overlay, deploy.sh, CI), dokumentácia SMTP a odosielateľov (vlna 1)
+- [ ] 07-01-PLAN.md — Spike odosielania: AppEmail (Message-ID, BCC, obálka), AppMailer::sendMessage, overenie cez Mailpit (vlna 1)
+- [ ] 07-02-PLAN.md — Šablóny e-mailov v DB so seedom pre 4 jazyky, vykreslenie cez whitelist, jednotné názvy PDF (vlna 1)
+- [ ] 07-03-PLAN.md — Infra: produkčný php do siete mail (overlay, deploy.sh, CI), dokumentácia SMTP a odosielateľov (vlna 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 07-03-PLAN.md — Odoslať klientovi: invoice_sends, stav Odoslaná v pohľade, InvoiceMailer (prílohy z DB, idempotencia, zápis po úspechu), sheet na detaile, CSS fázy (vlna 2)
+- [ ] 07-04-PLAN.md — Odoslanie (dáta a služba): invoice_sends a storná, stav Odoslaná v pohľade, InvoiceMailer (prílohy z DB, idempotencia, zápis po úspechu), SenderIdentity (vlna 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 07-04-PLAN.md — Odoslať znova na ľubovoľnú adresu s rovnakými bajtmi, editor adresátov, história odoslaní (vlna 3)
-- [ ] 07-05-PLAN.md — Identita odosielateľa pri subjekte (From, Reply-To, BCC, allowlist domén) (vlna 3)
+- [ ] 07-05-PLAN.md — Odoslať klientovi (UI): kontrolér a sheet, stav a história na detaile, CSS fázy (vlna 3)
+- [ ] 07-07-PLAN.md — Identita odosielateľa pri subjekte (From, Reply-To, BCC, allowlist domén) (vlna 3)
+- [ ] 07-09-PLAN.md — Úhrady (dáta a služba): payments a storná, zostatok a stavy v pohľade, PaymentService, InvoiceStatusQueries (vlna 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 07-06-PLAN.md — Nastavenia → Šablóny e-mailov: úprava s revíziou, whitelist premenných, náhľad (vlna 4)
-- [ ] 07-07-PLAN.md — Úhrady: payments a storná, zostatok a stavy v pohľade, PaymentService, karta Úhrady na detaile (vlna 4)
+- [ ] 07-06-PLAN.md — Odoslať znova na ľubovoľnú adresu s rovnakými bajtmi, editor adresátov, história odoslaní (vlna 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 07-08-PLAN.md — Ručné Označiť ako odoslanú a jeho storno (vlna 5)
-- [ ] 07-09-PLAN.md — Dashboard Po splatnosti a zoznam faktúr so stavmi a filtrom (vlna 5)
+- [ ] 07-08-PLAN.md — Nastavenia → Šablóny e-mailov: úprava s revíziou, whitelist premenných, náhľad (vlna 5)
+- [ ] 07-10-PLAN.md — Úhrady (UI): sheet zápisu a storna, karta Úhrady, odznaky stavu a Po splatnosti na detaile (vlna 5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 07-10-PLAN.md — Upomienka jedným klepnutím z dashboardu a detailu (šablóna reminder, len faktúra, vlákno) (vlna 6)
+- [ ] 07-11-PLAN.md — Ručné Označiť ako odoslanú a jeho storno (vlna 6)
+- [ ] 07-12-PLAN.md — Dashboard Po splatnosti a zoznam faktúr so stavmi a filtrom (vlna 6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 07-11-PLAN.md — Staging seed modul Deliveries a ručné overenie fázy na iPhone (vlna 7)
+- [ ] 07-13-PLAN.md — Upomienka jedným klepnutím z dashboardu a detailu (šablóna reminder, len faktúra, vlákno) (vlna 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 07-14-PLAN.md — Staging seed modul Deliveries, 07-HUMAN-UAT.md a ručné overenie fázy na iPhone (vlna 8)
 
 **UI hint**: yes
 **Poznámky**: **Závislosť od vlastníka:** zvolený produkčný SMTP poskytovateľ a DNS SPF/DKIM/DMARC pre odosielateľov SK a PL. E-mail a HTTP volania nikdy vo vnútri transakcie vystavenia. BCC archív a `Message-ID` pre dohľadanie. Stavy sú odvodené SQL pohľadom, `invoices` ostáva insert-only.
