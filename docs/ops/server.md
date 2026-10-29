@@ -459,7 +459,7 @@ Heslo si prečítaj zo súboru rovnako len na svojom termináli. Rotácia: uprav
 
 ### Rozšírenie o nový modul
 
-Seed je poradie modulov (`App\Libraries\StagingSeed\StagingSeeder::MODULES`: `AdminUser`, `MasterData`, `Tasks`, `Invoices`). Nová fáza pridá svoj modul takto:
+Seed je poradie modulov (`App\Libraries\StagingSeed\StagingSeeder::MODULES`: `AdminUser`, `MasterData`, `Tasks`, `Invoices`, `Deliveries`). Nová fáza pridá svoj modul takto:
 
 1. Vytvor `app/Libraries/StagingSeed/Modules/<Nazov>.php` implementujúci `SeedModule` (`name()`, `run(SeedContext $ctx)`).
 2. Ak modul potrebuje plánované dáta, rozšír `HistoryPlan` a `HistoryPlanner` (zachovaj determinizmus: iba seedovaný `Randomizer`, žiadny Faker ani reálny čas, všetky dátumy najviac do `today`).
@@ -468,7 +468,9 @@ Seed je poradie modulov (`App\Libraries\StagingSeed\StagingSeeder::MODULES`: `Ad
 5. Doplň `tests/unit/StagingSeed/HistoryPlannerTest.php` a tvrdenia v `tests/integration/StagingSeed/StagingSeederTest.php` (počty, súčty, dátumy).
 6. Celkový čas seedu drž v rozpočte (reset + seed do cca 60 s); `staging:seed` vypisuje čas po moduloch.
 
-Plánované moduly: `Payments` (fáza 7, úhrady), `Fx` (fáza 8, cudzomenové faktúry a kurzy), `CreditNotes` (fáza 9, dobropisy), `Limits` (fáza 10, daňové limity obratu). Do tej doby fakturujú iba v mene subjektu (klient a subjekt majú rovnakú menu).
+Modul `Deliveries` (fáza 7, D-25; plánovaný `Payments` ho nahradil) vytvára históriu doručení a úhrad výlučne cez `InvoiceMailer`, `ManualSendService` a `PaymentService` v čase udalosti: každá faktúra sa odošle 1 pracovný deň po vystavení, každá 7. sa označí ručne, staršie faktúry sa uhradia (každá 5. len polovicou), jedna úhrada sa stornuje a zadá znova, každá 6. ostane po splatnosti s upomienkou vo vlákne. Faktúry so splatnosťou v posledných 20 dňoch ostanú odoslané a neuhradené. Modul beží s `email.transport = log` (po behu sa hodnota vráti), takže sa nič neodosiela (D-02) a záznamy majú transport `log` (ručné `none`).
+
+Plánované moduly: `Fx` (fáza 8, cudzomenové faktúry a kurzy), `CreditNotes` (fáza 9, dobropisy), `Limits` (fáza 10, daňové limity obratu). Do tej doby fakturujú iba v mene subjektu (klient a subjekt majú rovnakú menu).
 
 ## 20. Nasadenie fázy 7 (e-mail, úhrady, upomienky)
 
@@ -497,3 +499,26 @@ Odosielanie faktúr a upomienok ide z produkcie cez vlastný Stalwart (D-01). Na
 4. **Overenie po deployi:** `docker compose -f compose.server.yaml -f compose.server.mail.yaml exec php php -r "var_dump((bool) @fsockopen('ssl://mail.vostack.dev', 465, \$e, \$s, 5));"` vráti `bool(true)`. Potom odošli faktúru na vlastný Gmail a v „Show original“ skontroluj SPF, DKIM a DMARC PASS (DMARC je zatiaľ `p=none`, sprísnenie 2026-11-19 podľa `docs/ops/mail.md`).
 5. **Migrácie fázy 7** (`email_templates`, `invoice_sends`, `payments`, rozšírenie `invoice_status_v`, odosielateľ pri subjekte) bežia automaticky pri deployi. Existujúce faktúry ostávajú v stave Vystavená.
 6. **Rollback:** odstráň `MAIL_NETWORK` z `.env`, nastav `email.transport = log` v `app.env` a nasaď znova.
+
+### Ručné overenie fázy 7
+
+Po zelených automatických testoch overí vlastník tieto veci ručne. Výsledky zapisuje do `.planning/phases/07-doru-enie-hrady-a-upomienky/07-HUMAN-UAT.md`.
+
+**(a) Staging na iPhone (inštalovaná PWA, `work-tracker-stage.vostack.dev`)**
+
+1. Otvor dashboard: sekcia Po splatnosti je viditeľná a obsahuje faktúry zo seedu.
+2. Z riadku faktúry pošli upomienku (2 klepnutia) a zapíš úhradu.
+3. Na detaile faktúry spusti Odoslať znova na vlastnú adresu najviac 2 klepnutiami. Flash hlási „testovacie prostredie“ a história odoslaní ukazuje transport `log`.
+4. Stránky nemajú horizontálne posúvanie a ovládacie prvky majú aspoň 44 px.
+
+**(b) Dev (Mailpit)**
+
+1. Odošli faktúru, v Mailpit otvor a stiahni prílohu.
+2. `sha256sum` stiahnutej prílohy sa rovná sha256 na detaile faktúry.
+3. Upomienka sa v Mailpit zobrazí v rovnakom vlákne ako pôvodné odoslanie.
+
+**(c) Produkcia (až po zapnutí SMTP podľa tejto sekcie)**
+
+1. Vystav jednu skúšobnú faktúru a pošli ju iba na vlastnú adresu.
+2. V Gmail „Show original“ sú SPF, DKIM aj DMARC PASS.
+3. `sha256sum` prílohy sa rovná sha256 na detaile faktúry.
