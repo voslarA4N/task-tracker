@@ -361,7 +361,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 07-04-PLAN.md — Odoslanie (dáta a služba): invoice_sends a storná, stav Odoslaná v pohľade, InvoiceMailer (prílohy z DB, idempotencia, zápis po úspechu), SenderIdentity (vlna 2)
+- [x] 07-04-PLAN.md — Odoslanie (dáta a služba): invoice_sends a storná, stav Odoslaná v pohľade, InvoiceMailer (prílohy z DB, idempotencia, zápis po úspechu), SenderIdentity (vlna 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -491,7 +491,7 @@ Plans:
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
-| 7. Doručenie, úhrady a upomienky | 3/14 | In Progress|  |
+| 7. Doručenie, úhrady a upomienky | 4/14 | In Progress|  |
 | 8. Meny a kurzy | 0/0 | Not started | - |
 | 9. Dobropisy | 0/0 | Not started | - |
 | 10. Limity obratu | 0/0 | Not started | - |
