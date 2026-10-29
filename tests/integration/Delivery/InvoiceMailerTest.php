@@ -86,7 +86,7 @@ final class InvoiceMailerTest extends PgTestCase
         $this->assertSame('smtp', $row['transport']);
         $this->assertStringContainsString($row['message_id'], $this->lastEmail->capturedHeaders);
         $this->assertSame($row['message_id'], $result->messageId);
-        $this->assertEquals(['to' => ['fakturacia@all4net.example'], 'cc' => []], json_decode($row['recipients'], true));
+        $this->assertSame(['to' => ['fakturacia@all4net.example'], 'cc' => []], json_decode($row['recipients'], true));
         $this->assertSame(['firma@example.test'], json_decode($row['bcc'], true));
         $this->assertSame('noreply@vostack.dev', $row['from_email']);
         $this->assertSame('Jan Novak', $row['from_name']);
