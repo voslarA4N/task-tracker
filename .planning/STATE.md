@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Phase 8 context gathered
-last_updated: "2026-10-29T23:07:06.610Z"
+stopped_at: Phase 8 UI-SPEC approved
+last_updated: "2026-10-29T23:24:16.397Z"
 last_activity: 2026-10-29
 progress:
   total_phases: 12
@@ -161,6 +161,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-29T23:07:06.605Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-meny-a-kurzy/08-CONTEXT.md
+Last session: 2026-10-29T23:24:16.391Z
+Stopped at: Phase 8 UI-SPEC approved
+Resume file: .planning/phases/08-meny-a-kurzy/08-UI-SPEC.md
