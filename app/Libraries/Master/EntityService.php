@@ -189,10 +189,10 @@ final class EntityService
                 $new[$key] = $text === '' ? null : $text;
             }
 
-            $bcc = $values['mail_bcc'] ?? '';
-            $bcc = is_array($bcc) ? $bcc : CcEmails::parse((string) $bcc);
+            // null = predvolene BCC (stlpec NULL), '' alebo [] = bez BCC (D-27, CR-01)
+            $bcc = array_key_exists('mail_bcc', $values) ? $values['mail_bcc'] : '';
 
-            $new['mail_bcc'] = $bcc;
+            $new['mail_bcc'] = $bcc === null ? null : (is_array($bcc) ? $bcc : CcEmails::parse($bcc));
         }
 
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
@@ -225,7 +225,7 @@ final class EntityService
                 $sets .= ', mail_from_name = :mail_from_name:, mail_from_email = :mail_from_email:, mail_reply_to = :mail_reply_to:, mail_bcc = CAST(:mail_bcc: AS jsonb)';
 
                 foreach (['mail_from_name', 'mail_from_email', 'mail_reply_to', 'mail_bcc'] as $key) {
-                    $params[$key] = $key === 'mail_bcc' ? json_encode($new[$key], JSON_THROW_ON_ERROR) : $new[$key];
+                    $params[$key] = $key === 'mail_bcc' && $new[$key] !== null ? json_encode($new[$key], JSON_THROW_ON_ERROR) : $new[$key];
                 }
             }
 

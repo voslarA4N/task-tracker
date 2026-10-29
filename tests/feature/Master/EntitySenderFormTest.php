@@ -63,9 +63,13 @@ final class EntitySenderFormTest extends AuthTestCase
         $html = $this->body($this->get('/settings/entities/' . $id . '/edit'));
 
         $this->assertStringContainsString('sender-card', $html);
-        $this->assertStringContainsString('value="' . esc('noreply@vostack.dev', 'attr') . '"', $html);
-        $this->assertStringContainsString('value="' . esc('firma@example.test', 'attr') . '"', $html);
-        $this->assertStringContainsString('value="' . esc('Jan Novak', 'attr') . '"', $html);
+        // Predvolene hodnoty su len placeholder, nie value (CR-01, D-27)
+        $this->assertStringContainsString('placeholder="' . esc('noreply@vostack.dev', 'attr') . '"', $html);
+        $this->assertStringContainsString('placeholder="' . esc('firma@example.test', 'attr') . '"', $html);
+        $this->assertStringContainsString('placeholder="' . esc('Jan Novak', 'attr') . '"', $html);
+        $this->assertStringNotContainsString('value="' . esc('noreply@vostack.dev', 'attr') . '"', $html);
+        $this->assertStringNotContainsString('value="' . esc('Jan Novak', 'attr') . '"', $html);
+        $this->assertMatchesRegularExpression('/<input[^>]*name="mail_bcc_none"(?![^>]*checked)[^>]*>/', $html);
         $this->assertStringContainsString('vostack.dev', $html);
         $this->assertStringNotContainsString(' style=', $html);
         $this->assertStringNotContainsString('onclick', $html);
@@ -112,5 +116,89 @@ final class EntitySenderFormTest extends AuthTestCase
         $this->update($id, [])->assertStatus(302);
 
         $this->assertSame('faktury@vostack.dev', $this->owner()->query('SELECT mail_from_email FROM entities WHERE id = ?', [$id])->getRow()->mail_from_email);
+    }
+
+    /**
+     * Hodnoty formulara z HTML (input value a textarea), ako by ich poslal prehliadac bez zmeny.
+     *
+     * @return array<string, string>
+     */
+    private function formValues(string $html): array
+    {
+        $out = [];
+        preg_match_all('/<input[^>]*\bname="([a-z_]+)"[^>]*>/', $html, $inputs, PREG_SET_ORDER);
+
+        foreach ($inputs as [$tag, $name]) {
+            if (str_contains($tag, 'type="checkbox"') && ! str_contains($tag, ' checked')) {
+                continue;
+            }
+
+            if (preg_match('/\bvalue="([^"]*)"/', $tag, $m) === 1 && $name !== csrf_token()) {
+                $out[$name] = html_entity_decode($m[1], ENT_QUOTES);
+            }
+        }
+
+        preg_match_all('/<textarea[^>]*\bname="([a-z_]+)"[^>]*>(.*?)<\/textarea>/s', $html, $areas, PREG_SET_ORDER);
+
+        foreach ($areas as [, $name, $text]) {
+            $out[$name] = html_entity_decode($text, ENT_QUOTES);
+        }
+
+        return $out;
+    }
+
+    public function testPostingEditFormUnchangedKeepsSenderColumnsNull(): void
+    {
+        $id   = $this->createEntity('SK');
+        $form = $this->formValues($this->body($this->get('/settings/entities/' . $id . '/edit')));
+
+        $this->assertArrayHasKey('mail_from_email', $form);
+        $this->assertArrayNotHasKey('mail_bcc_none', $form);
+
+        $form['name_internal'] = 'Iny nazov';
+        $this->update($id, $form)->assertStatus(302);
+
+        $row = $this->owner()->query('SELECT name_internal, mail_from_name, mail_from_email, mail_reply_to, mail_bcc FROM entities WHERE id = ?', [$id])->getRow();
+        $this->assertSame('Iny nazov', $row->name_internal);
+        $this->assertNull($row->mail_from_name);
+        $this->assertNull($row->mail_from_email);
+        $this->assertNull($row->mail_reply_to);
+        $this->assertNull($row->mail_bcc);
+    }
+
+    public function testUnchangedFormSavesEvenWhenConfigFromIsOutsideAllowedDomains(): void
+    {
+        $id                        = $this->createEntity('SK');
+        config('Email')->fromEmail = 'noreply@stage.vostack.dev';
+        $form                      = $this->formValues($this->body($this->get('/settings/entities/' . $id . '/edit')));
+
+        $this->update($id, $form)->assertStatus(302);
+        $this->assertNull($this->owner()->query('SELECT mail_from_email FROM entities WHERE id = ?', [$id])->getRow()->mail_from_email);
+    }
+
+    public function testNoBccCheckboxStoresEmptyListAndRoundTrips(): void
+    {
+        $id = $this->createEntity('SK');
+        $this->update($id, ['mail_from_name' => '', 'mail_from_email' => '', 'mail_reply_to' => '', 'mail_bcc' => '', 'mail_bcc_none' => '1'])->assertStatus(302);
+        $this->assertSame('[]', $this->owner()->query('SELECT mail_bcc::text AS b FROM entities WHERE id = ?', [$id])->getRow()->b);
+
+        $this->withSession();
+        $form = $this->formValues($this->body($this->get('/settings/entities/' . $id . '/edit')));
+        $this->assertSame('1', $form['mail_bcc_none'] ?? null);
+
+        // Odskrtnutie s prazdnym polom vrati predvolene BCC (NULL)
+        unset($form['mail_bcc_none']);
+        $this->update($id, $form)->assertStatus(302);
+        $this->assertNull($this->owner()->query('SELECT mail_bcc FROM entities WHERE id = ?', [$id])->getRow()->mail_bcc);
+    }
+
+    public function testNoBccWithAddressesIs422(): void
+    {
+        $id     = $this->createEntity('SK');
+        $result = $this->update($id, ['mail_from_name' => '', 'mail_from_email' => '', 'mail_reply_to' => '', 'mail_bcc' => 'a@x.sk', 'mail_bcc_none' => '1']);
+
+        $result->assertStatus(422);
+        $this->assertStringContainsString(esc(lang('Entities.errorSenderBccConflict')), $this->body($result));
+        $this->assertNull($this->owner()->query('SELECT mail_bcc FROM entities WHERE id = ?', [$id])->getRow()->mail_bcc);
     }
 }

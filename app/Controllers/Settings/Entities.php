@@ -174,7 +174,7 @@ final class Entities extends BaseController
             'name_internal' => (string) $entity['name_internal'],
             'active_from'   => (string) $entity['active_from'],
             'active_to'     => $entity['active_to'] === null ? '' : (string) $entity['active_to'],
-        ] + $this->senderValues($id), []));
+        ], []));
     }
 
     public function update(int $id): ResponseInterface
@@ -210,7 +210,7 @@ final class Entities extends BaseController
             && $values['active_from'] === (string) $entity['active_from']
             && $values['active_to'] === ($entity['active_to'] === null ? '' : (string) $entity['active_to']);
 
-        (new EntityService())->updateBase($id, $values + $sender);
+        (new EntityService())->updateBase($id, $values + EntityInput::senderForStorage($sender));
 
         session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang($baseUnchanged && $sender !== [] ? 'Entities.senderSaved' : 'Entities.saved')]);
 
@@ -292,10 +292,11 @@ final class Entities extends BaseController
      */
     private function editData(array $entity, array $values, array $errors): array
     {
-        $values += $this->senderValues((int) $entity['id']);
+        $values += $this->senderValues($entity);
 
         return [
             'allowedDomains' => SenderIdentity::allowedDomains(),
+            'senderDefaults' => (new SenderIdentity())->defaults((int) $entity['id']),
             'title'          => lang('Entities.editTitle'),
             'entity'         => $entity,
             'country'        => Country::from((string) $entity['country']),
@@ -305,19 +306,28 @@ final class Entities extends BaseController
     }
 
     /**
-     * Vyriesene hodnoty odosielatela na predvyplnenie karty (D-27).
+     * Ulozene (nevyriesene) hodnoty odosielatela na predvyplnenie karty. NULL = prazdne pole,
+     * predvolene hodnoty sa ukazuju len ako placeholder, aby ich ulozenie formulara nezapisalo (D-27, CR-01).
+     *
+     * @param array<string, mixed> $entity
      *
      * @return array<string, string>
      */
-    private function senderValues(int $id): array
+    private function senderValues(array $entity): array
     {
-        $r = (new SenderIdentity())->resolve($id);
+        $bcc = null;
+
+        if (($entity['mail_bcc'] ?? null) !== null) {
+            $decoded = json_decode((string) $entity['mail_bcc'], true);
+            $bcc     = array_values(array_filter(is_array($decoded) ? $decoded : [], static fn ($item): bool => is_string($item) && $item !== ''));
+        }
 
         return [
-            'mail_from_name'  => $r['from_name'],
-            'mail_from_email' => $r['from_email'],
-            'mail_reply_to'   => (string) $r['reply_to'],
-            'mail_bcc'        => implode("\n", $r['bcc']),
+            'mail_from_name'  => (string) ($entity['mail_from_name'] ?? ''),
+            'mail_from_email' => (string) ($entity['mail_from_email'] ?? ''),
+            'mail_reply_to'   => (string) ($entity['mail_reply_to'] ?? ''),
+            'mail_bcc'        => $bcc === null ? '' : implode("\n", $bcc),
+            'mail_bcc_none'   => $bcc === [] ? '1' : '',
         ];
     }
 

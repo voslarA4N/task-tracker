@@ -42,6 +42,7 @@ final class EntityInput
 
     /**
      * Prazdne pole, ak POST neobsahuje ziadne pole odosielatela (stare formulare ich nemenia).
+     * Prazdne pole formulara znamena predvolenu hodnotu (NULL, D-27), `mail_bcc_none` = '1' znamena bez BCC.
      *
      * @return array<string, string>
      */
@@ -50,7 +51,7 @@ final class EntityInput
         $out  = [];
         $post = $request->getPost();
 
-        if (array_intersect(self::SENDER_FIELDS, array_keys($post)) === []) {
+        if (array_intersect([...self::SENDER_FIELDS, 'mail_bcc_none'], array_keys($post)) === []) {
             return [];
         }
 
@@ -59,7 +60,33 @@ final class EntityInput
             $out[$field] = is_string($value) ? trim($value) : '';
         }
 
+        $out['mail_bcc_none'] = $request->getPost('mail_bcc_none') === '1' ? '1' : '';
+
         return $out;
+    }
+
+    /**
+     * Prevod hodnot formulara na stlpce subjektu (CR-01, D-27): prazdne pole = NULL (predvolena hodnota),
+     * prazdne BCC = NULL (predvolene BCC na e-mail subjektu), zaskrtnute „bez BCC“ = [] .
+     *
+     * @param array<string, string> $sender vystup senderFromPost
+     *
+     * @return array<string, string|null>
+     */
+    public static function senderForStorage(array $sender): array
+    {
+        if ($sender === []) {
+            return [];
+        }
+
+        $bcc = trim($sender['mail_bcc'] ?? '');
+
+        return [
+            'mail_from_name'  => trim($sender['mail_from_name'] ?? ''),
+            'mail_from_email' => trim($sender['mail_from_email'] ?? ''),
+            'mail_reply_to'   => trim($sender['mail_reply_to'] ?? ''),
+            'mail_bcc'        => ($sender['mail_bcc_none'] ?? '') === '1' ? '' : ($bcc === '' ? null : $bcc),
+        ];
     }
 
     /**
@@ -102,7 +129,9 @@ final class EntityInput
 
         $bcc = CcEmails::parse((string) ($v['mail_bcc'] ?? ''));
 
-        if (count($bcc) > CcEmails::MAX) {
+        if ($bcc !== [] && ($v['mail_bcc_none'] ?? '') === '1') {
+            $errors['mail_bcc'] = lang('Entities.errorSenderBccConflict');
+        } elseif (count($bcc) > CcEmails::MAX) {
             $errors['mail_bcc'] = lang('Entities.errorSenderBccMax', [CcEmails::MAX]);
         } elseif (($error = CcEmails::validate($bcc)) !== null) {
             $errors['mail_bcc'] = $error;

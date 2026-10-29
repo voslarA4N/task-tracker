@@ -184,9 +184,12 @@ return [
     'senderEmailHint'                   => 'Allowed domains: {0}.',
     'senderReplyTo'                     => 'Reply to',
     'senderBcc'                         => 'Hidden copy (BCC)',
-    'senderBccHint'                     => 'One address per line, at most {0}. An empty field means no hidden copy.',
+    'senderBccHint'                     => 'One address per line, at most {0}. An empty field means the default copy to the entity e-mail.',
+    'senderBccNone'                     => 'Do not send a hidden copy',
+    'senderDefaultsHint'                => 'An empty field means the default value (shown in grey). Defaults follow later changes of the entity and configuration.',
     'senderSaved'                       => 'Sending settings were saved.',
     'errorSenderDomain'                 => 'The sender address must be on the domain {0}, otherwise the recipient may reject it.',
     'errorSenderEmail'                  => 'Enter a valid e-mail address.',
     'errorSenderBccMax'                 => 'The hidden copy can have at most {0} addresses.',
+    'errorSenderBccConflict'            => 'Either fill in the hidden copy addresses or choose not to send one.',
 ];

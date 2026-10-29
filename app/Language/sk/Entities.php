@@ -184,9 +184,12 @@ return [
     'senderEmailHint'                   => 'Povolené domény: {0}.',
     'senderReplyTo'                     => 'Odpovedať na',
     'senderBcc'                         => 'Skrytá kópia (BCC)',
-    'senderBccHint'                     => 'Jedna adresa na riadok, najviac {0}. Prázdne pole znamená bez skrytej kópie.',
+    'senderBccHint'                     => 'Jedna adresa na riadok, najviac {0}. Prázdne pole znamená predvolenú kópiu na e-mail subjektu.',
+    'senderBccNone'                     => 'Neposielať skrytú kópiu',
+    'senderDefaultsHint'                => 'Prázdne pole znamená predvolenú hodnotu (zobrazená sivo). Predvolené hodnoty sa prispôsobia neskorším zmenám subjektu a konfigurácie.',
     'senderSaved'                       => 'Nastavenia odosielania boli uložené.',
     'errorSenderDomain'                 => 'Adresa odosielateľa musí byť na doméne {0}, inak ju príjemca môže odmietnuť.',
     'errorSenderEmail'                  => 'Zadajte platnú e-mailovú adresu.',
     'errorSenderBccMax'                 => 'Skrytá kópia môže mať najviac {0} adries.',
+    'errorSenderBccConflict'            => 'Buď vyplňte adresy skrytej kópie, alebo zvoľte, že sa nemá posielať.',
 ];

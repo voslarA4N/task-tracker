@@ -72,4 +72,23 @@ final class SenderIdentityTest extends CIUnitTestCase
         $this->assertArrayHasKey('mail_from_name', EntityInput::validateSender(['mail_from_name' => str_repeat('a', 101)] + $ok));
         $this->assertStringContainsString('vostack.dev', EntityInput::validateSender(['mail_from_email' => 'x@gmail.com'] + $ok)['mail_from_email']);
     }
+
+    public function testBccNoneConflictsWithAddresses(): void
+    {
+        config('Email')->allowedFromDomains = 'vostack.dev';
+        $empty                              = ['mail_from_name' => '', 'mail_from_email' => '', 'mail_reply_to' => ''];
+
+        $this->assertSame([], EntityInput::validateSender($empty + ['mail_bcc' => '', 'mail_bcc_none' => '1']));
+        $this->assertArrayHasKey('mail_bcc', EntityInput::validateSender($empty + ['mail_bcc' => 'a@x.sk', 'mail_bcc_none' => '1']));
+    }
+
+    public function testSenderForStorageKeepsDefaultsAsNull(): void
+    {
+        $this->assertSame([], EntityInput::senderForStorage([]));
+
+        $empty = ['mail_from_name' => '', 'mail_from_email' => '', 'mail_reply_to' => '', 'mail_bcc' => '', 'mail_bcc_none' => ''];
+        $this->assertNull(EntityInput::senderForStorage($empty)['mail_bcc']);
+        $this->assertSame('', EntityInput::senderForStorage(['mail_bcc_none' => '1'] + $empty)['mail_bcc']);
+        $this->assertSame("a@x.sk\nb@x.sk", EntityInput::senderForStorage(['mail_bcc' => " a@x.sk\nb@x.sk "] + $empty)['mail_bcc']);
+    }
 }

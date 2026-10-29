@@ -67,7 +67,7 @@ $id = (int) $entity['id'];
             <?php endif ?>
         </div>
 
-        <?= view('settings/entities/_sender_fields', ['values' => $values, 'errors' => $errors, 'allowedDomains' => $allowedDomains]) ?>
+        <?= view('settings/entities/_sender_fields', ['values' => $values, 'errors' => $errors, 'allowedDomains' => $allowedDomains, 'senderDefaults' => $senderDefaults]) ?>
 
         <div class="master-actions">
             <a class="btn btn-outline-secondary btn-touch" href="/settings/entities/<?= $id ?>"><?= esc(lang('Entities.backToDetail')) ?></a>
