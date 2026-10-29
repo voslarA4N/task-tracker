@@ -366,7 +366,7 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 07-05-PLAN.md — Odoslať klientovi (UI): kontrolér a sheet, stav a história na detaile, CSS fázy (vlna 3)
-- [ ] 07-07-PLAN.md — Identita odosielateľa pri subjekte (From, Reply-To, BCC, allowlist domén) (vlna 3)
+- [x] 07-07-PLAN.md — Identita odosielateľa pri subjekte (From, Reply-To, BCC, allowlist domén) (vlna 3)
 - [ ] 07-09-PLAN.md — Úhrady (dáta a služba): payments a storná, zostatok a stavy v pohľade, PaymentService, InvoiceStatusQueries (vlna 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
@@ -491,7 +491,7 @@ Plans:
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
-| 7. Doručenie, úhrady a upomienky | 5/14 | In Progress|  |
+| 7. Doručenie, úhrady a upomienky | 6/14 | In Progress|  |
 | 8. Meny a kurzy | 0/0 | Not started | - |
 | 9. Dobropisy | 0/0 | Not started | - |
 | 10. Limity obratu | 0/0 | Not started | - |
