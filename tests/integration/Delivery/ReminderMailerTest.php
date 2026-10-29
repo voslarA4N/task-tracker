@@ -6,6 +6,7 @@ namespace Tests\Integration\Delivery;
 
 use App\Libraries\Delivery\SendRejected;
 use App\Libraries\Platform\FrozenClock;
+use App\Libraries\Platform\Money;
 use App\Libraries\Platform\MoneyFormat;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -91,7 +92,7 @@ final class ReminderMailerTest extends PgTestCase
         $inv = $this->sentOverdue();
         $this->mailer()->send($this->sendCommand($inv['id'], ['fakturacia@all4net.example'], [], ['kind' => 'reminder', 'subject' => 'Upomienka: faktura 202610001']));
 
-        $doc = $this->owner()->query("SELECT content FROM invoice_documents WHERE invoice_id = :i: AND kind = 'invoice'", ['i' => $inv['id']])->getRow();
+        $doc  = $this->owner()->query("SELECT content FROM invoice_documents WHERE invoice_id = :i: AND kind = 'invoice'", ['i' => $inv['id']])->getRow();
         $body = str_replace(["\r", "\n"], '', $this->lastEmail->capturedBody);
         $this->assertStringContainsString(str_replace("\r\n", '', chunk_split(base64_encode(pg_unescape_bytea($doc->content)), 76, "\r\n")), $body);
         $this->assertSame(1, substr_count($this->lastEmail->capturedBody, 'Content-Type: application/pdf'));
@@ -114,7 +115,7 @@ final class ReminderMailerTest extends PgTestCase
         $this->payment($inv['id'], '500.00');
         $d = $this->mailer()->draft($inv['id'], 'reminder');
 
-        $this->assertStringContainsString(MoneyFormat::format(bcsub($inv['total'], '500.00', 2), 'EUR'), $d['body']);
+        $this->assertStringContainsString(MoneyFormat::format(Money::of($inv['total'])->minus(Money::of('500.00'))->toDecimalString(), 'EUR'), $d['body']);
     }
 
     public function testPaidInvoiceRejectedAndNothingSent(): void

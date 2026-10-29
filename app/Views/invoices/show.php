@@ -48,6 +48,7 @@ $canPay    = ! $external && in_array($status, ['issued', 'sent', 'partially_paid
 $payPrimary = $canPay && $status !== 'issued';
 $canSend = ! $external && $status === 'issued';
 $canResend = ! $external && in_array($status, ['sent', 'partially_paid', 'paid'], true);
+$canRemind = ! $external && in_array($status, ['sent', 'partially_paid'], true) && is_array($payState) && \App\Libraries\Platform\Money::of((string) $payState['balance'])->compare(\App\Libraries\Platform\Money::zero()) > 0;
 $history = (array) ($invoice['history'] ?? []);
 ?>
 <?= $this->extend('layouts/app') ?>
@@ -98,6 +99,9 @@ $history = (array) ($invoice['history'] ?? []);
                     <a class="btn <?= $payPrimary ? 'btn-primary' : 'btn-outline-secondary' ?> btn-touch" href="/invoices/<?= $id ?>/payments" hx-get="/invoices/<?= $id ?>/payments" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Payments.cta')) ?></a>
                 <?php endif ?>
 <?php endif ?>
+                <?php if ($canRemind) : ?>
+                    <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/remind" hx-get="/invoices/<?= $id ?>/remind" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.reminderCta')) ?></a>
+                <?php endif ?>
                 <?php if ($canResend) : ?>
                     <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/resend" hx-get="/invoices/<?= $id ?>/resend" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.resendCta')) ?></a>
                 <?php endif ?>

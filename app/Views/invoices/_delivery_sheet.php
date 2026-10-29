@@ -11,7 +11,11 @@
 <div class="offcanvas offcanvas-bottom work-sheet dl-sheet" tabindex="-1" id="work-sheet" aria-labelledby="work-sheet-title">
     <div class="offcanvas-header px-0 pt-0">
         <div>
-            <h2 class="offcanvas-title h5 mb-1" id="work-sheet-title"><?= esc(lang(($kind ?? 'invoice') === 'resend' ? 'Deliveries.resendTitle' : 'Deliveries.sendTitle')) ?></h2>
+            <h2 class="offcanvas-title h5 mb-1" id="work-sheet-title"><?= esc(lang(match ($kind ?? 'invoice') {
+                'resend'   => 'Deliveries.resendTitle',
+                'reminder' => 'Deliveries.reminderTitle',
+                default    => 'Deliveries.sendTitle',
+            })) ?></h2>
             <p class="small text-body-secondary mb-0"><?= esc(lang('Deliveries.sendMeta', [(string) $invoice['number'], $clientName, strtoupper((string) $draft['language'])])) ?></p>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="<?= esc(lang('Deliveries.cancel'), 'attr') ?>"></button>

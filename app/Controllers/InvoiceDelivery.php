@@ -9,6 +9,7 @@ use App\Libraries\Delivery\ManualSendService;
 use App\Libraries\Delivery\SendCommand;
 use App\Libraries\Delivery\SendRejected;
 use App\Libraries\Master\CcEmails;
+use App\Libraries\Platform\Money;
 use App\Libraries\Platform\Uuid;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\IncomingRequest;
@@ -30,6 +31,19 @@ final class InvoiceDelivery extends BaseController
     public function resendForm(int $id): ResponseInterface
     {
         return $this->form($id, 'resend');
+    }
+
+    /**
+     * Rucna upomienka (D-24): iba faktura, iba pri zostatku > 0.
+     */
+    public function remindForm(int $id): ResponseInterface
+    {
+        return $this->form($id, 'reminder');
+    }
+
+    public function remind(int $id): ResponseInterface
+    {
+        return $this->submit($id, 'reminder');
     }
 
     public function send(int $id): ResponseInterface
@@ -182,9 +196,11 @@ final class InvoiceDelivery extends BaseController
         return $this->response->setStatusCode($status)->setHeader('Vary', 'HX-Request')->setBody($body);
     }
 
-    private function done(string $message, string $to): ResponseInterface
+    private function done(string $message, string $to, bool $flash = true): ResponseInterface
     {
-        session()->setFlashdata('app_notice', ['type' => 'success', 'message' => $message]);
+        if ($flash) {
+            session()->setFlashdata('app_notice', ['type' => 'success', 'message' => $message]);
+        }
 
         if (is_htmx()) {
             return $this->response->setStatusCode(200)->setHeader('HX-Location', $to)->setHeader('HX-Trigger', 'allocationChanged')->setBody('');
@@ -203,12 +219,17 @@ final class InvoiceDelivery extends BaseController
             throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
         }
 
+        if ($kind === 'reminder' && Money::of((string) ($draft['invoice']['balance'] ?? '0'))->compare(Money::zero()) <= 0) {
+            return $this->noBalance($draft, $kind);
+        }
+
         return $this->panel('invoices/_delivery_sheet', 200, $draft, [
             'to'          => implode(', ', $draft['to']),
             'cc'          => implode(', ', $draft['cc']),
             'subject'     => $draft['subject'],
             'body'        => $draft['body'],
             'request_key' => Uuid::v4(),
+            'return_to'   => $this->returnTo($this->request->getGet('return_to'), $id),
         ], [], null, $kind);
     }
 
@@ -231,6 +252,7 @@ final class InvoiceDelivery extends BaseController
             'subject'     => $this->post('subject'),
             'body'        => $this->post('body'),
             'request_key' => $this->post('request_key'),
+            'return_to'   => $this->returnTo($this->post('return_to'), $id),
         ];
 
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/D', $values['request_key']) !== 1) {
@@ -255,6 +277,10 @@ final class InvoiceDelivery extends BaseController
                 throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
             }
 
+            if ($e->reason === 'no_balance') {
+                return $this->noBalance($draft, $kind);
+            }
+
             return $this->rejected($e, $draft, $values, $kind);
         }
 
@@ -263,11 +289,29 @@ final class InvoiceDelivery extends BaseController
             : lang('Deliveries.sent', [implode(', ', array_merge($result->to, $result->cc))]);
         session()->setFlashdata('app_notice', ['type' => 'success', 'message' => $message]);
 
-        if (is_htmx()) {
-            return $this->response->setStatusCode(200)->setHeader('HX-Location', '/invoices/' . $id)->setHeader('HX-Trigger', 'allocationChanged')->setBody('');
-        }
+        return $this->done($message, $values['return_to'], false);
+    }
 
-        return redirect()->to('/invoices/' . $id);
+    /**
+     * @param array<string, mixed> $draft
+     */
+    private function noBalance(array $draft, string $kind): ResponseInterface
+    {
+        return $this->panel('invoices/_delivery_form', 409, $draft, [
+            'to'          => '',
+            'cc'          => '',
+            'subject'     => (string) $draft['subject'],
+            'body'        => (string) $draft['body'],
+            'request_key' => Uuid::v4(),
+            'return_to'   => '/invoices/' . (int) $draft['invoice']['id'],
+        ], [], lang('Deliveries.errorNoBalance'), $kind);
+    }
+
+    private function returnTo(mixed $raw, int $id): string
+    {
+        $detail = '/invoices/' . $id;
+
+        return is_string($raw) && ($raw === '/' || $raw === $detail) ? $raw : $detail;
     }
 
     /**

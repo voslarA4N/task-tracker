@@ -12,6 +12,7 @@ use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Mail\AppMailer;
 use App\Libraries\Mail\OutgoingMessage;
 use App\Libraries\Master\CcEmails;
+use App\Libraries\Platform\Money;
 use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
 use CodeIgniter\Database\Exceptions\DatabaseException;
@@ -123,7 +124,7 @@ class InvoiceMailer
         $invoice = $draft['invoice'];
 
         // 3b. upomienka iba pri nenulovom zostatku (D-24, T-07-57)
-        if ($cmd->kind === 'reminder' && bccomp((string) ($invoice['balance'] ?? '0'), '0', 2) <= 0) {
+        if ($cmd->kind === 'reminder' && Money::of((string) ($invoice['balance'] ?? '0'))->compare(Money::zero()) <= 0) {
             throw new SendRejected('no_balance');
         }
 

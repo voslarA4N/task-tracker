@@ -34,9 +34,16 @@ $fmt = new IntlDateFormatter(service('request')->getLocale(), IntlDateFormatter:
                         <?php endif ?>
                     </span>
                 </a>
-                <div class="ov-actions px-3 pb-3">
+                <div class="ov-actions px-3 pb-2">
+                    <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/remind?return_to=/" hx-get="/invoices/<?= $id ?>/remind?return_to=/" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.reminderCta')) ?></a>
                     <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/payments?return_to=/" hx-get="/invoices/<?= $id ?>/payments?return_to=/" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Dashboard.actionPayment')) ?></a>
                 </div>
+                <?php if (! empty($row['last_reminder_at'])) : ?>
+                    <?php $remAt = service('clock')->parseDate(substr((string) $row['last_reminder_at'], 0, 10)); ?>
+                    <p class="small text-body-secondary px-3 pb-3 mb-0"><?= esc(lang('Deliveries.lastReminderRow', [$remAt === null ? (string) $row['last_reminder_at'] : (string) $fmt->format($remAt)])) ?></p>
+                <?php else : ?>
+                    <div class="pb-1"></div>
+                <?php endif ?>
             </div>
         <?php endforeach ?>
     </div>

@@ -12,6 +12,8 @@ $routes->get('invoices/(:num)/send', 'InvoiceDelivery::sendForm/$1');
 $routes->post('invoices/(:num)/send', 'InvoiceDelivery::send/$1');
 $routes->get('invoices/(:num)/resend', 'InvoiceDelivery::resendForm/$1');
 $routes->post('invoices/(:num)/resend', 'InvoiceDelivery::resend/$1');
+$routes->get('invoices/(:num)/remind', 'InvoiceDelivery::remindForm/$1');
+$routes->post('invoices/(:num)/remind', 'InvoiceDelivery::remind/$1');
 $routes->get('invoices/(:num)/mark-sent', 'InvoiceDelivery::markSentForm/$1');
 $routes->post('invoices/(:num)/mark-sent', 'InvoiceDelivery::markSent/$1');
 $routes->get('sends/(:num)/void', 'InvoiceDelivery::voidSendForm/$1');

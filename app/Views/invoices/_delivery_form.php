@@ -13,7 +13,11 @@
  */
 $id      = (int) $invoice['id'];
 $kind    = (string) ($kind ?? 'invoice');
-$action  = '/invoices/' . $id . ($kind === 'resend' ? '/resend' : '/send');
+$action  = '/invoices/' . $id . match ($kind) {
+    'resend'   => '/resend',
+    'reminder' => '/remind',
+    default    => '/send',
+};
 $clientEmails = implode(',', array_map(static fn ($e): string => strtolower((string) $e), (array) ($draft['client_emails'] ?? [])));
 $sender  = (array) $draft['sender'];
 $bcc     = (array) $sender['bcc'];
@@ -27,6 +31,9 @@ $describe = static fn (string $name): string => isset($errors[$name]) ? ' aria-d
 <form method="post" action="<?= esc($action, 'attr') ?>" hx-post="<?= esc($action, 'attr') ?>" hx-target="#sheet-body" hx-swap="innerHTML" data-submit-once data-client-emails="<?= esc($clientEmails, 'attr') ?>" novalidate>
     <?= csrf_field() ?>
     <input type="hidden" name="request_key" value="<?= esc($values['request_key'], 'attr') ?>">
+    <?php if ($kind === 'reminder') : ?>
+        <input type="hidden" name="return_to" value="<?= esc((string) ($values['return_to'] ?? '/invoices/' . $id), 'attr') ?>">
+    <?php endif ?>
 
 <?php foreach (['to' => 'Deliveries.labelTo', 'cc' => 'Deliveries.labelCc'] as $fname => $flabel) : ?>
     <div class="dl-field mb-3" x-data="dlRecipients" data-field="<?= $fname ?>">
@@ -85,7 +92,7 @@ $describe = static fn (string $name): string => isset($errors[$name]) ? ' aria-d
             </li>
         <?php endforeach ?>
     </ul>
-    <?php if (count((array) $draft['attachments']) < 2) : ?>
+    <?php if ($kind !== 'reminder' && count((array) $draft['attachments']) < 2) : ?>
         <p class="small text-body-secondary"><?= esc(lang('Invoices.reportMissing')) ?></p>
     <?php endif ?>
 
@@ -93,7 +100,11 @@ $describe = static fn (string $name): string => isset($errors[$name]) ? ' aria-d
         <button type="button" class="btn btn-outline-secondary btn-touch" data-bs-dismiss="offcanvas"><?= esc(lang('Deliveries.cancel')) ?></button>
         <button type="submit" class="btn btn-primary btn-touch">
             <span class="spinner-border spinner-border-sm htmx-indicator d-none" aria-hidden="true"></span>
-            <?= esc(lang($retry ? 'Deliveries.retry' : ($kind === 'resend' ? 'Deliveries.resendCta' : 'Deliveries.sendCta'))) ?>
+            <?= esc(lang($retry ? 'Deliveries.retry' : match ($kind) {
+                'resend'   => 'Deliveries.resendCta',
+                'reminder' => 'Deliveries.reminderCta',
+                default    => 'Deliveries.sendCta',
+            })) ?>
         </button>
     </div>
 </form>

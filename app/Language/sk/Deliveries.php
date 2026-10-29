@@ -78,4 +78,8 @@ return [
     'errorVoidReasonLong' => 'Dôvod môže mať najviac 200 znakov.',
     'errorVoidAlready'    => 'Toto označenie je už zrušené.',
     'historyNote'         => 'Poznámka: {0}',
+    'reminderTitle'       => 'Poslať upomienku',
+    'reminderCta'         => 'Poslať upomienku',
+    'errorNoBalance'      => 'Faktúra nemá zostatok, upomienka sa neposiela.',
+    'lastReminderRow'     => 'Posledná upomienka {0}',
 ];

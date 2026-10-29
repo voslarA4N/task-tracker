@@ -78,4 +78,8 @@ return [
     'errorVoidReasonLong' => 'The reason can have at most 200 characters.',
     'errorVoidAlready'    => 'This mark is already cancelled.',
     'historyNote'         => 'Note: {0}',
+    'reminderTitle'       => 'Send reminder',
+    'reminderCta'         => 'Send reminder',
+    'errorNoBalance'      => 'The invoice has no balance, no reminder is sent.',
+    'lastReminderRow'     => 'Last reminder {0}',
 ];
