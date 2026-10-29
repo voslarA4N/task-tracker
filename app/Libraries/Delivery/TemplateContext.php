@@ -12,7 +12,7 @@ use App\Libraries\Invoicing\PdfFormat;
 final class TemplateContext
 {
     /**
-     * @param array<string, mixed> $invoice riadok z invoices, snapshot dekodovany na pole
+     * @param array<string, mixed> $invoice riadok z invoices, snapshot dekodovany na pole, voliteľne `balance` z invoice_status_v (D-15)
      *
      * @return array<string, string>
      */
@@ -21,6 +21,7 @@ final class TemplateContext
         $lang     = (string) ($invoice['doc_language'] ?? 'sk');
         $currency = trim((string) $invoice['currency']);
         $total    = (string) $invoice['total'];
+        $balance  = isset($invoice['balance']) ? (string) $invoice['balance'] : $total;
         $snapshot = is_array($invoice['snapshot'] ?? null) ? $invoice['snapshot'] : [];
         $month    = (string) ($invoice['billing_month'] ?? '');
         $iban     = (string) ($snapshot['bank']['iban'] ?? '');
@@ -29,7 +30,7 @@ final class TemplateContext
         return [
             'number'          => (string) ($invoice['number'] ?? ''),
             'total'           => PdfFormat::amount($total, $currency, $lang),
-            'balance'         => PdfFormat::amount($total, $currency, $lang),
+            'balance'         => PdfFormat::amount($balance, $currency, $lang),
             'currency'        => $currency,
             'issue_date'      => self::date($invoice['issue_date'] ?? null, $lang),
             'due_date'        => self::date($due, $lang),

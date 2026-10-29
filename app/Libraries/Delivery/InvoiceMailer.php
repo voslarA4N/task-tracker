@@ -301,7 +301,8 @@ class InvoiceMailer
     private function loadInvoice(int $invoiceId): array
     {
         $row = $this->db->query(
-            'SELECT id, origin, type, number, doc_language, snapshot_schema, snapshot, client_id, entity_id, total, currency, issue_date, due_date, billing_month
+            'SELECT id, origin, type, number, doc_language, snapshot_schema, snapshot, client_id, entity_id, total, currency, issue_date, due_date, billing_month,
+                    (SELECT v.balance FROM invoice_status_v v WHERE v.id = invoices.id) AS balance
              FROM invoices WHERE id = :id:',
             ['id' => $invoiceId],
         )->getRowArray();
