@@ -15,6 +15,7 @@ $htmxConfig = [
         ['code' => '422', 'swap' => true, 'error' => false],
         ['code' => '403', 'swap' => true, 'error' => true],
         ['code' => '409', 'swap' => true, 'error' => false],
+        ['code' => '502', 'swap' => true, 'error' => false],
         ['code' => '[45]..', 'swap' => false, 'error' => true],
         ['code' => '...', 'swap' => false],
     ],

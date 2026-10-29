@@ -10,6 +10,7 @@ use App\Libraries\Work\DashboardFilter;
  *
  * @var DashboardFilter      $filter
  * @var array<string, mixed> $data
+ * @var array<string, mixed> $overdue
  */
 $locale   = service('request')->getLocale();
 $due      = $data['due'];
@@ -34,6 +35,8 @@ foreach ($groups as $g) {
 }
 ?>
 <div id="dashboard-body" hx-get="/fragments/dashboard?<?= htmlspecialchars(http_build_query($query), ENT_QUOTES) ?>" hx-trigger="allocationChanged from:body" hx-swap="outerHTML">
+    <?= view('home/_overdue', ['overdue' => $overdue]) ?>
+
     <?php if ($due === [] && $wip === [] && ! $hasGroups) : ?>
         <section class="app-card">
             <p class="fw-semibold mb-1"><?= esc(lang('Dashboard.emptyHeading')) ?></p>

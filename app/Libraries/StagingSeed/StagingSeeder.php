@@ -25,12 +25,13 @@ final class StagingSeeder
         Modules\MasterData::class,
         Modules\Tasks::class,
         Modules\Invoices::class,
+        Modules\Deliveries::class,
     ];
 
     /**
      * Tabulky, z ktorych sa pocty vypisuju po behu.
      */
-    private const COUNTED = ['entities', 'clients', 'tasks', 'billing_allocations', 'invoices', 'invoice_documents'];
+    private const COUNTED = ['entities', 'clients', 'tasks', 'billing_allocations', 'invoices', 'invoice_documents', 'invoice_sends', 'payments'];
 
     private readonly Closure $log;
 

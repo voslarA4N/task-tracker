@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 06-08-PLAN.md
-last_updated: "2026-10-28T20:19:59.556Z"
-last_activity: 2026-10-28
+stopped_at: Completed 07-14-PLAN.md
+last_updated: "2026-10-29T18:18:20.610Z"
+last_activity: 2026-10-29
 progress:
   total_phases: 12
-  completed_phases: 6
-  total_plans: 71
-  completed_plans: 71
-  percent: 50
+  completed_phases: 7
+  total_plans: 85
+  completed_plans: 85
+  percent: 58
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 06 — dokumenty-fakt-ry-a-v-kazu
+**Current focus:** Phase 07 — doru-enie-hrady-a-upomienky
 
 ## Current Position
 
-Phase: 7
-Plan: Not started
+Phase: 07 (doru-enie-hrady-a-upomienky) — EXECUTING
+Plan: 14 of 14
 Status: Phase complete — ready for verification
-Last activity: 2026-10-28
+Last activity: 2026-10-29
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -87,6 +87,9 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 05 P08 | 50min | 3 tasks | 16 files |
 | Phase 05 P09 | 45min | 2 tasks | 11 files |
 | Phase 06 P06 | 40min | 3 tasks | 16 files |
+| Phase 07 P04 | 75min | 2 tasks | 17 files |
+| Phase 07 P10 | 45min | 2 tasks | 14 files |
+| Phase 07 P13 | 40min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -119,6 +122,8 @@ Recent decisions affecting current work:
 - [Phase 04]: WR-07 (vlastník 2026-10-26, voľba C): importované riadky „Fakturované = ÁNO“ ostávajú zatiaľ nezamknuté časti; vo Phase 5 sa zamknú na historickú (externú) faktúru, aby sa nedali znova fakturovať. Historická faktúra nesmie spotrebovať číslo z radu `RRRRMM###`.
 - [Phase 06]: previewToken omits whole payment section; legal.texts.invoice_note stays in token
 - [Phase 06]: D-19 refined: ZBP number >32 chars gives no QR; missing PL NIP still qr_failed
+- [Phase 07]: Payment guard: pg_advisory_xact_lock(hashtext('payments'), invoice_id); void as insert-only payment_voids; total=0 never auto-paid
+- [Phase 07]: Reminder threads via latest non-voided invoice/resend message_id; no_balance guard server-side
 
 ### Pending Todos
 
@@ -143,6 +148,7 @@ Recent decisions affecting current work:
 | 261028-fcr | Staging (work-tracker-stage.vostack.dev) na tom istom serveri cez edge proxy (SNI + PROXY protocol), vetvy develop → staging, main → produkcia; repo zmeny, server cut-over čaká na vlastníka | 2026-10-28 | ed05715 | [261028-fcr-staging-prostredie-a-vetvovy-model-devel](./quick/261028-fcr-staging-prostredie-a-vetvovy-model-devel/) |
 | 261028-hu8 | Staging seed: deterministická vymyslená história od 2026-01-01 (3 subjekty, 8 klientov, ~157 úloh, ~41 faktúr cez reálny InvoiceIssuer), reset DB pri každom staging deployi s poistkami proti produkcii, moduly na rozširovanie | 2026-10-28 | 4777762 | [261028-hu8-staging-seed-s-vymyslenou-historiou-od-2](./quick/261028-hu8-staging-seed-s-vymyslenou-historiou-od-2/) |
 | 261028-mf3 | Voliteľná 2FA: ponuka pri prvom prihlásení s voľbou „nechcem“, zapnutie/vypnutie v Nastaveniach (heslo + TOTP alebo záložný kód), reset hesla e-mailom a zapamätanie zariadenia aj bez 2FA, staging admin bez 2FA | 2026-10-28 | d8c2e5f | [261028-mf3-volitelna-2fa-s-moznostou-vypnutia-v-gui](./quick/261028-mf3-volitelna-2fa-s-moznostou-vypnutia-v-gui/) |
+| 261028-w8p | Vlastný mailový server: Stalwart 1.0.1 + Roundcube (webmail.vostack.dev), unbound pre DNSBL, schránky info@/noreply@ + aliasy, DKIM/SPF/DMARC p=none/MTA-STS testing, nočné zálohy; nasadené na 2.31.74.48 (/opt/mail) 2026-10-29 | 2026-10-29 | 3367b4e | Needs Review | [261028-w8p-vlastny-mailovy-server-stalwart-a-webmai](./quick/261028-w8p-vlastny-mailovy-server-stalwart-a-webmai/) |
 
 ## Deferred Items
 
@@ -154,6 +160,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-28T00:16:34.042Z
-Stopped at: Completed 06-08-PLAN.md
+Last session: 2026-10-29T18:18:20.605Z
+Stopped at: Completed 07-14-PLAN.md
 Resume file: None

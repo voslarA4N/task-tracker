@@ -16,6 +16,7 @@ final readonly class HistoryPlan
      * @param list<array<string, mixed>> $clients
      * @param list<array<string, mixed>> $tasks
      * @param list<array<string, mixed>> $invoices
+     * @param list<array<string, mixed>> $deliveries odoslania, rucne oznacenia, uhrady, storna uhrad a upomienky zoradene podla `at`
      */
     public function __construct(
         public string $today,
@@ -24,6 +25,7 @@ final readonly class HistoryPlan
         public array $clients,
         public array $tasks,
         public array $invoices,
+        public array $deliveries = [],
     ) {
     }
 
@@ -33,12 +35,13 @@ final readonly class HistoryPlan
     public function toArray(): array
     {
         return [
-            'today'    => $this->today,
-            'seed'     => $this->seed,
-            'entities' => $this->entities,
-            'clients'  => $this->clients,
-            'tasks'    => $this->tasks,
-            'invoices' => $this->invoices,
+            'today'      => $this->today,
+            'seed'       => $this->seed,
+            'entities'   => $this->entities,
+            'clients'    => $this->clients,
+            'tasks'      => $this->tasks,
+            'invoices'   => $this->invoices,
+            'deliveries' => $this->deliveries,
         ];
     }
 }

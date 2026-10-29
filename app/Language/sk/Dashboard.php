@@ -27,4 +27,8 @@ return [
     'showAll'          => 'Zobraziť všetky úlohy',
     'emptyHeading'     => 'Zatiaľ nič na fakturáciu',
     'emptyBody'        => 'Na {0} nie sú zapracované žiadne úlohy. Pridajte úlohu tlačidlom „+“.',
+    'overdueTitle'     => 'Po splatnosti',
+    'overdueMeta'      => 'Splatnosť {0} · {1, plural, one{# deň} few{# dni} other{# dní}} po splatnosti',
+    'overdueShowAll'   => 'Zobraziť všetky',
+    'actionPayment'    => 'Úhrada',
 ];

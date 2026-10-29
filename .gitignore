@@ -18,3 +18,8 @@
 # Starý výstup spiku mPDF (spike teraz píše do writable/mpdf/)
 /spike-output.pdf
 /backups/
+
+# Serverove adresare mail stacku (docs/ops/mail.md), nikdy do gitu
+/tls/
+/letsencrypt/
+/secrets/

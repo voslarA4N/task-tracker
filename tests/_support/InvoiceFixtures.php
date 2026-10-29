@@ -69,7 +69,7 @@ trait InvoiceFixtures
             $db->query(
                 "INSERT INTO invoices (origin, type, entity_id, entity_version_id, series_id, number, client_id, billing_month, issue_date, delivery_date, due_date, turnover_date,
                     currency, total, total_entity_ccy, counts_toward_limit, line_count, doc_language, vat_regime, billing_mode, template_version, snapshot, snapshot_schema, created_at)
-                 VALUES ('issued', 'invoice', :entity:, :ver:, :series:, :number:, :client:, :month:, '2026-10-27', '2026-10-27', '2026-11-10', '2026-10-27',
+                 VALUES ('issued', 'invoice', :entity:, :ver:, :series:, :number:, :client:, :month:, '2026-10-27', '2026-10-27', :due:, '2026-10-27',
                     :ccy:, :total:, :total:, true, :n:, :lang:, :regime:, 'domestic', 'test-1', '{\"schema\":1}', :schema:, :now:)",
                 [
                     'entity' => $entityId,
@@ -78,6 +78,7 @@ trait InvoiceFixtures
                     'number' => $number,
                     'client' => $clientId,
                     'month'  => $month,
+                    'due'    => (string) ($overrides['due_date'] ?? '2026-11-10'),
                     'ccy'    => trim((string) $allocs[0]->currency),
                     'total'  => $total,
                     'n'      => (int) ($overrides['line_count'] ?? count($allocs)),

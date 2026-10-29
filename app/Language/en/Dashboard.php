@@ -27,4 +27,8 @@ return [
     'showAll'          => 'Show all tasks',
     'emptyHeading'     => 'Nothing to invoice yet',
     'emptyBody'        => 'There are no completed tasks for {0}. Add a task with the "+" button.',
+    'overdueTitle'     => 'Overdue',
+    'overdueMeta'      => 'Due {0} · {1, plural, one{# day} other{# days}} overdue',
+    'overdueShowAll'   => 'Show all',
+    'actionPayment'    => 'Payment',
 ];

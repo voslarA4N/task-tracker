@@ -72,7 +72,7 @@ final class InvoicePdfEndpointTest extends AuthTestCase
         $this->assertNotNull($stored);
         $this->assertSame($stored->bytes, (string) $r->getBody());
         $this->assertSame('application/pdf', $r->getHeaderLine('Content-Type'));
-        $this->assertSame('inline; filename="faktura-202610001.pdf"', $r->getHeaderLine('Content-Disposition'));
+        $this->assertSame('inline; filename="Faktura_202610001.pdf"', $r->getHeaderLine('Content-Disposition'));
         $this->assertSame('"' . $stored->sha256 . '"', $r->getHeaderLine('ETag'));
         $this->assertStringContainsString('no-store', $r->getHeaderLine('Cache-Control'));
         $this->assertStringContainsString('private', $r->getHeaderLine('Cache-Control'));
@@ -133,7 +133,7 @@ final class InvoicePdfEndpointTest extends AuthTestCase
         $i      = $this->issue(new FakePdfRenderer(), ['format' => 'FA/RRRR/###']);
         $result = $this->get('/invoices/' . $i['id'] . '/pdf');
 
-        $this->assertSame('inline; filename="faktura-FA_2026_001.pdf"', $result->response()->getHeaderLine('Content-Disposition'));
+        $this->assertSame('inline; filename="Faktura_FA_2026_001.pdf"', $result->response()->getHeaderLine('Content-Disposition'));
     }
 
     public function testReportServesStoredBytesWithCzechSlovakPrefix(): void
@@ -147,7 +147,7 @@ final class InvoicePdfEndpointTest extends AuthTestCase
         $this->assertNotNull($stored);
         $this->assertSame($stored->bytes, (string) $r->getBody());
         $this->assertSame('application/pdf', $r->getHeaderLine('Content-Type'));
-        $this->assertSame('inline; filename="vykaz-202610001.pdf"', $r->getHeaderLine('Content-Disposition'));
+        $this->assertSame('inline; filename="Vykaz_202610001.pdf"', $r->getHeaderLine('Content-Disposition'));
         $this->assertSame('"' . $stored->sha256 . '"', $r->getHeaderLine('ETag'));
         $this->assertStringContainsString('no-store', $r->getHeaderLine('Cache-Control'));
         $this->assertSame('nosniff', $r->getHeaderLine('X-Content-Type-Options'));
@@ -157,8 +157,8 @@ final class InvoicePdfEndpointTest extends AuthTestCase
     {
         $i = $this->issue(new FakePdfRenderer(), ['client' => ['doc_language' => 'en']]);
 
-        $this->assertSame('inline; filename="report-202610001.pdf"', $this->get('/invoices/' . $i['id'] . '/report')->response()->getHeaderLine('Content-Disposition'));
-        $this->assertSame('inline; filename="invoice-202610001.pdf"', $this->get('/invoices/' . $i['id'] . '/pdf')->response()->getHeaderLine('Content-Disposition'));
+        $this->assertSame('inline; filename="Report_202610001.pdf"', $this->get('/invoices/' . $i['id'] . '/report')->response()->getHeaderLine('Content-Disposition'));
+        $this->assertSame('inline; filename="Invoice_202610001.pdf"', $this->get('/invoices/' . $i['id'] . '/pdf')->response()->getHeaderLine('Content-Disposition'));
     }
 
     public function testSchema1InvoiceHasNoReport404(): void

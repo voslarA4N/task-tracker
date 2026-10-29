@@ -74,7 +74,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **INV-03**: Pri vystavení sa do JSONB uloží kópia údajov: verzia subjektu, klient, mena, jazyk, DPH režim, režim fakturácie, zákonné texty, preložené popisky, URL portálu, kurz. Faktúra je odvtedy nemenná (vynútené aj DB oprávneniami/triggermi).
 - [x] **INV-04**: Číslovanie podľa nastaviteľného formátu s tokenmi `RRRR`, `RR`, `MM`, `#…` a pevným textom (predvolene `RRRRMM###`). Rad patrí subjektu. Poradie sa vynuluje každý mesiac, ak formát obsahuje `MM`, inak každý rok. Počiatočné číslo sa dá nastaviť. Čísla idú bez medzier a pridelenie je bezpečné voči súbehu (prvá faktúra 10/2026 = `202610001`, druhá `202610002`, prvá v 11/2026 = `202611001`).
 - [x] **INV-05**: PDF faktúry vzniká z kópie údajov, má jednoduchý dizajn a len zákonné náležitosti podľa právneho profilu krajiny, DPH režimu a režimu fakturácie (SK neplatiteľ s textom „Nie som platiteľ DPH.“ a údajom o zápise, PL art. 113, EÚ B2B). Jazyk podľa klienta alebo subjektu.
-- [ ] **INV-06**: Faktúra má stavy vystavená → odoslaná → uhradená. „Po splatnosti“ sa odvodzuje. „Stornovaná“ nastane po dobropise.
+- [x] **INV-06**: Faktúra má stavy vystavená → odoslaná → uhradená. „Po splatnosti“ sa odvodzuje. „Stornovaná“ nastane po dobropise.
 - [ ] **INV-07**: Dobropis je celé storno pôvodnej faktúry so zápornými položkami, s vlastným radom alebo prefixom. Uvoľní zamknuté časti, aby sa dali fakturovať znova.
 - [x] **INV-08**: Všetky údaje faktúry sú uložené štruktúrovane (nielen v PDF a JSONB), aby bol neskôr možný export do KSeF FA(3).
 - [x] **INV-09** [nové, M1]: Každá položka má kód DPH (napr. `zw`, `np`, `0`, sadzba) s predvolenou hodnotou podľa právneho profilu. Výpočty pre platiteľa DPH sa neimplementujú.
@@ -92,13 +92,13 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 
 ### Odosielanie, úhrady a upomienky (E8)
 
-- [ ] **MAIL-01**: Používateľ odošle faktúru a výkaz e-mailom klientovi (PDF prílohy) zo šablóny v jazyku klienta. Ukladá sa dátum a adresáti.
-- [ ] **MAIL-02**: Používateľ faktúru znova odošle na ľubovoľný e-mail, aj z mobilu.
-- [ ] **MAIL-03**: Používateľ odošle upomienku jedným kliknutím zo šablóny s PDF faktúry. Ukladá sa dátum odoslania.
-- [ ] **MAIL-04**: Používateľ upraví šablóny e-mailov v nastaveniach pre každý jazyk.
-- [ ] **PAY-01**: Používateľ ručne označí úhradu (dátum, voliteľne suma).
-- [ ] **PAY-02**: Dashboard ukazuje zoznam faktúr po splatnosti.
-- [ ] **PAY-03** [nové, M7]: Faktúra môže mať viac úhrad. Stav „čiastočne uhradená“ a zostatok sa odvodzujú zo súčtu úhrad.
+- [x] **MAIL-01**: Používateľ odošle faktúru a výkaz e-mailom klientovi (PDF prílohy) zo šablóny v jazyku klienta. Ukladá sa dátum a adresáti.
+- [x] **MAIL-02**: Používateľ faktúru znova odošle na ľubovoľný e-mail, aj z mobilu.
+- [x] **MAIL-03**: Používateľ odošle upomienku jedným kliknutím zo šablóny s PDF faktúry. Ukladá sa dátum odoslania.
+- [x] **MAIL-04**: Používateľ upraví šablóny e-mailov v nastaveniach pre každý jazyk.
+- [x] **PAY-01**: Používateľ ručne označí úhradu (dátum, voliteľne suma).
+- [x] **PAY-02**: Dashboard ukazuje zoznam faktúr po splatnosti.
+- [x] **PAY-03** [nové, M7]: Faktúra môže mať viac úhrad. Stav „čiastočne uhradená“ a zostatok sa odvodzujú zo súčtu úhrad.
 
 ### Meny a kurzy (E9)
 
@@ -251,14 +251,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REP-01 | Phase 6 | Complete |
 | REP-02 | Phase 6 | Complete |
 | SET-01 | Phase 6 | Complete |
-| MAIL-01 | Phase 7 | Pending |
-| MAIL-02 | Phase 7 | Pending |
-| MAIL-03 | Phase 7 | Pending |
-| MAIL-04 | Phase 7 | Pending |
-| PAY-01 | Phase 7 | Pending |
-| PAY-02 | Phase 7 | Pending |
-| PAY-03 | Phase 7 | Pending |
-| INV-06 | Phase 7 | Pending |
+| MAIL-01 | Phase 7 | Complete |
+| MAIL-02 | Phase 7 | Complete |
+| MAIL-03 | Phase 7 | Complete |
+| MAIL-04 | Phase 7 | Complete |
+| PAY-01 | Phase 7 | Complete |
+| PAY-02 | Phase 7 | Complete |
+| PAY-03 | Phase 7 | Complete |
+| INV-06 | Phase 7 | Complete |
 | CUR-01 | Phase 8 | Pending |
 | CUR-02 | Phase 8 | Pending |
 | CUR-03 | Phase 8 | Pending |

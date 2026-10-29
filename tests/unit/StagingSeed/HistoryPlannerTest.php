@@ -37,6 +37,41 @@ final class HistoryPlannerTest extends CIUnitTestCase
         $this->assertNotSame(serialize($a->toArray()), serialize(HistoryPlanner::build(Profile::full(), '2026-10-28', 42)->toArray()));
     }
 
+    public function testDeliveriesAreDeterministicAndConsistent(): void
+    {
+        $a = HistoryPlanner::build(Profile::full(), '2026-10-28');
+        $b = HistoryPlanner::build(Profile::full(), '2026-10-28');
+
+        $this->assertSame(serialize($a->deliveries), serialize($b->deliveries));
+        $this->assertNotSame([], $a->deliveries);
+
+        $issued = [];
+
+        foreach ($a->invoices as $inv) {
+            $issued[$inv['key']] = $inv['at'];
+        }
+
+        $prev  = '';
+        $types = [];
+
+        foreach ($a->deliveries as $e) {
+            $this->assertLessThanOrEqual('2026-10-28T23:59:59', $e['at']);
+            $this->assertArrayHasKey($e['invoice'], $issued);
+            $this->assertGreaterThan($issued[$e['invoice']], $e['at']);
+            $this->assertGreaterThanOrEqual($prev, $e['at']);
+
+            $prev              = $e['at'];
+            $types[$e['type']] = ($types[$e['type']] ?? 0) + 1;
+        }
+
+        foreach (['send', 'manual', 'payment', 'payment_void', 'reminder'] as $type) {
+            $this->assertGreaterThanOrEqual(1, $types[$type] ?? 0, $type);
+        }
+
+        $this->assertSame(1, $types['payment_void']);
+        $this->assertNotEmpty(array_filter($a->deliveries, static fn (array $e): bool => ($e['partial'] ?? false) === true));
+    }
+
     public function testFullProfileBounds(): void
     {
         $plan = HistoryPlanner::build(Profile::full(), '2026-10-28');

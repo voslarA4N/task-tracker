@@ -23,7 +23,7 @@ trait MasterFixtures
     {
         $existing = [];
 
-        foreach (['audit_log', 'entity_bank_accounts', 'invoice_documents', 'invoice_lines', 'invoices', 'invoice_counters', 'invoice_series', 'entity_versions', 'entities', 'billing_allocations', 'tasks', 'clients'] as $t) {
+        foreach (['audit_log', 'payment_voids', 'payments', 'entity_bank_accounts', 'invoice_send_voids', 'invoice_sends', 'invoice_documents', 'invoice_lines', 'invoices', 'invoice_counters', 'invoice_series', 'entity_versions', 'entities', 'billing_allocations', 'tasks', 'clients'] as $t) {
             $row = $this->owner()->query('SELECT to_regclass(:t:) AS r', ['t' => $t])->getRow();
 
             if ($row !== null && $row->r !== null) {

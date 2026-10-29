@@ -33,6 +33,25 @@ foreach ($invoice['lines'] as $l) {
     $hoursSum = Hours::plus($hoursSum, (string) $l['hours']);
 }
 $empty = lang('Tasks.empty');
+$status = (string) ($invoice['status'] ?? 'issued');
+[$statusKey, $statusClass] = match (true) {
+    $external          => ['Invoices.badgeExternal', 'text-bg-secondary'],
+    $status === 'sent' => ['Invoices.statusSent', 'text-bg-light border'],
+    $status === 'partially_paid' => ['Invoices.statusPartiallyPaid', 'text-bg-warning'],
+    $status === 'paid' => ['Invoices.statusPaid', 'text-bg-success'],
+    default            => ['Invoices.statusIssued', 'text-bg-secondary'],
+};
+$payState  = $payState ?? null;
+$payments  = $payments ?? [];
+$overdue   = ! $external && is_array($payState) && $payState['overdue'];
+$canPay    = ! $external && in_array($status, ['issued', 'sent', 'partially_paid'], true);
+$payPrimary = $canPay && $status !== 'issued';
+// Dorucenie podla sent_at, nie podla status (paid/partially_paid maju prednost pred sent, WR-01)
+$isSent    = ($invoice['sent_at'] ?? null) !== null;
+$canSend   = ! $external && ! $isSent;
+$canResend = ! $external && $isSent;
+$canRemind = ! $external && in_array($status, ['sent', 'partially_paid'], true) && is_array($payState) && \App\Libraries\Platform\Money::of((string) $payState['balance'])->compare(\App\Libraries\Platform\Money::zero()) > 0;
+$history = (array) ($invoice['history'] ?? []);
 ?>
 <?= $this->extend('layouts/app') ?>
 
@@ -45,7 +64,12 @@ $empty = lang('Tasks.empty');
     <section class="app-card mb-4" aria-labelledby="inv-title">
         <h1 class="h4 mb-1" id="inv-title"><?= esc($heading) ?></h1>
         <p class="mb-1">
-            <span class="badge <?= $external ? 'text-bg-secondary' : 'text-bg-success' ?>"><?= esc(lang($external ? 'Invoices.badgeExternal' : 'Invoices.badgeIssued')) ?></span>
+            <span class="st-badges">
+                <span class="st-badge badge <?= esc($statusClass, 'attr') ?>"><?= esc(lang($statusKey)) ?></span>
+                <?php if ($overdue) : ?>
+                    <span class="st-badge badge text-bg-danger"><?= esc(lang('Invoices.statusOverdue', [$payState['days_overdue']])) ?></span>
+                <?php endif ?>
+            </span>
         </p>
         <p class="small text-body-secondary mb-3"><?= esc((string) $invoice['client_name']) ?><?= $dates['issue_date'] !== '' ? ' · ' . esc($dates['issue_date']) : '' ?></p>
         <?php if ($external) : ?>
@@ -62,9 +86,33 @@ $empty = lang('Tasks.empty');
             <div class="inv-summary-total tabular-nums"><?= esc($total) ?></div>
         </div>
 
+        <?php if ($canSend) : ?>
+            <div class="alert alert-secondary mt-3 mb-0" role="note"><?= esc(lang('Invoices.issuedSendHint', [$number])) ?></div>
+        <?php endif ?>
+
         <?php if (! $external) : ?>
             <div class="inv-docs mt-3">
-                <a class="btn btn-primary btn-touch" href="/invoices/<?= $id ?>/pdf" target="_blank" rel="noopener noreferrer"><?= esc(lang('Invoices.invoicePdf')) ?></a>
+                <?php if ($canSend) : ?>
+                    <a class="btn btn-primary btn-touch" href="/invoices/<?= $id ?>/send" hx-get="/invoices/<?= $id ?>/send" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.sendCta')) ?></a>
+                    <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/mark-sent" hx-get="/invoices/<?= $id ?>/mark-sent" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.markSentCta')) ?></a>
+                <?php endif ?>
+<?php if ($payPrimary) : ?>
+                <?php if ($canPay) : ?>
+                    <a class="btn <?= $payPrimary ? 'btn-primary' : 'btn-outline-secondary' ?> btn-touch" href="/invoices/<?= $id ?>/payments" hx-get="/invoices/<?= $id ?>/payments" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Payments.cta')) ?></a>
+                <?php endif ?>
+<?php endif ?>
+                <?php if ($canRemind) : ?>
+                    <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/remind" hx-get="/invoices/<?= $id ?>/remind" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.reminderCta')) ?></a>
+                <?php endif ?>
+                <?php if ($canResend) : ?>
+                    <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/resend" hx-get="/invoices/<?= $id ?>/resend" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.resendCta')) ?></a>
+                <?php endif ?>
+<?php if (! $payPrimary) : ?>
+                <?php if ($canPay) : ?>
+                    <a class="btn <?= $payPrimary ? 'btn-primary' : 'btn-outline-secondary' ?> btn-touch" href="/invoices/<?= $id ?>/payments" hx-get="/invoices/<?= $id ?>/payments" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Payments.cta')) ?></a>
+                <?php endif ?>
+<?php endif ?>
+                <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/pdf" target="_blank" rel="noopener noreferrer"><?= esc(lang('Invoices.invoicePdf')) ?></a>
                 <?php if ($reportDoc !== null || $schema >= 2) : ?>
                     <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/report" target="_blank" rel="noopener noreferrer"><?= esc(lang('Invoices.reportPdf')) ?></a>
                 <?php else : ?>
@@ -104,6 +152,11 @@ $empty = lang('Tasks.empty');
     </section>
 
     <?php if (! $external) : ?>
+        <?php if (is_array($payState)) : ?>
+            <?= view('invoices/_payments', ['invoice' => $invoice, 'payState' => $payState, 'payments' => $payments, 'locale' => $locale, 'dates' => $dates, 'canPay' => $canPay]) ?>
+        <?php endif ?>
+        <?= view('invoices/_history', ['invoice' => $invoice, 'history' => $history, 'locale' => $locale]) ?>
+
         <section class="app-card mb-4" aria-labelledby="inv-data-title">
             <h2 class="h5 mb-2" id="inv-data-title"><?= esc(lang('Invoices.labelDetails')) ?></h2>
             <dl class="master-kv">
@@ -140,5 +193,6 @@ $empty = lang('Tasks.empty');
 
         <div class="alert alert-secondary small" role="note"><?= esc(lang('Invoices.immutableHint')) ?></div>
     <?php endif ?>
+    <div id="sheet"></div>
 </div>
 <?= $this->endSection() ?>

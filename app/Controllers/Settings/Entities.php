@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Settings;
 
 use App\Controllers\BaseController;
+use App\Libraries\Delivery\SenderIdentity;
 use App\Libraries\Master\BankAccountService;
 use App\Libraries\Master\BillingMode;
 use App\Libraries\Master\Country;
@@ -183,26 +184,35 @@ final class Entities extends BaseController
 
         $entity = $this->entityOr404($id);
         $values = EntityInput::baseUpdateFromPost($request);
+        $sender = EntityInput::senderFromPost($request);
 
         if (EntityInput::hasImmutableKeys($request)) {
             return $this->response
                 ->setStatusCode(422)
-                ->setBody(view('settings/entities/edit', $this->editData($entity, $values, ['_form' => lang('Entities.errorImmutable')])));
+                ->setBody(view('settings/entities/edit', $this->editData($entity, $values + $sender, ['_form' => lang('Entities.errorImmutable')])));
         }
 
         $history = (new EntityVersionResolver())->history($id, service('clock')->today());
         $first   = $history === [] ? (string) $entity['active_from'] : (string) $history[array_key_last($history)]['valid_from'];
         $errors  = EntityInput::validateBaseUpdate($values, $first, service('clock')->today());
 
+        if ($sender !== []) {
+            $errors += EntityInput::validateSender($sender);
+        }
+
         if ($errors !== []) {
             return $this->response
                 ->setStatusCode(422)
-                ->setBody(view('settings/entities/edit', $this->editData($entity, $values, $errors)));
+                ->setBody(view('settings/entities/edit', $this->editData($entity, $values + $sender, $errors)));
         }
 
-        (new EntityService())->updateBase($id, $values);
+        $baseUnchanged = $values['name_internal'] === (string) $entity['name_internal']
+            && $values['active_from'] === (string) $entity['active_from']
+            && $values['active_to'] === ($entity['active_to'] === null ? '' : (string) $entity['active_to']);
 
-        session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang('Entities.saved')]);
+        (new EntityService())->updateBase($id, $values + EntityInput::senderForStorage($sender));
+
+        session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang($baseUnchanged && $sender !== [] ? 'Entities.senderSaved' : 'Entities.saved')]);
 
         return redirect()->to('/settings/entities/' . $id);
     }
@@ -282,12 +292,42 @@ final class Entities extends BaseController
      */
     private function editData(array $entity, array $values, array $errors): array
     {
+        $values += $this->senderValues($entity);
+
         return [
-            'title'   => lang('Entities.editTitle'),
-            'entity'  => $entity,
-            'country' => Country::from((string) $entity['country']),
-            'values'  => $values,
-            'errors'  => $errors,
+            'allowedDomains' => SenderIdentity::allowedDomains(),
+            'senderDefaults' => (new SenderIdentity())->defaults((int) $entity['id']),
+            'title'          => lang('Entities.editTitle'),
+            'entity'         => $entity,
+            'country'        => Country::from((string) $entity['country']),
+            'values'         => $values,
+            'errors'         => $errors,
+        ];
+    }
+
+    /**
+     * Ulozene (nevyriesene) hodnoty odosielatela na predvyplnenie karty. NULL = prazdne pole,
+     * predvolene hodnoty sa ukazuju len ako placeholder, aby ich ulozenie formulara nezapisalo (D-27, CR-01).
+     *
+     * @param array<string, mixed> $entity
+     *
+     * @return array<string, string>
+     */
+    private function senderValues(array $entity): array
+    {
+        $bcc = null;
+
+        if (($entity['mail_bcc'] ?? null) !== null) {
+            $decoded = json_decode((string) $entity['mail_bcc'], true);
+            $bcc     = array_values(array_filter(is_array($decoded) ? $decoded : [], static fn ($item): bool => is_string($item) && $item !== ''));
+        }
+
+        return [
+            'mail_from_name'  => (string) ($entity['mail_from_name'] ?? ''),
+            'mail_from_email' => (string) ($entity['mail_from_email'] ?? ''),
+            'mail_reply_to'   => (string) ($entity['mail_reply_to'] ?? ''),
+            'mail_bcc'        => $bcc === null ? '' : implode("\n", $bcc),
+            'mail_bcc_none'   => $bcc === [] ? '1' : '',
         ];
     }
 

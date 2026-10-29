@@ -33,6 +33,8 @@ $meta   = $client === null
     <?= $this->include('home/_body') ?>
 </div>
 
+<div id="sheet"></div>
+
 <a class="work-fab" href="/tasks/new" aria-label="<?= htmlspecialchars(lang('Tasks.new'), ENT_QUOTES) ?>">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
 </a>

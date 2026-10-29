@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\Invoicing\DocumentFilename;
 use App\Libraries\Invoicing\DocumentIntegrityError;
 use App\Libraries\Invoicing\DocumentStore;
 use App\Libraries\Invoicing\InvoiceQueries;
+use App\Libraries\Receivables\InvoiceStatusQueries;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\ResponseInterface;
 use IntlDateFormatter;
@@ -15,7 +17,9 @@ final class Invoices extends BaseController
 {
     public function index(): ResponseInterface
     {
-        $result = (new InvoiceQueries())->list(100);
+        $status = (string) $this->request->getGet('status');
+        $status = in_array($status, ['', 'issued', 'sent', 'partially_paid', 'paid', 'overdue'], true) ? $status : '';
+        $result = (new InvoiceQueries())->list(100, $status === '' ? null : $status, service('clock')->today());
         $fmt    = $this->dateFormatter();
 
         $rows = array_map(static function (array $r) use ($fmt): array {
@@ -24,7 +28,7 @@ final class Invoices extends BaseController
             return $r;
         }, $result['rows']);
 
-        $body = htmx_view('invoices/_list', ['rows' => $rows, 'truncated' => $result['truncated']], 'invoices/index');
+        $body = htmx_view('invoices/_list', ['rows' => $rows, 'truncated' => $result['truncated'], 'status' => $status], 'invoices/index');
 
         return $this->response->setHeader('Vary', 'HX-Request')->setBody($body);
     }
@@ -44,7 +48,16 @@ final class Invoices extends BaseController
             $dates[$field] = self::label($fmt, $invoice[$field] ?? null);
         }
 
-        return view('invoices/show', ['invoice' => $invoice, 'dates' => $dates]);
+        $payState = null;
+        $payments = [];
+
+        if ($invoice['origin'] === 'issued') {
+            $queries  = new InvoiceStatusQueries();
+            $payState = $queries->forInvoice($id, service('clock')->today());
+            $payments = $queries->payments($id);
+        }
+
+        return view('invoices/show', ['invoice' => $invoice, 'dates' => $dates, 'payState' => $payState, 'payments' => $payments]);
     }
 
     /**
@@ -91,17 +104,13 @@ final class Invoices extends BaseController
             return $this->response->setStatusCode(500)->setBody(lang($errorKey));
         }
 
-        $prefixes = $kind === 'report'
-            ? ['sk' => 'vykaz-', 'cs' => 'vykaz-', 'pl' => 'wykaz-', 'en' => 'report-']
-            : ['sk' => 'faktura-', 'cs' => 'faktura-', 'pl' => 'faktura-', 'en' => 'invoice-'];
-        $prefix      = $prefixes[trim((string) $row['doc_language'])] ?? ($kind === 'report' ? 'vykaz-' : 'faktura-');
-        $name        = preg_replace('/[^A-Za-z0-9._-]/', '_', (string) $row['number']);
+        $filename    = DocumentFilename::for($kind, trim((string) $row['doc_language']), (string) $row['number']);
         $disposition = $this->request->getGet('download') === '1' ? 'attachment' : 'inline';
 
         return $this->response
             ->setStatusCode(200)
             ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', $disposition . '; filename="' . $prefix . $name . '.pdf"')
+            ->setHeader('Content-Disposition', $disposition . '; filename="' . $filename . '"')
             ->setHeader('Cache-Control', 'private, no-store')
             ->setHeader('ETag', '"' . $doc->sha256 . '"')
             ->setHeader('X-Content-Type-Options', 'nosniff')

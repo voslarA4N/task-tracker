@@ -20,6 +20,7 @@ Jeden server Hetzner Cloud #172176757 (IP `2.31.74.48`, amd64), dva nezávislé 
 - Docker sieť `edge` (podsieť `10.250.250.0/24`, mimo predvolených poolov Dockeru) spája edge s nginx oboch stackov. Realip v stack nginx dôveruje presne tejto podsieti.
 - Pôvodné rozhodnutie fázy 2 (D-03 "staging je zároveň budúca produkcia") je prekonané: `/opt/work-tracker` je produkcia od go-live.
 - Architektúra amd64, obrazy z GHCR (D-04 fázy 2).
+- Vlastný mailový server (Stalwart + Roundcube) pre `vostack.dev` beží ako samostatný compose projekt `mail` v `/opt/mail`; inštalácia, DNS, zálohy a rollback sú v [docs/ops/mail.md](mail.md).
 
 ## Vetvový model
 
@@ -151,8 +152,12 @@ database.default.port = 5432
 
 email.protocol = smtp
 email.transport = log
-email.fromEmail = noreply@$DOMAIN
+email.fromEmail = noreply@vostack.dev
 email.fromName = 'Work Tracker'
+email.allowedFromDomains = vostack.dev
+# fromEmail musí byť presne na doméne z allowedFromDomains (porovnanie bez subdomén),
+# noreply@$DOMAIN by každé odoslanie odmietlo so sender_invalid.
+# Produkcia od fázy 7: blok email.* nahraď podľa sekcie 20.
 
 encryption.key = hex2bin:$ENC
 auth.backupCodePepper = $PEPPER
@@ -312,7 +317,7 @@ chmod 0640 secrets/db_superuser_password secrets/db_owner_password secrets/db_rw
 Očakávané kľúče po kroku 5:
 
 - `.env`: `APP_DOMAIN`, `NGINX_HSTS_VALUE`, `TLS_MODE`, `SSL_CERT`, `SSL_KEY`, `LE_EMAIL`, `IMAGE_PREFIX`.
-- `app.env`: `CI_ENVIRONMENT`, `app.baseURL`, šesť `database.default.*`, štyri `email.*`, `encryption.key`, `auth.backupCodePepper`.
+- `app.env`: `CI_ENVIRONMENT`, `app.baseURL`, šesť `database.default.*`, štyri `email.*` (produkcia má od fázy 7 plný blok `email.*` podľa sekcie 20), `encryption.key`, `auth.backupCodePepper`.
 - `migrate.env`: to isté ako `app.env` + šesť `database.owner.*`.
 
 Potom spusti nasadenie (push na `main` alebo opätovné spustenie workflow). `deploy.sh` prejde kontrolou, migrácia pobeží v `migrate`, php sa reštartuje s `app.env`. Overenie po nasadení (vypíše iba počty):
@@ -352,6 +357,8 @@ docker network create --driver bridge --subnet 10.250.250.0/24 edge
 # súbory skopírovať do /opt/edge: nginx.conf (docker/edge/nginx.conf) a compose.edge.yaml
 cd /opt/edge && docker compose -f compose.edge.yaml up -d
 ```
+
+Mail stack (webmail, autoconfig, autodiscover, mta-sts) má v `map` štyri riadky na `mail-web:443` (nginx `web` stacku `mail`, v sieti `edge` s aliasom `mail-web`), pozri [mail.md](mail.md).
 
 Nový hostname: pridať riadok do `map` v `nginx.conf`, potom `docker compose -f compose.edge.yaml exec edge nginx -s reload`.
 
@@ -455,7 +462,7 @@ Heslo si prečítaj zo súboru rovnako len na svojom termináli. Rotácia: uprav
 
 ### Rozšírenie o nový modul
 
-Seed je poradie modulov (`App\Libraries\StagingSeed\StagingSeeder::MODULES`: `AdminUser`, `MasterData`, `Tasks`, `Invoices`). Nová fáza pridá svoj modul takto:
+Seed je poradie modulov (`App\Libraries\StagingSeed\StagingSeeder::MODULES`: `AdminUser`, `MasterData`, `Tasks`, `Invoices`, `Deliveries`). Nová fáza pridá svoj modul takto:
 
 1. Vytvor `app/Libraries/StagingSeed/Modules/<Nazov>.php` implementujúci `SeedModule` (`name()`, `run(SeedContext $ctx)`).
 2. Ak modul potrebuje plánované dáta, rozšír `HistoryPlan` a `HistoryPlanner` (zachovaj determinizmus: iba seedovaný `Randomizer`, žiadny Faker ani reálny čas, všetky dátumy najviac do `today`).
@@ -464,4 +471,57 @@ Seed je poradie modulov (`App\Libraries\StagingSeed\StagingSeeder::MODULES`: `Ad
 5. Doplň `tests/unit/StagingSeed/HistoryPlannerTest.php` a tvrdenia v `tests/integration/StagingSeed/StagingSeederTest.php` (počty, súčty, dátumy).
 6. Celkový čas seedu drž v rozpočte (reset + seed do cca 60 s); `staging:seed` vypisuje čas po moduloch.
 
-Plánované moduly: `Payments` (fáza 7, úhrady), `Fx` (fáza 8, cudzomenové faktúry a kurzy), `CreditNotes` (fáza 9, dobropisy), `Limits` (fáza 10, daňové limity obratu). Do tej doby fakturujú iba v mene subjektu (klient a subjekt majú rovnakú menu).
+Modul `Deliveries` (fáza 7, D-25; plánovaný `Payments` ho nahradil) vytvára históriu doručení a úhrad výlučne cez `InvoiceMailer`, `ManualSendService` a `PaymentService` v čase udalosti: každá faktúra sa odošle 1 pracovný deň po vystavení, každá 7. sa označí ručne, staršie faktúry sa uhradia (každá 5. len polovicou), jedna úhrada sa stornuje a zadá znova, každá 6. ostane po splatnosti s upomienkou vo vlákne. Faktúry so splatnosťou v posledných 20 dňoch ostanú odoslané a neuhradené. Modul beží s `email.transport = log` (po behu sa hodnota vráti), takže sa nič neodosiela (D-02) a záznamy majú transport `log` (ručné `none`).
+
+Plánované moduly: `Fx` (fáza 8, cudzomenové faktúry a kurzy), `CreditNotes` (fáza 9, dobropisy), `Limits` (fáza 10, daňové limity obratu). Do tej doby fakturujú iba v mene subjektu (klient a subjekt majú rovnakú menu).
+
+## 20. Nasadenie fázy 7 (e-mail, úhrady, upomienky)
+
+Odosielanie faktúr a upomienok ide z produkcie cez vlastný Stalwart (D-01). Najprv over na stagingu (merge do `develop`), až potom `main`.
+
+1. **Produkcia, `.env`:** do `/opt/work-tracker/.env` pridaj riadok `MAIL_NETWORK=mail`. `deploy.sh` vtedy pridá overlay `compose.server.mail.yaml` (php sa pripojí do externej siete `mail`) a pred zálohou overí, že sieť na hoste existuje (inak skončí s hláškou „Chýba docker sieť mail“ a beží predošlý stack).
+2. **Produkcia, `app.env` aj `migrate.env`:** nahraď blok `email.*` týmto (práva ostávajú 0640):
+
+   ```
+   email.protocol = smtp
+   email.transport = smtp
+   email.SMTPHost = mail.vostack.dev
+   email.SMTPPort = 465
+   email.SMTPCrypto = ssl
+   email.SMTPUser = noreply@vostack.dev
+   email.SMTPPass = <heslo zo /opt/mail/secrets/noreply_password>
+   email.fromEmail = noreply@vostack.dev
+   email.fromName = 'Work Tracker'
+   email.envelopeFrom = noreply@vostack.dev
+   email.allowedFromDomains = vostack.dev
+   email.SMTPTimeout = 15
+   ```
+
+   Heslo prečítaj priamo na serveri zo `/opt/mail/secrets/noreply_password`. Nikdy ho nekopíruj do gitu ani do chatu. Certifikát sa overuje (alias `mail.vostack.dev` v sieti `mail`), overenie sa nevypína.
+3. **Staging:** `email.transport = log` ostáva, `MAIL_NETWORK` sa nenastavuje a sieť `mail` sa nepripája (D-02). Over v `/opt/work-tracker-staging/app.env` (aj `migrate.env`), že `email.fromEmail = noreply@vostack.dev` a `email.allowedFromDomains = vostack.dev`. Staršia šablóna sekcie 3 dávala `email.fromEmail = noreply@$DOMAIN` (`noreply@work-tracker-stage.vostack.dev`). Doména sa porovnáva presne, bez subdomén, takže s touto hodnotou by každé odoslanie aj uloženie vlastnej adresy odosielateľa skončilo chybou „Adresa odosielateľa nie je povolená“ a v logu `mail.sender_not_allowed`. Subdomény sa zámerne nepovoľujú: povolená doména má byť len tá, pre ktorú platí SPF, DKIM a DMARC.
+4. **Overenie po deployi:** `docker compose -f compose.server.yaml -f compose.server.mail.yaml exec php php -r "var_dump((bool) @fsockopen('ssl://mail.vostack.dev', 465, \$e, \$s, 5));"` vráti `bool(true)`. Potom odošli faktúru na vlastný Gmail a v „Show original“ skontroluj SPF, DKIM a DMARC PASS (DMARC je zatiaľ `p=none`, sprísnenie 2026-11-19 podľa `docs/ops/mail.md`).
+5. **Migrácie fázy 7** (`email_templates`, `invoice_sends`, `payments`, rozšírenie `invoice_status_v`, odosielateľ pri subjekte) bežia automaticky pri deployi. Existujúce faktúry ostávajú v stave Vystavená.
+6. **Rollback:** odstráň `MAIL_NETWORK` z `.env`, nastav `email.transport = log` v `app.env` a nasaď znova.
+
+### Ručné overenie fázy 7
+
+Po zelených automatických testoch overí vlastník tieto veci ručne. Výsledky zapisuje do `.planning/phases/07-doru-enie-hrady-a-upomienky/07-HUMAN-UAT.md`.
+
+**(a) Staging na iPhone (inštalovaná PWA, `work-tracker-stage.vostack.dev`)**
+
+1. Otvor dashboard: sekcia Po splatnosti je viditeľná a obsahuje faktúry zo seedu.
+2. Z riadku faktúry pošli upomienku (2 klepnutia) a zapíš úhradu.
+3. Na detaile faktúry spusti Odoslať znova na vlastnú adresu najviac 2 klepnutiami. Flash hlási „testovacie prostredie“ a história odoslaní ukazuje transport `log`.
+4. Stránky nemajú horizontálne posúvanie a ovládacie prvky majú aspoň 44 px.
+
+**(b) Dev (Mailpit)**
+
+1. Odošli faktúru, v Mailpit otvor a stiahni prílohu.
+2. `sha256sum` stiahnutej prílohy sa rovná sha256 na detaile faktúry.
+3. Upomienka sa v Mailpit zobrazí v rovnakom vlákne ako pôvodné odoslanie.
+
+**(c) Produkcia (až po zapnutí SMTP podľa tejto sekcie)**
+
+1. Vystav jednu skúšobnú faktúru a pošli ju iba na vlastnú adresu.
+2. V Gmail „Show original“ sú SPF, DKIM aj DMARC PASS.
+3. `sha256sum` prílohy sa rovná sha256 na detaile faktúry.

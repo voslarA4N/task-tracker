@@ -10,7 +10,7 @@ use Config\Database;
 /**
  * PDF dokladov v bytea (D-16). Binarne data iba cez decode(hex) a pg_unescape_bytea, nikdy Query Builder.
  */
-final class DocumentStore
+class DocumentStore
 {
     /**
      * @var BaseConnection<mixed, mixed>

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Libraries\Master;
 
+use App\Libraries\Delivery\SenderIdentity;
+use App\Libraries\Delivery\SenderRejected;
 use CodeIgniter\HTTP\IncomingRequest;
 
 /**
@@ -17,6 +19,7 @@ final class EntityInput
         'vat_id', 'registry_note', 'email', 'phone', 'doc_language', 'vat_regime', 'due_days',
     ];
     public const BASE_UPDATE_FIELDS = ['name_internal', 'active_from', 'active_to'];
+    public const SENDER_FIELDS      = ['mail_from_name', 'mail_from_email', 'mail_reply_to', 'mail_bcc'];
     public const IMMUTABLE_KEYS     = ['country', 'currency'];
     private const MIN_DATE          = '2000-01-01';
     private const OPTIONAL          = ['address_line2', 'regon', 'tax_id', 'vat_id', 'registry_note', 'phone'];
@@ -35,6 +38,106 @@ final class EntityInput
     public static function baseUpdateFromPost(IncomingRequest $request): array
     {
         return self::pick($request, self::BASE_UPDATE_FIELDS);
+    }
+
+    /**
+     * Prazdne pole, ak POST neobsahuje ziadne pole odosielatela (stare formulare ich nemenia).
+     * Prazdne pole formulara znamena predvolenu hodnotu (NULL, D-27), `mail_bcc_none` = '1' znamena bez BCC.
+     *
+     * @return array<string, string>
+     */
+    public static function senderFromPost(IncomingRequest $request): array
+    {
+        $out  = [];
+        $post = $request->getPost();
+
+        if (array_intersect([...self::SENDER_FIELDS, 'mail_bcc_none'], array_keys($post)) === []) {
+            return [];
+        }
+
+        foreach (self::SENDER_FIELDS as $field) {
+            $value       = $request->getPost($field);
+            $out[$field] = is_string($value) ? trim($value) : '';
+        }
+
+        $out['mail_bcc_none'] = $request->getPost('mail_bcc_none') === '1' ? '1' : '';
+
+        return $out;
+    }
+
+    /**
+     * Prevod hodnot formulara na stlpce subjektu (CR-01, D-27): prazdne pole = NULL (predvolena hodnota),
+     * prazdne BCC = NULL (predvolene BCC na e-mail subjektu), zaskrtnute „bez BCC“ = [] .
+     *
+     * @param array<string, string> $sender vystup senderFromPost
+     *
+     * @return array<string, string|null>
+     */
+    public static function senderForStorage(array $sender): array
+    {
+        if ($sender === []) {
+            return [];
+        }
+
+        $bcc = trim($sender['mail_bcc'] ?? '');
+
+        return [
+            'mail_from_name'  => trim($sender['mail_from_name'] ?? ''),
+            'mail_from_email' => trim($sender['mail_from_email'] ?? ''),
+            'mail_reply_to'   => trim($sender['mail_reply_to'] ?? ''),
+            'mail_bcc'        => ($sender['mail_bcc_none'] ?? '') === '1' ? '' : ($bcc === '' ? null : $bcc),
+        ];
+    }
+
+    /**
+     * Validacia identity odosielatela (D-27, T-07-27, T-07-28).
+     *
+     * @param array<string, string|null> $v
+     *
+     * @return array<string, string>
+     */
+    public static function validateSender(array $v): array
+    {
+        $errors = [];
+        $name   = trim((string) ($v['mail_from_name'] ?? ''));
+
+        if ($name !== '' && (mb_strlen($name) > 100 || preg_match('/[\x00-\x1F\x7F]/', $name) === 1)) {
+            $errors['mail_from_name'] = lang('Entities.errorLength', [1, 100]);
+        }
+
+        $from = trim((string) ($v['mail_from_email'] ?? ''));
+
+        if ($from !== '') {
+            try {
+                SenderIdentity::assertAllowed($from);
+
+                if (mb_strlen($from) > 254) {
+                    $errors['mail_from_email'] = lang('Entities.errorSenderEmail');
+                }
+            } catch (SenderRejected $e) {
+                $errors['mail_from_email'] = $e->reason === 'domain'
+                    ? lang('Entities.errorSenderDomain', [implode(', ', SenderIdentity::allowedDomains())])
+                    : lang('Entities.errorSenderEmail');
+            }
+        }
+
+        $reply = trim((string) ($v['mail_reply_to'] ?? ''));
+
+        if ($reply !== '' && (preg_match('/[\x00-\x1F\x7F]/', $reply) === 1 || mb_strlen($reply) > 254 || filter_var($reply, FILTER_VALIDATE_EMAIL) === false)) {
+            $errors['mail_reply_to'] = lang('Entities.errorSenderEmail');
+        }
+
+        $bcc = CcEmails::parse((string) ($v['mail_bcc'] ?? ''));
+
+        if ($bcc !== [] && ($v['mail_bcc_none'] ?? '') === '1') {
+            $errors['mail_bcc'] = lang('Entities.errorSenderBccConflict');
+        } elseif (count($bcc) > CcEmails::MAX) {
+            $errors['mail_bcc'] = lang('Entities.errorSenderBccMax', [CcEmails::MAX]);
+        } elseif (($error = CcEmails::validate($bcc)) !== null) {
+            $errors['mail_bcc'] = $error;
+        }
+
+        return $errors;
     }
 
     /**

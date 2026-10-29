@@ -53,6 +53,29 @@ final class InvoiceQueriesTest extends PgTestCase
         return ['first' => $first->id, 'second' => $second->id, 'external' => $external];
     }
 
+    public function testStatusFilterAndOverdueFlag(): void
+    {
+        $ids = $this->seed();
+        $db  = $this->owner();
+        $db->query('INSERT INTO payments (invoice_id, paid_on, amount, created_at) VALUES (:i:, :d:, :a:, now())', ['i' => $ids['first'], 'd' => '2026-10-28', 'a' => '10.00']);
+        $q = new InvoiceQueries($this->rw());
+
+        $partial = $q->list(100, 'partially_paid', '2026-10-27');
+        $this->assertSame([$ids['first']], array_column($partial['rows'], 'id'));
+        $this->assertSame('partially_paid', $partial['rows'][0]['status']);
+        $this->assertFalse($partial['rows'][0]['overdue']);
+
+        $overdue = $q->list(100, 'overdue', '2026-12-01');
+        $this->assertEqualsCanonicalizing([$ids['first'], $ids['second']], array_column($overdue['rows'], 'id'));
+        $this->assertTrue($overdue['rows'][0]['overdue']);
+        $this->assertGreaterThan(0, $overdue['rows'][0]['days_overdue']);
+        $this->assertArrayHasKey('balance', $overdue['rows'][0]);
+
+        $this->assertCount(3, $q->list(100, 'nezmysel', '2026-10-27')['rows']);
+        $this->assertSame([], $q->list(100, 'paid', '2026-10-27')['rows']);
+        $this->assertSame([], $q->list(100, 'overdue', '2026-10-27')['rows']);
+    }
+
     public function testListOrdersNewestFirstAndHidesBinaryColumns(): void
     {
         $ids    = $this->seed();

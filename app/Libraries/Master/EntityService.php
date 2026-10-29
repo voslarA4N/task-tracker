@@ -166,9 +166,10 @@ final class EntityService
     }
 
     /**
-     * Úprava interného názvu a obdobia pôsobenia (D-01). Zapisuje len stĺpce z grantu, audit v tej istej transakcii.
+     * Úprava interného názvu, obdobia pôsobenia a (voliteľne) identity odosielateľa (D-01, D-27).
+     * Zapisuje len stĺpce z grantu, audit v tej istej transakcii.
      *
-     * @param array<string, string|null> $values BASE_UPDATE_FIELDS
+     * @param array<string, list<string>|string|null> $values BASE_UPDATE_FIELDS a voliteľne SENDER_FIELDS (mail_bcc ako zoznam alebo text)
      *
      * @return bool true, ak nastala zmena
      */
@@ -179,9 +180,24 @@ final class EntityService
             'active_from'   => (string) $values['active_from'],
             'active_to'     => ($values['active_to'] ?? '') === '' ? null : (string) $values['active_to'],
         ];
+        $withSender = array_key_exists('mail_from_name', $values) || array_key_exists('mail_from_email', $values)
+                                                                  || array_key_exists('mail_reply_to', $values) || array_key_exists('mail_bcc', $values);
+
+        if ($withSender) {
+            foreach (['mail_from_name', 'mail_from_email', 'mail_reply_to'] as $key) {
+                $text      = trim((string) ($values[$key] ?? ''));
+                $new[$key] = $text === '' ? null : $text;
+            }
+
+            // null = predvolene BCC (stlpec NULL), '' alebo [] = bez BCC (D-27, CR-01)
+            $bcc = array_key_exists('mail_bcc', $values) ? $values['mail_bcc'] : '';
+
+            $new['mail_bcc'] = $bcc === null ? null : (is_array($bcc) ? $bcc : CcEmails::parse($bcc));
+        }
+
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
-        return Transaction::run($this->db, function () use ($id, $new, $now): bool {
+        return Transaction::run($this->db, function () use ($id, $new, $now, $withSender): bool {
             $entity = $this->lockOrFail($id);
             $old    = [
                 'name_internal' => (string) $entity['name_internal'],
@@ -189,14 +205,31 @@ final class EntityService
                 'active_to'     => $entity['active_to'] === null ? null : (string) $entity['active_to'],
             ];
 
+            if ($withSender) {
+                foreach (['mail_from_name', 'mail_from_email', 'mail_reply_to'] as $key) {
+                    $old[$key] = $entity[$key] === null ? null : (string) $entity[$key];
+                }
+
+                // NULL (predvolene BCC) a [] (bez BCC) sa rozlisuju; porovnanie po normalizacii JSON
+                $old['mail_bcc'] = $entity['mail_bcc'] === null ? null : json_decode((string) $entity['mail_bcc'], true, 512, JSON_THROW_ON_ERROR);
+            }
+
             if ($old === $new) {
                 return false;
             }
 
-            $this->db->query(
-                'UPDATE entities SET name_internal = :n:, active_from = :f:, active_to = :t:, updated_at = :now: WHERE id = :id:',
-                ['n' => $new['name_internal'], 'f' => $new['active_from'], 't' => $new['active_to'], 'now' => $now, 'id' => $id],
-            );
+            $sets   = 'name_internal = :name_internal:, active_from = :active_from:, active_to = :active_to:, updated_at = :now:';
+            $params = ['name_internal' => $new['name_internal'], 'active_from' => $new['active_from'], 'active_to' => $new['active_to'], 'now' => $now, 'id' => $id];
+
+            if ($withSender) {
+                $sets .= ', mail_from_name = :mail_from_name:, mail_from_email = :mail_from_email:, mail_reply_to = :mail_reply_to:, mail_bcc = CAST(:mail_bcc: AS jsonb)';
+
+                foreach (['mail_from_name', 'mail_from_email', 'mail_reply_to', 'mail_bcc'] as $key) {
+                    $params[$key] = $key === 'mail_bcc' && $new[$key] !== null ? json_encode($new[$key], JSON_THROW_ON_ERROR) : $new[$key];
+                }
+            }
+
+            $this->db->query('UPDATE entities SET ' . $sets . ' WHERE id = :id:', $params);
 
             return $this->audit->recordChange('entity', $id, 'update', $old, $new);
         });
