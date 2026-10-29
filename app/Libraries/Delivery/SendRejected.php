@@ -9,7 +9,8 @@ use RuntimeException;
 /**
  * Odoslanie bolo odmietnute z dovodu v $reason (not_found, external, not_sendable, no_recipients,
  * too_many_recipients, invalid_address, empty_content, too_long, attachments_failed, smtp_failed,
- * record_failed, sender_invalid). $field je 'to' alebo 'cc' pri invalid_address.
+ * record_failed, sender_invalid; rucne oznacenie (D-29): invalid_date, future_date, note_too_long, empty_reason,
+ * not_manual, already_voided, already_sent). $field je 'to' alebo 'cc' pri invalid_address.
  */
 final class SendRejected extends RuntimeException
 {
