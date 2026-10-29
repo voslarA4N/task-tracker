@@ -37,8 +37,15 @@ $status = (string) ($invoice['status'] ?? 'issued');
 [$statusKey, $statusClass] = match (true) {
     $external          => ['Invoices.badgeExternal', 'text-bg-secondary'],
     $status === 'sent' => ['Invoices.statusSent', 'text-bg-light border'],
+    $status === 'partially_paid' => ['Invoices.statusPartiallyPaid', 'text-bg-warning'],
+    $status === 'paid' => ['Invoices.statusPaid', 'text-bg-success'],
     default            => ['Invoices.statusIssued', 'text-bg-secondary'],
 };
+$payState  = $payState ?? null;
+$payments  = $payments ?? [];
+$overdue   = ! $external && is_array($payState) && $payState['overdue'];
+$canPay    = ! $external && in_array($status, ['issued', 'sent', 'partially_paid'], true);
+$payPrimary = $canPay && $status !== 'issued';
 $canSend = ! $external && $status === 'issued';
 $canResend = ! $external && in_array($status, ['sent', 'partially_paid', 'paid'], true);
 $history = (array) ($invoice['history'] ?? []);
@@ -56,6 +63,9 @@ $history = (array) ($invoice['history'] ?? []);
         <p class="mb-1">
             <span class="st-badges">
                 <span class="st-badge badge <?= esc($statusClass, 'attr') ?>"><?= esc(lang($statusKey)) ?></span>
+                <?php if ($overdue) : ?>
+                    <span class="st-badge badge text-bg-danger"><?= esc(lang('Invoices.statusOverdue', [$payState['days_overdue']])) ?></span>
+                <?php endif ?>
             </span>
         </p>
         <p class="small text-body-secondary mb-3"><?= esc((string) $invoice['client_name']) ?><?= $dates['issue_date'] !== '' ? ' · ' . esc($dates['issue_date']) : '' ?></p>
@@ -82,9 +92,19 @@ $history = (array) ($invoice['history'] ?? []);
                 <?php if ($canSend) : ?>
                     <a class="btn btn-primary btn-touch" href="/invoices/<?= $id ?>/send" hx-get="/invoices/<?= $id ?>/send" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.sendCta')) ?></a>
                 <?php endif ?>
+<?php if ($payPrimary) : ?>
+                <?php if ($canPay) : ?>
+                    <a class="btn <?= $payPrimary ? 'btn-primary' : 'btn-outline-secondary' ?> btn-touch" href="/invoices/<?= $id ?>/payments" hx-get="/invoices/<?= $id ?>/payments" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Payments.cta')) ?></a>
+                <?php endif ?>
+<?php endif ?>
                 <?php if ($canResend) : ?>
                     <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/resend" hx-get="/invoices/<?= $id ?>/resend" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Deliveries.resendCta')) ?></a>
                 <?php endif ?>
+<?php if (! $payPrimary) : ?>
+                <?php if ($canPay) : ?>
+                    <a class="btn <?= $payPrimary ? 'btn-primary' : 'btn-outline-secondary' ?> btn-touch" href="/invoices/<?= $id ?>/payments" hx-get="/invoices/<?= $id ?>/payments" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Payments.cta')) ?></a>
+                <?php endif ?>
+<?php endif ?>
                 <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/pdf" target="_blank" rel="noopener noreferrer"><?= esc(lang('Invoices.invoicePdf')) ?></a>
                 <?php if ($reportDoc !== null || $schema >= 2) : ?>
                     <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/report" target="_blank" rel="noopener noreferrer"><?= esc(lang('Invoices.reportPdf')) ?></a>
@@ -125,6 +145,9 @@ $history = (array) ($invoice['history'] ?? []);
     </section>
 
     <?php if (! $external) : ?>
+        <?php if (is_array($payState)) : ?>
+            <?= view('invoices/_payments', ['invoice' => $invoice, 'payState' => $payState, 'payments' => $payments, 'locale' => $locale, 'dates' => $dates, 'canPay' => $canPay]) ?>
+        <?php endif ?>
         <?= view('invoices/_history', ['invoice' => $invoice, 'history' => $history, 'locale' => $locale]) ?>
 
         <section class="app-card mb-4" aria-labelledby="inv-data-title">

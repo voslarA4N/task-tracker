@@ -8,6 +8,7 @@ use App\Libraries\Invoicing\DocumentFilename;
 use App\Libraries\Invoicing\DocumentIntegrityError;
 use App\Libraries\Invoicing\DocumentStore;
 use App\Libraries\Invoicing\InvoiceQueries;
+use App\Libraries\Receivables\InvoiceStatusQueries;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\ResponseInterface;
 use IntlDateFormatter;
@@ -45,7 +46,16 @@ final class Invoices extends BaseController
             $dates[$field] = self::label($fmt, $invoice[$field] ?? null);
         }
 
-        return view('invoices/show', ['invoice' => $invoice, 'dates' => $dates]);
+        $payState = null;
+        $payments = [];
+
+        if ($invoice['origin'] === 'issued') {
+            $queries  = new InvoiceStatusQueries();
+            $payState = $queries->forInvoice($id, service('clock')->today());
+            $payments = $queries->payments($id);
+        }
+
+        return view('invoices/show', ['invoice' => $invoice, 'dates' => $dates, 'payState' => $payState, 'payments' => $payments]);
     }
 
     /**
