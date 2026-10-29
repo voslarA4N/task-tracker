@@ -19,7 +19,7 @@ kroky:
 2. Klepni na Odoslať znova, v sheete nastav vlastnú adresu a potvrď.
 3. Skontroluj flash a históriu odoslaní.
 očakávané: Odoslanie znova trvá najviac 2 klepnutia, flash hovorí „testovacie prostredie“, história ukazuje nový záznam s transportom log.
-result: pending
+result: passed (2026-10-29, potvrdil vlastník na stagingu)
 
 ### UAT-02 Upomienka a úhrada z dashboardu Po splatnosti na iPhone
 requirement: MAIL-03, PAY-01, PAY-02
@@ -29,7 +29,7 @@ kroky:
 2. Z riadku faktúry pošli upomienku (2 klepnutia).
 3. Z riadku inej faktúry zapíš úhradu (plnú alebo čiastočnú).
 očakávané: Upomienka sa zapíše do histórie (transport log), úhrada zmení zostatok a stav faktúry, riadok po plnej úhrade zmizne zo sekcie Po splatnosti.
-result: pending
+result: passed (2026-10-29, potvrdil vlastník na stagingu)
 
 ### UAT-03 Ovládanie jednou rukou
 requirement: UX (odoslanie, úhrady, upomienky)
@@ -38,7 +38,7 @@ kroky:
 1. Prejdi dashboard, zoznam faktúr, detail faktúry, sheet odoslania a sheet úhrady.
 2. Sleduj posúvanie do strán a veľkosť ovládacích prvkov.
 očakávané: Žiadne horizontálne posúvanie, dotykové ciele aspoň 44 px, všetko ovládateľné jednou rukou.
-result: pending
+result: passed (2026-10-29, potvrdil vlastník na stagingu)
 
 ### UAT-04 Bajtová zhoda príloh v Mailpit a vlákno upomienky
 requirement: MAIL-01, MAIL-03
@@ -67,8 +67,8 @@ result: pending
 ## Súhrn
 
 total: 5
-passed: 1
-pending: 4
+passed: 4
+pending: 1
 issues: 0
 
 ## Zistenia
