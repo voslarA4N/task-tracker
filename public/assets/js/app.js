@@ -208,6 +208,33 @@
         get noWarn() { return !this.warnOutside; }
       };
     });
+    /* Sablona e-mailu: vkladanie premennej na poziciu kurzora v poslednom fokusovanom poli (predmet alebo text). */
+    window.Alpine.data('etVars', function () {
+      return {
+        last: null,
+        track: function () {
+          var t = this.$event && this.$event.target;
+          if (t && (t.name === 'subject' || t.name === 'body')) { this.last = t; }
+        },
+        insert: function () {
+          var token = this.$event.currentTarget.dataset.var;
+          var field = this.last || this.$el.querySelector('textarea[name=body]');
+          if (!field || !token) { return; }
+          var value = String(field.value || '');
+          var start = typeof field.selectionStart === 'number' ? field.selectionStart : value.length;
+          var end = typeof field.selectionEnd === 'number' ? field.selectionEnd : start;
+          if (this.last === null) { start = end = value.length; }
+          field.value = value.slice(0, start) + token + value.slice(end);
+          var pos = start + token.length;
+          if (typeof field.setSelectionRange === 'function') { field.setSelectionRange(pos, pos); }
+          field.selectionStart = field.selectionEnd = pos;
+          if (typeof field.focus === 'function') { field.focus(); }
+          if (typeof field.dispatchEvent === 'function' && typeof Event === 'function') {
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }
+      };
+    });
     /* Formular klienta: vypnutie hodnoty identifikatora pri type "none", povinne IC DPH pri eu_b2b. */
     window.Alpine.data('clientForm', function () {
       return {

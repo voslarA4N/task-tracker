@@ -19,3 +19,7 @@ $routes->get('settings/legal-texts/new', 'Settings\LegalTexts::new');
 $routes->post('settings/legal-texts', 'Settings\LegalTexts::create');
 $routes->get('settings/legal-texts/(:num)/edit', 'Settings\LegalTexts::edit/$1');
 $routes->post('settings/legal-texts/(:num)', 'Settings\LegalTexts::update/$1');
+$routes->get('settings/email-templates', 'Settings\EmailTemplates::index');
+$routes->get('settings/email-templates/(:num)/edit', 'Settings\EmailTemplates::edit/$1');
+$routes->post('settings/email-templates/(:num)/preview', 'Settings\EmailTemplates::preview/$1');
+$routes->post('settings/email-templates/(:num)', 'Settings\EmailTemplates::update/$1');

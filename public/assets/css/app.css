@@ -508,3 +508,10 @@ img, table { max-width: 100%; }
 .dl-add { display: flex; gap: 8px; }
 .dl-detail-summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
 .dl-mono { font-family: var(--bs-font-monospace); overflow-wrap: anywhere; }
+
+/* Sablony e-mailov (Phase 7, MAIL-04) */
+.et-vars-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.et-var { min-height: 44px; text-align: left; }
+.et-var code { font-size: 12px; }
+.et-preview-box { white-space: pre-wrap; font-size: 16px; overflow-wrap: anywhere; }
+.et-preview-text { white-space: pre-wrap; }

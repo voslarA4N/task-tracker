@@ -63,6 +63,9 @@ final class EmailTemplateServiceTest extends PgTestCase
         return new EmailTemplateService();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function row(): array
     {
         return $this->owner()->query('SELECT * FROM email_templates WHERE id = :id:', ['id' => $this->id])->getRowArray();
