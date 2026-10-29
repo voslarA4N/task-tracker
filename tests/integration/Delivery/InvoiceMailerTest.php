@@ -192,6 +192,10 @@ final class InvoiceMailerTest extends PgTestCase
         $this->assertSame('empty_content', $this->rejection(fn () => $m->send($this->sendCommand($id, o: ['body' => ''])))->reason);
         $this->assertSame('too_long', $this->rejection(fn () => $m->send($this->sendCommand($id, o: ['subject' => str_repeat('a', 201)])))->reason);
         $this->assertSame('too_long', $this->rejection(fn () => $m->send($this->sendCommand($id, o: ['body' => str_repeat('a', 4001)])))->reason);
+        // riadiace znaky v predmete (WR-04): zaznam musi zodpovedat tomu, co odislo
+        $this->assertSame('invalid_subject', $this->rejection(fn () => $m->send($this->sendCommand($id, o: ['subject' => "A\r\nBcc: x@evil.example"])))->reason);
+        $this->assertSame('invalid_subject', $this->rejection(fn () => $m->send($this->sendCommand($id, o: ['subject' => "Faktura\t1"])))->reason);
+        $this->assertSame('invalid_subject', $this->rejection(fn () => $m->send($this->sendCommand($id, o: ['subject' => "Faktura\x7F"])))->reason);
 
         $this->assertSame(0, $this->sendCount());
         $this->assertSame(0, $this->emailFactoryCalls);

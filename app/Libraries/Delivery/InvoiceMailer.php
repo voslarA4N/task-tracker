@@ -332,6 +332,11 @@ class InvoiceMailer
             throw new SendRejected('empty_content');
         }
 
+        // predmet ide do hlavicky: zaznam musi zodpovedat tomu, co odislo, a ochrana nesmie zavisiet od CI4 (WR-04)
+        if (preg_match('/[\x00-\x1F\x7F]/', $cmd->subject) === 1) {
+            throw new SendRejected('invalid_subject');
+        }
+
         if (mb_strlen($cmd->subject) > self::MAX_SUBJECT || mb_strlen($cmd->body) > self::MAX_BODY) {
             throw new SendRejected('too_long');
         }

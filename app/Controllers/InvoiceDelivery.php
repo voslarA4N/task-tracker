@@ -347,6 +347,10 @@ final class InvoiceDelivery extends BaseController
                 $errors['subject'] = lang('Deliveries.errorContent');
                 break;
 
+            case 'invalid_subject':
+                $errors['subject'] = lang('Deliveries.errorSubjectChars');
+                break;
+
             case 'too_long':
                 $errors['body'] = lang('Deliveries.errorTooLong');
                 break;

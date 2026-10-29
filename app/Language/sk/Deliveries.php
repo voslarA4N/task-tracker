@@ -30,6 +30,7 @@ return [
     'errorNoRecipient'    => 'Zadajte aspoň jednu adresu v poli Komu.',
     'errorTooMany'        => 'Najviac 10 adries v jednom e-maile.',
     'errorContent'        => 'Zadajte predmet a text správy.',
+    'errorSubjectChars'   => 'Predmet musí byť na jednom riadku, bez tabulátorov a riadiacich znakov.',
     'errorTooLong'        => 'Predmet alebo text správy je príliš dlhý.',
     'errorRequest'        => 'Formulár je neplatný alebo expiroval. Skontrolujte údaje a odošlite znova.',
     'historyTitle'        => 'Odoslanie',

@@ -30,6 +30,7 @@ return [
     'errorNoRecipient'    => 'Enter at least one address in the To field.',
     'errorTooMany'        => 'At most 10 addresses per email.',
     'errorContent'        => 'Enter a subject and message text.',
+    'errorSubjectChars'   => 'The subject must be on one line, without tabs or control characters.',
     'errorTooLong'        => 'The subject or message text is too long.',
     'errorRequest'        => 'The form is invalid or has expired. Check the data and send again.',
     'historyTitle'        => 'Sending',

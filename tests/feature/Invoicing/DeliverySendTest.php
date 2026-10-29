@@ -179,6 +179,19 @@ final class DeliverySendTest extends AuthTestCase
         $this->assertSame(0, $this->sendCount());
     }
 
+    public function testSubjectWithLineBreakIs422WithFieldError(): void
+    {
+        $this->login();
+        $inv    = $this->issuedInvoice();
+        $result = $this->submit($inv['id'], ['subject' => "A\r\nBcc: x@evil.example"] + $this->valid('66666666-6666-4666-8666-666666666666'));
+
+        $result->assertStatus(422);
+        $html = $this->body($result);
+        $this->assertStringContainsString('is-invalid', $html);
+        $this->assertStringContainsString(esc(lang('Deliveries.errorSubjectChars')), $html);
+        $this->assertSame(0, $this->sendCount());
+    }
+
     public function testExternalInvoiceSendIs404(): void
     {
         $this->login();
