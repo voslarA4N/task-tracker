@@ -19,7 +19,8 @@ final class EntitySenderFormTest extends AuthTestCase
 {
     use MasterFixtures;
 
-    private string $originalFrom = '';
+    private string $originalFrom    = '';
+    private string $originalDomains = '';
 
     protected function setUp(): void
     {
@@ -28,14 +29,18 @@ final class EntitySenderFormTest extends AuthTestCase
         $this->resetMasterTables();
         $this->originalFrom        = config('Email')->fromEmail;
         config('Email')->fromEmail = 'noreply@vostack.dev';
-        $user                      = $this->createUser('owner@example.test');
+        // CI .env (z .env.example) ma aj work-tracker.loc, test chce presne jednu domenu
+        $this->originalDomains              = config('Email')->allowedFromDomains;
+        config('Email')->allowedFromDomains = 'vostack.dev';
+        $user                               = $this->createUser('owner@example.test');
         $this->enrollTotp($user);
         $this->loginAs($user);
     }
 
     protected function tearDown(): void
     {
-        config('Email')->fromEmail = $this->originalFrom;
+        config('Email')->fromEmail          = $this->originalFrom;
+        config('Email')->allowedFromDomains = $this->originalDomains;
         $this->resetMasterTables();
         Services::reset();
         parent::tearDown();
