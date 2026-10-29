@@ -61,6 +61,66 @@ final class InvoiceStatusQueries
     }
 
     /**
+     * Faktury po splatnosti (zostatok > 0, splatnost pred dnom "dnes" z Clock), od najstarsej splatnosti.
+     *
+     * @return array{rows: list<array{id: int, number: string, client_name: string, due_date: string, days_overdue: int, balance: string, currency: string, status: string, last_reminder_at: ?string}>, total: int}
+     */
+    public function overdue(string $today, ?int $clientId, int $limit): array
+    {
+        $binds = ['today' => $today, 'n' => $limit];
+        $where = '';
+
+        if ($clientId !== null) {
+            $where         = ' AND i.client_id = :client:';
+            $binds['client'] = $clientId;
+        }
+
+        $rows = $this->db->query(
+            "SELECT i.id, i.number, c.name AS client_name, i.due_date, CAST(:today: AS date) - i.due_date AS days_overdue,
+                    i.balance, i.currency, i.status, i.last_reminder_at
+             FROM invoice_status_v i JOIN clients c ON c.id = i.client_id
+             WHERE i.origin = 'issued' AND i.type = 'invoice' AND i.balance > 0 AND i.due_date < CAST(:today: AS date)" . $where . '
+             ORDER BY i.due_date ASC, i.id ASC
+             LIMIT :n:',
+            $binds,
+        )->getResultArray();
+
+        return [
+            'rows' => array_map(static fn (array $r): array => [
+                'id'               => (int) $r['id'],
+                'number'           => (string) $r['number'],
+                'client_name'      => (string) $r['client_name'],
+                'due_date'         => (string) $r['due_date'],
+                'days_overdue'     => (int) $r['days_overdue'],
+                'balance'          => (string) $r['balance'],
+                'currency'         => trim((string) $r['currency']),
+                'status'           => (string) $r['status'],
+                'last_reminder_at' => $r['last_reminder_at'] === null ? null : (string) $r['last_reminder_at'],
+            ], $rows),
+            'total' => $this->countOverdue($today, $clientId),
+        ];
+    }
+
+    public function countOverdue(string $today, ?int $clientId): int
+    {
+        $binds = ['today' => $today];
+        $where = '';
+
+        if ($clientId !== null) {
+            $where         = ' AND client_id = :client:';
+            $binds['client'] = $clientId;
+        }
+
+        $row = $this->db->query(
+            "SELECT count(*) AS n FROM invoice_status_v
+             WHERE origin = 'issued' AND type = 'invoice' AND balance > 0 AND due_date < CAST(:today: AS date)" . $where,
+            $binds,
+        )->getRowArray();
+
+        return (int) ($row['n'] ?? 0);
+    }
+
+    /**
      * Uhrady od najnovsej, aj stornovane (s dovodom).
      *
      * @return list<array{id: int, paid_on: string, amount: string, note: ?string, created_at: string, voided: bool, void_reason: ?string, voided_at: ?string}>

@@ -29,20 +29,44 @@ final class InvoiceQueries
     /**
      * @return array{rows: list<array<string, mixed>>, truncated: bool}
      */
-    public function list(int $limit = 100): array
+    public function list(int $limit = 100, ?string $status = null, ?string $today = null): array
     {
+        $today ??= service('clock')->today();
+        $cond    = "(i.origin = 'issued' AND i.type = 'invoice' AND i.balance > 0 AND i.due_date < CAST(:today: AS date))";
+        $where   = '';
+
+        if (in_array($status, ['issued', 'sent', 'partially_paid', 'paid'], true)) {
+            $where = ' WHERE i.status = :status:';
+        } elseif ($status === 'overdue') {
+            $where = ' WHERE ' . $cond;
+        }
+
+        $binds = ['today' => $today, 'n' => $limit + 1];
+
+        if (str_contains($where, ':status:')) {
+            $binds['status'] = $status;
+        }
+
         $rows = $this->db->query(
-            'SELECT i.id, i.origin, i.number, i.external_ref, i.issue_date, i.billing_month, i.currency, i.total, i.created_at, c.name AS client_name
-             FROM invoice_status_v i JOIN clients c ON c.id = i.client_id
+            'SELECT i.id, i.origin, i.number, i.external_ref, i.issue_date, i.billing_month, i.currency, i.total, i.created_at, c.name AS client_name,
+                    i.status, i.balance, i.paid_amount, i.due_date,
+                    CASE WHEN ' . $cond . ' THEN 1 ELSE 0 END AS overdue,
+                    CASE WHEN ' . $cond . ' THEN CAST(:today: AS date) - i.due_date ELSE 0 END AS days_overdue
+             FROM invoice_status_v i JOIN clients c ON c.id = i.client_id' . $where . '
              ORDER BY i.issue_date DESC NULLS LAST, i.number DESC NULLS LAST, i.id DESC
              LIMIT :n:',
-            ['n' => $limit + 1],
+            $binds,
         )->getResultArray();
 
         $truncated = count($rows) > $limit;
 
         return [
-            'rows'      => array_map(static fn (array $r): array => ['currency' => trim((string) $r['currency'])] + $r, array_slice($rows, 0, $limit)),
+            'rows' => array_map(static fn (array $r): array => [
+                'id'           => (int) $r['id'],
+                'currency'     => trim((string) $r['currency']),
+                'overdue'      => (int) $r['overdue'] === 1,
+                'days_overdue' => (int) $r['days_overdue'],
+            ] + $r, array_slice($rows, 0, $limit)),
             'truncated' => $truncated,
         ];
     }
