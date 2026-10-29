@@ -31,6 +31,9 @@ final class DeployGuardTest extends CIUnitTestCase
           *"pg_restore -l"*)
             [ -z "${FAKE_RESTORE_FAIL-}" ] || exit 1
             ;;
+          *"network inspect mail"*)
+            [ -z "${FAKE_NO_MAIL-}" ] || exit 1
+            ;;
           *"network inspect"*)
             [ -z "${FAKE_NO_EDGE-}" ] || exit 1
             ;;
@@ -75,6 +78,7 @@ final class DeployGuardTest extends CIUnitTestCase
             }
         }
         copy(ROOTPATH . 'scripts/deploy.sh', $this->dir . '/deploy.sh');
+        copy(ROOTPATH . 'compose.server.mail.yaml', $this->dir . '/compose.server.mail.yaml');
         file_put_contents($this->dir . '/.env', "TLS_MODE = origin-ca\nAPP_DOMAIN = test.example\nCOMPOSE_PROJECT_NAME = test-stack\nEDGE_ALIAS = wt-test-nginx\nIMAGE_PREFIX = ghcr.io/x/tt\n");
         file_put_contents($this->dir . '/certs/origin.pem', '');
 
@@ -178,6 +182,53 @@ final class DeployGuardTest extends CIUnitTestCase
         $this->assertStringContainsString('network inspect edge', $this->log());
         $this->assertStringNotContainsString('pull', $this->log());
         $this->assertStringContainsString('edge', $err);
+    }
+
+    public function testWithoutMailNetworkOverlayIsNotUsed(): void
+    {
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertSame(0, $code, $err);
+        $this->assertStringContainsString('-f compose.server.yaml', $this->log());
+        $this->assertStringNotContainsString('compose.server.mail.yaml', $this->log());
+        $this->assertStringNotContainsString('network inspect mail', $this->log());
+    }
+
+    public function testMailNetworkAddsOverlayAndChecksNetwork(): void
+    {
+        file_put_contents($this->dir . '/.env', "MAIL_NETWORK = mail\n", FILE_APPEND);
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertSame(0, $code, $err);
+        $log = $this->log();
+        $this->assertStringContainsString('network inspect mail', $log);
+        $this->assertStringContainsString('-f compose.server.yaml -f compose.server.mail.yaml', $log);
+        $this->assertStringContainsString('compose -f compose.server.yaml -f compose.server.mail.yaml up -d --wait --remove-orphans', $log);
+    }
+
+    public function testMissingMailNetworkFailsBeforeBackupAndUp(): void
+    {
+        file_put_contents($this->dir . '/.env', "MAIL_NETWORK = mail\n", FILE_APPEND);
+
+        [$code, $err] = $this->runDeploy(['FAKE_NO_MAIL' => '1']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertStringContainsString('Chýba docker sieť mail', $err);
+        $this->assertStringNotContainsString('pg_dump', $this->log());
+        $this->assertStringNotContainsString('up -d', $this->log());
+    }
+
+    public function testMissingMailOverlayFileFailsBeforeAnyDockerCall(): void
+    {
+        file_put_contents($this->dir . '/.env', "MAIL_NETWORK = mail\n", FILE_APPEND);
+        unlink($this->dir . '/compose.server.mail.yaml');
+
+        [$code, $err] = $this->runDeploy([]);
+
+        $this->assertNotSame(0, $code);
+        $this->assertSame("logout ghcr.io\n", $this->log());
+        $this->assertStringContainsString('compose.server.mail.yaml', $err);
     }
 
     public function testProjectFromAnotherDirectoryFailsBeforePull(): void

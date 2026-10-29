@@ -26,7 +26,16 @@ export DOCKER_CONFIG
 # Token z CI nesmie zostať na disku servera.
 trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
 
-dc() { docker compose -f "$COMPOSE_FILE_NAME" "$@"; }
+# MAIL_NETWORK (len produkcia, D-01) pripojí overlay compose.server.mail.yaml; bez neho
+# (staging, D-02) sa sieť mail nepoužije. Hodnota sa nastaví po načítaní .env nižšie.
+MAIL_NETWORK=
+dc() {
+  if [ -n "$MAIL_NETWORK" ]; then
+    docker compose -f "$COMPOSE_FILE_NAME" -f compose.server.mail.yaml "$@"
+  else
+    docker compose -f "$COMPOSE_FILE_NAME" "$@"
+  fi
+}
 
 # Hodnoty z .env sa čítajú po kľúčoch (formát CI4 s bodkami sa nedá `source`-ovať).
 env_get() { sed -n "s/^$1 *= *//p" .env | head -n1 | tr -d "'\"\r"; }
@@ -75,6 +84,13 @@ done
 COMPOSE_PROJECT_NAME=$(env_get COMPOSE_PROJECT_NAME)
 export COMPOSE_PROJECT_NAME
 
+MAIL_NETWORK=$(env_get MAIL_NETWORK)
+if [ -n "$MAIL_NETWORK" ] && [ ! -f "$HERE/compose.server.mail.yaml" ]; then
+  echo "MAIL_NETWORK=$MAIL_NETWORK vyžaduje súbor compose.server.mail.yaml v $HERE. Nic sa nenasadilo." >&2
+  exit 1
+fi
+export MAIL_NETWORK
+
 # Reset a seed stagingu (D-01). Tvrdé poistky ešte pred prvým volaním dockeru: produkcia (projekt,
 # doména alebo adresár) nesmie mať STAGING_RESEED ani `staging.seed = true` v app.env.
 RESEED=$(env_get STAGING_RESEED)
@@ -115,6 +131,10 @@ preflight_reseed
 preflight_host() {
   if ! docker network inspect edge >/dev/null 2>&1; then
     echo "Chýba docker sieť edge (docs/ops/server.md, sekcia Edge proxy). Nic sa nenasadilo." >&2
+    exit 1
+  fi
+  if [ -n "$MAIL_NETWORK" ] && ! docker network inspect "$MAIL_NETWORK" >/dev/null 2>&1; then
+    echo "Chýba docker sieť $MAIL_NETWORK (docs/ops/server.md, sekcia 20). Nic sa nenasadilo." >&2
     exit 1
   fi
   # V `docker ps` je .Labels reťazec, jeden label vracia iba {{.Label "..."}}. Chyba šablóny
