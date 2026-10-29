@@ -75,6 +75,7 @@ final class CreateInvoiceSends extends Migration
     public function down(): void
     {
         $this->restoreOriginalStatusView();
+
         foreach (['invoice_send_voids', 'invoice_sends'] as $t) {
             $this->db->query("DROP TRIGGER IF EXISTS {$t}_no_truncate ON {$t}");
             $this->db->query("DROP TRIGGER IF EXISTS {$t}_immutable ON {$t}");

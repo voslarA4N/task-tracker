@@ -7,6 +7,7 @@ namespace Tests\Integration\Delivery;
 use App\Database\Migrations\CreateInvoiceSends;
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Database\Exceptions\DatabaseException;
+use Config\Database;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\InvoiceFixtures;
@@ -168,7 +169,7 @@ final class InvoiceStatusViewColumnsTest extends PgTestCase
 
         try {
             require_once APPPATH . 'Database/Migrations/2026-10-29-000002_CreateInvoiceSends.php';
-            (new CreateInvoiceSends(\Config\Database::forge($db)))->restoreOriginalStatusView();
+            (new CreateInvoiceSends(Database::forge($db)))->restoreOriginalStatusView();
             $n = (int) $db->query("SELECT count(*) AS c FROM information_schema.columns WHERE table_name = 'invoice_status_v'")->getRow()->c;
             $this->assertSame(16, $n);
         } finally {
