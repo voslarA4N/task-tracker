@@ -28,9 +28,45 @@ final class SenderIdentity
     }
 
     /**
+     * Skutocne hodnoty v case odoslania: nastavenia subjektu, inak predvolene (D-27).
+     *
      * @return array{from_email: string, from_name: string, reply_to: ?string, bcc: list<string>}
      */
     public function resolve(int $entityId): array
+    {
+        $row     = $this->db->query('SELECT mail_from_name, mail_from_email, mail_reply_to, mail_bcc FROM entities WHERE id = :id:', ['id' => $entityId])->getRowArray() ?? [];
+        $default = $this->defaults($entityId);
+
+        $name  = trim((string) ($row['mail_from_name'] ?? ''));
+        $from  = trim((string) ($row['mail_from_email'] ?? ''));
+        $reply = trim((string) ($row['mail_reply_to'] ?? ''));
+        $bcc   = $default['bcc'];
+
+        if (($row['mail_bcc'] ?? null) !== null) {
+            $decoded = json_decode((string) $row['mail_bcc'], true);
+            $bcc     = [];
+
+            foreach (is_array($decoded) ? $decoded : [] as $item) {
+                if (is_string($item) && $item !== '') {
+                    $bcc[] = $item;
+                }
+            }
+        }
+
+        return [
+            'from_email' => $from !== '' ? $from : $default['from_email'],
+            'from_name'  => $name !== '' ? $name : $default['from_name'],
+            'reply_to'   => $reply !== '' ? $reply : $default['reply_to'],
+            'bcc'        => $bcc,
+        ];
+    }
+
+    /**
+     * Predvolene hodnoty D-27 (aj na predvyplnenie formulara).
+     *
+     * @return array{from_email: string, from_name: string, reply_to: ?string, bcc: list<string>}
+     */
+    public function defaults(int $entityId): array
     {
         $version = (new EntityVersionResolver($this->db))->current($entityId, service('clock')->today());
         $email   = trim((string) ($version['email'] ?? ''));
