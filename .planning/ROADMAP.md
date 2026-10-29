@@ -14,7 +14,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 - [x] **Phase 4: Úlohy, fakturačné časti a dashboard** - Evidencia úloh, rozdelenie na časti po mesiacoch, dashboard, import z Excelu (completed 2026-10-26)
 - [x] **Phase 5: Fakturačné jadro** - Atómové vystavenie nemennej faktúry, číslovanie, kópia údajov, uložené PDF so sha256 (completed 2026-10-27)
 - [x] **Phase 6: Dokumenty faktúry a výkazu** - Právne profily, PDF faktúra a výkaz, QR platba, editovateľné zákonné texty (completed 2026-10-28)
-- [ ] **Phase 7: Doručenie, úhrady a upomienky** - E-mail s PDF, opätovné odoslanie, úhrady, po splatnosti, upomienka
+- [x] **Phase 7: Doručenie, úhrady a upomienky** - E-mail s PDF, opätovné odoslanie, úhrady, po splatnosti, upomienka (completed 2026-10-29)
 - [ ] **Phase 8: Meny a kurzy** - NBP/ECB/ČNB kurzy s ručným prepisom a uložením do kópie údajov
 - [ ] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí
 - [ ] **Phase 10: Limity obratu** - Tabuľka limitov, výpočet obratu, upozornenia a predkontrola pri vystavení
@@ -389,7 +389,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 07-14-PLAN.md — Staging seed modul Deliveries, 07-HUMAN-UAT.md a ručné overenie fázy na iPhone (vlna 8)
+- [x] 07-14-PLAN.md — Staging seed modul Deliveries, 07-HUMAN-UAT.md a ručné overenie fázy na iPhone (vlna 8)
 
 **UI hint**: yes
 **Poznámky**: **Závislosť od vlastníka:** zvolený produkčný SMTP poskytovateľ a DNS SPF/DKIM/DMARC pre odosielateľov SK a PL. E-mail a HTTP volania nikdy vo vnútri transakcie vystavenia. BCC archív a `Message-ID` pre dohľadanie. Stavy sú odvodené SQL pohľadom, `invoices` ostáva insert-only.
@@ -491,7 +491,7 @@ Plans:
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
-| 7. Doručenie, úhrady a upomienky | 13/14 | In Progress|  |
+| 7. Doručenie, úhrady a upomienky | 14/14 | Complete   | 2026-10-29 |
 | 8. Meny a kurzy | 0/0 | Not started | - |
 | 9. Dobropisy | 0/0 | Not started | - |
 | 10. Limity obratu | 0/0 | Not started | - |
