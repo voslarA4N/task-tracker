@@ -26,12 +26,13 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 - [x] PDF faktúra `inv-2` podľa právneho profilu (SK, CZ, PL art. 113, EÚ B2B), forma úhrady a poznámka, QR platba PAY by square 1.0.0 / SPAYD / ZBP, nemenný PDF výkaz `rep-1` vznikajúci v tej istej transakcii ako faktúra (E6, E7), editovateľné zákonné texty s revíziou a auditom (E12). Validated in Phase 6: Dokumenty faktúry a výkazu (UAT na stagingu 2026-10-28; znenia čakajú na potvrdenie účtovníčkou)
 
+- [x] Doručenie a pohľadávky (E8): odoslanie faktúry s výkazom z uložených PDF cez vlastný SMTP (Stalwart, `noreply@vostack.dev`), opätovné odoslanie na ľubovoľnú adresu, ručné označenie odoslania so stornom, odosielateľ / Reply-To / skrytá kópia pri subjekte, editovateľné šablóny e-mailov pre každý jazyk, úhrady (aj čiastočné) so stornom, stavy Čiastočne uhradená / Uhradená, prehľad Po splatnosti na dashboarde, upomienka jedným klepnutím vo vlákne pôvodnej faktúry. Validated in Phase 7: Doručenie, úhrady a upomienky (UAT staging + dev Mailpit + produkcia 2026-10-30, SPF/DKIM/DMARC PASS)
+
 ### Active
 
 Úplný zoznam s ID je v `.planning/REQUIREMENTS.md` (prevzatý z `docs/PRD.md`, epiky E1–E12, priority P0 + P1 + P2).
 
 - [ ] Faktúry (E6): zvyšok – dobropis (Phase 9). Jadro hotové vo Phase 5, PDF podľa právneho profilu vo Phase 6
-- [ ] Odoslanie e-mailom, opätovné odoslanie, ručné úhrady, faktúry po splatnosti, upomienky (E8)
 - [ ] Meny EUR, PLN, CZK, kurzy z NBP / ECB / ČNB s ručným prepisom a uložením do kópie údajov (E9)
 - [ ] Dashboard (mobil, variant B), mesačné a ročné prehľady, export CSV a XLSX, limity obratu nastaviteľné v aplikácii (E10)
 - [ ] Denník zmien s prehliadaním a filtrami (E11)
@@ -119,4 +120,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-28 after Phase 6 (Dokumenty faktúry a výkazu)*
+*Last updated: 2026-10-30 after Phase 7 (Doručenie, úhrady a upomienky)*

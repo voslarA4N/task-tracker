@@ -1,6 +1,6 @@
 ---
 phase: 07-doru-enie-hrady-a-upomienky
-status: partial
+status: complete
 source: 07-VALIDATION.md (Manual-Only Verifications)
 created: 2026-10-29
 ---
@@ -62,13 +62,13 @@ kroky:
 2. V Gmail otvor „Show original“ a skontroluj SPF, DKIM a DMARC.
 3. Porovnaj `sha256sum` prílohy so sha256 na detaile faktúry.
 očakávané: SPF, DKIM aj DMARC majú PASS, sha256 prílohy sa rovná detailu faktúry.
-result: pending
+result: passed (2026-10-30, potvrdil vlastník v produkcii: SPF, DKIM, DMARC PASS, sha256 prílohy sedí)
 
 ## Súhrn
 
 total: 5
-passed: 4
-pending: 1
+passed: 5
+pending: 0
 issues: 0
 
 ## Zistenia
