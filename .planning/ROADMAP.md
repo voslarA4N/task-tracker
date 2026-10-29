@@ -407,7 +407,42 @@ Plans:
   3. Kurz, zdroj, dátum a prepočítaná suma v mene subjektu sú uložené v kópii údajov a obe sumy sú vytlačené na PDF; neskoršia zmena kurzu v zdroji doklad nezmení.
   4. Dátum, ku ktorému sa kurz hľadá (predvolene dátum dodania), sa dá nastaviť v právnom profile krajiny a podporované meny (EUR, PLN, CZK) sa dajú rozšíriť bez zmeny modelu.
 
-**Plans**: TBD
+**Plans**: 10 plans (8 vĺn: 1: 08-01, 08-02 · 2: 08-03 · 3: 08-04 · 4: 08-05, 08-08 · 5: 08-10 · 6: 08-06 · 7: 08-07 · 8: 08-09)
+Plans:
+**Wave 1**
+
+- [ ] 08-01-PLAN.md — Tabuľka currencies, FK namiesto CHECK, formuláre čítajú meny z DB (CUR-01)
+- [ ] 08-02-PLAN.md — TDD: FxConverter, FxBoundDate, RateQuote/FxQuote, FxFormat
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 08-03-PLAN.md — TDD: poskytovatelia NBP, ECB, ČNB na fixtúrach + HTTP klient
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 08-04-PLAN.md — fx_country_settings, exchange_rate_cache a FxService (cache, výpadok, retry)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 08-05-PLAN.md — Snapshot fx (schema 3), popisky v 4 jazykoch, PDF inv-2 s oboma sumami
+- [ ] 08-08-PLAN.md — Nastavenia → Kurz mien podľa krajiny (CUR-05) s auditom
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 08-10-PLAN.md — Vystavenie s kurzom iba z cache, stĺpce fx_*, CHECK konzistencie, audit, assertFx
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 08-06-PLAN.md — Kurz v náhľade faktúry (.fx-card), potvrdenie a vystavenie z UI
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 08-07-PLAN.md — Ručný prepis kurzu, nedostupné API, Skúsiť znova
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 08-09-PLAN.md — Druhá suma na detaile a v zozname, test nemennosti, staging seed
+
 **Poznámky**: **Potrebuje /gsd-research-phase** (SDMX parametre ECB, limit rozsahu NBP, časy publikácie). NBP cez rozsah `D-10..D-1` a posledný záznam, ECB je „za 1 EUR“ (delí sa), ČNB má `amount`. Kurz sa načíta v náhľade, nie sieťovým volaním v transakcii. **Závislosť od účtovníčky:** rozhodujúci dátum kurzu (dodanie vs vystavenie) a pravidlo zaokrúhľovania, predvolená hodnota je len konfigurácia.
 
 ### Phase 9: Dobropisy
