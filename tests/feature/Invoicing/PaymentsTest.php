@@ -204,6 +204,20 @@ final class PaymentsTest extends AuthTestCase
         $this->assertSame(0, $this->rows('payments'));
     }
 
+    public function testPaymentBeforeIssueDateIs422AndFormHasMin(): void
+    {
+        $this->login();
+        $inv = $this->issuedInvoice();
+
+        $form = $this->body($this->withHeaders(['HX-Request' => 'true'])->get('/invoices/' . $inv['id'] . '/payments'));
+        $this->assertStringContainsString('min="2026-10-27"', $form);
+
+        $early = $this->pay($inv['id'], ['paid_on' => '2025-10-29']);
+        $early->assertStatus(422);
+        $this->assertStringContainsString(esc(lang('Payments.errorBeforeIssue')), $this->body($early));
+        $this->assertSame(0, $this->rows('payments'));
+    }
+
     public function testPostWithoutCsrfIs403(): void
     {
         $this->login();

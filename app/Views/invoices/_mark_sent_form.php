@@ -22,7 +22,7 @@ $describe = static fn (string $name): string => isset($errors[$name]) ? ' aria-d
 
     <div class="mb-3">
         <label class="form-label" for="ms-date"><?= esc(lang('Deliveries.labelSentDate')) ?></label>
-        <input class="form-control<?= $field('date') ?>" type="date" id="ms-date" name="date" value="<?= esc($values['date'], 'attr') ?>" max="<?= esc($today, 'attr') ?>" required<?= $describe('date') ?>>
+        <input class="form-control<?= $field('date') ?>" type="date" id="ms-date" name="date" value="<?= esc($values['date'], 'attr') ?>"<?= ($invoice['issue_date'] ?? null) !== null ? ' min="' . esc((string) $invoice['issue_date'], 'attr') . '"' : '' ?> max="<?= esc($today, 'attr') ?>" required<?= $describe('date') ?>>
         <?php if (isset($errors['date'])) : ?><div class="invalid-feedback d-block" id="ms-date-err"><?= esc($errors['date']) ?></div><?php endif ?>
     </div>
 

@@ -20,6 +20,7 @@ return [
     'errorAmount'      => 'Enter a valid amount, for example 500 or 500.50.',
     'errorFuture'      => 'The payment date cannot be in the future.',
     'errorDate'        => 'Enter a valid payment date.',
+    'errorBeforeIssue' => 'The payment date cannot be before the invoice issue date.',
     'errorNote'        => 'The note can have at most 200 characters.',
     'errorPaid'        => 'The invoice is already fully paid.',
     'errorRequest'     => 'The form is invalid or has expired. Check the data and submit again.',

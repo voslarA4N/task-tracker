@@ -117,8 +117,12 @@ final class PaymentServiceTest extends PgTestCase
         $this->assertSame('1080.00', $over->balance);
         $this->expectReject('not_found', static fn () => $s->record(999999, null, '2026-11-05', null, Uuid::v4(), null));
         $this->expectReject('note_too_long', fn () => $s->record($this->invoice, '1', '2026-11-05', str_repeat('a', 201), Uuid::v4(), null));
+        // dolna hranica = datum vystavenia 2026-10-27 (WR-06)
+        $this->expectReject('before_issue', fn () => $s->record($this->invoice, '1', '2026-10-26', null, Uuid::v4(), null));
+        $this->expectReject('before_issue', fn () => $s->record($this->invoice, '1', '2025-10-27', null, Uuid::v4(), null));
         $this->assertSame(0, $this->paymentCount());
 
+        $this->assertFalse($s->record($this->invoice, '1', '2026-10-27', null, Uuid::v4(), null)->replay);
         $s->record($this->invoice, null, '2026-11-05', null, Uuid::v4(), null);
         $this->expectReject('already_paid', fn () => $s->record($this->invoice, '1', '2026-11-05', null, Uuid::v4(), null));
     }

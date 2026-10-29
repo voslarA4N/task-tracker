@@ -79,7 +79,7 @@ final class ManualSendService
         }
 
         try {
-            return Transaction::run($this->db, fn (): int => $this->markInTransaction($invoiceId, $sentAt->format('Y-m-d H:i:sP'), $now->format('Y-m-d H:i:sP'), $note, $requestKey, $userId));
+            return Transaction::run($this->db, fn (): int => $this->markInTransaction($invoiceId, $date, $sentAt->format('Y-m-d H:i:sP'), $now->format('Y-m-d H:i:sP'), $note, $requestKey, $userId));
         } catch (DatabaseException $e) {
             if (InvoiceIssuer::isUniqueViolation($e, self::REQUEST_KEY_CONSTRAINT)) {
                 $replay = $this->replayOf($requestKey);
@@ -151,7 +151,7 @@ final class ManualSendService
         }
     }
 
-    private function markInTransaction(int $invoiceId, string $sentAt, string $createdAt, ?string $note, string $requestKey, ?int $userId): int
+    private function markInTransaction(int $invoiceId, string $date, string $sentAt, string $createdAt, ?string $note, string $requestKey, ?int $userId): int
     {
         $this->lock($invoiceId);
 
@@ -162,7 +162,10 @@ final class ManualSendService
         }
 
         // stav dorucenia je sent_at, nie status: status v2 uprednostnuje platby (paid pred sent, WR-01)
-        $row = $this->db->query('SELECT origin, type, sent_at FROM invoice_status_v WHERE id = :id:', ['id' => $invoiceId])->getRowArray();
+        $row = $this->db->query(
+            'SELECT v.origin, v.type, v.sent_at, i.issue_date FROM invoice_status_v v JOIN invoices i ON i.id = v.id WHERE v.id = :id:',
+            ['id' => $invoiceId],
+        )->getRowArray();
 
         if ($row === null) {
             throw new SendRejected('not_found');
@@ -178,6 +181,11 @@ final class ManualSendService
 
         if ($row['sent_at'] !== null) {
             throw new SendRejected('already_sent');
+        }
+
+        // odoslanie pred vystavenim nedava zmysel (WR-06)
+        if ($row['issue_date'] !== null && $date < (string) $row['issue_date']) {
+            throw new SendRejected('before_issue');
         }
 
         $id = (int) $this->db->query(

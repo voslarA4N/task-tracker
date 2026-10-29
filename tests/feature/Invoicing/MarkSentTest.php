@@ -109,6 +109,7 @@ final class MarkSentTest extends AuthTestCase
         $this->assertStringContainsString('id="work-sheet"', $sheet);
         $this->assertStringContainsString('value="2026-10-27"', $sheet);
         $this->assertStringContainsString('max="2026-10-27"', $sheet);
+        $this->assertStringContainsString('min="2026-10-27"', $sheet);
         $this->assertStringContainsString('maxlength="200"', $sheet);
         $this->assertStringContainsString('data-submit-once', $sheet);
         $this->assertNoInline($sheet);
@@ -151,6 +152,17 @@ final class MarkSentTest extends AuthTestCase
         // novy kluc na uz odoslanej fakture ostava 404
         $this->expectException(PageNotFoundException::class);
         $this->mark($inv['id']);
+    }
+
+    public function testDateBeforeIssueIs422(): void
+    {
+        $this->login();
+        $inv    = $this->issuedInvoice();
+        $result = $this->mark($inv['id'], ['date' => '2026-10-26']);
+
+        $result->assertStatus(422);
+        $this->assertStringContainsString(esc(lang('Deliveries.errorSentBeforeIssue')), $this->body($result));
+        $this->assertSame(0, $this->rows('invoice_sends'));
     }
 
     public function testFutureDateIs422AndPostWithoutCsrfIs403(): void

@@ -89,10 +89,24 @@ final class ManualSendServiceTest extends PgTestCase
     public function testPastDateUsesNoonBratislava(): void
     {
         $inv = $this->issuedInvoice();
-        $id  = $this->service()->markSent($inv['id'], '2026-10-20', null, $this->uuid4(), null);
+        Services::injectMock('clock', new FrozenClock('2026-10-30T10:00:00+01:00'));
+        $id = $this->service()->markSent($inv['id'], '2026-10-28', null, $this->uuid4(), null);
 
         $sentAt = (string) $this->owner()->query("SELECT to_char(sent_at AT TIME ZONE 'Europe/Bratislava', 'YYYY-MM-DD HH24:MI:SS') AS s FROM invoice_sends WHERE id = :i:", ['i' => $id])->getRow()->s;
-        $this->assertSame('2026-10-20 12:00:00', $sentAt);
+        $this->assertSame('2026-10-28 12:00:00', $sentAt);
+    }
+
+    public function testDateBeforeIssueDateIsRejected(): void
+    {
+        // faktura vystavena 2026-10-27 (WR-06)
+        $inv = $this->issuedInvoice();
+
+        $this->assertSame('before_issue', $this->reason(fn () => $this->service()->markSent($inv['id'], '2026-10-26', null, $this->uuid4(), null)));
+        $this->assertSame('before_issue', $this->reason(fn () => $this->service()->markSent($inv['id'], '2025-10-27', null, $this->uuid4(), null)));
+        $this->assertSame(0, $this->sendCount());
+
+        $this->service()->markSent($inv['id'], '2026-10-27', null, $this->uuid4(), null);
+        $this->assertSame(1, $this->sendCount());
     }
 
     public function testDateAndNoteValidation(): void

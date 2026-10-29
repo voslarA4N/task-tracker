@@ -25,7 +25,7 @@ $describe = static fn (string $name): string => isset($errors[$name]) ? ' aria-d
 
     <div class="mb-3">
         <label class="form-label" for="pay-paid_on"><?= esc(lang('Payments.labelDate')) ?></label>
-        <input class="form-control<?= $field('paid_on') ?>" type="date" id="pay-paid_on" name="paid_on" value="<?= esc($values['paid_on'], 'attr') ?>" max="<?= esc($today, 'attr') ?>" required<?= $describe('paid_on') ?>>
+        <input class="form-control<?= $field('paid_on') ?>" type="date" id="pay-paid_on" name="paid_on" value="<?= esc($values['paid_on'], 'attr') ?>"<?= ($invoice['issue_date'] ?? null) !== null ? ' min="' . esc((string) $invoice['issue_date'], 'attr') . '"' : '' ?> max="<?= esc($today, 'attr') ?>" required<?= $describe('paid_on') ?>>
         <?php if (isset($errors['paid_on'])) : ?><div class="invalid-feedback d-block" id="pay-paid_on-err"><?= esc($errors['paid_on']) ?></div><?php endif ?>
     </div>
 

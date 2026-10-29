@@ -20,6 +20,7 @@ return [
     'errorAmount'      => 'Zadajte platnú sumu, napríklad 500 alebo 500,50.',
     'errorFuture'      => 'Dátum úhrady nemôže byť v budúcnosti.',
     'errorDate'        => 'Zadajte platný dátum úhrady.',
+    'errorBeforeIssue' => 'Dátum úhrady nemôže byť pred dátumom vystavenia faktúry.',
     'errorNote'        => 'Poznámka môže mať najviac 200 znakov.',
     'errorPaid'        => 'Faktúra je už celá uhradená.',
     'errorRequest'     => 'Formulár je neplatný alebo expiroval. Skontrolujte údaje a odošlite znova.',

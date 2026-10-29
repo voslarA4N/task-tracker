@@ -97,6 +97,7 @@ final class InvoiceDelivery extends BaseController
 
             return match ($e->reason) {
                 'future_date'   => $this->markPanel('invoices/_mark_sent_form', 422, $invoice, $values, ['date' => lang('Deliveries.errorSentFuture')], null),
+                'before_issue'  => $this->markPanel('invoices/_mark_sent_form', 422, $invoice, $values, ['date' => lang('Deliveries.errorSentBeforeIssue')], null),
                 'note_too_long' => $this->markPanel('invoices/_mark_sent_form', 422, $invoice, $values, ['note' => lang('Deliveries.errorMarkNote')], null),
                 'already_sent'  => $this->markPanel('invoices/_mark_sent_form', 409, $invoice, $values, [], lang('Deliveries.errorAlreadySent')),
                 default         => $this->markPanel('invoices/_mark_sent_form', 422, $invoice, $values, ['date' => lang('Deliveries.errorSentDate')], null),
@@ -136,7 +137,7 @@ final class InvoiceDelivery extends BaseController
     private function markable(int $id): array
     {
         $row = db_connect()->query(
-            'SELECT i.id, i.number, i.origin, i.type, v.status, v.sent_at FROM invoices i JOIN invoice_status_v v ON v.id = i.id WHERE i.id = :id:',
+            'SELECT i.id, i.number, i.origin, i.type, i.issue_date, v.status, v.sent_at FROM invoices i JOIN invoice_status_v v ON v.id = i.id WHERE i.id = :id:',
             ['id' => $id],
         )->getRowArray();
 

@@ -208,7 +208,10 @@ final class PaymentService
             return $replay;
         }
 
-        $row = $this->db->query('SELECT origin, type, balance FROM invoice_status_v WHERE id = :id:', ['id' => $invoiceId])->getRowArray();
+        $row = $this->db->query(
+            'SELECT v.origin, v.type, v.balance, i.issue_date FROM invoice_status_v v JOIN invoices i ON i.id = v.id WHERE v.id = :id:',
+            ['id' => $invoiceId],
+        )->getRowArray();
 
         if ($row === null) {
             throw new PaymentRejected('not_found');
@@ -216,6 +219,11 @@ final class PaymentService
 
         if ($row['origin'] !== 'issued' || $row['type'] !== 'invoice') {
             throw new PaymentRejected('not_payable');
+        }
+
+        // uhrada pred vystavenim je preklep (WR-06); zaznam je insert-only, oprava by bola len storno
+        if ($row['issue_date'] !== null && $paidOn < (string) $row['issue_date']) {
+            throw new PaymentRejected('before_issue');
         }
 
         $balance = (string) $row['balance'];
