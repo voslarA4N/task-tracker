@@ -92,8 +92,8 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 
 ### Odosielanie, úhrady a upomienky (E8)
 
-- [ ] **MAIL-01**: Používateľ odošle faktúru a výkaz e-mailom klientovi (PDF prílohy) zo šablóny v jazyku klienta. Ukladá sa dátum a adresáti.
-- [ ] **MAIL-02**: Používateľ faktúru znova odošle na ľubovoľný e-mail, aj z mobilu.
+- [x] **MAIL-01**: Používateľ odošle faktúru a výkaz e-mailom klientovi (PDF prílohy) zo šablóny v jazyku klienta. Ukladá sa dátum a adresáti.
+- [x] **MAIL-02**: Používateľ faktúru znova odošle na ľubovoľný e-mail, aj z mobilu.
 - [ ] **MAIL-03**: Používateľ odošle upomienku jedným kliknutím zo šablóny s PDF faktúry. Ukladá sa dátum odoslania.
 - [ ] **MAIL-04**: Používateľ upraví šablóny e-mailov v nastaveniach pre každý jazyk.
 - [ ] **PAY-01**: Používateľ ručne označí úhradu (dátum, voliteľne suma).
@@ -251,8 +251,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REP-01 | Phase 6 | Complete |
 | REP-02 | Phase 6 | Complete |
 | SET-01 | Phase 6 | Complete |
-| MAIL-01 | Phase 7 | Pending |
-| MAIL-02 | Phase 7 | Pending |
+| MAIL-01 | Phase 7 | Complete |
+| MAIL-02 | Phase 7 | Complete |
 | MAIL-03 | Phase 7 | Pending |
 | MAIL-04 | Phase 7 | Pending |
 | PAY-01 | Phase 7 | Pending |
