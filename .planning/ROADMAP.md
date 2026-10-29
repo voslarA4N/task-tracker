@@ -357,7 +357,7 @@ Plans:
 
 - [x] 07-01-PLAN.md — Spike odosielania: AppEmail (Message-ID, BCC, obálka), AppMailer::sendMessage, overenie cez Mailpit (vlna 1)
 - [x] 07-02-PLAN.md — Šablóny e-mailov v DB so seedom pre 4 jazyky, vykreslenie cez whitelist, jednotné názvy PDF (vlna 1)
-- [ ] 07-03-PLAN.md — Infra: produkčný php do siete mail (overlay, deploy.sh, CI), dokumentácia SMTP a odosielateľov (vlna 1)
+- [x] 07-03-PLAN.md — Infra: produkčný php do siete mail (overlay, deploy.sh, CI), dokumentácia SMTP a odosielateľov (vlna 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -491,7 +491,7 @@ Plans:
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
-| 7. Doručenie, úhrady a upomienky | 2/14 | In Progress|  |
+| 7. Doručenie, úhrady a upomienky | 3/14 | In Progress|  |
 | 8. Meny a kurzy | 0/0 | Not started | - |
 | 9. Dobropisy | 0/0 | Not started | - |
 | 10. Limity obratu | 0/0 | Not started | - |
