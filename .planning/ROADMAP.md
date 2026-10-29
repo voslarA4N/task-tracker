@@ -371,7 +371,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 07-06-PLAN.md — Odoslať znova na ľubovoľnú adresu s rovnakými bajtmi, editor adresátov, história odoslaní (vlna 4)
+- [x] 07-06-PLAN.md — Odoslať znova na ľubovoľnú adresu s rovnakými bajtmi, editor adresátov, história odoslaní (vlna 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -491,7 +491,7 @@ Plans:
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
-| 7. Doručenie, úhrady a upomienky | 7/14 | In Progress|  |
+| 7. Doručenie, úhrady a upomienky | 8/14 | In Progress|  |
 | 8. Meny a kurzy | 0/0 | Not started | - |
 | 9. Dobropisy | 0/0 | Not started | - |
 | 10. Limity obratu | 0/0 | Not started | - |
