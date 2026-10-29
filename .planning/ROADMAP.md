@@ -381,7 +381,7 @@ Plans:
 **Wave 6** *(blocked on Wave 5 completion)*
 
 - [x] 07-11-PLAN.md — Ručné Označiť ako odoslanú a jeho storno (vlna 6)
-- [ ] 07-12-PLAN.md — Dashboard Po splatnosti a zoznam faktúr so stavmi a filtrom (vlna 6)
+- [x] 07-12-PLAN.md — Dashboard Po splatnosti a zoznam faktúr so stavmi a filtrom (vlna 6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
@@ -491,7 +491,7 @@ Plans:
 | 4. Úlohy, fakturačné časti a dashboard | 13/13 | Complete    | 2026-10-26 |
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
-| 7. Doručenie, úhrady a upomienky | 11/14 | In Progress|  |
+| 7. Doručenie, úhrady a upomienky | 12/14 | In Progress|  |
 | 8. Meny a kurzy | 0/0 | Not started | - |
 | 9. Dobropisy | 0/0 | Not started | - |
 | 10. Limity obratu | 0/0 | Not started | - |

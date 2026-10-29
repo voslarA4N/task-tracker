@@ -97,7 +97,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **MAIL-03**: Používateľ odošle upomienku jedným kliknutím zo šablóny s PDF faktúry. Ukladá sa dátum odoslania.
 - [x] **MAIL-04**: Používateľ upraví šablóny e-mailov v nastaveniach pre každý jazyk.
 - [x] **PAY-01**: Používateľ ručne označí úhradu (dátum, voliteľne suma).
-- [ ] **PAY-02**: Dashboard ukazuje zoznam faktúr po splatnosti.
+- [x] **PAY-02**: Dashboard ukazuje zoznam faktúr po splatnosti.
 - [x] **PAY-03** [nové, M7]: Faktúra môže mať viac úhrad. Stav „čiastočne uhradená“ a zostatok sa odvodzujú zo súčtu úhrad.
 
 ### Meny a kurzy (E9)
@@ -256,7 +256,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MAIL-03 | Phase 7 | Complete |
 | MAIL-04 | Phase 7 | Complete |
 | PAY-01 | Phase 7 | Complete |
-| PAY-02 | Phase 7 | Pending |
+| PAY-02 | Phase 7 | Complete |
 | PAY-03 | Phase 7 | Complete |
 | INV-06 | Phase 7 | Complete |
 | CUR-01 | Phase 8 | Pending |
