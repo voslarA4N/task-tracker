@@ -7,6 +7,7 @@ namespace App\Libraries\StagingSeed\Modules;
 use App\Libraries\Delivery\InvoiceMailer;
 use App\Libraries\Delivery\ManualSendService;
 use App\Libraries\Delivery\SendCommand;
+use App\Libraries\Delivery\SenderIdentity;
 use App\Libraries\Delivery\SendRejected;
 use App\Libraries\Platform\Money;
 use App\Libraries\Platform\Uuid;
@@ -38,7 +39,14 @@ final class Deliveries implements SeedModule
 
         // nic sa neodosiela, takze odosielatel z dev/test konfiguracie (inej domeny) seed nezablokuje; hodnota sa vo finally vrati
         if ($at !== false) {
-            $config->allowedFromDomains = $domains . ',' . substr((string) $config->fromEmail, $at + 1);
+            $fromDomain = mb_strtolower(substr((string) $config->fromEmail, $at + 1));
+
+            if (! in_array($fromDomain, SenderIdentity::allowedDomains(), true)) {
+                // aplikacia by s touto konfiguraciou kazde odoslanie odmietla (WR-05): seed pokracuje, ale nahlas to zapise
+                log_message('warning', sprintf('staging_seed.sender_not_allowed from_domain=%s allowed=%s (email.fromEmail mimo email.allowedFromDomains, docs/ops/server.md sekcia 20)', $fromDomain, $domains));
+            }
+
+            $config->allowedFromDomains = $domains . ',' . $fromDomain;
         }
 
         try {

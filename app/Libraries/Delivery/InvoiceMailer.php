@@ -167,7 +167,10 @@ class InvoiceMailer
 
         try {
             SenderIdentity::assertAllowed($sender['from_email']);
-        } catch (SenderRejected) {
+        } catch (SenderRejected $e) {
+            // typicky chybna konfiguracia (email.fromEmail mimo email.allowedFromDomains), WR-05
+            log_message('error', sprintf('mail.sender_not_allowed invoice=%d from=%s reason=%s allowed=%s', $cmd->invoiceId, (string) preg_replace('/[\x00-\x1F\x7F]/', '?', $sender['from_email']), $e->reason, implode(',', SenderIdentity::allowedDomains())));
+
             throw new SendRejected('sender_invalid');
         }
 

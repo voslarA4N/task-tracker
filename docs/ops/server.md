@@ -152,8 +152,11 @@ database.default.port = 5432
 
 email.protocol = smtp
 email.transport = log
-email.fromEmail = noreply@$DOMAIN
+email.fromEmail = noreply@vostack.dev
 email.fromName = 'Work Tracker'
+email.allowedFromDomains = vostack.dev
+# fromEmail musí byť presne na doméne z allowedFromDomains (porovnanie bez subdomén),
+# noreply@$DOMAIN by každé odoslanie odmietlo so sender_invalid.
 # Produkcia od fázy 7: blok email.* nahraď podľa sekcie 20.
 
 encryption.key = hex2bin:$ENC
@@ -495,7 +498,7 @@ Odosielanie faktúr a upomienok ide z produkcie cez vlastný Stalwart (D-01). Na
    ```
 
    Heslo prečítaj priamo na serveri zo `/opt/mail/secrets/noreply_password`. Nikdy ho nekopíruj do gitu ani do chatu. Certifikát sa overuje (alias `mail.vostack.dev` v sieti `mail`), overenie sa nevypína.
-3. **Staging:** žiadna zmena. `email.transport = log`, `email.allowedFromDomains = vostack.dev`, `MAIL_NETWORK` sa nenastavuje a sieť `mail` sa nepripája (D-02).
+3. **Staging:** `email.transport = log` ostáva, `MAIL_NETWORK` sa nenastavuje a sieť `mail` sa nepripája (D-02). Over v `/opt/work-tracker-staging/app.env` (aj `migrate.env`), že `email.fromEmail = noreply@vostack.dev` a `email.allowedFromDomains = vostack.dev`. Staršia šablóna sekcie 3 dávala `email.fromEmail = noreply@$DOMAIN` (`noreply@work-tracker-stage.vostack.dev`). Doména sa porovnáva presne, bez subdomén, takže s touto hodnotou by každé odoslanie aj uloženie vlastnej adresy odosielateľa skončilo chybou „Adresa odosielateľa nie je povolená“ a v logu `mail.sender_not_allowed`. Subdomény sa zámerne nepovoľujú: povolená doména má byť len tá, pre ktorú platí SPF, DKIM a DMARC.
 4. **Overenie po deployi:** `docker compose -f compose.server.yaml -f compose.server.mail.yaml exec php php -r "var_dump((bool) @fsockopen('ssl://mail.vostack.dev', 465, \$e, \$s, 5));"` vráti `bool(true)`. Potom odošli faktúru na vlastný Gmail a v „Show original“ skontroluj SPF, DKIM a DMARC PASS (DMARC je zatiaľ `p=none`, sprísnenie 2026-11-19 podľa `docs/ops/mail.md`).
 5. **Migrácie fázy 7** (`email_templates`, `invoice_sends`, `payments`, rozšírenie `invoice_status_v`, odosielateľ pri subjekte) bežia automaticky pri deployi. Existujúce faktúry ostávajú v stave Vystavená.
 6. **Rollback:** odstráň `MAIL_NETWORK` z `.env`, nastav `email.transport = log` v `app.env` a nasaď znova.

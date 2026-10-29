@@ -6,6 +6,7 @@ namespace Tests\Integration\Delivery;
 
 use App\Libraries\Delivery\SendRejected;
 use App\Libraries\Platform\FrozenClock;
+use CodeIgniter\Test\TestLogger;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\DeliveryFixtures;
@@ -204,6 +205,17 @@ final class InvoiceMailerTest extends PgTestCase
     public function testSenderDomainOutsideAllowlistIsRejected(): void
     {
         config('Email')->fromEmail = 'noreply@evil.example';
+        $inv                       = $this->issuedInvoice();
+
+        $this->assertSame('sender_invalid', $this->rejection(fn () => $this->mailer()->send($this->sendCommand($inv['id'])))->reason);
+        $this->assertSame(0, $this->emailFactoryCalls);
+        $this->assertTrue(TestLogger::didLog('error', 'mail.sender_not_allowed invoice=' . $inv['id'] . ' from=noreply@evil.example reason=domain', false));
+    }
+
+    public function testStagingSubdomainFromIsNotAllowedByParentDomain(): void
+    {
+        // presna zhoda domeny je zamerna (WR-05): staging musi mat fromEmail na povolenej domene, nie na subdomene
+        config('Email')->fromEmail = 'noreply@work-tracker-stage.vostack.dev';
         $inv                       = $this->issuedInvoice();
 
         $this->assertSame('sender_invalid', $this->rejection(fn () => $this->mailer()->send($this->sendCommand($inv['id'])))->reason);
