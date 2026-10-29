@@ -1,6 +1,6 @@
 ---
 phase: 07-doru-enie-hrady-a-upomienky
-status: pending
+status: partial
 source: 07-VALIDATION.md (Manual-Only Verifications)
 created: 2026-10-29
 ---
@@ -48,7 +48,11 @@ kroky:
 2. Porovnaj `sha256sum` prílohy so sha256 na detaile faktúry.
 3. Pošli upomienku a skontroluj, že je v Mailpit v rovnakom vlákne.
 očakávané: sha256 stiahnutej prílohy je zhodný s detailom faktúry, upomienka je v rovnakom vlákne ako pôvodné odoslanie.
-result: pending
+result: passed (2026-10-29)
+overenie: dev DB po `make reset-staging`, faktúra 202610001 (id 40); vlastník odoslal znova a poslal upomienku, kontrola cez Mailpit API.
+- Faktúra v opätovnom odoslaní, faktúra v upomienke aj uložený doklad: sha256 `c38f7731383066d2301beaf90c985a9831f4359c41d5b30cd803e1395383e37a`. Výkaz v opätovnom odoslaní aj uložený doklad: `17966c242aedf3570e817b37c3024b3240ec84d6e10fa3a1b9193fd25f84f2ed`. Upomienka má iba PDF faktúry.
+- Upomienka má `In-Reply-To` aj `References` = Message-ID pôvodného odoslania faktúry (`<887d8c85-a8dc-49ef-b6d9-799f060f9e24@work-tracker.loc>`, 2026-10-02). To pôvodné odoslanie vytvoril seed s transportom `log`, preto v Mailpit nie je a vlákno sa tam vizuálne nezobrazí; v schránke klienta sa upomienka zaradí do vlákna pôvodnej faktúry.
+- BCC neuniká: jediný riadok `Bcc:` v surovom zdroji vkladá Mailpit z obálky (prvý riadok pred `Received`), aplikácia hlavičku Bcc neposiela.
 
 ### UAT-05 Doručiteľnosť v produkcii
 requirement: MAIL-01
@@ -63,8 +67,8 @@ result: pending
 ## Súhrn
 
 total: 5
-passed: 0
-pending: 5
+passed: 1
+pending: 4
 issues: 0
 
 ## Zistenia
