@@ -49,4 +49,10 @@ return [
     'errorReport'         => 'PDF výkazu sa nepodarilo načítať. Skúste to znova; ak chyba pretrvá, obráťte sa na správcu.',
     'reportMissing'       => 'Pre túto faktúru výkaz neexistuje.',
     'labelReportTemplate' => 'Verzia šablóny výkazu',
+    'statusIssued'        => 'Vystavená',
+    'statusSent'          => 'Odoslaná',
+    'statusPartiallyPaid' => 'Čiastočne uhradená',
+    'statusPaid'          => 'Uhradená',
+    'statusOverdue'       => 'Po splatnosti · {0, plural, one{# deň} few{# dni} other{# dní}}',
+    'issuedSendHint'      => 'Faktúra {0} je vystavená. Odošlite ju klientovi.',
 ];

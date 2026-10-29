@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Delivery\InvoiceMailer;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
 
@@ -80,6 +81,14 @@ final class InvoiceQueries
 
             return $l;
         }, $lines);
+
+        $st = $this->db->query('SELECT status, sent_at, send_count, last_reminder_at FROM invoice_status_v WHERE id = :id:', ['id' => $id])->getRowArray() ?? [];
+
+        $invoice['status']           = (string) ($st['status'] ?? 'issued');
+        $invoice['sent_at']          = $st['sent_at'] ?? null;
+        $invoice['send_count']       = (int) ($st['send_count'] ?? 0);
+        $invoice['last_reminder_at'] = $st['last_reminder_at'] ?? null;
+        $invoice['history']          = $invoice['origin'] === 'external' ? [] : (new InvoiceMailer($this->db))->history($id);
 
         $store                      = new DocumentStore($this->db);
         $invoice['document']        = $store->meta($id);
