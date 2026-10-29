@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Libraries\Delivery;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Platform\Transaction;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
 use RuntimeException;
 
 /**
- * Sablony e-mailov (MAIL-04, D-14). V tomto kroku iba citanie; uprava a audit pride neskor.
+ * Sablony e-mailov (MAIL-04, D-14, D-16): citanie a uprava s revizom a auditom v jednej transakcii.
  */
 class EmailTemplateService
 {
@@ -33,14 +34,6 @@ class EmailTemplateService
     {
         $this->db    = $db ?? Database::connect();
         $this->audit = $audit ?? new AuditLogger($this->db);
-    }
-
-    /**
-     * Audit logger pre upravu sablon (pridava sa neskor).
-     */
-    protected function audit(): AuditLogger
-    {
-        return $this->audit;
     }
 
     /**
@@ -96,5 +89,68 @@ class EmailTemplateService
         });
 
         return $rows;
+    }
+
+    /**
+     * Uprava predmetu a textu (D-15, D-16). Meni sa iba subject, body, revision a updated_at.
+     *
+     * @return int nova revizia (pri nezmenenom obsahu povodna, bez zapisu)
+     *
+     * @throws EmailTemplateRejected
+     */
+    public function update(int $id, string $subject, string $body, int $expectedRevision): int
+    {
+        $subject = trim($subject);
+        $body    = str_replace(["\r\n", "\r"], "\n", $body);
+
+        if ($subject === '' || trim($body) === '') {
+            throw new EmailTemplateRejected('empty');
+        }
+
+        if (mb_strlen($subject) > self::MAX_SUBJECT || mb_strlen($body) > self::MAX_BODY) {
+            throw new EmailTemplateRejected('too_long');
+        }
+
+        if (preg_match('/[\x00-\x1F\x7F]/', $subject) === 1) {
+            throw new EmailTemplateRejected('invalid');
+        }
+
+        $unknown = TemplateRenderer::unknownPlaceholders($subject . "\n" . $body);
+
+        if ($unknown !== []) {
+            throw new EmailTemplateRejected('unknown_placeholder', $unknown[0]);
+        }
+
+        $now = service('clock')->now()->format('Y-m-d H:i:sP');
+
+        return Transaction::run($this->db, function () use ($id, $subject, $body, $expectedRevision, $now): int {
+            $row = $this->db->query('SELECT * FROM email_templates WHERE id = :id: FOR UPDATE', ['id' => $id])->getRowArray();
+
+            if ($row === null) {
+                throw new EmailTemplateRejected('not_found');
+            }
+
+            $revision = (int) $row['revision'];
+
+            if ($revision !== $expectedRevision) {
+                throw new EmailTemplateRejected('stale');
+            }
+
+            $old = ['subject' => (string) $row['subject'], 'body' => (string) $row['body'], 'revision' => $revision];
+
+            if ($old['subject'] === $subject && $old['body'] === $body) {
+                return $revision;
+            }
+
+            $new = ['subject' => $subject, 'body' => $body, 'revision' => $revision + 1];
+
+            $this->db->query(
+                'UPDATE email_templates SET subject = :s:, body = :b:, revision = revision + 1, updated_at = :now: WHERE id = :id:',
+                ['s' => $subject, 'b' => $body, 'now' => $now, 'id' => $id],
+            );
+            $this->audit->recordChange('email_template', $id, 'update', $old, $new);
+
+            return $revision + 1;
+        });
     }
 }

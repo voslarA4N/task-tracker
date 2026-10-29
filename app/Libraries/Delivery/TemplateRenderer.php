@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Libraries\Delivery;
 
+use App\Libraries\Invoicing\PdfFormat;
+
 /**
  * Vykreslenie sablon e-mailov (D-13, D-15). Iba strtr nad whitelistom placeholderov: ziadny eval, ziadny callback,
  * hodnoty sa nerozbaluju druhy raz, predmet nikdy neobsahuje CR/LF.
@@ -32,6 +34,31 @@ final class TemplateRenderer
         $textOut    = str_replace(["\r\n", "\r"], "\n", strtr($body, $map));
 
         return ['subject' => $subjectOut, 'text' => $textOut];
+    }
+
+    /**
+     * Vzorove hodnoty pre nahlad sablony (bez vazby na skutocny doklad).
+     *
+     * @return array<string, string>
+     */
+    public static function sampleValues(string $language): array
+    {
+        $total = PdfFormat::amount('1080.00', 'EUR', $language);
+
+        return [
+            'number'          => '202610001',
+            'total'           => $total,
+            'balance'         => $total,
+            'currency'        => 'EUR',
+            'issue_date'      => PdfFormat::date('2026-10-01', $language),
+            'due_date'        => PdfFormat::date('2026-10-15', $language),
+            'billing_month'   => '09/2026',
+            'variable_symbol' => '202610001',
+            'iban'            => 'SK3112000000198742637541',
+            'client_name'     => 'Vzorový klient s.r.o.',
+            'entity_name'     => 'Vzorový subjekt',
+            'days_overdue'    => '12',
+        ];
     }
 
     public static function html(string $text): string
