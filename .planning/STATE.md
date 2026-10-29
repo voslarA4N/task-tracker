@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-07-PLAN.md
-last_updated: "2026-10-29T16:59:00.861Z"
+stopped_at: Completed 07-09-PLAN.md
+last_updated: "2026-10-29T17:13:55.533Z"
 last_activity: 2026-10-29
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 85
-  completed_plans: 77
+  completed_plans: 78
   percent: 50
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 07 (doru-enie-hrady-a-upomienky) — EXECUTING
-Plan: 7 of 14
+Plan: 8 of 14
 Status: Ready to execute
 Last activity: 2026-10-29
 
@@ -120,6 +120,7 @@ Recent decisions affecting current work:
 - [Phase 04]: WR-07 (vlastník 2026-10-26, voľba C): importované riadky „Fakturované = ÁNO“ ostávajú zatiaľ nezamknuté časti; vo Phase 5 sa zamknú na historickú (externú) faktúru, aby sa nedali znova fakturovať. Historická faktúra nesmie spotrebovať číslo z radu `RRRRMM###`.
 - [Phase 06]: previewToken omits whole payment section; legal.texts.invoice_note stays in token
 - [Phase 06]: D-19 refined: ZBP number >32 chars gives no QR; missing PL NIP still qr_failed
+- [Phase 07]: Payment guard: pg_advisory_xact_lock(hashtext('payments'), invoice_id); void as insert-only payment_voids; total=0 never auto-paid
 
 ### Pending Todos
 
@@ -156,6 +157,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-29T16:59:00.856Z
-Stopped at: Completed 07-07-PLAN.md
+Last session: 2026-10-29T17:13:55.334Z
+Stopped at: Completed 07-09-PLAN.md
 Resume file: None
