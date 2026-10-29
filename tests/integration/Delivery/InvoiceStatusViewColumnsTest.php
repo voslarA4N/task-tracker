@@ -64,7 +64,7 @@ final class InvoiceStatusViewColumnsTest extends PgTestCase
         return (int) $this->owner()->query('SELECT max(id) AS id FROM invoice_sends')->getRow()->id;
     }
 
-    public function testOriginalSixteenColumnsAreKeptInOrderAndNewOnesAppended(): void
+    public function testOriginalColumnsAreKeptInOrderAndNewOnesAppended(): void
     {
         $cols = $this->owner()->query(
             "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'invoice_status_v' ORDER BY ordinal_position",
@@ -73,7 +73,8 @@ final class InvoiceStatusViewColumnsTest extends PgTestCase
 
         $this->assertSame(
             ['id', 'origin', 'type', 'number', 'external_ref', 'client_id', 'entity_id', 'billing_month', 'issue_date', 'due_date',
-                'currency', 'total', 'counts_toward_limit', 'line_count', 'created_at', 'status', 'sent_at', 'send_count', 'last_reminder_at'],
+                'currency', 'total', 'counts_toward_limit', 'line_count', 'created_at', 'status', 'sent_at', 'send_count', 'last_reminder_at',
+                'paid_amount', 'balance', 'last_paid_on'],
             array_keys($map),
         );
         $this->assertSame('bigint', $map['id']);
@@ -82,6 +83,9 @@ final class InvoiceStatusViewColumnsTest extends PgTestCase
         $this->assertSame('timestamp with time zone', $map['sent_at']);
         $this->assertSame('integer', $map['send_count']);
         $this->assertSame('timestamp with time zone', $map['last_reminder_at']);
+        $this->assertSame('numeric', $map['paid_amount']);
+        $this->assertSame('numeric', $map['balance']);
+        $this->assertSame('date', $map['last_paid_on']);
     }
 
     public function testIssuedWithoutSendsAndExternal(): void
@@ -176,6 +180,6 @@ final class InvoiceStatusViewColumnsTest extends PgTestCase
             $db->query('ROLLBACK');
         }
 
-        $this->assertSame(19, (int) $db->query("SELECT count(*) AS c FROM information_schema.columns WHERE table_name = 'invoice_status_v'")->getRow()->c);
+        $this->assertSame(22, (int) $db->query("SELECT count(*) AS c FROM information_schema.columns WHERE table_name = 'invoice_status_v'")->getRow()->c);
     }
 }
