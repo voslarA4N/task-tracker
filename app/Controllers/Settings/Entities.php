@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Settings;
 
 use App\Controllers\BaseController;
+use App\Libraries\Delivery\SenderIdentity;
 use App\Libraries\Master\BankAccountService;
 use App\Libraries\Master\BillingMode;
 use App\Libraries\Master\Country;
@@ -173,7 +174,7 @@ final class Entities extends BaseController
             'name_internal' => (string) $entity['name_internal'],
             'active_from'   => (string) $entity['active_from'],
             'active_to'     => $entity['active_to'] === null ? '' : (string) $entity['active_to'],
-        ], []));
+        ] + $this->senderValues($id), []));
     }
 
     public function update(int $id): ResponseInterface
@@ -183,26 +184,35 @@ final class Entities extends BaseController
 
         $entity = $this->entityOr404($id);
         $values = EntityInput::baseUpdateFromPost($request);
+        $sender = EntityInput::senderFromPost($request);
 
         if (EntityInput::hasImmutableKeys($request)) {
             return $this->response
                 ->setStatusCode(422)
-                ->setBody(view('settings/entities/edit', $this->editData($entity, $values, ['_form' => lang('Entities.errorImmutable')])));
+                ->setBody(view('settings/entities/edit', $this->editData($entity, $values + $sender, ['_form' => lang('Entities.errorImmutable')])));
         }
 
         $history = (new EntityVersionResolver())->history($id, service('clock')->today());
         $first   = $history === [] ? (string) $entity['active_from'] : (string) $history[array_key_last($history)]['valid_from'];
         $errors  = EntityInput::validateBaseUpdate($values, $first, service('clock')->today());
 
+        if ($sender !== []) {
+            $errors += EntityInput::validateSender($sender);
+        }
+
         if ($errors !== []) {
             return $this->response
                 ->setStatusCode(422)
-                ->setBody(view('settings/entities/edit', $this->editData($entity, $values, $errors)));
+                ->setBody(view('settings/entities/edit', $this->editData($entity, $values + $sender, $errors)));
         }
 
-        (new EntityService())->updateBase($id, $values);
+        $baseUnchanged = $values['name_internal'] === (string) $entity['name_internal']
+            && $values['active_from'] === (string) $entity['active_from']
+            && $values['active_to'] === ($entity['active_to'] === null ? '' : (string) $entity['active_to']);
 
-        session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang('Entities.saved')]);
+        (new EntityService())->updateBase($id, $values + $sender);
+
+        session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang($baseUnchanged && $sender !== [] ? 'Entities.senderSaved' : 'Entities.saved')]);
 
         return redirect()->to('/settings/entities/' . $id);
     }
@@ -282,12 +292,32 @@ final class Entities extends BaseController
      */
     private function editData(array $entity, array $values, array $errors): array
     {
+        $values += $this->senderValues((int) $entity['id']);
+
         return [
-            'title'   => lang('Entities.editTitle'),
-            'entity'  => $entity,
-            'country' => Country::from((string) $entity['country']),
-            'values'  => $values,
-            'errors'  => $errors,
+            'allowedDomains' => SenderIdentity::allowedDomains(),
+            'title'          => lang('Entities.editTitle'),
+            'entity'         => $entity,
+            'country'        => Country::from((string) $entity['country']),
+            'values'         => $values,
+            'errors'         => $errors,
+        ];
+    }
+
+    /**
+     * Vyriesene hodnoty odosielatela na predvyplnenie karty (D-27).
+     *
+     * @return array<string, string>
+     */
+    private function senderValues(int $id): array
+    {
+        $r = (new SenderIdentity())->resolve($id);
+
+        return [
+            'mail_from_name'  => $r['from_name'],
+            'mail_from_email' => $r['from_email'],
+            'mail_reply_to'   => (string) $r['reply_to'],
+            'mail_bcc'        => implode("\n", $r['bcc']),
         ];
     }
 

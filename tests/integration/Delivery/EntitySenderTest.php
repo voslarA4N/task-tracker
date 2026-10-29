@@ -6,6 +6,7 @@ namespace Tests\Integration\Delivery;
 
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Delivery\SenderIdentity;
+use App\Libraries\Delivery\SendRejected;
 use App\Libraries\Master\EntityService;
 use App\Libraries\Platform\FrozenClock;
 use Config\Services;
@@ -136,7 +137,7 @@ final class EntitySenderTest extends PgTestCase
         try {
             $this->mailer()->send($this->sendCommand($inv['id']));
             $this->fail('Expected SendRejected');
-        } catch (\App\Libraries\Delivery\SendRejected $e) {
+        } catch (SendRejected $e) {
             $this->assertSame('sender_invalid', $e->reason);
         } finally {
             config('Email')->allowedFromDomains = $original;

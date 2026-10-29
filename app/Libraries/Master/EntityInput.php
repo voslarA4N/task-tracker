@@ -41,11 +41,18 @@ final class EntityInput
     }
 
     /**
+     * Prazdne pole, ak POST neobsahuje ziadne pole odosielatela (stare formulare ich nemenia).
+     *
      * @return array<string, string>
      */
     public static function senderFromPost(IncomingRequest $request): array
     {
-        $out = [];
+        $out  = [];
+        $post = $request->getPost();
+
+        if (array_intersect(self::SENDER_FIELDS, array_keys($post)) === []) {
+            return [];
+        }
 
         foreach (self::SENDER_FIELDS as $field) {
             $value       = $request->getPost($field);

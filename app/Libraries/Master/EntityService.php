@@ -169,7 +169,7 @@ final class EntityService
      * Úprava interného názvu, obdobia pôsobenia a (voliteľne) identity odosielateľa (D-01, D-27).
      * Zapisuje len stĺpce z grantu, audit v tej istej transakcii.
      *
-     * @param array<string, string|list<string>|null> $values BASE_UPDATE_FIELDS a voliteľne SENDER_FIELDS (mail_bcc ako zoznam alebo text)
+     * @param array<string, list<string>|string|null> $values BASE_UPDATE_FIELDS a voliteľne SENDER_FIELDS (mail_bcc ako zoznam alebo text)
      *
      * @return bool true, ak nastala zmena
      */
@@ -181,7 +181,7 @@ final class EntityService
             'active_to'     => ($values['active_to'] ?? '') === '' ? null : (string) $values['active_to'],
         ];
         $withSender = array_key_exists('mail_from_name', $values) || array_key_exists('mail_from_email', $values)
-            || array_key_exists('mail_reply_to', $values) || array_key_exists('mail_bcc', $values);
+                                                                  || array_key_exists('mail_reply_to', $values) || array_key_exists('mail_bcc', $values);
 
         if ($withSender) {
             foreach (['mail_from_name', 'mail_from_email', 'mail_reply_to'] as $key) {
@@ -190,7 +190,7 @@ final class EntityService
             }
 
             $bcc = $values['mail_bcc'] ?? '';
-            $bcc = is_array($bcc) ? array_values($bcc) : CcEmails::parse((string) $bcc);
+            $bcc = is_array($bcc) ? $bcc : CcEmails::parse((string) $bcc);
 
             $new['mail_bcc'] = $bcc;
         }

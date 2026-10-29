@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Delivery;
 
 use App\Libraries\Delivery\SenderIdentity;
-use App\Libraries\Master\EntityInput;
 use App\Libraries\Delivery\SenderRejected;
+use App\Libraries\Master\EntityInput;
 use CodeIgniter\Test\CIUnitTestCase;
 
 /**
