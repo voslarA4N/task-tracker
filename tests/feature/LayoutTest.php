@@ -70,7 +70,7 @@ final class LayoutTest extends AuthTestCase
         $this->assertSame(0, $cfg['historyCacheSize']);
 
         $codes = array_column($cfg['responseHandling'], 'code');
-        $this->assertSame(['204', '[23]..', '422', '403', '409', '[45]..', '...'], $codes);
+        $this->assertSame(['204', '[23]..', '422', '403', '409', '502', '[45]..', '...'], $codes);
 
         $by = array_column($cfg['responseHandling'], null, 'code');
         $this->assertTrue($by['422']['swap']);

@@ -8,3 +8,5 @@ $routes->get('invoices', 'Invoices::index');
 $routes->get('invoices/(:num)', 'Invoices::show/$1');
 $routes->get('invoices/(:num)/pdf', 'Invoices::pdf/$1');
 $routes->get('invoices/(:num)/report', 'Invoices::report/$1');
+$routes->get('invoices/(:num)/send', 'InvoiceDelivery::sendForm/$1');
+$routes->post('invoices/(:num)/send', 'InvoiceDelivery::send/$1');
