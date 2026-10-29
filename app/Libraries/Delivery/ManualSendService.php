@@ -161,7 +161,8 @@ final class ManualSendService
             return $replay;
         }
 
-        $row = $this->db->query('SELECT origin, type, status FROM invoice_status_v WHERE id = :id:', ['id' => $invoiceId])->getRowArray();
+        // stav dorucenia je sent_at, nie status: status v2 uprednostnuje platby (paid pred sent, WR-01)
+        $row = $this->db->query('SELECT origin, type, sent_at FROM invoice_status_v WHERE id = :id:', ['id' => $invoiceId])->getRowArray();
 
         if ($row === null) {
             throw new SendRejected('not_found');
@@ -175,7 +176,7 @@ final class ManualSendService
             throw new SendRejected('not_sendable');
         }
 
-        if ($row['status'] !== 'issued') {
+        if ($row['sent_at'] !== null) {
             throw new SendRejected('already_sent');
         }
 

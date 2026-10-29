@@ -131,11 +131,12 @@ final class InvoiceDelivery extends BaseController
     private function markable(int $id): array
     {
         $row = db_connect()->query(
-            'SELECT i.id, i.number, i.origin, i.type, v.status FROM invoices i JOIN invoice_status_v v ON v.id = i.id WHERE i.id = :id:',
+            'SELECT i.id, i.number, i.origin, i.type, v.status, v.sent_at FROM invoices i JOIN invoice_status_v v ON v.id = i.id WHERE i.id = :id:',
             ['id' => $id],
         )->getRowArray();
 
-        if ($row === null || $row['origin'] !== 'issued' || $row['type'] !== 'invoice' || $row['status'] !== 'issued') {
+        // stav dorucenia podla sent_at (zaplatena, ale neodoslana faktura sa da oznacit, WR-01)
+        if ($row === null || $row['origin'] !== 'issued' || $row['type'] !== 'invoice' || $row['sent_at'] !== null) {
             throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
         }
 

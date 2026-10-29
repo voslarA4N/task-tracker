@@ -7,6 +7,8 @@ namespace Tests\Integration\Delivery;
 use App\Libraries\Delivery\ManualSendService;
 use App\Libraries\Delivery\SendRejected;
 use App\Libraries\Platform\FrozenClock;
+use App\Libraries\Platform\Uuid;
+use App\Libraries\Receivables\PaymentService;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\DeliveryFixtures;
@@ -125,6 +127,19 @@ final class ManualSendServiceTest extends PgTestCase
         $this->mailer()->send($this->sendCommand($inv['id']));
 
         $this->assertSame('sent', $this->invoiceStatus($inv['id']));
+        $this->assertSame('already_sent', $this->reason(fn () => $this->service()->markSent($inv['id'], '2026-10-27', null, $this->uuid4(), null)));
+    }
+
+    public function testPaidBeforeSentCanBeMarkedOnce(): void
+    {
+        $inv = $this->issuedInvoice();
+        (new PaymentService($this->rw()))->record($inv['id'], '100', '2026-10-27', null, Uuid::v4(), null);
+        $this->assertSame('partially_paid', $this->invoiceStatus($inv['id']));
+
+        // stav dorucenia je sent_at, nie status (WR-01)
+        $this->service()->markSent($inv['id'], '2026-10-27', null, $this->uuid4(), null);
+        $this->assertSame(1, $this->sendCount());
+        $this->assertSame('partially_paid', $this->invoiceStatus($inv['id']));
         $this->assertSame('already_sent', $this->reason(fn () => $this->service()->markSent($inv['id'], '2026-10-27', null, $this->uuid4(), null)));
     }
 

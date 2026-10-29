@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Invoicing;
 
 use App\Libraries\Platform\FrozenClock;
+use App\Libraries\Platform\Uuid;
+use App\Libraries\Receivables\PaymentService;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
@@ -190,5 +192,30 @@ final class MarkSentTest extends AuthTestCase
 
         $this->expectException(PageNotFoundException::class);
         $this->withHeaders(['HX-Request' => 'true'])->get('/sends/' . $sid . '/void');
+    }
+
+    public function testInvoicePaidBeforeSendingCanStillBeSentAndMarked(): void
+    {
+        $this->login();
+        $inv = $this->issuedInvoice();
+        (new PaymentService())->record($inv['id'], null, '2026-10-27', null, Uuid::v4(), null);
+        $this->assertSame('paid', $this->owner()->query('SELECT status FROM invoice_status_v WHERE id = ?', [$inv['id']])->getRow()->status);
+
+        // Dorucenie sa riadi sent_at, nie status (WR-01): Send aj rucne oznacenie ostavaju, Resend nie
+        $detail = $this->body($this->get('/invoices/' . $inv['id']));
+        $this->assertStringContainsString('/invoices/' . $inv['id'] . '/send"', $detail);
+        $this->assertStringContainsString('/invoices/' . $inv['id'] . '/mark-sent', $detail);
+        $this->assertStringNotContainsString('/invoices/' . $inv['id'] . '/resend', $detail);
+
+        $this->withHeaders(['HX-Request' => 'true'])->get('/invoices/' . $inv['id'] . '/mark-sent')->assertStatus(200);
+        $this->mark($inv['id'])->assertStatus(200);
+        $this->assertSame(1, $this->rows('invoice_sends'));
+        $this->assertNotNull($this->owner()->query('SELECT sent_at FROM invoice_status_v WHERE id = ?', [$inv['id']])->getRow()->sent_at);
+
+        $this->withSession();
+        $after = $this->body($this->get('/invoices/' . $inv['id']));
+        $this->assertStringNotContainsString('/invoices/' . $inv['id'] . '/send"', $after);
+        $this->assertStringNotContainsString('/invoices/' . $inv['id'] . '/mark-sent', $after);
+        $this->assertStringContainsString('/invoices/' . $inv['id'] . '/resend', $after);
     }
 }

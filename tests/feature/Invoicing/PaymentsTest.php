@@ -301,7 +301,9 @@ final class PaymentsTest extends AuthTestCase
 
         $this->pay($inv['id']);
         $paid = $this->detail($inv['id']);
-        $this->assertStringContainsString('/resend', $paid);
+        // zaplatena, ale neodoslana: stale ponuka Odoslat, nie Znova poslat (WR-01)
+        $this->assertStringContainsString('href="/invoices/' . $inv['id'] . '/send"', $paid);
+        $this->assertStringNotContainsString('/resend', $paid);
         $this->assertStringNotContainsString('href="/invoices/' . $inv['id'] . '/payments"', $paid);
     }
 
