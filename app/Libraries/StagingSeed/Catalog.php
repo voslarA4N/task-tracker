@@ -159,7 +159,7 @@ final class Catalog
             'name'          => 'Alpenmechanik AG', 'address_line1' => 'Bahnhofstrasse 70', 'postal_code' => '8001', 'city' => 'Zürich',
             'country'       => 'CH', 'identifier_type' => 'other', 'identifier_value' => 'CHE-123.456.789', 'vat_id' => null,
             'invoice_email' => 'accounting@alpenmechanik.example', 'billing_mode' => 'non_eu', 'doc_language' => 'en',
-            'portal_name'   => null, 'portal_url_template' => null, 'lang' => 'en',
+            'portal_name'   => null, 'portal_url_template' => null, 'lang' => 'en', 'currency' => 'EUR',
         ],
     ];
 
