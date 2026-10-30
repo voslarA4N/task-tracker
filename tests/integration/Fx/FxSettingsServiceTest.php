@@ -11,6 +11,8 @@ use App\Libraries\Platform\FrozenClock;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\FxFixtures;
+use Tests\Support\IssueFixtures;
+use Tests\Support\MasterFixtures;
 use Tests\Support\PgTestCase;
 
 /**
@@ -20,6 +22,8 @@ use Tests\Support\PgTestCase;
 final class FxSettingsServiceTest extends PgTestCase
 {
     use FxFixtures;
+    use IssueFixtures;
+    use MasterFixtures;
 
     protected function setUp(): void
     {

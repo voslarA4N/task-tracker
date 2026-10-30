@@ -25,6 +25,7 @@ $noteKeys = ['vat_note' => 'LegalTexts.keyVatNote', 'invoice_note' => 'LegalText
 <p class="mb-2"><a href="/more"><?= esc(lang('LegalTexts.backToMore')) ?></a></p>
 <h1 class="h4 mb-1"><?= esc(lang('LegalTexts.title')) ?></h1>
 <p class="small text-body-secondary"><?= esc(lang('LegalTexts.intro')) ?></p>
+<p class="small"><a href="/settings/fx"><?= esc(lang('FxSettings.navTitle')) ?></a></p>
 <p><a class="btn btn-primary btn-touch w-100 w-md-auto" href="/settings/legal-texts/new"><?= esc(lang('LegalTexts.addVariant')) ?></a></p>
 
 <?php if ($provisionalCount > 0) : ?>

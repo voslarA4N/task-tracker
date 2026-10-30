@@ -70,7 +70,7 @@ class FxSettingsService
     /**
      * Zapis nastavenia vsetkych krajin naraz (D-05, CUR-05). Zmenene riadky dostanu novu reviziu a audit v tej istej transakcii.
      *
-     * @param array<string, array{source: string, date_basis: string, day_rule: string, revision: int}> $rows
+     * @param array<string, array<string, mixed>> $rows
      *
      * @return bool true ak sa nieco zmenilo
      *
@@ -82,7 +82,7 @@ class FxSettingsService
         $allowed = ['source' => self::SOURCES, 'date_basis' => self::DATE_BASES, 'day_rule' => self::DAY_RULES];
 
         foreach (self::COUNTRIES as $country) {
-            if (! isset($rows[$country]) || ! is_array($rows[$country])) {
+            if (! isset($rows[$country])) {
                 $invalid[] = $country;
 
                 continue;
