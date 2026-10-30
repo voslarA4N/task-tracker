@@ -130,17 +130,20 @@ final class SampleSnapshots
     }
 
     /**
-     * PL subjekt (PLN) a faktura v EUR s blokom fx (NBP 4.4090 z 27. 10. 2026 alebo rucny kurz).
+     * PL subjekt (PLN) a faktura v EUR s blokom fx (NBP 4.4090 z 27. 10. 2026 alebo rucny kurz), dodanie 28. 10. 2026.
      *
      * @return array<string, mixed>
      */
     public static function fxInvoice(bool $manual = false, string $language = 'sk'): array
     {
         $base = self::invoice('pl', $language);
+        // dodanie 28. 10. => bound 27. 10. (previous_business_day); kurz ani rucny datum nesmu byt po bound (WR-02)
         $quote = $manual
-            ? FxQuote::manual('4.3000', '2026-10-28', 'multiply', 'delivery_date', 'previous_business_day', '2026-10-26', 'PLN', 'EUR', null)
-            : FxQuote::fromRate(new RateQuote('NBP', 'EUR', '4.4090', 1, '2026-10-27', '209/A/NBP/2026', 'multiply'), 'delivery_date', 'previous_business_day', '2026-10-26', 'PLN', 'EUR');
+            ? FxQuote::manual('4.3000', '2026-10-27', 'multiply', 'delivery_date', 'previous_business_day', '2026-10-28', 'PLN', 'EUR', null)
+            : FxQuote::fromRate(new RateQuote('NBP', 'EUR', '4.4090', 1, '2026-10-27', '209/A/NBP/2026', 'multiply'), 'delivery_date', 'previous_business_day', '2026-10-28', 'PLN', 'EUR');
 
+        $base['issue_date']          = '2026-10-28';
+        $base['delivery_date']       = '2026-10-28';
         $base['bank']['currency']    = 'EUR';
         $base['currency']            = 'EUR';
         $base['rounding']['fx']      = 'invoice_total_half_up_2';

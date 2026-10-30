@@ -166,6 +166,8 @@ final class InvoiceDraftService
                     $anchorChanged = false;
 
                     if ($ctx !== null && $fxInput !== null && $fxInput->mode === 'manual') {
+                        $fxInput = $fxInput->withBound($ctx->bound);
+
                         if ($fxInput->anchor !== null && $fxInput->anchor !== $ctx->anchor) {
                             // kotviaci datum sa zmenil: rucny kurz sa zahodi (D-08)
                             $anchorChanged = true;
@@ -175,7 +177,7 @@ final class InvoiceDraftService
                             $fxFieldErrors = $fxInput->errors;
                             $fxFields      = ['fx_mode' => 'manual', 'fx_rate' => $fxInput->rawRate, 'fx_date' => $fxInput->rawDate, 'fx_anchor' => $ctx->anchor];
                         } else {
-                            $quote    = FxQuote::manual((string) $fxInput->rate, $fxInput->date ?? $ctx->bound, $ctx->direction, $ctx->dateBasis, $ctx->dayRule, $ctx->anchor, $ctx->entityCurrency, $ctx->invoiceCurrency, $fetched?->toRateQuote());
+                            $quote    = FxQuote::manual((string) $fxInput->rate, $fxInput->dateFor($ctx->bound, service('clock')->today()), $ctx->direction, $ctx->dateBasis, $ctx->dayRule, $ctx->anchor, $ctx->entityCurrency, $ctx->invoiceCurrency, $fetched?->toRateQuote());
                             $state    = 'manual';
                             $fxFields = ['fx_mode' => 'manual', 'fx_rate' => (string) $fxInput->rate, 'fx_date' => $fxInput->date ?? '', 'fx_anchor' => $ctx->anchor];
                         }

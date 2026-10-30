@@ -44,4 +44,5 @@ return [
     'errDate'            => 'Zadajte platný dátum platnosti kurzu.',
     'errDateFuture'      => 'Dátum platnosti kurzu nemôže byť v budúcnosti.',
     'errDateOld'         => 'Dátum platnosti kurzu nemôže byť starší ako rok.',
+    'errDateAfterBound'  => 'Dátum platnosti kurzu nemôže byť neskôr ako {0}, deň, ku ktorému sa kurz hľadá.',
 ];

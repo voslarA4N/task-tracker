@@ -15,7 +15,7 @@ final readonly class FxInput
     public const MAX_LEN = 32;
 
     /**
-     * @param array<string, string> $errors fx_rate|fx_date => invalid|decimals|date_invalid|date_future|date_old
+     * @param array<string, string> $errors fx_rate|fx_date => invalid|decimals|date_invalid|date_future|date_old|date_after_bound
      */
     private function __construct(
         public string $mode,
@@ -77,6 +77,28 @@ final readonly class FxInput
         }
 
         return new self('manual', $rate, $date, $anchor, $retry, $errors, $rawRate, $rawDate);
+    }
+
+    /**
+     * Den platnosti rucneho kurzu nesmie byt neskor ako horna hranica hladania (bound): kurz platny az po dni,
+     * ku ktoremu sa hlada, nemoze byt spravnym kurzom pre doklad (WR-02). Bound je znamy az z kontextu, preto
+     * sa kontroluje tu, nie vo fromArray().
+     */
+    public function withBound(string $bound): self
+    {
+        if ($this->mode !== 'manual' || $this->date === null || $this->date <= $bound) {
+            return $this;
+        }
+
+        return new self($this->mode, $this->rate, null, $this->anchor, $this->retry, $this->errors + ['fx_date' => 'date_after_bound'], $this->rawRate, $this->rawDate);
+    }
+
+    /**
+     * Den platnosti rucneho kurzu: zadany, inak bound, ale nikdy nie v buducnosti (pri bound > dnes, WR-01).
+     */
+    public function dateFor(string $bound, string $today): string
+    {
+        return $this->date ?? min($bound, $today);
     }
 
     public function isManual(): bool

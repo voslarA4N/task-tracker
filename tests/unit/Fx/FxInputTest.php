@@ -79,6 +79,32 @@ final class FxInputTest extends CIUnitTestCase
         $this->assertSame([], $mk('')->errors);
     }
 
+    public function testWithBoundRejectsDateAfterBound(): void
+    {
+        $in = FxInput::fromArray(['fx_mode' => 'manual', 'fx_rate' => '4.3', 'fx_date' => '2026-10-29'], '2026-10-30');
+
+        $this->assertSame($in, $in->withBound('2026-10-29'));
+        $late = $in->withBound('2026-10-28');
+        $this->assertSame(['fx_date' => 'date_after_bound'], $late->errors);
+        $this->assertNull($late->date);
+        $this->assertFalse($late->isManual());
+        $this->assertSame('2026-10-29', $late->rawDate);
+
+        $auto = FxInput::auto();
+        $this->assertSame($auto, $auto->withBound('2026-10-01'));
+    }
+
+    public function testDateForDefaultsToBoundButNeverFuture(): void
+    {
+        $in = FxInput::fromArray(['fx_mode' => 'manual', 'fx_rate' => '4.3'], '2026-10-30');
+
+        $this->assertSame('2026-10-20', $in->dateFor('2026-10-20', '2026-10-30'));
+        $this->assertSame('2026-10-30', $in->dateFor('2026-11-05', '2026-10-30'));
+
+        $dated = FxInput::fromArray(['fx_mode' => 'manual', 'fx_rate' => '4.3', 'fx_date' => '2026-10-15'], '2026-10-30');
+        $this->assertSame('2026-10-15', $dated->dateFor('2026-10-20', '2026-10-30'));
+    }
+
     public function testNonManualModeIsAuto(): void
     {
         $i = FxInput::fromArray(['fx_mode' => 'x', 'fx_rate' => '0', 'fx_retry' => '1', 'fx_anchor' => '2026-10-31'], self::TODAY);

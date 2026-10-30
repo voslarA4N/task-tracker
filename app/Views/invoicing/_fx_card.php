@@ -37,6 +37,7 @@ $errText    = static fn (string $code): string => match ($code) {
     'date_invalid' => lang('Currency.errDate'),
     'date_future' => lang('Currency.errDateFuture'),
     'date_old'    => lang('Currency.errDateOld'),
+    'date_after_bound' => lang('Currency.errDateAfterBound', [Invoicing::dateLabel($bound)]),
     default       => lang('Currency.errRate'),
 };
 $include    = '#inv-client, #inv-month, #inv-entity, #inv-issue-date, #inv-delivery-date, #inv-due-date, #inv-payment-method, #inv-payment-note, #inv-payment-note-dirty';

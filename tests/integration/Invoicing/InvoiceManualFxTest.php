@@ -121,6 +121,42 @@ final class InvoiceManualFxTest extends PgTestCase
         $this->assertSame([], $this->http->calls);
     }
 
+    public function testManualDateAfterBoundIsRejectedInDraftAndIssue(): void
+    {
+        // WR-02: dodanie 2026-10-20 => bound 2026-10-19; rucny kurz platny 2026-10-29 nemoze byt kurzom pre toto dodanie
+        $this->http->respond('https://api.nbp.pl/api/exchangerates/rates/a/eur/2026-10-09/2026-10-19/?format=json', 503, '');
+        $s  = $this->fxPlEurSetup();
+        $in = FxInput::fromArray(['fx_mode' => 'manual', 'fx_rate' => '4.3', 'fx_date' => '2026-10-29', 'fx_anchor' => '2026-10-20'], '2026-10-30');
+        $d  = $this->draft($s, $in, '2026-10-20');
+
+        $this->assertSame('invalid', $d->fx['state']);
+        $this->assertSame(['fx_date' => 'date_after_bound'], $d->fx['errors']);
+        $this->assertFalse($d->canIssue);
+
+        $ok = FxInput::fromArray(['fx_mode' => 'manual', 'fx_rate' => '4.3', 'fx_date' => '2026-10-19', 'fx_anchor' => '2026-10-20'], '2026-10-30');
+        $this->assertSame('manual', $this->draft($s, $ok, '2026-10-20')->fx['state']);
+
+        try {
+            $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts'], ['issueDate' => '2026-10-30', 'deliveryDate' => '2026-10-20', 'previewToken' => str_repeat('a', 64), 'fx' => $in]));
+            $this->fail('Expected IssueRejected');
+        } catch (IssueRejected $e) {
+            $this->assertSame('fx_invalid', $e->reason);
+        }
+
+        $this->assertSame(0, $this->written());
+    }
+
+    public function testManualDefaultDateNeverInFuture(): void
+    {
+        // bound v buducnosti (WR-01): rucny kurz bez datumu plati ku dnesku, nie k buducemu bound
+        $s = $this->fxPlEurSetup();
+        $d = $this->draft($s, $this->manual('4.3', '', '2026-11-06'), '2026-11-06');
+
+        $this->assertSame('manual', $d->fx['state']);
+        $this->assertSame('2026-10-30', $d->fx['quote']['valid_for']);
+        $this->assertSame([], $this->http->calls);
+    }
+
     public function testOutageStillAllowsManualRate(): void
     {
         $this->http->respond(self::URL_1030, 503, '');

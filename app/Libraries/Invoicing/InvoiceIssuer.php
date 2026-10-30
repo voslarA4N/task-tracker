@@ -174,11 +174,13 @@ final class InvoiceIssuer
 
         // rucny kurz (D-11): povodny stiahnuty kurz sa iba precita z cache, siet sa nevola
         if ($ctx !== null && $cmd->fx !== null && $cmd->fx->mode === 'manual') {
-            if ($cmd->fx->errors !== [] || $cmd->fx->rate === null) {
+            $manual = $cmd->fx->withBound($ctx->bound);
+
+            if ($manual->errors !== [] || $manual->rate === null) {
                 throw new IssueRejected('fx_invalid');
             }
 
-            $quote = FxQuote::manual($cmd->fx->rate, $cmd->fx->date ?? $ctx->bound, $ctx->direction, $ctx->dateBasis, $ctx->dayRule, $ctx->anchor, $ctx->entityCurrency, $ctx->invoiceCurrency, $quote?->toRateQuote());
+            $quote = FxQuote::manual($manual->rate, $manual->dateFor($ctx->bound, service('clock')->today()), $ctx->direction, $ctx->dateBasis, $ctx->dayRule, $ctx->anchor, $ctx->entityCurrency, $ctx->invoiceCurrency, $quote?->toRateQuote());
         }
 
         $this->guards->assertFx($entity, $invoiceCcy, $quote);

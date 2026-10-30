@@ -44,4 +44,5 @@ return [
     'errDate'            => 'Enter a valid rate date.',
     'errDateFuture'      => 'The rate date cannot be in the future.',
     'errDateOld'         => 'The rate date cannot be older than a year.',
+    'errDateAfterBound'  => 'The rate date cannot be later than {0}, the day the rate is looked up for.',
 ];
