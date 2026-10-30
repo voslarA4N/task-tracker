@@ -50,6 +50,17 @@ final class IssueInputTest extends CIUnitTestCase
         ];
     }
 
+    public function testToCommandCarriesManualFx(): void
+    {
+        $cmd = IssueInput::toCommand($this->valid() + ['fx_mode' => 'manual', 'fx_rate' => '4,3', 'fx_date' => ''], 1);
+
+        $this->assertNotNull($cmd->fx);
+        $this->assertSame('manual', $cmd->fx->mode);
+        $this->assertSame('4.3', $cmd->fx->rate);
+        $this->assertTrue($cmd->fx->isManual());
+        $this->assertFalse($cmd->fx->retry);
+    }
+
     public function testValidInputHasNoErrors(): void
     {
         $this->assertSame([], IssueInput::validate($this->valid()));

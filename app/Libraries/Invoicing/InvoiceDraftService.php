@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Fx\FxInput;
+use App\Libraries\Fx\FxQuote;
 use App\Libraries\Fx\FxService;
 use App\Libraries\Fx\RateNotFound;
 use App\Libraries\Fx\RateUnavailable;
@@ -75,7 +77,7 @@ final class InvoiceDraftService
         return BillingMonth::previous(BillingMonth::current());
     }
 
-    public function draft(int $clientId, string $month, ?int $entityId, ?string $issueDate, ?string $deliveryDate, ?string $dueDate, ?string $paymentMethod = null, ?string $paymentNote = null, bool $noteDirty = false, bool $fxRetry = false): Draft
+    public function draft(int $clientId, string $month, ?int $entityId, ?string $issueDate, ?string $deliveryDate, ?string $dueDate, ?string $paymentMethod = null, ?string $paymentNote = null, bool $noteDirty = false, bool $fxRetry = false, ?FxInput $fxInput = null): Draft
     {
         $clock = service('clock');
 
@@ -139,17 +141,39 @@ final class InvoiceDraftService
                 if ($entity !== null) {
                     $invoiceCcy = $this->guards->partsCurrency($parts);
                     $ctx        = $this->fx->context((string) $entity['country'], trim((string) $entity['currency']), $invoiceCcy, $issue, $delivery);
+                    $fetched    = null;
                     $quote      = null;
                     $state      = 'ok';
 
                     // siet sa vola iba tu (nahlad, D-07), nikdy v transakcii vystavenia
                     if ($ctx !== null) {
                         try {
-                            $quote = $this->fx->resolve($ctx, $fxRetry);
+                            $fetched = $this->fx->resolve($ctx, $fxRetry || ($fxInput !== null && $fxInput->retry));
+                            $quote   = $fetched;
                         } catch (UnsupportedPair) {
                             $state = 'unsupported';
                         } catch (RateNotFound|RateUnavailable) {
                             $state = 'unavailable';
+                        }
+                    }
+
+                    $fxFields      = ['fx_mode' => '', 'fx_rate' => '', 'fx_date' => '', 'fx_anchor' => ''];
+                    $fxFieldErrors = [];
+                    $anchorChanged = false;
+
+                    if ($ctx !== null && $fxInput !== null && $fxInput->mode === 'manual') {
+                        if ($fxInput->anchor !== null && $fxInput->anchor !== $ctx->anchor) {
+                            // kotviaci datum sa zmenil: rucny kurz sa zahodi (D-08)
+                            $anchorChanged = true;
+                        } elseif ($fxInput->errors !== []) {
+                            $state         = 'invalid';
+                            $quote         = null;
+                            $fxFieldErrors = $fxInput->errors;
+                            $fxFields      = ['fx_mode' => 'manual', 'fx_rate' => $fxInput->rawRate, 'fx_date' => $fxInput->rawDate, 'fx_anchor' => $ctx->anchor];
+                        } else {
+                            $quote = FxQuote::manual((string) $fxInput->rate, $fxInput->date ?? $ctx->bound, $ctx->direction, $ctx->dateBasis, $ctx->dayRule, $ctx->anchor, $ctx->entityCurrency, $ctx->invoiceCurrency, $fetched?->toRateQuote());
+                            $state    = 'manual';
+                            $fxFields = ['fx_mode' => 'manual', 'fx_rate' => (string) $fxInput->rate, 'fx_date' => $fxInput->date ?? '', 'fx_anchor' => $ctx->anchor];
                         }
                     }
 
@@ -165,6 +189,10 @@ final class InvoiceDraftService
                             'entity_currency'  => $ctx->entityCurrency,
                             'invoice_currency' => $ctx->invoiceCurrency,
                             'quote'            => null,
+                            'fields'           => $fxFields,
+                            'errors'           => $fxFieldErrors,
+                            'fetched'          => $fetched?->core(),
+                            'anchor_changed'   => $anchorChanged,
                         ];
                     }
 
@@ -182,11 +210,11 @@ final class InvoiceDraftService
 
                     if ($fxState !== null) {
                         $fxState['state'] = $state;
-                        $fxState['quote'] = $state === 'ok' ? $snapshot['fx'] : null;
+                        $fxState['quote'] = in_array($state, ['ok', 'manual'], true) ? $snapshot['fx'] : null;
                     }
 
                     // bez kurzu sa kopia zostavi iba na zobrazenie, vystavit sa nedá (token ostane null)
-                    $token = $ctx !== null && $state !== 'ok' ? null : InvoiceCalculator::previewToken($snapshot);
+                    $token = $ctx !== null && ! in_array($state, ['ok', 'manual'], true) ? null : InvoiceCalculator::previewToken($snapshot);
                 }
             } catch (IssueRejected $e) {
                 $errors[] = ['reason' => $e->reason, 'context' => $e->context];

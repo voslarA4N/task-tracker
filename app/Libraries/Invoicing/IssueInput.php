@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Fx\FxInput;
 use CodeIgniter\HTTP\IncomingRequest;
 
 /**
@@ -12,11 +13,11 @@ use CodeIgniter\HTTP\IncomingRequest;
  */
 final class IssueInput
 {
-    public const SCALARS    = ['client_id', 'billing_month', 'entity_id', 'preview_token', 'request_key', 'issue_date', 'delivery_date', 'due_date', 'confirm_backdate', 'payment_method', 'payment_note'];
+    public const SCALARS    = ['client_id', 'billing_month', 'entity_id', 'preview_token', 'request_key', 'issue_date', 'delivery_date', 'due_date', 'confirm_backdate', 'payment_method', 'payment_note', 'fx_mode', 'fx_rate', 'fx_date'];
     private const MAX_PARTS = 500;
 
     /**
-     * @return array{client_id: string, billing_month: string, entity_id: string, preview_token: string, request_key: string, issue_date: string, delivery_date: string, due_date: string, confirm_backdate: string, payment_method: string, payment_note: string, part_ids: list<string>}
+     * @return array{client_id: string, billing_month: string, entity_id: string, preview_token: string, request_key: string, issue_date: string, delivery_date: string, due_date: string, confirm_backdate: string, payment_method: string, payment_note: string, fx_mode: string, fx_rate: string, fx_date: string, part_ids: list<string>}
      */
     public static function fromPost(IncomingRequest $request): array
     {
@@ -143,6 +144,7 @@ final class IssueInput
             $userId,
             $str('payment_method') === '' ? 'transfer' : $str('payment_method'),
             self::normalizeNote($str('payment_note')),
+            FxInput::fromArray($v, service('clock')->today()),
         );
     }
 

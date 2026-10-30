@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries\Invoicing;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Fx\FxQuote;
 use App\Libraries\Fx\FxService;
 use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use App\Libraries\Platform\DbBool;
@@ -170,6 +171,16 @@ final class InvoiceIssuer
         $invoiceCcy = $this->guards->partsCurrency($parts);
         $ctx        = $this->fx->context((string) $entity['country'], trim((string) $entity['currency']), $invoiceCcy, $cmd->issueDate, $cmd->deliveryDate);
         $quote      = $ctx === null ? null : $this->fx->cached($ctx);
+
+        // rucny kurz (D-11): povodny stiahnuty kurz sa iba precita z cache, siet sa nevola
+        if ($ctx !== null && $cmd->fx !== null && $cmd->fx->mode === 'manual') {
+            if ($cmd->fx->errors !== [] || $cmd->fx->rate === null) {
+                throw new IssueRejected('fx_invalid');
+            }
+
+            $quote = FxQuote::manual($cmd->fx->rate, $cmd->fx->date ?? $ctx->bound, $ctx->direction, $ctx->dateBasis, $ctx->dayRule, $ctx->anchor, $ctx->entityCurrency, $ctx->invoiceCurrency, $quote?->toRateQuote());
+        }
+
         $this->guards->assertFx($entity, $invoiceCcy, $quote);
 
         $snapshot = $this->builder->build($client, $entity, $parts, $cmd->billingMonth, $cmd->issueDate, $cmd->deliveryDate, $cmd->dueDate, null, $cmd->paymentMethod, $cmd->paymentNote, $quote);
@@ -263,6 +274,7 @@ final class InvoiceIssuer
             'fx_source'        => $snapshot['fx']['source'] ?? null,
             'fx_rate'          => $snapshot['fx']['rate_display'] ?? null,
             'fx_manual'        => $snapshot['fx']['manual'] ?? null,
+            'fx_fetched_rate'  => $snapshot['fx']['fetched']['rate'] ?? null,
             'total_entity_ccy' => $snapshot['fx']['total'] ?? $snapshot['totals']['total'],
         ]);
 

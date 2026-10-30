@@ -95,6 +95,7 @@ trait IssueFixtures
             $overrides['userId'] ?? null,
             (string) ($overrides['paymentMethod'] ?? 'transfer'),
             $overrides['paymentNote'] ?? null,
+            $overrides['fx'] ?? null,
         );
     }
 
