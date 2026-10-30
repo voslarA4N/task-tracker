@@ -58,7 +58,7 @@ final class EcbRateProviderTest extends CIUnitTestCase
                 (new EcbRateProvider($http))->latestOnOrBefore('PLN', '2026-10-29');
                 $this->fail('Expected RateNotFound');
             } catch (RateNotFound) {
-                $this->assertTrue(true);
+                $this->addToAssertionCount(1);
             }
         }
     }

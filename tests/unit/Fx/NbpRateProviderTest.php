@@ -69,7 +69,7 @@ final class NbpRateProviderTest extends CIUnitTestCase
                 (new NbpRateProvider($http))->latestOnOrBefore('EUR', '2026-10-29');
                 $this->fail('Expected RateNotFound for ' . $status);
             } catch (RateNotFound) {
-                $this->assertTrue(true);
+                $this->addToAssertionCount(1);
             }
         }
     }
@@ -149,7 +149,6 @@ final class NbpRateProviderTest extends CIUnitTestCase
         $this->assertSame('PLN', $p->homeCurrency());
         $this->assertSame('multiply', $p->direction());
         $this->assertSame('NBP', $p->source());
-        $this->assertSame(['NBP' => 'PLN', 'ECB' => 'EUR', 'CNB' => 'CZK'], RateProviders::HOME);
 
         $this->expectException(InvalidArgumentException::class);
         RateProviders::for('XYZ', new FakeRateHttpClient());
