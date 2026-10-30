@@ -416,7 +416,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 08-03-PLAN.md — TDD: poskytovatelia NBP, ECB, ČNB na fixtúrach + HTTP klient
+- [x] 08-03-PLAN.md — TDD: poskytovatelia NBP, ECB, ČNB na fixtúrach + HTTP klient
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -527,7 +527,7 @@ Plans:
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
-| 8. Meny a kurzy | 2/10 | In Progress|  |
+| 8. Meny a kurzy | 3/10 | In Progress|  |
 | 9. Dobropisy | 0/0 | Not started | - |
 | 10. Limity obratu | 0/0 | Not started | - |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
