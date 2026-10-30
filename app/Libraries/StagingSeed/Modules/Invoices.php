@@ -155,7 +155,7 @@ final class Invoices implements SeedModule
                 'c' => $fx->invoiceCurrency,
                 'b' => $fx->bound,
                 'r' => self::RATE,
-                't' => '209/A/NBP/2026',
+                't' => $fx->source === 'NBP' ? '209/A/NBP/2026' : null,
                 'd' => $fx->direction,
                 'f' => service('clock')->now()->format('Y-m-d H:i:sP'),
             ],
