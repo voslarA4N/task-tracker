@@ -7,7 +7,6 @@ namespace Tests\Unit\Fx;
 use App\Libraries\Fx\CurlRateHttpClient;
 use App\Libraries\Fx\RateUnavailable;
 use CodeIgniter\HTTP\Exceptions\HTTPException;
-use CodeIgniter\HTTP\Response;
 use CodeIgniter\HTTP\URI;
 use CodeIgniter\Test\CIUnitTestCase;
 use CodeIgniter\Test\Mock\MockCURLRequest;
@@ -69,6 +68,6 @@ final class CurlRateHttpClientTest extends CIUnitTestCase
     {
         $config = config(App::class);
 
-        return new MockCURLRequest($config, new URI(), new Response($config), []);
+        return new MockCURLRequest($config, new URI(), single_service('response'), []);
     }
 }

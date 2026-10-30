@@ -6,7 +6,6 @@ namespace App\Libraries\Fx;
 
 use CodeIgniter\HTTP\CURLRequest;
 use CodeIgniter\HTTP\Exceptions\HTTPException;
-use LogicException;
 
 /**
  * Produkcny HTTP klient: CURLRequest s kratkymi timeoutmi, bez vynimky pri 4xx/5xx, s overenim certifikatu (T-08-09, T-08-12).
@@ -46,12 +45,6 @@ final class CurlRateHttpClient implements RateHttpClient
     private function newClient(): CURLRequest
     {
         // single_service: novy nezdielany CURLRequest (zdielany by si pamatal stav medzi volaniami).
-        $client = single_service('curlrequest', self::OPTIONS);
-
-        if (! $client instanceof CURLRequest) {
-            throw new LogicException('curlrequest service must return CURLRequest.');
-        }
-
-        return $client;
+        return single_service('curlrequest', self::OPTIONS);
     }
 }
