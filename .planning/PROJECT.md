@@ -28,12 +28,13 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 - [x] Doručenie a pohľadávky (E8): odoslanie faktúry s výkazom z uložených PDF cez vlastný SMTP (Stalwart, `noreply@vostack.dev`), opätovné odoslanie na ľubovoľnú adresu, ručné označenie odoslania so stornom, odosielateľ / Reply-To / skrytá kópia pri subjekte, editovateľné šablóny e-mailov pre každý jazyk, úhrady (aj čiastočné) so stornom, stavy Čiastočne uhradená / Uhradená, prehľad Po splatnosti na dashboarde, upomienka jedným klepnutím vo vlákne pôvodnej faktúry. Validated in Phase 7: Doručenie, úhrady a upomienky (UAT staging + dev Mailpit + produkcia 2026-10-30, SPF/DKIM/DMARC PASS)
 
+- [x] Meny a kurzy (E9): zoznam mien v tabuľke `currencies` (EUR, PLN, CZK, rozšíriteľný bez zmeny modelu), kurz podľa krajiny subjektu (PL: NBP, SK: ECB, CZ: ČNB) s nastaviteľným dátumom a zdrojom (Nastavenia → Kurz mien, auditované), cache kurzov, ručné zadanie pri výpadku API alebo budúcom dátume dodania, kurz, zdroj, dátum a suma v mene subjektu v kópii údajov, na PDF, v detaile aj zozname faktúr. Vystavenie číta kurz len z cache (bez siete). Validated in Phase 8: Meny a kurzy (2026-10-30; prehľady a limity v mene subjektu, CUR-04, prídu vo Phase 10)
+
 ### Active
 
 Úplný zoznam s ID je v `.planning/REQUIREMENTS.md` (prevzatý z `docs/PRD.md`, epiky E1–E12, priority P0 + P1 + P2).
 
 - [ ] Faktúry (E6): zvyšok – dobropis (Phase 9). Jadro hotové vo Phase 5, PDF podľa právneho profilu vo Phase 6
-- [ ] Meny EUR, PLN, CZK, kurzy z NBP / ECB / ČNB s ručným prepisom a uložením do kópie údajov (E9)
 - [ ] Dashboard (mobil, variant B), mesačné a ročné prehľady, export CSV a XLSX, limity obratu nastaviteľné v aplikácii (E10)
 - [ ] Denník zmien s prehliadaním a filtrami (E11)
 - [ ] Responzívne UI (Bootstrap 5.3), jazyky SK, PL, CZ, EN, PWA, import z Excelu, editovateľné zákonné texty (E12)
@@ -120,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-30 after Phase 7 (Doručenie, úhrady a upomienky)*
+*Last updated: 2026-10-30 after Phase 8 (Meny a kurzy)*
