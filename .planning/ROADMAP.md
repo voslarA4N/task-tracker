@@ -424,7 +424,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 08-05-PLAN.md — Snapshot fx (schema 3), popisky v 4 jazykoch, PDF inv-2 s oboma sumami
+- [x] 08-05-PLAN.md — Snapshot fx (schema 3), popisky v 4 jazykoch, PDF inv-2 s oboma sumami
 - [ ] 08-08-PLAN.md — Nastavenia → Kurz mien podľa krajiny (CUR-05) s auditom
 
 **Wave 5** *(blocked on Wave 4 completion)*
@@ -527,7 +527,7 @@ Plans:
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
-| 8. Meny a kurzy | 4/10 | In Progress|  |
+| 8. Meny a kurzy | 5/10 | In Progress|  |
 | 9. Dobropisy | 0/0 | Not started | - |
 | 10. Limity obratu | 0/0 | Not started | - |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |

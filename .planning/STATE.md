@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 8 UI-SPEC approved
-last_updated: "2026-10-30T10:23:13.709Z"
+last_updated: "2026-10-30T10:30:33.425Z"
 last_activity: 2026-10-30
 progress:
   total_phases: 12
   completed_phases: 7
   total_plans: 95
-  completed_plans: 89
+  completed_plans: 90
   percent: 58
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 08 (meny-a-kurzy) — EXECUTING
-Plan: 5 of 10
+Plan: 6 of 10
 Status: Ready to execute
 Last activity: 2026-10-30
 
@@ -125,6 +125,7 @@ Recent decisions affecting current work:
 - [Phase 06]: D-19 refined: ZBP number >32 chars gives no QR; missing PL NIP still qr_failed
 - [Phase 07]: Payment guard: pg_advisory_xact_lock(hashtext('payments'), invoice_id); void as insert-only payment_voids; total=0 never auto-paid
 - [Phase 07]: Reminder threads via latest non-voided invoice/resend message_id; no_balance guard server-side
+- [Phase ?]: 08-05: fx block built via public static SnapshotBuilder::fxBlock; PDF fx rows in totals table with td.fxnote
 
 ### Pending Todos
 
@@ -161,6 +162,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-30T10:01:59.995Z
+Last session: 2026-10-30T10:30:30.569Z
 Stopped at: Phase 8 UI-SPEC approved
 Resume file: None
