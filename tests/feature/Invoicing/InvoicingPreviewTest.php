@@ -393,7 +393,7 @@ final class InvoicingPreviewTest extends AuthTestCase
         $html = $this->body($this->fragment('/fragments/invoice-preview?client=' . $s['client'] . '&month=2026-10&payment_method=cash&payment_note=Stara&payment_note_dirty=1'));
 
         $this->assertSame(1, preg_match('/<div id="inv-preview" hx-get="([^"]*)" hx-trigger="allocationChanged from:body"[^>]*>/', $html, $m));
-        $this->assertStringContainsString('hx-include="#inv-payment-method, #inv-payment-note, #inv-payment-note-dirty"', $m[0]);
+        $this->assertStringContainsString('hx-include="#inv-payment-method, #inv-payment-note, #inv-payment-note-dirty, #inv-fx-mode', $m[0]);
         $refresh = html_entity_decode($m[1], ENT_QUOTES);
         $this->assertStringNotContainsString('payment_', $refresh);
 

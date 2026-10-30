@@ -171,7 +171,7 @@ final class InvoiceDraftService
                             $fxFieldErrors = $fxInput->errors;
                             $fxFields      = ['fx_mode' => 'manual', 'fx_rate' => $fxInput->rawRate, 'fx_date' => $fxInput->rawDate, 'fx_anchor' => $ctx->anchor];
                         } else {
-                            $quote = FxQuote::manual((string) $fxInput->rate, $fxInput->date ?? $ctx->bound, $ctx->direction, $ctx->dateBasis, $ctx->dayRule, $ctx->anchor, $ctx->entityCurrency, $ctx->invoiceCurrency, $fetched?->toRateQuote());
+                            $quote    = FxQuote::manual((string) $fxInput->rate, $fxInput->date ?? $ctx->bound, $ctx->direction, $ctx->dateBasis, $ctx->dayRule, $ctx->anchor, $ctx->entityCurrency, $ctx->invoiceCurrency, $fetched?->toRateQuote());
                             $state    = 'manual';
                             $fxFields = ['fx_mode' => 'manual', 'fx_rate' => (string) $fxInput->rate, 'fx_date' => $fxInput->date ?? '', 'fx_anchor' => $ctx->anchor];
                         }

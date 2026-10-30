@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries\Fx;
 
-use DateTimeImmutable;
+use InvalidArgumentException;
 
 /**
  * Whitelist a validacia rucneho kurzu z formulara (D-13). Iba retazce a bcmath, nikdy float.
@@ -67,7 +67,7 @@ final readonly class FxInput
                 $errors['fx_date'] = 'date_future';
                 $date              = null;
             } else {
-                $min = (new DateTimeImmutable($today))->modify('-1 year')->format('Y-m-d');
+                $min = service('clock')->parseDate($today)?->modify('-1 year')->format('Y-m-d') ?? $today;
 
                 if ($date < $min) {
                     $errors['fx_date'] = 'date_old';
@@ -105,7 +105,10 @@ final readonly class FxInput
 
         $r = (string) preg_replace('/^0+(?=\d)/', '', $r);
 
-        if (preg_match('/^\d{1,10}(\.\d{1,8})?$/D', $r) !== 1 || bccomp($r, '0', 8) <= 0) {
+        try {
+            // jedno miesto pravdy pre rozsah a kladnost kurzu (regex + bcmath vo FxConverter)
+            FxConverter::assertRate($r, 1, 'multiply');
+        } catch (InvalidArgumentException) {
             $errors['fx_rate'] = 'invalid';
 
             return null;
@@ -120,8 +123,6 @@ final readonly class FxInput
             return null;
         }
 
-        $d = DateTimeImmutable::createFromFormat('!Y-m-d', $s);
-
-        return $d !== false && $d->format('Y-m-d') === $s ? $s : null;
+        return service('clock')->parseDate($s) === null ? null : $s;
     }
 }

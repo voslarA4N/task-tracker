@@ -17,10 +17,19 @@ final class FxInputTest extends CIUnitTestCase
 {
     private const TODAY = '2026-10-30';
 
+    #[DataProvider('provideValidRates')]
+    public function testValidRates(string $in, string $out): void
+    {
+        $i = FxInput::fromArray(['fx_mode' => 'manual', 'fx_rate' => $in], self::TODAY);
+        $this->assertSame($out, $i->rate);
+        $this->assertSame([], $i->errors);
+        $this->assertTrue($i->isManual());
+    }
+
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function validRates(): iterable
+    public static function provideValidRates(): iterable
     {
         yield 'comma' => ['4,3', '4.3'];
 
@@ -33,32 +42,23 @@ final class FxInputTest extends CIUnitTestCase
         yield 'spaces' => ['  4.3 ', '4.3'];
     }
 
-    #[DataProvider('validRates')]
-    public function testValidRates(string $in, string $out): void
-    {
-        $i = FxInput::fromArray(['fx_mode' => 'manual', 'fx_rate' => $in], self::TODAY);
-        $this->assertSame($out, $i->rate);
-        $this->assertSame([], $i->errors);
-        $this->assertTrue($i->isManual());
-    }
-
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function invalidRates(): iterable
-    {
-        foreach (['0', '-1', 'abc', '1e3', '4.3.1', '', '0.0', '4.', '12345678901'] as $v) {
-            yield 'v ' . $v => [$v];
-        }
-    }
-
-    #[DataProvider('invalidRates')]
+    #[DataProvider('provideInvalidRates')]
     public function testInvalidRates(string $in): void
     {
         $i = FxInput::fromArray(['fx_mode' => 'manual', 'fx_rate' => $in], self::TODAY);
         $this->assertSame('invalid', $i->errors['fx_rate']);
         $this->assertNull($i->rate);
         $this->assertFalse($i->isManual());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideInvalidRates(): iterable
+    {
+        foreach (['0', '-1', 'abc', '1e3', '4.3.1', '', '0.0', '4.', '12345678901'] as $v) {
+            yield 'v ' . $v => [$v];
+        }
     }
 
     public function testTooManyDecimals(): void

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\Fx\FxInput;
 use App\Libraries\Invoicing\Draft;
 use App\Libraries\Invoicing\InvoiceDraftService;
 use App\Libraries\Invoicing\IssueCommand;
@@ -113,6 +114,9 @@ final class Invoicing extends BaseController
             'payment_method'     => in_array($input['payment_method'], IssueCommand::PAYMENT_METHODS, true) ? $input['payment_method'] : 'transfer',
             'payment_note'       => $input['payment_note'],
             'payment_note_dirty' => '1',
+            'fx_mode'            => $input['fx_mode'],
+            'fx_rate'            => $input['fx_rate'],
+            'fx_date'            => $input['fx_date'],
         ];
 
         if ($errors !== []) {
@@ -380,7 +384,13 @@ final class Invoicing extends BaseController
                 $raw['payment_method'] ?? null,
                 $raw['payment_note'] ?? null,
                 ($raw['payment_note_dirty'] ?? '0') === '1',
+                false,
+                FxInput::fromArray($raw, service('clock')->today()),
             );
+
+            if (($draft->fx['state'] ?? null) === 'invalid') {
+                $forcedStatus = 422;
+            }
 
             $data['draft']      = $draft;
             $data['entities']   = $draft->entities;

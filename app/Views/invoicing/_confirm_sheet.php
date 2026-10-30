@@ -37,10 +37,16 @@ $methodLabels = [
             <dd><?= esc(Invoicing::dateLabel($draft->issueDate)) ?></dd>
             <dt><?= esc(lang('Invoicing.labelTotal')) ?></dt>
             <dd class="fw-semibold tabular-nums"><?= esc($total) ?></dd>
-            <?php if (($draft->fx['state'] ?? null) === 'ok' && is_array($draft->fx['quote'])) : ?>
+            <?php if (in_array($draft->fx['state'] ?? null, ['ok', 'manual'], true) && is_array($draft->fx['quote'])) : ?>
                 <?php $q = $draft->fx['quote']; ?>
                 <dt><?= esc(lang('Currency.confirmRate')) ?></dt>
-                <dd><?= esc(lang('Currency.confirmRateSource', [FxFormat::expression($q, service('request')->getLocale()), FxFormat::sourceLabel((string) $q['source']), Invoicing::dateLabel((string) $q['valid_for'])])) ?></dd>
+                <dd>
+                <?php if (($draft->fx['state'] ?? null) === 'manual') : ?>
+                    <?= esc(FxFormat::expression($q, service('request')->getLocale()) . ' (' . lang('Currency.manualMeta', [Invoicing::dateLabel((string) $q['valid_for'])]) . ')') ?>
+                    <span class="fx-badge badge text-bg-warning"><?= esc(lang('Currency.badgeManual')) ?></span>
+                <?php else : ?>
+                    <?= esc(lang('Currency.confirmRateSource', [FxFormat::expression($q, service('request')->getLocale()), FxFormat::sourceLabel((string) $q['source']), Invoicing::dateLabel((string) $q['valid_for'])])) ?>
+                <?php endif ?></dd>
                 <dt><?= esc(lang('Currency.totalIn', [$q['entity_currency']])) ?></dt>
                 <dd class="fw-semibold tabular-nums"><?= esc(MoneyFormat::format((string) $q['total'], (string) $q['entity_currency'])) ?></dd>
             <?php endif ?>

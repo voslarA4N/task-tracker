@@ -6,6 +6,7 @@ namespace Tests\Integration\Invoicing;
 
 use App\Libraries\Fx\FxInput;
 use App\Libraries\Fx\FxService;
+use App\Libraries\Invoicing\Draft;
 use App\Libraries\Invoicing\InvoiceDraftService;
 use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Platform\FrozenClock;
@@ -62,7 +63,7 @@ final class InvoiceManualFxTest extends PgTestCase
     /**
      * @param array{entity: int, client: int, tasks: list<int>, parts: list<int>, series: int} $s
      */
-    private function draft(array $s, ?FxInput $in, string $delivery = '2026-10-31'): \App\Libraries\Invoicing\Draft
+    private function draft(array $s, ?FxInput $in, string $delivery = '2026-10-31'): Draft
     {
         return $this->service()->draft($s['client'], '2026-10', $s['entity'], '2026-10-30', $delivery, '2026-11-10', null, null, false, false, $in);
     }

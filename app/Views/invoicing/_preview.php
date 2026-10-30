@@ -23,9 +23,9 @@ use App\Libraries\Platform\MoneyFormat;
  */
 $empty = lang('Tasks.empty');
 $query = http_build_query($values);
-$dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-preview" hx-trigger="change" hx-target="#inv-preview" hx-swap="outerHTML" hx-push-url="true" hx-indicator="#inv-fx-loading" hx-disabled-elt="#inv-issue-btn" hx-include="' . $include . ', #inv-payment-method, #inv-payment-note, #inv-payment-note-dirty"';
+$dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-preview" hx-trigger="change" hx-target="#inv-preview" hx-swap="outerHTML" hx-push-url="true" hx-indicator="#inv-fx-loading" hx-disabled-elt="#inv-issue-btn" hx-include="' . $include . ', #inv-payment-method, #inv-payment-note, #inv-payment-note-dirty, #inv-fx-mode, #inv-fx-rate, #inv-fx-date, #inv-fx-anchor"';
 ?>
-<div id="inv-preview"<?php if (($refresh ?? '') !== '') : ?> hx-get="<?= htmlspecialchars($refresh, ENT_QUOTES, 'UTF-8') ?>" hx-trigger="allocationChanged from:body" hx-target="#inv-preview" hx-swap="outerHTML" hx-include="#inv-payment-method, #inv-payment-note, #inv-payment-note-dirty"<?php endif ?>>
+<div id="inv-preview"<?php if (($refresh ?? '') !== '') : ?> hx-get="<?= htmlspecialchars($refresh, ENT_QUOTES, 'UTF-8') ?>" hx-trigger="allocationChanged from:body" hx-target="#inv-preview" hx-swap="outerHTML" hx-include="#inv-payment-method, #inv-payment-note, #inv-payment-note-dirty, #inv-fx-mode, #inv-fx-rate, #inv-fx-date, #inv-fx-anchor"<?php endif ?>>
 <?php if (is_array($notice ?? null)) : ?>
     <div class="alert alert-success" role="alert" aria-live="polite"><?= esc((string) ($notice['message'] ?? '')) ?></div>
 <?php endif ?>
@@ -127,7 +127,7 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
                 <div aria-live="polite">
                     <div class="small text-body-secondary"><?= esc(lang('Invoicing.labelTotal')) ?></div>
                     <div class="inv-summary-total"><?= esc($fmt($draft->total)) ?></div>
-                    <?php if ($draft->fx !== null && $fxState !== 'ok') : ?>
+                    <?php if ($draft->fx !== null && ! in_array($fxState, ['ok', 'manual'], true)) : ?>
                         <div class="small text-body-secondary"><?= esc(lang('Currency.pendingTotal', [$draft->fx['entity_currency']])) ?></div>
                     <?php endif ?>
                     <div class="small text-body-secondary"><?= esc(lang('Invoicing.countLine', [$draft->lineCount, Hours::format($draft->hours, $locale)])) ?></div>
