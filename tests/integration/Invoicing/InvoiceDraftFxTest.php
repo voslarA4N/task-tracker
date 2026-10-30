@@ -60,6 +60,17 @@ final class InvoiceDraftFxTest extends PgTestCase
         return new InvoiceDraftService($this->rw(), new FxService($this->rw(), $this->http));
     }
 
+    public function testFutureBoundShowsNotYetPublishedWithoutHttp(): void
+    {
+        $s = $this->fxPlEurSetup();
+        $d = $this->service()->draft($s['client'], '2026-10', $s['entity'], '2026-10-27', '2026-11-05', '2026-11-15');
+
+        $this->assertSame('unavailable', $d->fx['state']);
+        $this->assertTrue($d->fx['future_bound']);
+        $this->assertFalse($d->canIssue);
+        $this->assertSame([], $this->http->calls);
+    }
+
     public function testOkStateCachesAndTokenMatchesIssuer(): void
     {
         $s = $this->fxPlEurSetup();

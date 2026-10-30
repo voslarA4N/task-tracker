@@ -59,8 +59,8 @@ final class CurlRateHttpClientTest extends CIUnitTestCase
         $result = (new CurlRateHttpClient($mock))->get('https://api.nbp.pl/x');
 
         $this->assertSame(200, $result->status);
-        $this->assertEquals(3000, $mock->curl_options[CURLOPT_TIMEOUT_MS]);
-        $this->assertEquals(2000, $mock->curl_options[CURLOPT_CONNECTTIMEOUT_MS]);
+        $this->assertSame(3000, (int) $mock->curl_options[CURLOPT_TIMEOUT_MS]);
+        $this->assertSame(2000, (int) $mock->curl_options[CURLOPT_CONNECTTIMEOUT_MS]);
         $this->assertSame(2, $mock->curl_options[CURLOPT_SSL_VERIFYHOST]);
         $this->assertTrue($mock->curl_options[CURLOPT_SSL_VERIFYPEER]);
     }

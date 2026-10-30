@@ -17,6 +17,7 @@ return [
     'loading'            => 'Načítavam kurz…',
     'unavailableTitle'   => 'Kurz zatiaľ nie je k dispozícii',
     'unavailableBody'    => 'Kurz {0} sa nepodarilo načítať. Zadajte kurz ručne alebo skúste načítanie znova.',
+    'futureBoundBody'    => 'Deň pre kurz ({1}) je v budúcnosti, {0} ho ešte nezverejnil. Zadajte kurz ručne alebo zmeňte dátum.',
     'unsupportedBody'    => 'Zdroj {0} neposkytuje kurz pre túto dvojicu mien ({1} a {2}). Kurz bude vždy nutné zadať ručne.',
     'pendingTotal'       => 'Spolu v {0}: bude známe po zadaní kurzu.',
     'issueHintRetry'     => 'Vystavenie vyžaduje kurz. Zadajte ho ručne alebo skúste načítanie znova.',

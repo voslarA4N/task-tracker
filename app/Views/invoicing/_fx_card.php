@@ -42,6 +42,7 @@ $errText    = static fn (string $code): string => match ($code) {
 $include    = '#inv-client, #inv-month, #inv-entity, #inv-issue-date, #inv-delivery-date, #inv-due-date, #inv-payment-method, #inv-payment-note, #inv-payment-note-dirty';
 $getAttrs   = 'hx-get="/fragments/invoice-preview" hx-target="#inv-preview" hx-swap="outerHTML" hx-push-url="false" hx-disabled-elt="this"';
 $manualOpen = in_array($state, ['manual', 'invalid', 'unavailable', 'unsupported'], true);
+$notYet     = (bool) ($fx['future_bound'] ?? false);
 ?>
 <section class="app-card fx-card mb-3" role="region" aria-labelledby="inv-fx-title">
     <h2 class="h5" id="inv-fx-title"><?= esc(lang('Currency.cardTitle')) ?></h2>
@@ -87,12 +88,14 @@ $manualOpen = in_array($state, ['manual', 'invalid', 'unavailable', 'unsupported
         <p class="h5 mb-1"><?= esc(lang('Currency.unavailableTitle')) ?></p>
     <?php if ($state === 'unsupported') : ?>
         <p class="small mb-0"><?= esc(lang('Currency.unsupportedBody', [$source, $entityCcy, $fx['invoice_currency']])) ?></p>
+    <?php elseif ($notYet) : ?>
+        <p class="small mb-0"><?= esc(lang('Currency.futureBoundBody', [$source, Invoicing::dateLabel($bound)])) ?></p>
     <?php else : ?>
         <p class="small mb-0"><?= esc(lang('Currency.unavailableBody', [$source])) ?></p>
     <?php endif ?>
     </div>
 <?php endif ?>
-<?php if ($state === 'unavailable') : ?>
+<?php if ($state === 'unavailable' && ! $notYet) : ?>
     <button type="button" class="btn btn-outline-secondary btn-touch w-100 mb-2" <?= $getAttrs ?> hx-vals='{"fx_retry":"1"}' hx-include="<?= esc($include, 'attr') ?>"><span class="spinner-border spinner-border-sm htmx-indicator" aria-hidden="true"></span> <?= esc(lang('Currency.retry')) ?></button>
 <?php endif ?>
     <details class="fx-manual"<?= $manualOpen ? ' open' : '' ?>>

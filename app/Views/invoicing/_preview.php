@@ -234,7 +234,7 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
             <div class="alert alert-warning" role="alert" hidden x-bind:hidden="fresh"><?= esc(lang('Invoicing.previewStaleRefresh')) ?></div>
 
             <?php if ($draft->fx !== null && in_array($fxState, ['unavailable', 'unsupported'], true)) : ?>
-                <p class="small text-body-secondary"><?= esc(lang($fxState === 'unsupported' ? 'Currency.issueHintManual' : 'Currency.issueHintRetry')) ?></p>
+                <p class="small text-body-secondary"><?= esc(lang($fxState === 'unsupported' || ($draft->fx['future_bound'] ?? false) ? 'Currency.issueHintManual' : 'Currency.issueHintRetry')) ?></p>
             <?php endif ?>
             <div class="master-sticky-actions d-flex align-items-center justify-content-between gap-2">
                 <div class="fw-semibold tabular-nums"><?= esc(lang('Invoicing.labelTotal')) ?> <?= esc($fmt($draft->total)) ?></div>

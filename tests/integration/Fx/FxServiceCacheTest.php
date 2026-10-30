@@ -174,6 +174,41 @@ final class FxServiceCacheTest extends PgTestCase
         $this->assertSame(1, $this->calls());
     }
 
+    public function testFutureBoundIsNotYetPublishedForEverySource(): void
+    {
+        // WR-01: bound v buducnosti sa nehlada pri ziadnom zdroji, bez siete a bez cache
+        $this->seedRate('NBP', 'EUR', '2026-11-04', '2026-10-29', '4.3951', 1, '211/A/NBP/2026');
+        $this->owner()->query("UPDATE fx_country_settings SET day_rule = 'on_or_before' WHERE country = 'SK'");
+        $contexts = [
+            $this->fx->context('PL', 'PLN', 'EUR', '2026-10-27', '2026-11-05'),
+            $this->fx->context('CZ', 'CZK', 'EUR', '2026-10-27', '2026-11-05'),
+            $this->fx->context('SK', 'EUR', 'PLN', '2026-10-27', '2026-11-05'),
+        ];
+
+        foreach ($contexts as $ctx) {
+            $this->assertNotNull($ctx);
+            $this->assertTrue($ctx->supported);
+            $this->assertGreaterThan('2026-10-30', $ctx->bound);
+            $this->assertNull($this->fx->cached($ctx));
+
+            try {
+                $this->fx->resolve($ctx, true);
+                $this->fail('Expected RateNotFound for ' . $ctx->source);
+            } catch (RateNotFound $e) {
+                $this->assertSame(RateNotFound::NOT_YET_PUBLISHED, $e->reason);
+            }
+        }
+
+        $this->assertSame([], $this->http->calls);
+    }
+
+    public function testTodayBoundIsStillResolved(): void
+    {
+        $ctx = $this->plCtx('2026-10-27', '2026-10-31');
+        $this->assertSame('2026-10-30', $ctx->bound);
+        $this->assertSame('4.3951', $this->fx->resolve($ctx)->rate);
+    }
+
     public function testNonFinalRefreshesAfterFifteenMinutes(): void
     {
         $this->seedRate('NBP', 'EUR', '2026-10-30', '2026-10-29', '4.0000', 1, 'OLD', '2026-10-30 09:30:00+01');

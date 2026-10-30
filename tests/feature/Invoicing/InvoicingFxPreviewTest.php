@@ -124,6 +124,18 @@ final class InvoicingFxPreviewTest extends AuthTestCase
         $this->assertSame('NBP', $this->owner()->query('SELECT fx_source FROM invoices')->getRow()->fx_source);
     }
 
+    public function testFutureDeliveryShowsNotYetPublishedWithoutRetry(): void
+    {
+        $this->login();
+        $s    = $this->fxPlEurSetup();
+        $html = $this->body($this->get('/fragments/invoice-preview?client=' . $s['client'] . '&month=2026-10&entity=' . $s['entity'] . '&issue_date=2026-10-27&delivery_date=2026-11-06'));
+
+        $this->assertStringContainsString('Kurz zatiaľ nie je k dispozícii', $html);
+        $this->assertStringContainsString('NBP ho ešte nezverejnil', $html);
+        $this->assertStringNotContainsString('fx_retry', $html);
+        $this->assertSame([], $this->http->calls);
+    }
+
     public function testOutageShowsWarningAndDisablesIssue(): void
     {
         $this->login();

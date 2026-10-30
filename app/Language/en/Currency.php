@@ -17,6 +17,7 @@ return [
     'loading'            => 'Loading rate…',
     'unavailableTitle'   => 'Exchange rate not available yet',
     'unavailableBody'    => 'The {0} rate could not be loaded. Enter the rate manually or try loading it again.',
+    'futureBoundBody'    => 'The date for the rate ({1}) is in the future, so {0} has not published it yet. Enter the rate manually or change the date.',
     'unsupportedBody'    => '{0} does not provide a rate for this currency pair ({1} and {2}). The rate will always have to be entered manually.',
     'pendingTotal'       => 'Total in {0}: will be known once the rate is entered.',
     'issueHintRetry'     => 'Issuing requires a rate. Enter it manually or try loading it again.',

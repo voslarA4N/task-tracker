@@ -144,6 +144,7 @@ final class InvoiceDraftService
                     $fetched    = null;
                     $quote      = null;
                     $state      = 'ok';
+                    $notYet     = false;
 
                     // siet sa vola iba tu (nahlad, D-07), nikdy v transakcii vystavenia
                     if ($ctx !== null) {
@@ -152,7 +153,10 @@ final class InvoiceDraftService
                             $quote   = $fetched;
                         } catch (UnsupportedPair) {
                             $state = 'unsupported';
-                        } catch (RateNotFound|RateUnavailable) {
+                        } catch (RateNotFound $e) {
+                            $state  = 'unavailable';
+                            $notYet = $e->reason === RateNotFound::NOT_YET_PUBLISHED;
+                        } catch (RateUnavailable) {
                             $state = 'unavailable';
                         }
                     }
@@ -193,6 +197,7 @@ final class InvoiceDraftService
                             'errors'           => $fxFieldErrors,
                             'fetched'          => $fetched?->core(),
                             'anchor_changed'   => $anchorChanged,
+                            'future_bound'     => $notYet,
                         ];
                     }
 

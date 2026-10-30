@@ -67,6 +67,12 @@ class FxService
             throw new UnsupportedPair('Source does not support this currency pair.');
         }
 
+        // WR-01: bound v buducnosti sa nikdy nehlada. Zdroje sa spravaju roznie (NBP 400, ECB a CNB vratia starsi kurz),
+        // preto sa jednotne odmietne bez siete a bez cache a kurz treba zadat rucne.
+        if ($this->isFutureBound($ctx)) {
+            throw new RateNotFound('Rate for a future bound date is not published yet.', RateNotFound::NOT_YET_PUBLISHED);
+        }
+
         $row = $this->selectRow($ctx);
 
         if ($row !== null && ($row['final'] || $row['fresh'])) {
@@ -129,13 +135,18 @@ class FxService
      */
     public function cached(FxContext $ctx): ?FxQuote
     {
-        if (! $ctx->supported) {
+        if (! $ctx->supported || $this->isFutureBound($ctx)) {
             return null;
         }
 
         $row = $this->selectRow($ctx);
 
         return $row === null ? null : $this->quoteFromRow($ctx, $row);
+    }
+
+    private function isFutureBound(FxContext $ctx): bool
+    {
+        return $ctx->bound > service('clock')->today();
     }
 
     private function failureKey(FxContext $ctx): string
