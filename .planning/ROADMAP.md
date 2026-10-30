@@ -420,7 +420,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 08-04-PLAN.md — fx_country_settings, exchange_rate_cache a FxService (cache, výpadok, retry)
+- [x] 08-04-PLAN.md — fx_country_settings, exchange_rate_cache a FxService (cache, výpadok, retry)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -527,7 +527,7 @@ Plans:
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
-| 8. Meny a kurzy | 3/10 | In Progress|  |
+| 8. Meny a kurzy | 4/10 | In Progress|  |
 | 9. Dobropisy | 0/0 | Not started | - |
 | 10. Limity obratu | 0/0 | Not started | - |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
