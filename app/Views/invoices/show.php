@@ -1,5 +1,6 @@
 <?php
 
+use App\Libraries\Fx\FxFormat;
 use App\Libraries\Platform\Hours;
 use App\Libraries\Platform\MoneyFormat;
 
@@ -28,6 +29,9 @@ $bank     = (array) ($snap['bank'] ?? []);
 $legal    = (array) ($snap['legal'] ?? []);
 $legalTxt = (string) ($legal['texts']['vat_note']['body'] ?? '');
 $hoursSum = '0.00';
+$fx       = (($invoice['fx_rate'] ?? null) !== null && is_array($snap['fx'] ?? null)) ? $snap['fx'] : null;
+$entityCcy = trim((string) ($invoice['entity_currency'] ?? ''));
+$fxBasisKey = ($invoice['fx_date_basis'] ?? '') === 'issue_date' ? 'Invoices.fxBasisIssue' : 'Invoices.fxBasisDelivery';
 
 foreach ($invoice['lines'] as $l) {
     $hoursSum = Hours::plus($hoursSum, (string) $l['hours']);
@@ -84,6 +88,9 @@ $history = (array) ($invoice['history'] ?? []);
         <div class="inv-summary">
             <div class="small text-body-secondary"><?= esc(lang('Invoices.labelTotal')) ?></div>
             <div class="inv-summary-total tabular-nums"><?= esc($total) ?></div>
+            <?php if ($fx !== null) : ?>
+                <div class="fx-sub"><?= esc(lang('Invoices.fxTotalIn', [$entityCcy])) ?> <?= esc(MoneyFormat::format((string) $invoice['total_entity_ccy'], $entityCcy)) ?></div>
+            <?php endif ?>
         </div>
 
         <?php if ($canSend) : ?>
@@ -172,6 +179,22 @@ $history = (array) ($invoice['history'] ?? []);
                 <dd><?= esc($dates['due_date']) ?></dd>
                 <dt><?= esc(lang('Invoices.labelCurrency')) ?></dt>
                 <dd><?= esc($currency) ?></dd>
+                <?php if ($fx !== null) : ?>
+                    <?php $fxManual = ! empty($fx['manual']); ?>
+                    <dt><?= esc(lang('Invoices.fxRate')) ?></dt>
+                    <dd>
+                        <?= esc(FxFormat::expression($fx, 'sk')) ?>
+                        <?php if ($fxManual) : ?><span class="fx-badge badge text-bg-warning"><?= esc(lang('Invoices.fxBadgeManual')) ?></span><?php endif ?>
+                        <?php if ($fxManual && is_array($fx['fetched'] ?? null)) : ?>
+                            <?php $f = $fx['fetched']; $fe = $fx; $fe['rate'] = $f['rate']; $fe['rate_display'] = $f['rate']; $fe['amount'] = $f['amount']; ?>
+                            <div class="small text-body-secondary"><?= esc(lang('Invoices.fxOriginal', [FxFormat::sourceLabel((string) $f['source']), FxFormat::expression($fe, 'sk'), (string) $f['valid_for']])) ?></div>
+                        <?php endif ?>
+                    </dd>
+                    <dt><?= esc(lang('Invoices.fxSource')) ?></dt>
+                    <dd><?= $fxManual ? esc(lang('Invoices.fxSourceManual')) : esc(FxFormat::sourceLabel((string) $invoice['fx_source']) . (($invoice['fx_table_no'] ?? null) !== null ? ', ' . lang('Invoices.fxTable', [(string) $invoice['fx_table_no']]) : '')) ?></dd>
+                    <dt><?= esc(lang('Invoices.fxDate')) ?></dt>
+                    <dd><?= esc((string) $invoice['fx_date']) ?>, <?= esc(lang($fxBasisKey)) ?></dd>
+                <?php endif ?>
                 <dt><?= esc(lang('Invoices.labelBank')) ?></dt>
                 <dd><?= esc((string) ($bank['iban'] ?? $empty)) ?></dd>
                 <dt><?= esc(lang('Invoices.labelPayment')) ?></dt>

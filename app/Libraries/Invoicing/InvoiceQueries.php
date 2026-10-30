@@ -50,9 +50,10 @@ final class InvoiceQueries
         $rows = $this->db->query(
             'SELECT i.id, i.origin, i.number, i.external_ref, i.issue_date, i.billing_month, i.currency, i.total, i.created_at, c.name AS client_name,
                     i.status, i.balance, i.paid_amount, i.due_date,
+                    f.fx_rate, f.total_entity_ccy, e.currency AS entity_currency,
                     CASE WHEN ' . $cond . ' THEN 1 ELSE 0 END AS overdue,
                     CASE WHEN ' . $cond . ' THEN CAST(:today: AS date) - i.due_date ELSE 0 END AS days_overdue
-             FROM invoice_status_v i JOIN clients c ON c.id = i.client_id' . $where . '
+             FROM invoice_status_v i JOIN clients c ON c.id = i.client_id JOIN invoices f ON f.id = i.id LEFT JOIN entities e ON e.id = f.entity_id' . $where . '
              ORDER BY i.issue_date DESC NULLS LAST, i.number DESC NULLS LAST, i.id DESC
              LIMIT :n:',
             $binds,
@@ -79,8 +80,9 @@ final class InvoiceQueries
         $invoice = $this->db->query(
             'SELECT i.id, i.origin, i.type, i.number, i.external_ref, i.client_id, i.billing_month, i.issue_date, i.delivery_date, i.due_date,
                     i.currency, i.total, i.line_count, i.doc_language, i.vat_regime, i.exemption_code, i.payment_method,
-                    i.template_version, i.snapshot_schema, i.snapshot, i.created_at, c.name AS client_name
-             FROM invoices i JOIN clients c ON c.id = i.client_id
+                    i.template_version, i.snapshot_schema, i.snapshot, i.created_at, c.name AS client_name,
+                    i.total_entity_ccy, i.fx_rate, i.fx_source, i.fx_date, i.fx_table_no, i.fx_date_basis, e.currency AS entity_currency
+             FROM invoices i JOIN clients c ON c.id = i.client_id LEFT JOIN entities e ON e.id = i.entity_id
              WHERE i.id = :id:',
             ['id' => $id],
         )->getRowArray();
