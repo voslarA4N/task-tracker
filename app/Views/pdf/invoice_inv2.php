@@ -128,10 +128,12 @@ $unit        = $print['line_unit'] ? ' ' . $l['unitHours'] : '';
 </table>
 <table class="totals">
     <tr><td><?= esc($l['total']) ?></td><td class="r"><?= esc(PdfFormat::amount($s['totals']['total'], $cur, $lg)) ?></td></tr>
-</table>
 <?php if (! empty($s['fx'])) : ?>
-    <p class="small"><?= esc((string) ($s['fx']['text'] ?? '')) ?></p>
+    <tr><td colspan="2" class="r fxnote"><?= esc((string) ($s['fx']['text']['rate_line'] ?? '')) ?></td></tr>
+    <tr><td colspan="2" class="r fxnote"><?= esc((string) ($s['fx']['text']['date_line'] ?? '')) ?></td></tr>
+    <tr><td><?= esc((string) ($s['fx']['text']['total_label'] ?? '')) ?></td><td class="r"><?= esc((string) ($s['fx']['text']['total_value'] ?? '')) ?></td></tr>
 <?php endif; ?>
+</table>
 <?php if ($print['vat_note']) : ?>
     <p class="note"><span class="note-heading"><?= esc($l['vatNoteHeading']) ?></span><br><?= esc($s['legal']['texts']['vat_note']['body']) ?></p>
 <?php endif; ?>

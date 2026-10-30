@@ -12,6 +12,7 @@ table.items th { background-color: #f0f0f0; text-align: left; border-bottom: 0.2
 table.items td { border-bottom: 0.2mm solid #999999; padding: 1mm; page-break-inside: avoid; }
 table.totals { width: 100%; margin-top: 3mm; }
 table.totals td { background-color: #f0f0f0; padding: 1.5mm; font-size: 12pt; font-weight: bold; }
+table.totals td.fxnote { background-color: #ffffff; font-size: 7pt; font-weight: normal; padding: 0.5mm 1.5mm; }
 .r { text-align: right; }
 .note { margin-top: 6mm; }
 .note-heading { font-weight: bold; }

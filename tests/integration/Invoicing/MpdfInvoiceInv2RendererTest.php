@@ -180,4 +180,46 @@ final class MpdfInvoiceInv2RendererTest extends CIUnitTestCase
         $this->assertStringNotContainsString('ZBP', $this->text($s));
         $this->assertStringNotContainsString('QR code', $this->text($s));
     }
+
+    public function testFxBlockOrderAndTexts(): void
+    {
+        $text = $this->text(SampleSnapshots::fxInvoice());
+
+        $this->assertStringContainsString('Kurz NBP 1 EUR = 4,4090 PLN', $text);
+        $this->assertStringContainsString('tab. 209/A/NBP/2026', $text);
+        $this->assertStringContainsString('Spolu v PLN', $text);
+
+        $spolu = (int) strpos($text, 'Celkom na úhradu');
+        $kurz  = (int) strpos($text, 'Kurz NBP');
+        $v     = (int) strpos($text, 'Spolu v PLN');
+
+        $this->assertGreaterThan(0, $spolu);
+        $this->assertLessThan($kurz, $spolu);
+        $this->assertLessThan($v, $kurz);
+    }
+
+    public function testManualFxBlock(): void
+    {
+        $text = $this->text(SampleSnapshots::fxInvoice(true));
+
+        $this->assertStringContainsString('Ručne zadaný kurz', $text);
+        $this->assertStringContainsString('platí ku dňu', $text);
+        $this->assertStringNotContainsString('tab.', $text);
+    }
+
+    public function testNoFxBlockWithoutFx(): void
+    {
+        $text = $this->text(SampleSnapshots::invoice('sk'));
+
+        $this->assertStringNotContainsString('Kurz ', $text);
+        $this->assertStringNotContainsString('Spolu v ', $text);
+    }
+
+    public function testPolishFxBlock(): void
+    {
+        $text = $this->text(SampleSnapshots::fxInvoice(false, 'pl'));
+
+        $this->assertStringContainsString('Kurs NBP', $text);
+        $this->assertStringContainsString('Razem w PLN', $text);
+    }
 }
