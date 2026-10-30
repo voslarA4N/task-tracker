@@ -15,7 +15,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 - [x] **Phase 5: Fakturačné jadro** - Atómové vystavenie nemennej faktúry, číslovanie, kópia údajov, uložené PDF so sha256 (completed 2026-10-27)
 - [x] **Phase 6: Dokumenty faktúry a výkazu** - Právne profily, PDF faktúra a výkaz, QR platba, editovateľné zákonné texty (completed 2026-10-28)
 - [x] **Phase 7: Doručenie, úhrady a upomienky** - E-mail s PDF, opätovné odoslanie, úhrady, po splatnosti, upomienka (completed 2026-10-29)
-- [ ] **Phase 8: Meny a kurzy** - NBP/ECB/ČNB kurzy s ručným prepisom a uložením do kópie údajov
+- [x] **Phase 8: Meny a kurzy** - NBP/ECB/ČNB kurzy s ručným prepisom a uložením do kópie údajov (completed 2026-10-30)
 - [ ] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí
 - [ ] **Phase 10: Limity obratu** - Tabuľka limitov, výpočet obratu, upozornenia a predkontrola pri vystavení
 - [ ] **Phase 11: Prehľady, exporty a audit** - Mesačné a ročné prehľady, CSV/XLSX, ZIP pre účtovníčku, prehliadač denníka, PC zoznamy
@@ -441,7 +441,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 08-09-PLAN.md — Druhá suma na detaile a v zozname, test nemennosti, staging seed
+- [x] 08-09-PLAN.md — Druhá suma na detaile a v zozname, test nemennosti, staging seed
 
 **Poznámky**: **Potrebuje /gsd-research-phase** (SDMX parametre ECB, limit rozsahu NBP, časy publikácie). NBP cez rozsah `D-10..D-1` a posledný záznam, ECB je „za 1 EUR“ (delí sa), ČNB má `amount`. Kurz sa načíta v náhľade, nie sieťovým volaním v transakcii. **Závislosť od účtovníčky:** rozhodujúci dátum kurzu (dodanie vs vystavenie) a pravidlo zaokrúhľovania, predvolená hodnota je len konfigurácia.
 
@@ -527,7 +527,7 @@ Plans:
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
-| 8. Meny a kurzy | 9/10 | In Progress|  |
+| 8. Meny a kurzy | 10/10 | Complete   | 2026-10-30 |
 | 9. Dobropisy | 0/0 | Not started | - |
 | 10. Limity obratu | 0/0 | Not started | - |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
