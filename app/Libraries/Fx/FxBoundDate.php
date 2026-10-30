@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Libraries\Fx;
 
-use DateTimeImmutable;
 use InvalidArgumentException;
 
 /**
@@ -23,9 +22,9 @@ final class FxBoundDate
 
     public static function bound(string $dayRule, string $anchor): string
     {
-        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $anchor);
+        $date = service('clock')->parseDate($anchor);
 
-        if ($date === false) {
+        if ($date === null) {
             throw new InvalidArgumentException('Invalid anchor date.');
         }
 
