@@ -18,7 +18,6 @@ use App\Libraries\Master\VersionNotFound;
 use App\Libraries\Platform\DbBool;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
-use LogicException;
 use OverflowException;
 
 /**
@@ -193,7 +192,15 @@ final class SnapshotBuilder
     public static function fxBlock(FxQuote $fx, string $total, string $invoiceCurrency, string $entityCurrency, string $lang, array $labels): array
     {
         if ($fx->invoiceCurrency !== $invoiceCurrency || $fx->entityCurrency !== $entityCurrency) {
-            throw new LogicException('FxQuote currencies do not match the invoice.');
+            // WR-07: nesulad je chyba programu, ale pouzivatel dostane zrozumitelne odmietnutie (nie 500); do logu ide detail
+            log_message('error', 'FX quote currency mismatch: quote={qi}/{qe} invoice={ii}/{ie}', [
+                'qi' => $fx->invoiceCurrency,
+                'qe' => $fx->entityCurrency,
+                'ii' => $invoiceCurrency,
+                'ie' => $entityCurrency,
+            ]);
+
+            throw new IssueRejected('fx_missing', ['cause' => 'currency_mismatch']);
         }
 
         try {

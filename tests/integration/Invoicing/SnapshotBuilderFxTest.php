@@ -15,7 +15,6 @@ use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Master\BankAccountService;
 use App\Libraries\Platform\FrozenClock;
 use Config\Services;
-use LogicException;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\FxFixtures;
 use Tests\Support\InvoiceFixtures;
@@ -154,12 +153,18 @@ final class SnapshotBuilderFxTest extends PgTestCase
         }
     }
 
-    public function testCurrencyMismatchThrows(): void
+    public function testCurrencyMismatchIsUserFacingRejection(): void
     {
+        // WR-07: nie LogicException (500), ale IssueRejected, ktory nahlad aj vystavenie zobrazia ako spravu
         $fx = FxQuote::fromRate(new RateQuote('NBP', 'USD', '4.0000', 1, '2026-10-27', '209/A/NBP/2026', 'multiply'), 'delivery_date', 'previous_business_day', '2026-10-31', 'PLN', 'USD');
 
-        $this->expectException(LogicException::class);
-        $this->build($this->fxPlEurSetup(), $fx);
+        try {
+            $this->build($this->fxPlEurSetup(), $fx);
+            $this->fail('Expected IssueRejected');
+        } catch (IssueRejected $e) {
+            $this->assertSame('fx_missing', $e->reason);
+            $this->assertSame('currency_mismatch', $e->context['cause']);
+        }
     }
 
     public function testPreviewTokenFollowsRate(): void
