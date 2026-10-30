@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
-use App\Libraries\Fx\FxQuote;
 use App\Libraries\Fx\FxService;
 use App\Libraries\Fx\RateNotFound;
 use App\Libraries\Fx\RateUnavailable;

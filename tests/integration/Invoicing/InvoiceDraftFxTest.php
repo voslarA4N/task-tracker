@@ -73,14 +73,14 @@ final class InvoiceDraftFxTest extends PgTestCase
         $this->assertSame('4746.71', $d->fx['quote']['total']);
         $this->assertNotNull($d->previewToken);
         $this->assertTrue($d->canIssue);
-        $this->assertCount(1, $this->http->calls);
+        $this->assertSame([self::URL_1030], $this->http->calls);
 
         $this->service()->draft($s['client'], '2026-10', $s['entity'], '2026-10-27', '2026-10-31', '2026-11-10');
-        $this->assertCount(1, $this->http->calls);
+        $this->assertSame([self::URL_1030], $this->http->calls);
 
         $issued = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts'], ['previewToken' => $d->previewToken]));
         $this->assertNotSame('', $issued->number);
-        $this->assertCount(1, $this->http->calls);
+        $this->assertSame([self::URL_1030], $this->http->calls);
     }
 
     public function testDeliveryDateChangeLooksUpNewRateAndChangesToken(): void
@@ -124,7 +124,7 @@ final class InvoiceDraftFxTest extends PgTestCase
         $s = $this->fxPlEurSetup();
         $this->service()->draft($s['client'], '2026-10', $s['entity'], '2026-10-27', '2026-10-31', '2026-11-10');
         $this->service()->draft($s['client'], '2026-10', $s['entity'], '2026-10-27', '2026-10-31', '2026-11-10');
-        $this->assertCount(1, $this->http->calls);
+        $this->assertSame([self::URL_1030], $this->http->calls);
 
         $this->http->respond(self::URL_1030, 200, FakeRateHttpClient::fixture('nbp_eur_range.json'));
         $d = $this->service()->draft($s['client'], '2026-10', $s['entity'], '2026-10-27', '2026-10-31', '2026-11-10', null, null, false, true);

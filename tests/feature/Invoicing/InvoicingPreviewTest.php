@@ -11,6 +11,7 @@ use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\AuthTestCase;
+use Tests\Support\FakeRateHttpClient;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
@@ -103,16 +104,17 @@ final class InvoicingPreviewTest extends AuthTestCase
         $this->assertStringNotContainsString('Stara firma', $html);
     }
 
-    public function testCurrencyMismatchShowsDangerAndDisablesButton(): void
+    public function testForeignCurrencyWithoutRateShowsWarningAndDisablesButton(): void
     {
+        Services::injectMock('rateHttpClient', new FakeRateHttpClient());
         $s = $this->issueSetup();
         $this->owner()->query("UPDATE clients SET currency = 'PLN' WHERE id = :c:", ['c' => $s['client']]);
         $this->owner()->query("UPDATE billing_allocations SET currency = 'PLN' WHERE id = :p:", ['p' => $s['parts'][0]]);
 
         $html = $this->body($this->fragment('/fragments/invoice-preview?client=' . $s['client'] . '&month=2026-10'));
 
-        $this->assertStringContainsString('alert-danger', $html);
-        $this->assertStringContainsString('Faktúra v mene PLN sa nedá vystaviť zo subjektu s menou EUR', $html);
+        $this->assertStringContainsString('Kurz zatiaľ nie je k dispozícii', $html);
+        $this->assertStringContainsString('alert-warning', $html);
         $this->assertMatchesRegularExpression('/<button[^>]*form="inv-issue-form"[^>]*\sdisabled/', $html);
     }
 
