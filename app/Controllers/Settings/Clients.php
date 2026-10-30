@@ -73,15 +73,20 @@ final class Clients extends BaseController
     {
         $service = new ClientService();
 
-        if ($service->find($id) === null) {
+        $existing = $service->find($id);
+
+        if ($existing === null) {
             throw PageNotFoundException::forPageNotFound(lang('Clients.notFound'));
         }
 
         $request = $this->request;
         assert($request instanceof IncomingRequest);
 
-        $values = ClientInput::fromPost($request);
-        $errors = ClientInput::validate($values);
+        // WR-06: nezmenena sucasna mena klienta prejde aj vtedy, ked bola medzicasom deaktivovana
+        $current = trim((string) ($existing['currency'] ?? ''));
+        $repo    = new CurrencyRepository();
+        $values  = ClientInput::fromPost($request);
+        $errors  = ClientInput::validate($values, static fn (string $c): bool => ($c !== '' && $c === $current) || $repo->isActive($c));
 
         if ($errors !== []) {
             return $this->response->setStatusCode(422)->setBody(view('settings/clients/form', $this->formData($id, $values, $errors)));

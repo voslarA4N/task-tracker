@@ -91,4 +91,29 @@ final class CurrencyListTest extends AuthTestCase
         $bad->assertStatus(422);
         $this->assertStringContainsString('f-currency-error', $this->body($bad));
     }
+
+    public function testClientWithDeactivatedCurrencyCanStillBeEdited(): void
+    {
+        // WR-06: nezmenena neaktivna mena klienta neblokuje ulozenie, zmena na inu neaktivnu menu ano
+        $this->withSession();
+        $this->assertTrue($this->call('post', '/settings/clients', $this->payload('CZK') + [csrf_token() => csrf_hash()])->isRedirect());
+        $owner = Database::connect('tests_owner', false);
+        $id    = (int) $owner->query("SELECT id FROM clients WHERE name = 'All4Net'")->getRow()->id;
+        $owner->query("UPDATE currencies SET active = false WHERE code = 'CZK'");
+
+        try {
+            $this->withSession();
+            $ok = $this->call('post', '/settings/clients/' . $id, ['hourly_rate' => '35'] + $this->payload('CZK') + [csrf_token() => csrf_hash()]);
+            $this->assertTrue($ok->isRedirect(), $this->body($ok));
+            $this->assertSame('35.00', $owner->query('SELECT hourly_rate FROM clients WHERE id = :i:', ['i' => $id])->getRow()->hourly_rate);
+
+            $owner->query("UPDATE currencies SET active = false WHERE code = 'PLN'");
+            $this->withSession();
+            $bad = $this->call('post', '/settings/clients/' . $id, $this->payload('PLN') + [csrf_token() => csrf_hash()]);
+            $bad->assertStatus(422);
+            $this->assertStringContainsString('f-currency-error', $this->body($bad));
+        } finally {
+            $owner->query("UPDATE currencies SET active = true WHERE code IN ('CZK', 'PLN')");
+        }
+    }
 }
