@@ -1,6 +1,7 @@
 <?php
 
 use App\Controllers\Invoicing;
+use App\Libraries\Fx\FxConverter;
 use App\Libraries\Fx\FxFormat;
 use App\Libraries\Invoicing\Draft;
 use App\Libraries\Platform\MoneyFormat;
@@ -57,6 +58,9 @@ $methodLabels = [
             <dt class="visually-hidden"><?= esc(lang('Invoicing.labelItems')) ?></dt>
             <dd><?= esc(lang('Invoicing.confirmItems', [$draft->lineCount])) ?></dd>
         </dl>
+        <?php if (($draft->fx['state'] ?? null) === 'manual' && ($draft->fx['deviation'] ?? false) && is_array($draft->fx['quote']['fetched'] ?? null)) : ?>
+            <div class="alert alert-warning" role="alert"><?= esc(lang('Currency.deviationWarning', [FxConverter::DEVIATION_PERCENT, FxFormat::sourceLabel((string) $draft->fx['quote']['fetched']['source'])])) ?></div>
+        <?php endif ?>
         <?php if ($needsConfirm) : ?>
             <div class="alert alert-warning" role="alert"><?= esc(lang('Invoicing.confirmBackdateNote', [Invoicing::dateLabel($draft->issueDate)])) ?></div>
         <?php endif ?>

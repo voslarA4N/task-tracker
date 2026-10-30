@@ -38,6 +38,7 @@ return [
     'manualRateLine'     => 'Rate: {0}',
     'manualMeta'         => 'valid on {0} · entered manually',
     'fetchedInfo'        => 'The fetched rate was {0} {1} from {2}.',
+    'deviationWarning'   => 'The manual rate differs from the fetched {1} rate by more than {0} %. Check for a typo or a reversed rate direction before issuing.',
     'anchorChanged'      => 'The date changed, the rate was loaded again.',
     'errRate'            => 'Enter the rate as a positive number.',
     'errDecimals'        => 'The rate can have at most 8 decimal places.',

@@ -18,7 +18,8 @@ use RoundingMode;
  */
 final class FxConverter
 {
-    private const MAX = '9999999999.99';
+    public const DEVIATION_PERCENT = '10';
+    private const MAX              = '9999999999.99';
 
     public static function convert(string $total, string $rate, int $amount, string $direction): string
     {
@@ -36,6 +37,22 @@ final class FxConverter
         }
 
         return Money::of($rounded)->toDecimalString();
+    }
+
+    /**
+     * Ci sa rucny kurz lisi od stiahnuteho o viac nez $maxPercent percent (WR-03). Porovnava sa kurz za 1 jednotku
+     * (rate / amount) v rovnakom smere, aky publikuje zdroj. Zachyti preklep (42512 namiesto 4.2512) aj opacny smer.
+     */
+    public static function deviationExceeds(string $manual, int $manualAmount, string $fetched, int $fetchedAmount, string $maxPercent = self::DEVIATION_PERCENT): bool
+    {
+        self::assertRate($manual, $manualAmount, 'multiply');
+        self::assertRate($fetched, $fetchedAmount, 'multiply');
+
+        $m    = bcdiv($manual, (string) $manualAmount, 12);
+        $f    = bcdiv($fetched, (string) $fetchedAmount, 12);
+        $diff = bcsub($m, $f, 12);
+
+        return bccomp(bcmul(ltrim($diff, '-'), '100', 12), bcmul($f, $maxPercent, 12), 12) > 0;
     }
 
     /**

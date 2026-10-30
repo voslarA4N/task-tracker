@@ -1,6 +1,7 @@
 <?php
 
 use App\Controllers\Invoicing;
+use App\Libraries\Fx\FxConverter;
 use App\Libraries\Fx\FxFormat;
 use App\Libraries\Invoicing\Draft;
 use App\Libraries\Platform\MoneyFormat;
@@ -78,6 +79,9 @@ $notYet     = (bool) ($fx['future_bound'] ?? false);
     <div class="fx-meta"><?= esc(implode(' · ', $meta)) ?></div>
     <?php if ($state === 'manual' && is_array($quote['fetched'] ?? null)) : ?>
         <div class="fx-meta"><?= esc(lang('Currency.fetchedInfo', [FxFormat::sourceLabel((string) $quote['fetched']['source']), FxFormat::rate((string) $quote['fetched']['rate'], $locale), Invoicing::dateLabel((string) $quote['fetched']['valid_for'])])) ?></div>
+        <?php if ($fx['deviation'] ?? false) : ?>
+        <div class="alert alert-warning small py-2 mt-2 mb-0" role="alert"><?= esc(lang('Currency.deviationWarning', [FxConverter::DEVIATION_PERCENT, FxFormat::sourceLabel((string) $quote['fetched']['source'])])) ?></div>
+        <?php endif ?>
     <?php endif ?>
     <div class="fx-total-wrap" aria-live="polite">
         <div class="fx-meta"><?= esc(lang('Currency.totalIn', [$entityCcy])) ?></div>

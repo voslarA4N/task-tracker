@@ -136,6 +136,16 @@ final class InvoicingFxPreviewTest extends AuthTestCase
         $this->assertSame([], $this->http->calls);
     }
 
+    public function testManualRateDeviationWarningInCardAndConfirmSheet(): void
+    {
+        $this->login();
+        $s    = $this->fxPlEurSetup();
+        $html = $this->body($this->get('/fragments/invoice-preview?client=' . $s['client'] . '&month=2026-10&entity=' . $s['entity'] . '&issue_date=2026-10-27&delivery_date=2026-10-31&fx_mode=manual&fx_rate=44.090&fx_anchor=2026-10-31'));
+
+        $this->assertSame(2, substr_count($html, 'líši o viac ako 10 %'));
+        $this->assertStringContainsString('stiahnutého kurzu NBP', $html);
+    }
+
     public function testOutageShowsWarningAndDisablesIssue(): void
     {
         $this->login();

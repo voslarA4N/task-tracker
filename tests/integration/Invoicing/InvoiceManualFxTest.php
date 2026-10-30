@@ -95,6 +95,28 @@ final class InvoiceManualFxTest extends PgTestCase
         $this->assertSame('4.3000', $d->fx['fields']['fx_rate']);
     }
 
+    public function testManualRateFarFromFetchedShowsDeviationWarning(): void
+    {
+        $s = $this->fxPlEurSetup();
+        $this->seedRate('NBP', 'EUR', '2026-10-30', '2026-10-27', '4.4090', 1, '209/A/NBP/2026');
+
+        $this->assertFalse($this->draft($s, $this->manual('4.3000'))->fx['deviation']);
+
+        $d = $this->draft($s, $this->manual('44.090'));
+        $this->assertSame('manual', $d->fx['state']);
+        $this->assertTrue($d->fx['deviation']);
+        // iba varovanie (D-11: rucny prepis bez dovodu), vystavit sa da
+        $this->assertTrue($d->canIssue);
+    }
+
+    public function testNoDeviationWithoutFetchedRate(): void
+    {
+        $this->http->respond(self::URL_1030, 503, '');
+        $s = $this->fxPlEurSetup();
+
+        $this->assertFalse($this->draft($s, $this->manual('44.090'))->fx['deviation']);
+    }
+
     public function testIssueWithManualRateStoresFetchedAndAudit(): void
     {
         $s = $this->fxPlEurSetup();

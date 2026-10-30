@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Fx\FxConverter;
 use App\Libraries\Fx\FxInput;
 use App\Libraries\Fx\FxQuote;
 use App\Libraries\Fx\FxService;
@@ -164,6 +165,7 @@ final class InvoiceDraftService
                     $fxFields      = ['fx_mode' => '', 'fx_rate' => '', 'fx_date' => '', 'fx_anchor' => ''];
                     $fxFieldErrors = [];
                     $anchorChanged = false;
+                    $deviation     = false;
 
                     if ($ctx !== null && $fxInput !== null && $fxInput->mode === 'manual') {
                         $fxInput = $fxInput->withBound($ctx->bound);
@@ -177,9 +179,11 @@ final class InvoiceDraftService
                             $fxFieldErrors = $fxInput->errors;
                             $fxFields      = ['fx_mode' => 'manual', 'fx_rate' => $fxInput->rawRate, 'fx_date' => $fxInput->rawDate, 'fx_anchor' => $ctx->anchor];
                         } else {
-                            $quote    = FxQuote::manual((string) $fxInput->rate, $fxInput->dateFor($ctx->bound, service('clock')->today()), $ctx->direction, $ctx->dateBasis, $ctx->dayRule, $ctx->anchor, $ctx->entityCurrency, $ctx->invoiceCurrency, $fetched?->toRateQuote());
-                            $state    = 'manual';
-                            $fxFields = ['fx_mode' => 'manual', 'fx_rate' => (string) $fxInput->rate, 'fx_date' => $fxInput->date ?? '', 'fx_anchor' => $ctx->anchor];
+                            $quote = FxQuote::manual((string) $fxInput->rate, $fxInput->dateFor($ctx->bound, service('clock')->today()), $ctx->direction, $ctx->dateBasis, $ctx->dayRule, $ctx->anchor, $ctx->entityCurrency, $ctx->invoiceCurrency, $fetched?->toRateQuote());
+                            $state = 'manual';
+                            // WR-03: vyrazna odchylka od stiahnuteho kurzu (preklep, opacny smer) sa zobrazi ako varovanie
+                            $deviation = $fetched !== null && FxConverter::deviationExceeds($quote->rate, $quote->amount, $fetched->rate, $fetched->amount);
+                            $fxFields  = ['fx_mode' => 'manual', 'fx_rate' => (string) $fxInput->rate, 'fx_date' => $fxInput->date ?? '', 'fx_anchor' => $ctx->anchor];
                         }
                     }
 
@@ -200,6 +204,7 @@ final class InvoiceDraftService
                             'fetched'          => $fetched?->core(),
                             'anchor_changed'   => $anchorChanged,
                             'future_bound'     => $notYet,
+                            'deviation'        => $deviation,
                         ];
                     }
 

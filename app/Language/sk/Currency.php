@@ -38,6 +38,7 @@ return [
     'manualRateLine'     => 'Kurz: {0}',
     'manualMeta'         => 'platí ku dňu {0} · zadané ručne',
     'fetchedInfo'        => 'Stiahnutý kurz bol {0} {1} z {2}.',
+    'deviationWarning'   => 'Ručný kurz sa od stiahnutého kurzu {1} líši o viac ako {0} %. Pred vystavením skontrolujte, či nejde o preklep alebo opačný smer kurzu.',
     'anchorChanged'      => 'Dátum sa zmenil, kurz bol načítaný znova.',
     'errRate'            => 'Zadajte kurz ako kladné číslo.',
     'errDecimals'        => 'Kurz môže mať najviac 8 desatinných miest.',

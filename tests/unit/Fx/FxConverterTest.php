@@ -96,4 +96,21 @@ final class FxConverterTest extends CIUnitTestCase
         $q = new RateQuote('NBP', 'EUR', '4.4090', 1, '2026-10-27', '209/A/NBP/2026', 'multiply');
         $this->assertSame('4.4090', $q->rate);
     }
+
+    public function testDeviation(): void
+    {
+        // do 10 % vratane bez varovania
+        $this->assertFalse(FxConverter::deviationExceeds('4.4090', 1, '4.4090', 1));
+        $this->assertFalse(FxConverter::deviationExceeds('4.3000', 1, '4.4090', 1));
+        $this->assertFalse(FxConverter::deviationExceeds('4.8499', 1, '4.4090', 1));
+        $this->assertFalse(FxConverter::deviationExceeds('11', 1, '10', 1));
+        $this->assertFalse(FxConverter::deviationExceeds('9', 1, '10', 1));
+        $this->assertTrue(FxConverter::deviationExceeds('11.00000001', 1, '10', 1));
+        // preklep a opacny smer (ECB 4.2512 PLN za EUR vs 0.2352)
+        $this->assertTrue(FxConverter::deviationExceeds('42512', 1, '4.2512', 1));
+        $this->assertTrue(FxConverter::deviationExceeds('0.2352', 1, '4.2512', 1));
+        // CNB amount: 100 HUF = 6.512 CZK, rucne 0.06512 za 1 HUF je zhodny
+        $this->assertFalse(FxConverter::deviationExceeds('0.06512', 1, '6.512', 100));
+        $this->assertTrue(FxConverter::deviationExceeds('6.512', 1, '6.512', 100));
+    }
 }
