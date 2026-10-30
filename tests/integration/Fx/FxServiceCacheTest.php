@@ -29,7 +29,9 @@ final class FxServiceCacheTest extends PgTestCase
     use IssueFixtures;
     use FxFixtures;
 
-    private const NBP_URL = 'https://api.nbp.pl/api/exchangerates/rates/a/eur/2026-10-20/2026-10-30/?format=json';
+    private const NBP_URL       = 'https://api.nbp.pl/api/exchangerates/rates/a/eur/2026-10-20/2026-10-30/?format=json';
+    private const NBP_URL_1020  = 'https://api.nbp.pl/api/exchangerates/rates/a/eur/2026-10-10/2026-10-20/?format=json';
+    private const NBP_BODY_1020 = '{"rates":[{"no":"203/A/NBP/2026","effectiveDate":"2026-10-19","mid":4.3702},{"no":"204/A/NBP/2026","effectiveDate":"2026-10-20","mid":4.3716}]}';
 
     private FakeRateHttpClient $http;
     private FxService $fx;
@@ -101,9 +103,6 @@ final class FxServiceCacheTest extends PgTestCase
         $this->assertNull($this->fx->cached($this->plCtx()));
         $this->assertSame([], $this->http->calls);
     }
-
-    private const NBP_URL_1020  = 'https://api.nbp.pl/api/exchangerates/rates/a/eur/2026-10-10/2026-10-20/?format=json';
-    private const NBP_BODY_1020 = '{"rates":[{"no":"203/A/NBP/2026","effectiveDate":"2026-10-19","mid":4.3702},{"no":"204/A/NBP/2026","effectiveDate":"2026-10-20","mid":4.3716}]}';
 
     private function ctx1020(): FxContext
     {
@@ -308,7 +307,7 @@ final class FxServiceCacheTest extends PgTestCase
 
         try {
             $this->fx->resolve($ctx);
-        } catch (RateNotFound | RateUnavailable) {
+        } catch (RateNotFound|RateUnavailable) {
             // obsah fixtury nie je predmetom testu, iba volana URL
         }
 

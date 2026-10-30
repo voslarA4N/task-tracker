@@ -142,12 +142,12 @@ final class SampleSnapshots
             ? FxQuote::manual('4.3000', '2026-10-27', 'multiply', 'delivery_date', 'previous_business_day', '2026-10-28', 'PLN', 'EUR', null)
             : FxQuote::fromRate(new RateQuote('NBP', 'EUR', '4.4090', 1, '2026-10-27', '209/A/NBP/2026', 'multiply'), 'delivery_date', 'previous_business_day', '2026-10-28', 'PLN', 'EUR');
 
-        $base['issue_date']          = '2026-10-28';
-        $base['delivery_date']       = '2026-10-28';
-        $base['bank']['currency']    = 'EUR';
-        $base['currency']            = 'EUR';
-        $base['rounding']['fx']      = 'invoice_total_half_up_2';
-        $base['fx']                  = SnapshotBuilder::fxBlock($quote, $base['totals']['total'], 'EUR', 'PLN', $language, $base['labels']);
+        $base['issue_date']       = '2026-10-28';
+        $base['delivery_date']    = '2026-10-28';
+        $base['bank']['currency'] = 'EUR';
+        $base['currency']         = 'EUR';
+        $base['rounding']['fx']   = 'invoice_total_half_up_2';
+        $base['fx']               = SnapshotBuilder::fxBlock($quote, $base['totals']['total'], 'EUR', 'PLN', $language, $base['labels']);
 
         return $base;
     }
