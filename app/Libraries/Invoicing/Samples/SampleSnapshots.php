@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing\Samples;
 
+use App\Libraries\Fx\FxQuote;
+use App\Libraries\Fx\RateQuote;
 use App\Libraries\Invoicing\LegalProfile;
 use App\Libraries\Invoicing\Qr\QrPaymentBuilder;
 use App\Libraries\Invoicing\ReportRows;
@@ -12,7 +14,7 @@ use App\Libraries\Master\LegalProfileResolver;
 use InvalidArgumentException;
 
 /**
- * Fixturne snapshoty schema 2 pre kazdy pravny profil a jazyk (testy renderera, neskor spark prikaz).
+ * Fixturne snapshoty schema 3 pre kazdy pravny profil a jazyk (testy renderera, neskor spark prikaz).
  * Bez DB a bez zivych nastaveni.
  */
 final class SampleSnapshots
@@ -60,7 +62,7 @@ final class SampleSnapshots
         $euB2b        = $cfg['mode'] === 'eu_b2b';
 
         $base = [
-            'schema'                  => 2,
+            'schema'                  => 3,
             'sample'                  => true,
             'origin'                  => 'issued',
             'type'                    => 'invoice',
@@ -125,6 +127,26 @@ final class SampleSnapshots
         $base['report']        = self::report($base['lines'], $reportLabels, $lang, $base['billing_month']);
 
         return array_replace($base, $overrides);
+    }
+
+    /**
+     * PL subjekt (PLN) a faktura v EUR s blokom fx (NBP 4.4090 z 27. 10. 2026 alebo rucny kurz).
+     *
+     * @return array<string, mixed>
+     */
+    public static function fxInvoice(bool $manual = false, string $language = 'sk'): array
+    {
+        $base = self::invoice('pl', $language);
+        $quote = $manual
+            ? FxQuote::manual('4.3000', '2026-10-28', 'multiply', 'delivery_date', 'previous_business_day', '2026-10-26', 'PLN', 'EUR', null)
+            : FxQuote::fromRate(new RateQuote('NBP', 'EUR', '4.4090', 1, '2026-10-27', '209/A/NBP/2026', 'multiply'), 'delivery_date', 'previous_business_day', '2026-10-26', 'PLN', 'EUR');
+
+        $base['bank']['currency']    = 'EUR';
+        $base['currency']            = 'EUR';
+        $base['rounding']['fx']      = 'invoice_total_half_up_2';
+        $base['fx']                  = SnapshotBuilder::fxBlock($quote, $base['totals']['total'], 'EUR', 'PLN', $language, $base['labels']);
+
+        return $base;
     }
 
     /**

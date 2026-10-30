@@ -41,4 +41,10 @@ return [
     'qrSpayd'         => 'QR Platba',
     'qrZbp'           => 'Kod QR ZBP',
     'qrCaption'       => 'Płatność kodem QR',
+    'fxRate'          => 'Kurs',
+    'fxFrom'          => 'z dnia',
+    'fxTable'         => 'tabela',
+    'fxTotalIn'       => 'Razem w',
+    'fxManual'        => 'Kurs wprowadzony ręcznie',
+    'fxManualFrom'    => 'obowiązuje na dzień',
 ];

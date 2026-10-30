@@ -30,6 +30,10 @@ final class IssueRejected extends RuntimeException
         'not_found',
         'report_failed',
         'qr_failed',
+        'fx_missing',
+        'fx_unavailable',
+        'fx_invalid',
+        'fx_overflow',
     ];
 
     /**

@@ -111,6 +111,21 @@ final class SampleSnapshotShapeTest extends PgTestCase
         $this->assertSameShape(SampleSnapshots::invoice('pl', null, [], new LegalProfileResolver($this->rw())), $issued);
     }
 
+    public function testFxSampleKeepsIssuedShapeWithFxBlock(): void
+    {
+        $issued = $this->issued('PL');
+
+        foreach ([false, true] as $manual) {
+            $sample = SampleSnapshots::fxInvoice($manual);
+            $fx     = $sample['fx'];
+            unset($sample['fx'], $issued['fx'], $sample['rounding']['fx']);
+
+            $this->assertSameShape($sample, $issued);
+            $this->assertSame($manual, $fx['manual']);
+            $this->assertSame(3, SampleSnapshots::fxInvoice($manual)['schema']);
+        }
+    }
+
     public function testSeedTextMatchesResolverContract(): void
     {
         $seed     = SampleSnapshots::invoice('sk')['legal']['texts']['vat_note'];
