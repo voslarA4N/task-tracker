@@ -102,7 +102,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 
 ### Meny a kurzy (E9)
 
-- [ ] **CUR-01**: Podporované meny sú EUR, PLN a CZK. Zoznam sa dá rozšíriť bez zmeny modelu.
+- [x] **CUR-01**: Podporované meny sú EUR, PLN a CZK. Zoznam sa dá rozšíriť bez zmeny modelu.
 - [ ] **CUR-02**: Ak sa mena faktúry líši od meny subjektu, aplikácia stiahne kurz (PL: NBP, posledný pracovný deň pred dátumom dodania; SK: ECB; CZ: ČNB), dovolí ho ručne prepísať a uloží kurz, zdroj, dátum a prepočítanú sumu do kópie údajov. Obe sumy sa vytlačia na PDF.
 - [ ] **CUR-03**: Ak API kurzov nie je dostupné, aplikácia si kurz vypýta ručne.
 - [ ] **CUR-04**: Prehľady a limity počítajú v mene subjektu iba z uložených prepočítaných súm.
@@ -259,7 +259,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PAY-02 | Phase 7 | Complete |
 | PAY-03 | Phase 7 | Complete |
 | INV-06 | Phase 7 | Complete |
-| CUR-01 | Phase 8 | Pending |
+| CUR-01 | Phase 8 | Complete |
 | CUR-02 | Phase 8 | Pending |
 | CUR-03 | Phase 8 | Pending |
 | CUR-05 | Phase 8 | Pending |
