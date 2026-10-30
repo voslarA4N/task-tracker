@@ -12,6 +12,7 @@ use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Platform\FrozenClock;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
+use Tests\Support\FxFixtures;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
@@ -25,6 +26,7 @@ use Tests\Support\PgTestCase;
 #[Group('integration')]
 final class PreviewTokenScopeTest extends PgTestCase
 {
+    use FxFixtures;
     use InvoiceFixtures;
     use IssueFixtures;
     use MasterFixtures;
@@ -84,6 +86,15 @@ final class PreviewTokenScopeTest extends PgTestCase
         $with['payment']['qr'] = ['payload' => 'x'];
 
         $this->assertSame(InvoiceCalculator::previewToken($snap), InvoiceCalculator::previewToken($with));
+    }
+
+    public function testRateChangeChangesToken(): void
+    {
+        $s = $this->fxPlEurSetup();
+        $this->seedRate('NBP', 'EUR', '2026-10-30', '2026-10-27', '4.4090', 1, '209/A/NBP/2026', '2026-10-27 09:59:00+01');
+        $token = $this->previewTokenFor($s['client'], '2026-10', $s['entity'], $s['parts']);
+        $this->owner()->query("UPDATE exchange_rate_cache SET rate_published = '4.5000', rate = 4.5");
+        $this->assertNotSame($token, $this->previewTokenFor($s['client'], '2026-10', $s['entity'], $s['parts']));
     }
 
     public function testIssueDateChangeIsStale(): void

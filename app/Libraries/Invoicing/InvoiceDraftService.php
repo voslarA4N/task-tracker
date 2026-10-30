@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Fx\FxQuote;
+use App\Libraries\Fx\FxService;
+use App\Libraries\Fx\RateNotFound;
+use App\Libraries\Fx\RateUnavailable;
+use App\Libraries\Fx\UnsupportedPair;
 use App\Libraries\Invoicing\Qr\PolishZbpQr;
 use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use App\Libraries\Master\EntityDirectory;
@@ -36,11 +41,12 @@ final class InvoiceDraftService
     private readonly EntityDirectory $entities;
     private readonly EntityVersionResolver $versions;
     private readonly LegalProfileResolver $legal;
+    private readonly FxService $fx;
 
     /**
      * @param BaseConnection<mixed, mixed>|null $db
      */
-    public function __construct(?BaseConnection $db = null)
+    public function __construct(?BaseConnection $db = null, ?FxService $fx = null)
     {
         $this->db       = $db ?? Database::connect();
         $this->parts    = new InvoiceParts($this->db);
@@ -49,6 +55,7 @@ final class InvoiceDraftService
         $this->entities = new EntityDirectory($this->db);
         $this->versions = new EntityVersionResolver($this->db);
         $this->legal    = new LegalProfileResolver($this->db);
+        $this->fx       = $fx ?? new FxService($this->db);
     }
 
     /**
@@ -69,7 +76,7 @@ final class InvoiceDraftService
         return BillingMonth::previous(BillingMonth::current());
     }
 
-    public function draft(int $clientId, string $month, ?int $entityId, ?string $issueDate, ?string $deliveryDate, ?string $dueDate, ?string $paymentMethod = null, ?string $paymentNote = null, bool $noteDirty = false): Draft
+    public function draft(int $clientId, string $month, ?int $entityId, ?string $issueDate, ?string $deliveryDate, ?string $dueDate, ?string $paymentMethod = null, ?string $paymentNote = null, bool $noteDirty = false, bool $fxRetry = false): Draft
     {
         $clock = service('clock');
 
@@ -119,6 +126,7 @@ final class InvoiceDraftService
         $currency = null;
         $token    = null;
         $snapshot = null;
+        $fxState  = null;
 
         if ($parts !== []) {
             try {
@@ -130,10 +138,56 @@ final class InvoiceDraftService
                 $currency = $calc['currency'];
 
                 if ($entity !== null) {
-                    // mena sa kontroluje pred vyberom bankoveho uctu, inak by sa ukazal zavadzajuci no_bank_account
-                    $this->guards->assertCurrency($entity, $this->guards->partsCurrency($parts));
-                    $snapshot = $this->builder->build($client, $entity, $parts, $month, $issue, $delivery, $due, null);
-                    $token    = InvoiceCalculator::previewToken($snapshot);
+                    $invoiceCcy = $this->guards->partsCurrency($parts);
+                    $ctx        = $this->fx->context((string) $entity['country'], trim((string) $entity['currency']), $invoiceCcy, $issue, $delivery);
+                    $quote      = null;
+                    $state      = 'ok';
+
+                    // siet sa vola iba tu (nahlad, D-07), nikdy v transakcii vystavenia
+                    if ($ctx !== null) {
+                        try {
+                            $quote = $this->fx->resolve($ctx, $fxRetry);
+                        } catch (UnsupportedPair) {
+                            $state = 'unsupported';
+                        } catch (RateNotFound|RateUnavailable) {
+                            $state = 'unavailable';
+                        }
+                    }
+
+                    if ($ctx !== null) {
+                        $fxState = [
+                            'state'            => $state,
+                            'source'           => $ctx->source,
+                            'date_basis'       => $ctx->dateBasis,
+                            'day_rule'         => $ctx->dayRule,
+                            'anchor'           => $ctx->anchor,
+                            'bound'            => $ctx->bound,
+                            'direction'        => $ctx->direction,
+                            'entity_currency'  => $ctx->entityCurrency,
+                            'invoice_currency' => $ctx->invoiceCurrency,
+                            'quote'            => null,
+                        ];
+                    }
+
+                    try {
+                        $snapshot = $this->builder->build($client, $entity, $parts, $month, $issue, $delivery, $due, null, 'transfer', null, $quote);
+                    } catch (IssueRejected $e) {
+                        if ($e->reason !== 'fx_overflow') {
+                            throw $e;
+                        }
+
+                        $errors[] = ['reason' => $e->reason, 'context' => $e->context];
+                        $state    = 'overflow';
+                        $snapshot = $this->builder->build($client, $entity, $parts, $month, $issue, $delivery, $due, null);
+                    }
+
+                    if ($fxState !== null) {
+                        $fxState['state'] = $state;
+                        $fxState['quote'] = $state === 'ok' ? $snapshot['fx'] : null;
+                    }
+
+                    // bez kurzu sa kopia zostavi iba na zobrazenie, vystavit sa nedá (token ostane null)
+                    $token = $ctx !== null && $state !== 'ok' ? null : InvoiceCalculator::previewToken($snapshot);
                 }
             } catch (IssueRejected $e) {
                 $errors[] = ['reason' => $e->reason, 'context' => $e->context];
@@ -204,6 +258,7 @@ final class InvoiceDraftService
             $provisional,
             $zbpWarning,
             $zbpAmountWarning,
+            $fxState,
         );
     }
 

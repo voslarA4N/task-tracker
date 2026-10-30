@@ -15,6 +15,7 @@ final readonly class Draft
      * @param array<string, mixed>|null                                                      $snapshot
      * @param array{number: string, issue_date: string}|null                                 $backdate
      * @param list<array{reason: string, context: array<string, mixed>}>                     $errors
+     * @param array{state: string, source: string, date_basis: string, day_rule: string, anchor: string, bound: string, direction: string, entity_currency: string, invoice_currency: string, quote: array<string, mixed>|null}|null $fx null pri rovnakej mene
      * @param list<array{id: int, name_internal: string, country: string, currency: string}> $entities aktivne k datumu vystavenia
      */
     public function __construct(
@@ -43,6 +44,7 @@ final readonly class Draft
         public bool $provisionalText = false,
         public bool $zbpTitleWarning = false,
         public bool $zbpAmountWarning = false,
+        public ?array $fx = null,
     ) {
     }
 }

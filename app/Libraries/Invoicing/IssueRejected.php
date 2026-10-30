@@ -18,7 +18,6 @@ final class IssueRejected extends RuntimeException
         'parts_changed',
         'preview_stale',
         'already_issued',
-        'currency_mismatch',
         'entity_inactive',
         'backdate_unconfirmed',
         'sequence_overflow',

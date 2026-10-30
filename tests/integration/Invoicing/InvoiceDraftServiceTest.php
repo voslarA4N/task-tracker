@@ -9,6 +9,7 @@ use App\Libraries\Platform\FrozenClock;
 use Config\Services;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
+use Tests\Support\FakeRateHttpClient;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
@@ -137,19 +138,19 @@ final class InvoiceDraftServiceTest extends PgTestCase
         $this->assertSame($s['entity'], $d->entityId);
     }
 
-    public function testCurrencyMismatchIsReportedWithoutBuild(): void
+    public function testForeignCurrencyWithoutRateIsNotIssuable(): void
     {
+        Services::injectMock('rateHttpClient', new FakeRateHttpClient());
         $s = $this->issueSetup();
         $this->owner()->query("UPDATE clients SET currency = 'PLN' WHERE id = :c:", ['c' => $s['client']]);
         $this->owner()->query("UPDATE billing_allocations SET currency = 'PLN' WHERE id = :p:", ['p' => $s['parts'][0]]);
 
         $d = $this->service()->draft($s['client'], '2026-10', null, null, null, null);
 
-        $this->assertCount(1, $d->errors);
-        $this->assertSame('currency_mismatch', $d->errors[0]['reason']);
         $this->assertFalse($d->canIssue);
-        $this->assertNull($d->snapshot);
+        $this->assertNull($d->previewToken);
         $this->assertSame(1, $d->lineCount);
+        $this->assertSame('unavailable', $d->fx['state'] ?? null);
     }
 
     public function testLockedPartsAndBackdate(): void
