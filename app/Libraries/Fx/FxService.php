@@ -17,6 +17,14 @@ class FxService
     public const FAILURE_TTL     = 60;
 
     /**
+     * Riadok je finalny (uz sa nikdy neprepise ani neobnovi) iba ak bound je v minulosti a riadok bol stiahnuty
+     * v kalendarny den (casova zona aplikacie) prisne po bound. Vtedy uz kazdy zdroj kurz za bound zverejnil.
+     * Riadok stiahnuty v den bound alebo skor mohol niest starsi kurz pred zverejnenim, preto ostava obnovitelny (CR-02).
+     * Rovnaka podmienka je v SQL v selectRow() aj v upsert().
+     */
+    private const FINAL_SQL = '(%1$s.bound_date < :today: AND (%1$s.fetched_at AT TIME ZONE :tz:)::date > %1$s.bound_date)';
+
+    /**
      * @var BaseConnection<mixed, mixed>
      */
     private readonly BaseConnection $db;
@@ -61,7 +69,7 @@ class FxService
 
         $row = $this->selectRow($ctx);
 
-        if ($row !== null && ($this->isFinal($ctx) || $row['fresh'])) {
+        if ($row !== null && ($row['final'] || $row['fresh'])) {
             return $this->quoteFromRow($ctx, $row);
         }
 
@@ -130,11 +138,6 @@ class FxService
         return $row === null ? null : $this->quoteFromRow($ctx, $row);
     }
 
-    private function isFinal(FxContext $ctx): bool
-    {
-        return $ctx->bound < service('clock')->today();
-    }
-
     private function failureKey(FxContext $ctx): string
     {
         return 'fx_fail_' . $ctx->source . '_' . $ctx->invoiceCurrency . '_' . $ctx->bound;
@@ -145,10 +148,19 @@ class FxService
      */
     private function selectRow(FxContext $ctx): ?array
     {
-        $cutoff = service('clock')->now()->modify('-' . self::REFRESH_MINUTES . ' minutes')->format('Y-m-d H:i:sP');
+        $clock  = service('clock');
+        $cutoff = $clock->now()->modify('-' . self::REFRESH_MINUTES . ' minutes')->format('Y-m-d H:i:sP');
         $row    = $this->db->query(
-            'SELECT *, (fetched_at > :cutoff:) AS fresh FROM exchange_rate_cache WHERE source = :s: AND currency = :c: AND bound_date = :b:',
-            ['cutoff' => $cutoff, 's' => $ctx->source, 'c' => $ctx->invoiceCurrency, 'b' => $ctx->bound],
+            'SELECT *, (fetched_at > :cutoff:) AS fresh, ' . sprintf(self::FINAL_SQL, 'exchange_rate_cache') . ' AS final
+             FROM exchange_rate_cache WHERE source = :s: AND currency = :c: AND bound_date = :b:',
+            [
+                'cutoff' => $cutoff,
+                'today'  => $clock->today(),
+                'tz'     => $clock->timezone()->getName(),
+                's'      => $ctx->source,
+                'c'      => $ctx->invoiceCurrency,
+                'b'      => $ctx->bound,
+            ],
         )->getRowArray();
 
         if ($row === null) {
@@ -156,6 +168,7 @@ class FxService
         }
 
         $row['fresh'] = $row['fresh'] === true || $row['fresh'] === 't';
+        $row['final'] = $row['final'] === true || $row['final'] === 't';
 
         return $row;
     }
@@ -168,7 +181,7 @@ class FxService
              ON CONFLICT (source, currency, bound_date) DO UPDATE SET
                 valid_for = EXCLUDED.valid_for, rate = EXCLUDED.rate, rate_published = EXCLUDED.rate_published,
                 amount = EXCLUDED.amount, table_no = EXCLUDED.table_no, direction = EXCLUDED.direction, fetched_at = EXCLUDED.fetched_at
-             WHERE exchange_rate_cache.bound_date >= :today:',
+             WHERE NOT ' . sprintf(self::FINAL_SQL, 'exchange_rate_cache'),
             [
                 's'     => $ctx->source,
                 'c'     => $ctx->invoiceCurrency,
@@ -180,6 +193,7 @@ class FxService
                 'd'     => $q->direction,
                 'f'     => service('clock')->now()->format('Y-m-d H:i:sP'),
                 'today' => service('clock')->today(),
+                'tz'    => service('clock')->timezone()->getName(),
             ],
         );
     }

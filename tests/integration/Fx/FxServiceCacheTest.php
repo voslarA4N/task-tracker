@@ -102,23 +102,76 @@ final class FxServiceCacheTest extends PgTestCase
         $this->assertSame([], $this->http->calls);
     }
 
-    public function testFinalRowNeverOverwritten(): void
+    private const NBP_URL_1020  = 'https://api.nbp.pl/api/exchangerates/rates/a/eur/2026-10-10/2026-10-20/?format=json';
+    private const NBP_BODY_1020 = '{"rates":[{"no":"203/A/NBP/2026","effectiveDate":"2026-10-19","mid":4.3702},{"no":"204/A/NBP/2026","effectiveDate":"2026-10-20","mid":4.3716}]}';
+
+    private function ctx1020(): FxContext
     {
-        $this->seedRate('NBP', 'EUR', '2026-10-20', '2026-10-20', '4.1000', 1, 'X', '2026-10-21 10:00:00+01');
         $ctx = $this->fx->context('PL', 'PLN', 'EUR', '2026-10-15', '2026-10-21');
         $this->assertNotNull($ctx);
         $this->assertSame('2026-10-20', $ctx->bound);
-        $this->assertSame('4.1000', $this->fx->resolve($ctx)->rate);
-        $this->assertSame([], $this->http->calls);
 
-        $this->owner()->query("UPDATE exchange_rate_cache SET rate = 4.2, rate_published = '4.2' WHERE bound_date = '2026-10-20'");
-        $this->rw()->query(
-            "INSERT INTO exchange_rate_cache (source, currency, bound_date, valid_for, rate, rate_published, direction, fetched_at)
-             VALUES ('NBP', 'EUR', '2026-10-20', '2026-10-19', 9, '9', 'multiply', now())
-             ON CONFLICT (source, currency, bound_date) DO UPDATE SET rate = EXCLUDED.rate, rate_published = EXCLUDED.rate_published
-             WHERE exchange_rate_cache.bound_date >= '2026-10-30'",
-        );
-        $this->assertSame('4.2', $this->owner()->query("SELECT rate_published FROM exchange_rate_cache WHERE bound_date = '2026-10-20'")->getRow()->rate_published);
+        return $ctx;
+    }
+
+    private function storedRate1020(): string
+    {
+        return (string) $this->owner()->query("SELECT rate_published FROM exchange_rate_cache WHERE bound_date = '2026-10-20'")->getRow()->rate_published;
+    }
+
+    public function testFinalRowNeverOverwritten(): void
+    {
+        // stiahnuty den po bound (Europe/Bratislava): kurz za bound uz bol zverejneny, riadok je finalny
+        $this->seedRate('NBP', 'EUR', '2026-10-20', '2026-10-20', '4.1000', 1, 'X', '2026-10-21 10:00:00+02');
+        $ctx = $this->ctx1020();
+        $this->assertSame('4.1000', $this->fx->resolve($ctx)->rate);
+        $this->assertSame('4.1000', $this->fx->resolve($ctx, true)->rate);
+        $this->assertSame([], $this->http->calls);
+        $this->assertSame('4.1000', $this->storedRate1020());
+    }
+
+    public function testRowFetchedBeforePublicationIsRefreshedAfterBound(): void
+    {
+        // CR-02: nahlad v den bound pred zverejnenim vratil kurz z predosleho dna; po bound sa nesmie zmrazit
+        $this->seedRate('NBP', 'EUR', '2026-10-20', '2026-10-19', '4.3702', 1, '203/A/NBP/2026', '2026-10-20 09:00:00+02');
+        $this->http->respond(self::NBP_URL_1020, 200, self::NBP_BODY_1020);
+        $ctx = $this->ctx1020();
+
+        $q = $this->fx->resolve($ctx);
+        $this->assertSame([self::NBP_URL_1020], $this->http->calls);
+        $this->assertSame('4.3716', $q->rate);
+        $this->assertSame('2026-10-20', $q->validFor);
+        $this->assertSame('204/A/NBP/2026', $q->tableNo);
+        $this->assertSame('4.3716', $this->storedRate1020());
+
+        // obnoveny riadok je teraz finalny: dalsie hladanie ani retry siet nevolaju
+        $this->fx->resolve($ctx, true);
+        $this->assertSame(1, $this->calls());
+    }
+
+    public function testFinalityUsesLocalCalendarDayOfFetch(): void
+    {
+        // 2026-10-20 21:30 UTC = 23:30 v Bratislave, teda este v den bound: nie je finalny
+        $this->seedRate('NBP', 'EUR', '2026-10-20', '2026-10-19', '4.3702', 1, '203/A/NBP/2026', '2026-10-20 21:30:00+00');
+        $this->http->respond(self::NBP_URL_1020, 200, self::NBP_BODY_1020);
+        $this->assertSame('4.3716', $this->fx->resolve($this->ctx1020())->rate);
+        $this->assertSame(1, $this->calls());
+    }
+
+    public function testFinalityAfterLocalMidnight(): void
+    {
+        // 2026-10-20 22:30 UTC = 2026-10-21 00:30 v Bratislave: finalny
+        $this->seedRate('NBP', 'EUR', '2026-10-20', '2026-10-20', '4.3716', 1, '204/A/NBP/2026', '2026-10-20 22:30:00+00');
+        $this->assertSame('4.3716', $this->fx->resolve($this->ctx1020(), true)->rate);
+        $this->assertSame([], $this->http->calls);
+    }
+
+    public function testOutageKeepsPrePublicationRowAsFallback(): void
+    {
+        $this->seedRate('NBP', 'EUR', '2026-10-20', '2026-10-19', '4.3702', 1, '203/A/NBP/2026', '2026-10-20 09:00:00+02');
+        $this->http->respond(self::NBP_URL_1020, 503, 'down');
+        $this->assertSame('4.3702', $this->fx->resolve($this->ctx1020())->rate);
+        $this->assertSame(1, $this->calls());
     }
 
     public function testNonFinalRefreshesAfterFifteenMinutes(): void
