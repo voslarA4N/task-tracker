@@ -429,7 +429,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 08-10-PLAN.md — Vystavenie s kurzom iba z cache, stĺpce fx_*, CHECK konzistencie, audit, assertFx
+- [x] 08-10-PLAN.md — Vystavenie s kurzom iba z cache, stĺpce fx_*, CHECK konzistencie, audit, assertFx
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
@@ -527,7 +527,7 @@ Plans:
 | 5. Fakturačné jadro | 9/9 | Complete    | 2026-10-27 |
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
-| 8. Meny a kurzy | 6/10 | In Progress|  |
+| 8. Meny a kurzy | 7/10 | In Progress|  |
 | 9. Dobropisy | 0/0 | Not started | - |
 | 10. Limity obratu | 0/0 | Not started | - |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
