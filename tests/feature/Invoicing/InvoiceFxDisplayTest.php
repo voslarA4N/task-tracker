@@ -7,6 +7,7 @@ namespace Tests\Feature\Invoicing;
 use App\Libraries\Fx\FxInput;
 use App\Libraries\Fx\FxService;
 use App\Libraries\Invoicing\InvoiceDraftService;
+use App\Libraries\Invoicing\InvoiceQueries;
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Test\Mock\MockCache;
 use CodeIgniter\Test\TestResponse;
@@ -112,5 +113,18 @@ final class InvoiceFxDisplayTest extends AuthTestCase
 
         $this->assertSame(1, substr_count($html, 'class="fx-sub w-100"'));
         $this->assertMatchesRegularExpression('#fx-sub w-100">4\D?761[.,]72#u', $html);
+    }
+
+    public function testEntityCurrencyComesFromSnapshot(): void
+    {
+        // WR-05: mena subjektu pri druhom sucte je z kopie udajov dokladu, nie zo zivej tabulky entities
+        $id = $this->issueFx();
+        $q  = new InvoiceQueries($this->rw());
+
+        $row = array_values(array_filter($q->list()['rows'], static fn (array $r): bool => $r['id'] === $id))[0];
+        $this->assertSame('PLN', $row['entity_currency']);
+        $detail = $q->detail($id) ?? [];
+        $this->assertArrayNotHasKey('entity_currency', $detail);
+        $this->assertSame('PLN', $detail['snapshot']['fx']['entity_currency'] ?? null);
     }
 }

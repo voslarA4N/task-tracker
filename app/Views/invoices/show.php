@@ -30,7 +30,8 @@ $legal    = (array) ($snap['legal'] ?? []);
 $legalTxt = (string) ($legal['texts']['vat_note']['body'] ?? '');
 $hoursSum = '0.00';
 $fx       = (($invoice['fx_rate'] ?? null) !== null && is_array($snap['fx'] ?? null)) ? $snap['fx'] : null;
-$entityCcy = trim((string) ($invoice['entity_currency'] ?? ''));
+// mena subjektu iba z kopie udajov dokladu, nikdy zo zivej tabulky entities (WR-05)
+$entityCcy = trim((string) ($fx['entity_currency'] ?? ''));
 $fxBasisKey = ($invoice['fx_date_basis'] ?? '') === 'issue_date' ? 'Invoices.fxBasisIssue' : 'Invoices.fxBasisDelivery';
 
 foreach ($invoice['lines'] as $l) {
