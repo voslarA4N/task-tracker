@@ -58,7 +58,7 @@ final class InvoiceIssuerTest extends PgTestCase
         $this->assertSame('2026-10-31', $row->turnover_date);
         $this->assertSame('transfer', $row->payment_method);
         $this->assertNull($row->payment_note);
-        $this->assertSame(2, (int) $row->snapshot_schema);
+        $this->assertSame(3, (int) $row->snapshot_schema);
         $this->assertSame('inv-2', $row->template_version);
         $this->assertNull($row->fx_rate);
         $this->assertSame('sk', $row->doc_language);
