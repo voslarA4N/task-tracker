@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries\Invoicing;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Fx\FxService;
 use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use App\Libraries\Platform\DbBool;
 use App\Libraries\Platform\Transaction;
@@ -33,6 +34,7 @@ final class InvoiceIssuer
     private readonly NumberAllocator $numbers;
     private readonly DocumentStore $documents;
     private readonly InvoiceGuards $guards;
+    private readonly FxService $fx;
 
     /**
      * @param BaseConnection<mixed, mixed>|null $db
@@ -44,6 +46,7 @@ final class InvoiceIssuer
         ?SnapshotBuilder $builder = null,
         ?NumberAllocator $numbers = null,
         ?DocumentStore $documents = null,
+        ?FxService $fx = null,
     ) {
         $this->db        = $db ?? Database::connect();
         $this->audit     = $audit ?? new AuditLogger($this->db);
@@ -52,6 +55,7 @@ final class InvoiceIssuer
         $this->numbers   = $numbers ?? new NumberAllocator($this->db);
         $this->documents = $documents ?? new DocumentStore($this->db);
         $this->guards    = new InvoiceGuards($this->db);
+        $this->fx        = $fx ?? new FxService($this->db);
     }
 
     /**
@@ -161,10 +165,14 @@ final class InvoiceIssuer
 
         // kontroly pred vyberom bankoveho uctu (inak by mena skoncila ako no_bank_account)
         $this->guards->assertEntityActive($entity, $cmd->issueDate);
-        $this->guards->assertCurrency($entity, $this->guards->partsCurrency($parts));
 
-        $snapshot = $this->builder->build($client, $entity, $parts, $cmd->billingMonth, $cmd->issueDate, $cmd->deliveryDate, $cmd->dueDate, null, $cmd->paymentMethod, $cmd->paymentNote);
-        $this->guards->assertCurrency($entity, $snapshot['currency']);
+        // kurz iba z cache, nikdy siet pod zamkom (D-07, D-03)
+        $invoiceCcy = $this->guards->partsCurrency($parts);
+        $ctx        = $this->fx->context((string) $entity['country'], trim((string) $entity['currency']), $invoiceCcy, $cmd->issueDate, $cmd->deliveryDate);
+        $quote      = $ctx === null ? null : $this->fx->cached($ctx);
+        $this->guards->assertFx($entity, $invoiceCcy, $quote);
+
+        $snapshot = $this->builder->build($client, $entity, $parts, $cmd->billingMonth, $cmd->issueDate, $cmd->deliveryDate, $cmd->dueDate, null, $cmd->paymentMethod, $cmd->paymentNote, $quote);
 
         if (! hash_equals($cmd->previewToken, InvoiceCalculator::previewToken($snapshot))) {
             throw new IssueRejected('preview_stale');
@@ -243,15 +251,19 @@ final class InvoiceIssuer
 
         // 13. audit (bez snapshotu a bajtov)
         $this->audit->record('invoice', $invoiceId, 'issue', null, [
-            'number'        => $allocated->number,
-            'client_id'     => $cmd->clientId,
-            'entity_id'     => $cmd->entityId,
-            'billing_month' => $cmd->billingMonth,
-            'total'         => $snapshot['totals']['total'],
-            'currency'      => $snapshot['currency'],
-            'line_count'    => $snapshot['totals']['line_count'],
-            'sha256'        => $pdf->sha256,
-            'report_sha256' => $report->sha256,
+            'number'           => $allocated->number,
+            'client_id'        => $cmd->clientId,
+            'entity_id'        => $cmd->entityId,
+            'billing_month'    => $cmd->billingMonth,
+            'total'            => $snapshot['totals']['total'],
+            'currency'         => $snapshot['currency'],
+            'line_count'       => $snapshot['totals']['line_count'],
+            'sha256'           => $pdf->sha256,
+            'report_sha256'    => $report->sha256,
+            'fx_source'        => $snapshot['fx']['source'] ?? null,
+            'fx_rate'          => $snapshot['fx']['rate_display'] ?? null,
+            'fx_manual'        => $snapshot['fx']['manual'] ?? null,
+            'total_entity_ccy' => $snapshot['fx']['total'] ?? $snapshot['totals']['total'],
         ]);
 
         // 14. deferred kontrola uplnosti padne ako vynimka este vnutri transakcie
@@ -278,46 +290,52 @@ final class InvoiceIssuer
     {
         return (int) $this->db->query(
             "INSERT INTO invoices (origin, type, request_key, entity_id, entity_version_id, series_id, number, client_id, billing_month,
-                issue_date, delivery_date, due_date, turnover_date, currency, total, total_entity_ccy, counts_toward_limit, line_count,
+                issue_date, delivery_date, due_date, turnover_date, currency, total, total_entity_ccy, fx_rate, fx_source, fx_date, fx_table_no, fx_date_basis, counts_toward_limit, line_count,
                 doc_language, vat_regime, billing_mode, exemption_code, entity_vat_id, client_identifier_type, client_identifier_value, client_vat_id,
                 bank_iban, bank_swift, payment_method, payment_note, snapshot, snapshot_schema, template_version, created_at, created_by)
              VALUES ('issued', 'invoice', CAST(:rk: AS uuid), :entity:, :version:, :series:, :number:, :client:, :month:,
-                :issue:, :delivery:, :due:, :turnover:, :ccy:, :total:, :total:, CAST(:counts: AS boolean), :n:,
+                :issue:, :delivery:, :due:, :turnover:, :ccy:, :total:, :total_entity:, :fx_rate:, :fx_source:, :fx_date:, :fx_table:, :fx_basis:, CAST(:counts: AS boolean), :n:,
                 :lang:, :regime:, :mode:, :exemption:, :entity_vat:, :cit:, :civ:, :cvat:,
                 :iban:, :swift:, :pm:, :pn:, CAST(:snapshot: AS jsonb), :schema:, :tpl:, :created:, :by:) RETURNING id",
             [
-                'rk'         => $cmd->requestKey,
-                'pm'         => $snapshot['payment']['method'],
-                'pn'         => $snapshot['payment']['note'],
-                'schema'     => (int) $snapshot['schema'],
-                'entity'     => $cmd->entityId,
-                'version'    => $snapshot['entity']['version_id'],
-                'series'     => (int) $series['id'],
-                'number'     => $snapshot['number'],
-                'client'     => $cmd->clientId,
-                'month'      => $cmd->billingMonth,
-                'issue'      => $snapshot['issue_date'],
-                'delivery'   => $snapshot['delivery_date'],
-                'due'        => $snapshot['due_date'],
-                'turnover'   => $snapshot['delivery_date'], // datum dodania
-                'ccy'        => $snapshot['currency'],
-                'total'      => $snapshot['totals']['total'],
-                'counts'     => DbBool::toDb(DbBool::of($client['counts_toward_limit'])),
-                'n'          => $snapshot['totals']['line_count'],
-                'lang'       => $snapshot['doc_language'],
-                'regime'     => $snapshot['legal']['vat_regime'],
-                'mode'       => $snapshot['legal']['billing_mode'],
-                'exemption'  => $snapshot['legal']['exemption_code'],
-                'entity_vat' => $snapshot['entity']['vat_id'],
-                'cit'        => $snapshot['client']['identifier_type'],
-                'civ'        => $snapshot['client']['identifier_value'],
-                'cvat'       => $snapshot['client']['vat_id'],
-                'iban'       => $snapshot['bank']['iban'],
-                'swift'      => $snapshot['bank']['swift'],
-                'snapshot'   => json_encode($snapshot, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
-                'tpl'        => $snapshot['template_version'],
-                'created'    => $created,
-                'by'         => $cmd->userId,
+                'rk'           => $cmd->requestKey,
+                'pm'           => $snapshot['payment']['method'],
+                'pn'           => $snapshot['payment']['note'],
+                'schema'       => (int) $snapshot['schema'],
+                'entity'       => $cmd->entityId,
+                'version'      => $snapshot['entity']['version_id'],
+                'series'       => (int) $series['id'],
+                'number'       => $snapshot['number'],
+                'client'       => $cmd->clientId,
+                'month'        => $cmd->billingMonth,
+                'issue'        => $snapshot['issue_date'],
+                'delivery'     => $snapshot['delivery_date'],
+                'due'          => $snapshot['due_date'],
+                'turnover'     => $snapshot['delivery_date'], // datum dodania
+                'ccy'          => $snapshot['currency'],
+                'total'        => $snapshot['totals']['total'],
+                'total_entity' => $snapshot['fx']['total'] ?? $snapshot['totals']['total'],
+                'fx_rate'      => $snapshot['fx']['rate'] ?? null,
+                'fx_source'    => $snapshot['fx']['source'] ?? null,
+                'fx_date'      => $snapshot['fx']['valid_for'] ?? null,
+                'fx_table'     => $snapshot['fx']['table_no'] ?? null,
+                'fx_basis'     => $snapshot['fx']['date_basis'] ?? null,
+                'counts'       => DbBool::toDb(DbBool::of($client['counts_toward_limit'])),
+                'n'            => $snapshot['totals']['line_count'],
+                'lang'         => $snapshot['doc_language'],
+                'regime'       => $snapshot['legal']['vat_regime'],
+                'mode'         => $snapshot['legal']['billing_mode'],
+                'exemption'    => $snapshot['legal']['exemption_code'],
+                'entity_vat'   => $snapshot['entity']['vat_id'],
+                'cit'          => $snapshot['client']['identifier_type'],
+                'civ'          => $snapshot['client']['identifier_value'],
+                'cvat'         => $snapshot['client']['vat_id'],
+                'iban'         => $snapshot['bank']['iban'],
+                'swift'        => $snapshot['bank']['swift'],
+                'snapshot'     => json_encode($snapshot, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
+                'tpl'          => $snapshot['template_version'],
+                'created'      => $created,
+                'by'           => $cmd->userId,
             ],
         )->getRow()->id;
     }

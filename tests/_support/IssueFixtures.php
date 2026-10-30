@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use App\Libraries\Audit\AuditLogger;
+use App\Libraries\Fx\FxService;
 use App\Libraries\Invoicing\InvoiceCalculator;
 use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Invoicing\InvoiceParts;
@@ -137,8 +138,17 @@ trait IssueFixtures
             return str_repeat('0', 64);
         }
 
+        $quote = null;
+        $ccy   = trim((string) $unlocked[0]['currency']);
+
+        if ($ccy !== trim((string) $entity['currency'])) {
+            $fx    = new FxService($this->rw());
+            $ctx   = $fx->context((string) $entity['country'], trim((string) $entity['currency']), $ccy, $issueDate, $deliveryDate);
+            $quote = $ctx === null ? null : $fx->cached($ctx);
+        }
+
         try {
-            $snapshot = (new SnapshotBuilder($this->rw()))->build($client, $entity, $unlocked, $month, $issueDate, $deliveryDate, $dueDate, null);
+            $snapshot = (new SnapshotBuilder($this->rw()))->build($client, $entity, $unlocked, $month, $issueDate, $deliveryDate, $dueDate, null, 'transfer', null, $quote);
         } catch (IssueRejected) {
             return str_repeat('0', 64);
         }
