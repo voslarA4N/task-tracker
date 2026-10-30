@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 8 UI-SPEC approved
-last_updated: "2026-10-29T23:52:06.400Z"
-last_activity: 2026-10-29 -- Phase 8 planning complete
+last_updated: "2026-10-30T09:54:28.016Z"
+last_activity: 2026-10-30 -- Phase 08 execution started
 progress:
   total_phases: 12
   completed_phases: 7
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 07 — doru-enie-hrady-a-upomienky
+**Current focus:** Phase 08 — meny-a-kurzy
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-10-29 -- Phase 8 planning complete
+Phase: 08 (meny-a-kurzy) — EXECUTING
+Plan: 1 of 10
+Status: Executing Phase 08
+Last activity: 2026-10-30 -- Phase 08 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
