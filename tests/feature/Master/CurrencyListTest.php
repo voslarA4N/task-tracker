@@ -48,10 +48,10 @@ final class CurrencyListTest extends AuthTestCase
     private function payload(string $currency): array
     {
         return [
-            'name' => 'All4Net', 'address_line1' => 'Hlavna 1', 'address_line2' => '', 'postal_code' => '81101', 'city' => 'Bratislava',
-            'country' => 'SK', 'identifier_type' => 'local_id', 'identifier_value' => '12345678', 'tax_id' => '', 'vat_id' => '',
+            'name'          => 'All4Net', 'address_line1' => 'Hlavna 1', 'address_line2' => '', 'postal_code' => '81101', 'city' => 'Bratislava',
+            'country'       => 'SK', 'identifier_type' => 'local_id', 'identifier_value' => '12345678', 'tax_id' => '', 'vat_id' => '',
             'invoice_email' => 'fakturacia@example.test', 'cc_emails' => '', 'hourly_rate' => '30', 'currency' => $currency,
-            'doc_language' => '', 'due_days' => '', 'billing_mode' => 'domestic', 'counts_toward_limit' => '1',
+            'doc_language'  => '', 'due_days' => '', 'billing_mode' => 'domestic', 'counts_toward_limit' => '1',
         ];
     }
 

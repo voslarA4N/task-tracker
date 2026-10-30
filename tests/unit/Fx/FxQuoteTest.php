@@ -44,11 +44,11 @@ final class FxQuoteTest extends CIUnitTestCase
         $this->assertNull($core['table_no']);
         $this->assertSame('4.3000', $core['rate_display']);
         $this->assertSame([
-            'source'   => 'NBP',
-            'rate'     => '4.4090',
-            'amount'   => 1,
+            'source'    => 'NBP',
+            'rate'      => '4.4090',
+            'amount'    => 1,
             'valid_for' => '2026-10-27',
-            'table_no' => '209/A/NBP/2026',
+            'table_no'  => '209/A/NBP/2026',
         ], $core['fetched']);
     }
 
@@ -67,7 +67,7 @@ final class FxQuoteTest extends CIUnitTestCase
     public function testToRateQuote(): void
     {
         $nbp = $this->nbp();
-        $this->assertEquals($nbp, FxQuote::fromRate($nbp, 'delivery_date', 'previous_business_day', '2026-10-28', 'PLN', 'EUR')->toRateQuote());
+        $this->assertSame($nbp, FxQuote::fromRate($nbp, 'delivery_date', 'previous_business_day', '2026-10-28', 'PLN', 'EUR')->toRateQuote());
         $this->assertNull(FxQuote::manual('4.3', '2026-10-28', 'multiply', 'delivery_date', 'previous_business_day', '2026-10-28', 'PLN', 'EUR', $nbp)->toRateQuote());
     }
 

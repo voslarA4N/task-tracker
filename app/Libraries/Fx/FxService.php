@@ -28,6 +28,7 @@ class FxService
      * @var BaseConnection<mixed, mixed>
      */
     private readonly BaseConnection $db;
+
     private readonly RateHttpClient $http;
     private readonly FxSettingsService $settings;
 
@@ -57,9 +58,9 @@ class FxService
     }
 
     /**
-     * @throws UnsupportedPair
      * @throws RateNotFound
      * @throws RateUnavailable
+     * @throws UnsupportedPair
      */
     public function resolve(FxContext $ctx, bool $retry = false): FxQuote
     {

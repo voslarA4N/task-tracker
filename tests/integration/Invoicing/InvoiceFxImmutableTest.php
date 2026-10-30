@@ -19,6 +19,7 @@ use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
 use Tests\Support\PgTestCase;
+use Throwable;
 
 /**
  * Vystavena faktura s kurzom sa nezmeni po zmene cache ani nastaveni (CUR-02, D-07, D-14).
@@ -77,7 +78,7 @@ final class InvoiceFxImmutableTest extends PgTestCase
 
         try {
             $fx->resolve($ctx);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // vysledok nie je podstatny, iba ze doklad zostane
         }
 

@@ -114,7 +114,7 @@ final class ClientInput
     /**
      * Validuje surove (fromPost) hodnoty; identifikatory porovnava po rovnakej normalizacii ako normalize().
      *
-     * @param array<string, string|null>   $v
+     * @param array<string, string|null>    $v
      * @param (callable(string): bool)|null $currencyActive overí menu (predvolene tabuľka currencies)
      *
      * @return array<string, string>

@@ -26,6 +26,7 @@ class FxSettingsService
      * @var BaseConnection<mixed, mixed>
      */
     protected readonly BaseConnection $db;
+
     protected readonly AuditLogger $audit;
 
     /**
@@ -104,7 +105,7 @@ class FxSettingsService
         $now = service('clock')->now()->format('Y-m-d H:i:sP');
 
         return Transaction::run($this->db, function () use ($rows, $now): bool {
-            $current = $this->db->query('SELECT * FROM fx_country_settings ORDER BY id FOR UPDATE')->getResultArray();
+            $current   = $this->db->query('SELECT * FROM fx_country_settings ORDER BY id FOR UPDATE')->getResultArray();
             $byCountry = [];
 
             foreach ($current as $r) {

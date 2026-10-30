@@ -15,7 +15,7 @@ final class CnbRateProvider implements RateProvider
     private const URL_JSON = 'https://api.cnb.cz/cnbapi/exrates/daily?date=%s&lang=EN';
     private const URL_TXT  = 'https://www.cnb.cz/en/financial-markets/foreign-exchange-market/central-bank-exchange-rate-fixing/central-bank-exchange-rate-fixing/daily.txt?date=%s';
     private const MONTHS   = ['Jan' => '01', 'Feb' => '02', 'Mar' => '03', 'Apr' => '04', 'May' => '05', 'Jun' => '06',
-        'Jul' => '07', 'Aug' => '08', 'Sep' => '09', 'Oct' => '10', 'Nov' => '11', 'Dec' => '12'];
+        'Jul'                       => '07', 'Aug' => '08', 'Sep' => '09', 'Oct' => '10', 'Nov' => '11', 'Dec' => '12'];
 
     public function __construct(private readonly RateHttpClient $http)
     {
@@ -78,7 +78,7 @@ final class CnbRateProvider implements RateProvider
             }
 
             if (! is_string($row['rate'] ?? null) || ! is_int($row['amount'] ?? null)
-                || ! is_string($row['validFor'] ?? null) || ! is_int($row['order'] ?? null)) {
+                                                  || ! is_string($row['validFor'] ?? null) || ! is_int($row['order'] ?? null)) {
                 throw new RateUnavailable('parse_error');
             }
 
@@ -100,7 +100,7 @@ final class CnbRateProvider implements RateProvider
         $lines = preg_split('/\r\n|\n|\r/', trim($result->body));
 
         if ($lines === false || ! isset($lines[0]) || preg_match('/^(\d{1,2}) (\w{3}) (\d{4}) #(\d+)$/D', trim($lines[0]), $h) !== 1
-            || ! isset(self::MONTHS[$h[2]])) {
+                             || ! isset(self::MONTHS[$h[2]])) {
             throw new RateUnavailable('parse_error');
         }
 

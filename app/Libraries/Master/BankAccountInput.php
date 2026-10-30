@@ -62,7 +62,7 @@ final class BankAccountInput
     }
 
     /**
-     * @param array<string, mixed>          $v normalizovane hodnoty
+     * @param array<string, mixed>          $v              normalizovane hodnoty
      * @param (callable(string): bool)|null $currencyActive overi menu (predvolene tabulka currencies)
      *
      * @return array<string, string>

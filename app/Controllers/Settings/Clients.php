@@ -7,9 +7,9 @@ namespace App\Controllers\Settings;
 use App\Controllers\BaseController;
 use App\Libraries\Master\BillingMode;
 use App\Libraries\Master\ClientCurrencyLocked;
-use App\Libraries\Master\CurrencyRepository;
 use App\Libraries\Master\ClientInput;
 use App\Libraries\Master\ClientService;
+use App\Libraries\Master\CurrencyRepository;
 use App\Libraries\Platform\MoneyFormat;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\IncomingRequest;
@@ -167,12 +167,12 @@ final class Clients extends BaseController
         $client = $id === null ? null : (new ClientService())->find($id);
 
         return [
-            'title'     => lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle'),
-            'id'        => $id,
-            'client'    => $client,
-            'values'    => $values,
-            'errors'    => $errors,
-            'countries' => $countries,
+            'title'      => lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle'),
+            'id'         => $id,
+            'client'     => $client,
+            'values'     => $values,
+            'errors'     => $errors,
+            'countries'  => $countries,
             'currencies' => $this->currencyOptions((string) ($values['currency'] ?? '')),
         ];
     }

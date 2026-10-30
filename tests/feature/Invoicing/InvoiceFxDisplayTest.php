@@ -67,10 +67,10 @@ final class InvoiceFxDisplayTest extends AuthTestCase
 
     private function issueFx(?FxInput $in = null): int
     {
-        $s  = $this->fxPlEurSetup();
+        $s = $this->fxPlEurSetup();
         $this->seedRate('NBP', 'EUR', '2026-10-30', '2026-10-27', '4.4090', 1, '209/A/NBP/2026');
         $in ??= FxInput::auto();
-        $d  = (new InvoiceDraftService($this->rw(), new FxService($this->rw(), $this->http)))
+        $d = (new InvoiceDraftService($this->rw(), new FxService($this->rw(), $this->http)))
             ->draft($s['client'], '2026-10', $s['entity'], '2026-10-30', '2026-10-31', '2026-11-10', null, null, false, false, $in);
 
         return $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts'], ['issueDate' => '2026-10-30', 'previewToken' => $d->previewToken, 'fx' => $in]))->id;

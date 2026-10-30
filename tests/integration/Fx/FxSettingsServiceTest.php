@@ -73,8 +73,8 @@ final class FxSettingsServiceTest extends PgTestCase
 
     public function testUpdateChangesRowBumpsRevisionAndAudits(): void
     {
-        $base = $this->auditCount();
-        $rows = $this->rows();
+        $base                     = $this->auditCount();
+        $rows                     = $this->rows();
         $rows['PL']['date_basis'] = 'issue_date';
 
         $this->assertTrue($this->service()->updateAll($rows));
@@ -111,8 +111,8 @@ final class FxSettingsServiceTest extends PgTestCase
         $rows['PL']['source'] = 'ECB';
         $this->service()->updateAll($rows);
 
-        $again                 = $this->rows();
-        $again['PL']['source'] = 'CNB';
+        $again                   = $this->rows();
+        $again['PL']['source']   = 'CNB';
         $again['PL']['revision'] = 1;
 
         try {
@@ -127,8 +127,8 @@ final class FxSettingsServiceTest extends PgTestCase
 
     public function testInvalidRejected(): void
     {
-        $rows                 = $this->rows();
-        $rows['PL']['source'] = 'XYZ';
+        $rows                   = $this->rows();
+        $rows['PL']['source']   = 'XYZ';
         $rows['CZ']['day_rule'] = '';
 
         try {

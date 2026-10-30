@@ -8,10 +8,14 @@ interface RateProvider
 {
     public function source(): string;
 
-    /** Mena subjektu, v ktorej zdroj publikuje (PLN, EUR, CZK). */
+    /**
+     * Mena subjektu, v ktorej zdroj publikuje (PLN, EUR, CZK).
+     */
     public function homeCurrency(): string;
 
-    /** 'multiply' (suma * kurz) alebo 'divide' (suma / kurz). */
+    /**
+     * 'multiply' (suma * kurz) alebo 'divide' (suma / kurz).
+     */
     public function direction(): string;
 
     /**

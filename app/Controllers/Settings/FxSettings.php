@@ -54,7 +54,7 @@ final class FxSettings extends BaseController
     }
 
     /**
-     * @param array<string, array<string, mixed>>|null $draft  odoslane hodnoty pri 422, inak null (hodnoty z DB)
+     * @param array<string, array<string, mixed>>|null $draft   odoslane hodnoty pri 422, inak null (hodnoty z DB)
      * @param list<string>                             $invalid
      *
      * @return array<string, mixed>

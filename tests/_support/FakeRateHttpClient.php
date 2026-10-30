@@ -14,7 +14,9 @@ use Throwable;
  */
 final class FakeRateHttpClient implements RateHttpClient
 {
-    /** @var list<string> */
+    /**
+     * @var list<string>
+     */
     public array $calls = [];
 
     /**

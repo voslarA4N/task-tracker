@@ -65,7 +65,7 @@ final class FxSettingsTest extends AuthTestCase
         ];
 
         foreach ($override as $path => $value) {
-            [$c, $f]    = explode('.', $path);
+            [$c, $f]      = explode('.', $path);
             $data[$c][$f] = $value;
         }
 
