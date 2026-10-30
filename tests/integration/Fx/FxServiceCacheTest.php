@@ -148,6 +148,17 @@ final class FxServiceCacheTest extends PgTestCase
         $this->assertSame(1, $this->calls());
     }
 
+    public function testResponseWithRowsAfterBoundIsCachedWithoutCheckViolation(): void
+    {
+        // WR-04: odpoved obsahuje aj dni po bound; provider ich ignoruje, upsert neporusi CHECK valid_for <= bound_date
+        $this->http->respond(self::NBP_URL_1020, 200, FakeRateHttpClient::fixture('nbp_eur_range.json'));
+        $q = $this->fx->resolve($this->ctx1020());
+
+        $this->assertSame('4.3716', $q->rate);
+        $this->assertSame('2026-10-20', $q->validFor);
+        $this->assertSame('4.3716', $this->storedRate1020());
+    }
+
     public function testFinalityUsesLocalCalendarDayOfFetch(): void
     {
         // 2026-10-20 21:30 UTC = 23:30 v Bratislave, teda este v den bound: nie je finalny

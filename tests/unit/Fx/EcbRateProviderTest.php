@@ -36,9 +36,9 @@ final class EcbRateProviderTest extends CIUnitTestCase
 
     public function testColumnsByHeaderNameAndQuotedCommas(): void
     {
-        $csv = "OBS_VALUE,TITLE_COMPL,TIME_PERIOD,KEY\n"
-            . "4.1000,\"a, b, c\",2026-10-28,K\n"
-            . "4.2500,\"ECB reference exchange rate, Polish zloty/Euro, 2.15 pm\",2026-10-29,K\n";
+        $csv = "OBS_VALUE,TITLE_COMPL,TIME_PERIOD,KEY,CURRENCY\n"
+            . "4.1000,\"a, b, c\",2026-10-28,K,PLN\n"
+            . "4.2500,\"ECB reference exchange rate, Polish zloty/Euro, 2.15 pm\",2026-10-29,K,PLN\n";
         $http = new FakeRateHttpClient();
         $http->respond(self::URL, 200, $csv);
 
@@ -46,6 +46,47 @@ final class EcbRateProviderTest extends CIUnitTestCase
 
         $this->assertSame('4.2500', $q->rate);
         $this->assertSame('2026-10-29', $q->validFor);
+    }
+
+    public function testPicksLatestRowOnOrBeforeBoundRegardlessOfOrder(): void
+    {
+        // WR-04: neusporiadane riadky, riadok po bound a riadok inej meny sa ignoruju
+        $csv = "TIME_PERIOD,OBS_VALUE,CURRENCY\n"
+            . "2026-10-28,4.2800,PLN\n"
+            . "2026-10-30,9.9999,PLN\n"
+            . "2026-10-29,4.2900,CZK\n"
+            . "2026-10-27,4.2700,PLN\n";
+        $http = new FakeRateHttpClient();
+        $http->respond(self::URL, 200, $csv);
+
+        $q = (new EcbRateProvider($http))->latestOnOrBefore('PLN', '2026-10-29');
+
+        $this->assertSame('4.2800', $q->rate);
+        $this->assertSame('2026-10-28', $q->validFor);
+    }
+
+    public function testOnlyRowsAfterBoundOrOtherCurrencyAreNotFound(): void
+    {
+        $http = new FakeRateHttpClient();
+        $http->respond(self::URL, 200, "TIME_PERIOD,OBS_VALUE,CURRENCY\n2026-10-30,4.3,PLN\n2026-10-29,4.3,CZK\n");
+
+        $this->expectException(RateNotFound::class);
+        (new EcbRateProvider($http))->latestOnOrBefore('PLN', '2026-10-29');
+    }
+
+    public function testMissingCurrencyColumnOrBadDateIsParseError(): void
+    {
+        foreach (["TIME_PERIOD,OBS_VALUE\n2026-10-29,4.3\n", "TIME_PERIOD,OBS_VALUE,CURRENCY\n29.10.2026,4.3,PLN\n"] as $body) {
+            $http = new FakeRateHttpClient();
+            $http->respond(self::URL, 200, $body);
+
+            try {
+                (new EcbRateProvider($http))->latestOnOrBefore('PLN', '2026-10-29');
+                $this->fail('Expected RateUnavailable');
+            } catch (RateUnavailable $e) {
+                $this->assertSame('parse_error', $e->reason);
+            }
+        }
     }
 
     public function testEmptyBodyAndHeaderOnlyAreNotFound(): void

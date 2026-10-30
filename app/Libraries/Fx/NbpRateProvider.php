@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use JsonException;
 
 /**
- * NBP, tabulka A (stredny kurz), PLN za jednotku meny (D-06). Rozsah [bound-10, bound], posledny prvok.
+ * NBP, tabulka A (stredny kurz), PLN za jednotku meny (D-06). Rozsah [bound-10, bound], najnovsi riadok <= bound.
  */
 final class NbpRateProvider implements RateProvider
 {
@@ -63,14 +63,25 @@ final class NbpRateProvider implements RateProvider
             throw new RateUnavailable('parse_error');
         }
 
-        if ($rates === []) {
-            throw new RateNotFound('No NBP rate in range.');
+        // WR-04: neveri sa poradiu ani rozsahu odpovede; vyberie sa najnovsi riadok s datumom <= bound
+        $last = null;
+
+        foreach ($rates as $row) {
+            if (! is_array($row) || ! is_string($row['mid'] ?? null) || ! is_string($row['effectiveDate'] ?? null) || ! is_string($row['no'] ?? null)) {
+                throw new RateUnavailable('parse_error');
+            }
+
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/D', $row['effectiveDate']) !== 1) {
+                throw new RateUnavailable('parse_error');
+            }
+
+            if ($row['effectiveDate'] <= $to && ($last === null || $row['effectiveDate'] > $last['effectiveDate'])) {
+                $last = $row;
+            }
         }
 
-        $last = end($rates);
-
-        if (! is_array($last) || ! is_string($last['mid'] ?? null) || ! is_string($last['effectiveDate'] ?? null) || ! is_string($last['no'] ?? null)) {
-            throw new RateUnavailable('parse_error');
+        if ($last === null) {
+            throw new RateNotFound('No NBP rate in range.');
         }
 
         try {

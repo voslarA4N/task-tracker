@@ -57,19 +57,43 @@ final class EcbRateProvider implements RateProvider
         $header = str_getcsv($lines[0], ',', '"', '');
         $time   = array_search('TIME_PERIOD', $header, true);
         $value  = array_search('OBS_VALUE', $header, true);
+        $ccy    = array_search('CURRENCY', $header, true);
 
-        if ($time === false || $value === false) {
+        if ($time === false || $value === false || $ccy === false) {
             throw new RateUnavailable('parse_error');
         }
 
-        $row = str_getcsv($lines[count($lines) - 1], ',', '"', '');
+        // WR-04: neveri sa poradiu ani rozsahu odpovede; najnovsi riadok s datumom <= bound a spravnou menou
+        $best = null;
 
-        if (! isset($row[$time], $row[$value])) {
-            throw new RateUnavailable('parse_error');
+        foreach (array_slice($lines, 1) as $line) {
+            $row = str_getcsv($line, ',', '"', '');
+
+            if (! isset($row[$time], $row[$value], $row[$ccy])) {
+                throw new RateUnavailable('parse_error');
+            }
+
+            $date = trim((string) $row[$time]);
+
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date) !== 1) {
+                throw new RateUnavailable('parse_error');
+            }
+
+            if (trim((string) $row[$ccy]) !== $currency || $date > $to) {
+                continue;
+            }
+
+            if ($best === null || $date > $best[0]) {
+                $best = [$date, trim((string) $row[$value])];
+            }
+        }
+
+        if ($best === null) {
+            throw new RateNotFound('No ECB rate in range.');
         }
 
         try {
-            return new RateQuote('ECB', $currency, trim($row[$value]), 1, trim($row[$time]), null, 'divide');
+            return new RateQuote('ECB', $currency, $best[1], 1, $best[0], null, 'divide');
         } catch (InvalidArgumentException) {
             throw new RateUnavailable('parse_error');
         }

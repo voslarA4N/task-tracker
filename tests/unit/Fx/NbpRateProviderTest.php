@@ -51,6 +51,29 @@ final class NbpRateProviderTest extends CIUnitTestCase
         $this->assertSame('4.3', $q->rate);
     }
 
+    public function testPicksLatestRowOnOrBeforeBoundRegardlessOfOrder(): void
+    {
+        // WR-04: neusporiadane pole a riadok po bound sa ignoruje (inak by upsert porusil CHECK valid_for <= bound_date)
+        $http = new FakeRateHttpClient();
+        $http->respond(self::URL, 200, '{"rates":[{"no":"210/A/NBP/2026","effectiveDate":"2026-10-28","mid":4.4090},'
+            . '{"no":"212/A/NBP/2026","effectiveDate":"2026-10-30","mid":9.9999},{"no":"209/A/NBP/2026","effectiveDate":"2026-10-27","mid":4.4056}]}');
+
+        $q = (new NbpRateProvider($http))->latestOnOrBefore('EUR', '2026-10-29');
+
+        $this->assertSame('4.4090', $q->rate);
+        $this->assertSame('2026-10-28', $q->validFor);
+        $this->assertSame('210/A/NBP/2026', $q->tableNo);
+    }
+
+    public function testOnlyRowsAfterBoundAreNotFound(): void
+    {
+        $http = new FakeRateHttpClient();
+        $http->respond(self::URL, 200, '{"rates":[{"no":"212/A/NBP/2026","effectiveDate":"2026-10-30","mid":4.4}]}');
+
+        $this->expectException(RateNotFound::class);
+        (new NbpRateProvider($http))->latestOnOrBefore('EUR', '2026-10-29');
+    }
+
     public function testRateStaysStringWithTrailingZero(): void
     {
         $http = new FakeRateHttpClient();
