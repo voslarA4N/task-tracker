@@ -82,11 +82,12 @@ class FxService
         try {
             $q = RateProviders::for($ctx->source, $this->http)->latestOnOrBefore($ctx->invoiceCurrency, $ctx->bound);
         } catch (RateUnavailable $e) {
-            log_message('error', 'FX source unavailable: source={source} currency={currency} bound={bound} reason={reason}', [
+            log_message('error', 'FX source unavailable: source={source} currency={currency} bound={bound} reason={reason} cause={cause}', [
                 'source'   => $ctx->source,
                 'currency' => $ctx->invoiceCurrency,
                 'bound'    => $ctx->bound,
                 'reason'   => $e->reason . ($e->status !== null ? ':' . $e->status : ''),
+                'cause'    => $e->getPrevious() === null ? '-' : $e->getPrevious()::class . ':' . $e->getPrevious()->getCode(),
             ]);
             cache()->save($key, 1, self::FAILURE_TTL);
 
