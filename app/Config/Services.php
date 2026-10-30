@@ -2,6 +2,8 @@
 
 namespace Config;
 
+use App\Libraries\Fx\CurlRateHttpClient;
+use App\Libraries\Fx\RateHttpClient;
 use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Platform\AfterResponse;
 use App\Libraries\Platform\Clock;
@@ -29,6 +31,15 @@ class Services extends BaseService
         }
 
         return new Clock();
+    }
+
+    public static function rateHttpClient(bool $getShared = true): RateHttpClient
+    {
+        if ($getShared) {
+            return static::getSharedInstance('rateHttpClient');
+        }
+
+        return new CurlRateHttpClient();
     }
 
     public static function invoiceIssuer(bool $getShared = true): InvoiceIssuer

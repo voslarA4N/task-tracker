@@ -1,8 +1,8 @@
 ---
 phase: 07-doru-enie-hrady-a-upomienky
 verified: 2026-10-29T19:00:00Z
-status: human_needed
-score: 5/5 roadmap truths verified (code level); 5 human UAT items pending
+status: passed
+score: 5/5 roadmap truths verified; 5/5 human UAT passed (07-HUMAN-UAT.md, 2026-10-30); review findings CR-01, WR-01..06 fixed (07-REVIEW-FIX.md)
 overrides_applied: 0
 human_verification:
   - test: "UAT-01 Resend from iPhone in at most 2 taps (staging)"

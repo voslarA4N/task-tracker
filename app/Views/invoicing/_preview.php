@@ -23,9 +23,9 @@ use App\Libraries\Platform\MoneyFormat;
  */
 $empty = lang('Tasks.empty');
 $query = http_build_query($values);
-$dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-preview" hx-trigger="change" hx-target="#inv-preview" hx-swap="outerHTML" hx-push-url="true" hx-include="' . $include . ', #inv-payment-method, #inv-payment-note, #inv-payment-note-dirty"';
+$dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-preview" hx-trigger="change" hx-target="#inv-preview" hx-swap="outerHTML" hx-push-url="true" hx-indicator="#inv-fx-loading" hx-disabled-elt="#inv-issue-btn" hx-include="' . $include . ', #inv-payment-method, #inv-payment-note, #inv-payment-note-dirty, #inv-fx-mode, #inv-fx-rate, #inv-fx-date, #inv-fx-anchor"';
 ?>
-<div id="inv-preview"<?php if (($refresh ?? '') !== '') : ?> hx-get="<?= htmlspecialchars($refresh, ENT_QUOTES, 'UTF-8') ?>" hx-trigger="allocationChanged from:body" hx-target="#inv-preview" hx-swap="outerHTML" hx-include="#inv-payment-method, #inv-payment-note, #inv-payment-note-dirty"<?php endif ?>>
+<div id="inv-preview"<?php if (($refresh ?? '') !== '') : ?> hx-get="<?= htmlspecialchars($refresh, ENT_QUOTES, 'UTF-8') ?>" hx-trigger="allocationChanged from:body" hx-target="#inv-preview" hx-swap="outerHTML" hx-include="#inv-payment-method, #inv-payment-note, #inv-payment-note-dirty, #inv-fx-mode, #inv-fx-rate, #inv-fx-date, #inv-fx-anchor"<?php endif ?>>
 <?php if (is_array($notice ?? null)) : ?>
     <div class="alert alert-success" role="alert" aria-live="polite"><?= esc((string) ($notice['message'] ?? '')) ?></div>
 <?php endif ?>
@@ -106,6 +106,10 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
             <?php endif ?>
         </section>
     <?php else : ?>
+        <?php
+        $fxState = $draft->fx['state'] ?? 'ok';
+        echo view('invoicing/_fx_card', ['draft' => $draft, 'locale' => $locale]);
+        ?>
         <div x-data="invIssue" data-can-issue="<?= $draft->canIssue ? '1' : '0' ?>" data-needs-confirm="<?= $needsConfirm ? '1' : '0' ?>">
             <div x-data="invPay" data-dirty="<?= $draft->paymentNoteDirty ? '1' : '0' ?>">
             <section class="app-card mb-3 inv-summary" aria-labelledby="inv-summary-title">
@@ -123,6 +127,9 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
                 <div aria-live="polite">
                     <div class="small text-body-secondary"><?= esc(lang('Invoicing.labelTotal')) ?></div>
                     <div class="inv-summary-total"><?= esc($fmt($draft->total)) ?></div>
+                    <?php if ($draft->fx !== null && ! in_array($fxState, ['ok', 'manual'], true)) : ?>
+                        <div class="small text-body-secondary"><?= esc(lang('Currency.pendingTotal', [$draft->fx['entity_currency']])) ?></div>
+                    <?php endif ?>
                     <div class="small text-body-secondary"><?= esc(lang('Invoicing.countLine', [$draft->lineCount, Hours::format($draft->hours, $locale)])) ?></div>
                 </div>
             </section>
@@ -226,9 +233,12 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
 
             <div class="alert alert-warning" role="alert" hidden x-bind:hidden="fresh"><?= esc(lang('Invoicing.previewStaleRefresh')) ?></div>
 
+            <?php if ($draft->fx !== null && in_array($fxState, ['unavailable', 'unsupported'], true)) : ?>
+                <p class="small text-body-secondary"><?= esc(lang($fxState === 'unsupported' || ($draft->fx['future_bound'] ?? false) ? 'Currency.issueHintManual' : 'Currency.issueHintRetry')) ?></p>
+            <?php endif ?>
             <div class="master-sticky-actions d-flex align-items-center justify-content-between gap-2">
                 <div class="fw-semibold tabular-nums"><?= esc(lang('Invoicing.labelTotal')) ?> <?= esc($fmt($draft->total)) ?></div>
-                <button type="button" class="btn btn-primary btn-touch" data-bs-toggle="offcanvas" data-bs-target="#inv-confirm" x-bind:disabled="disabled"<?= $draft->canIssue ? '' : ' disabled' ?>><?= esc(lang('Invoicing.issueCta')) ?></button>
+                <button type="button" class="btn btn-primary btn-touch" id="inv-issue-btn" data-bs-toggle="offcanvas" data-bs-target="#inv-confirm" x-bind:disabled="disabled"<?= $draft->canIssue ? '' : ' disabled' ?>><?= esc(lang('Invoicing.issueCta')) ?></button>
                 <noscript><button type="submit" form="inv-issue-form" class="btn btn-primary btn-touch"<?= $draft->canIssue ? '' : ' disabled' ?>><?= esc(lang('Invoicing.issueCta')) ?></button></noscript>
             </div>
             <?= view('invoicing/_confirm_sheet', ['draft' => $draft, 'clientName' => $clientName, 'entityName' => $entityName, 'monthLabel' => $monthLabel, 'total' => $fmt($draft->total), 'needsConfirm' => $needsConfirm]) ?>

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 07-14-PLAN.md
-last_updated: "2026-10-29T18:18:20.610Z"
-last_activity: 2026-10-29
+stopped_at: Phase 8 UI-SPEC approved
+last_updated: "2026-10-30T18:49:31.323Z"
+last_activity: 2026-10-30
 progress:
   total_phases: 12
-  completed_phases: 7
-  total_plans: 85
-  completed_plans: 85
-  percent: 58
+  completed_phases: 8
+  total_plans: 95
+  completed_plans: 95
+  percent: 67
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 07 — doru-enie-hrady-a-upomienky
+**Current focus:** Phase 08 — meny-a-kurzy
 
 ## Current Position
 
-Phase: 07 (doru-enie-hrady-a-upomienky) — EXECUTING
-Plan: 14 of 14
+Phase: 9
+Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-10-29
+Last activity: 2026-10-30
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -36,7 +36,7 @@ Progress: [░░░░░░░░░░] 0%
 
 **Velocity:**
 
-- Total plans completed: 61
+- Total plans completed: 85
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -49,6 +49,8 @@ Progress: [░░░░░░░░░░] 0%
 | 04 | 13 | - | - |
 | 5 | 9 | - | - |
 | 06 | 9 | - | - |
+| 7 | 14 | - | - |
+| 08 | 10 | - | - |
 
 **Recent Trend:**
 
@@ -124,6 +126,7 @@ Recent decisions affecting current work:
 - [Phase 06]: D-19 refined: ZBP number >32 chars gives no QR; missing PL NIP still qr_failed
 - [Phase 07]: Payment guard: pg_advisory_xact_lock(hashtext('payments'), invoice_id); void as insert-only payment_voids; total=0 never auto-paid
 - [Phase 07]: Reminder threads via latest non-voided invoice/resend message_id; no_balance guard server-side
+- [Phase ?]: 08-05: fx block built via public static SnapshotBuilder::fxBlock; PDF fx rows in totals table with td.fxnote
 
 ### Pending Todos
 
@@ -160,6 +163,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-29T18:18:20.605Z
-Stopped at: Completed 07-14-PLAN.md
+Last session: 2026-10-30T11:17:39.636Z
+Stopped at: Phase 8 UI-SPEC approved
 Resume file: None

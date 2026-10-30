@@ -10,12 +10,12 @@ enum Country: string
     case PL = 'PL';
     case CZ = 'CZ';
 
-    public function defaultCurrency(): Currency
+    public function defaultCurrency(): string
     {
         return match ($this) {
-            self::SK => Currency::EUR,
-            self::PL => Currency::PLN,
-            self::CZ => Currency::CZK,
+            self::SK => 'EUR',
+            self::PL => 'PLN',
+            self::CZ => 'CZK',
         };
     }
 

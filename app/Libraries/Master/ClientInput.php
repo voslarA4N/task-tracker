@@ -114,11 +114,12 @@ final class ClientInput
     /**
      * Validuje surove (fromPost) hodnoty; identifikatory porovnava po rovnakej normalizacii ako normalize().
      *
-     * @param array<string, string|null> $v
+     * @param array<string, string|null>    $v
+     * @param (callable(string): bool)|null $currencyActive overí menu (predvolene tabuľka currencies)
      *
      * @return array<string, string>
      */
-    public static function validate(array $v): array
+    public static function validate(array $v, ?callable $currencyActive = null): array
     {
         $errors = [];
         $get    = static fn (string $k): string => trim((string) ($v[$k] ?? ''));
@@ -210,7 +211,9 @@ final class ClientInput
             $errors['hourly_rate'] = lang('Clients.errorRate');
         }
 
-        if (Currency::tryFrom($get('currency')) === null) {
+        $currencyActive ??= static fn (string $c): bool => (new CurrencyRepository())->isActive($c);
+
+        if (! $currencyActive($get('currency'))) {
             $errors['currency'] = lang('Clients.errorChoice');
         }
 

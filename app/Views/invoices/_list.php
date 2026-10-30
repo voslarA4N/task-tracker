@@ -52,6 +52,9 @@ use App\Libraries\Platform\MoneyFormat;
                     </span>
                     <span class="inv-row-meta w-100"><?= esc($meta) ?></span>
                     <span class="inv-row-amount w-100"><?= esc(MoneyFormat::format((string) $row['total'], (string) $row['currency'])) ?></span>
+                    <?php if (($row['fx_rate'] ?? null) !== null && trim((string) ($row['entity_currency'] ?? '')) !== '') : ?>
+                        <span class="fx-sub w-100"><?= esc(MoneyFormat::format((string) $row['total_entity_ccy'], trim((string) $row['entity_currency']))) ?></span>
+                    <?php endif ?>
                     <?php if (! $external && $st === 'partially_paid') : ?>
                         <span class="inv-row-meta w-100"><?= esc(lang('Invoices.balanceLeft', [MoneyFormat::format((string) $row['balance'], (string) $row['currency'])])) ?></span>
                     <?php endif ?>

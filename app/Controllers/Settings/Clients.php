@@ -9,6 +9,7 @@ use App\Libraries\Master\BillingMode;
 use App\Libraries\Master\ClientCurrencyLocked;
 use App\Libraries\Master\ClientInput;
 use App\Libraries\Master\ClientService;
+use App\Libraries\Master\CurrencyRepository;
 use App\Libraries\Platform\MoneyFormat;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\IncomingRequest;
@@ -72,15 +73,20 @@ final class Clients extends BaseController
     {
         $service = new ClientService();
 
-        if ($service->find($id) === null) {
+        $existing = $service->find($id);
+
+        if ($existing === null) {
             throw PageNotFoundException::forPageNotFound(lang('Clients.notFound'));
         }
 
         $request = $this->request;
         assert($request instanceof IncomingRequest);
 
-        $values = ClientInput::fromPost($request);
-        $errors = ClientInput::validate($values);
+        // WR-06: nezmenena sucasna mena klienta prejde aj vtedy, ked bola medzicasom deaktivovana
+        $current = trim((string) ($existing['currency'] ?? ''));
+        $repo    = new CurrencyRepository();
+        $values  = ClientInput::fromPost($request);
+        $errors  = ClientInput::validate($values, static fn (string $c): bool => ($c !== '' && $c === $current) || $repo->isActive($c));
 
         if ($errors !== []) {
             return $this->response->setStatusCode(422)->setBody(view('settings/clients/form', $this->formData($id, $values, $errors)));
@@ -133,6 +139,16 @@ final class Clients extends BaseController
     }
 
     /**
+     * @return list<string> aktivne meny; aktualna (aj neaktivna) mena zaznamu sa zobrazi na konci
+     */
+    private function currencyOptions(string $current): array
+    {
+        $codes = (new CurrencyRepository())->codes();
+
+        return $current !== '' && ! in_array($current, $codes, true) && (new CurrencyRepository())->exists($current) ? [...$codes, $current] : $codes;
+    }
+
+    /**
      * @param array<string, string> $values
      * @param array<string, string> $errors
      *
@@ -151,12 +167,13 @@ final class Clients extends BaseController
         $client = $id === null ? null : (new ClientService())->find($id);
 
         return [
-            'title'     => lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle'),
-            'id'        => $id,
-            'client'    => $client,
-            'values'    => $values,
-            'errors'    => $errors,
-            'countries' => $countries,
+            'title'      => lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle'),
+            'id'         => $id,
+            'client'     => $client,
+            'values'     => $values,
+            'errors'     => $errors,
+            'countries'  => $countries,
+            'currencies' => $this->currencyOptions((string) ($values['currency'] ?? '')),
         ];
     }
 

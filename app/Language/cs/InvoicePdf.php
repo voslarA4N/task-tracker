@@ -41,4 +41,10 @@ return [
     'qrSpayd'         => 'QR Platba',
     'qrZbp'           => 'Kod QR ZBP',
     'qrCaption'       => 'Platba QR kódem',
+    'fxRate'          => 'Kurz',
+    'fxFrom'          => 'ze dne',
+    'fxTable'         => 'tab.',
+    'fxTotalIn'       => 'Celkem v',
+    'fxManual'        => 'Ručně zadaný kurz',
+    'fxManualFrom'    => 'platí ke dni',
 ];

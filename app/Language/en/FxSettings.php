@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'navTitle'           => 'Exchange rates',
+    'title'              => 'Exchange rates',
+    'intro'              => 'Sets where the rate comes from and which day it is looked up for when an invoice is in a currency other than the entity currency. A change applies only to invoices issued after saving.',
+    'fieldSource'        => 'Rate source',
+    'fieldDateBasis'     => 'Date the rate is looked up for',
+    'fieldDayRule'       => 'Day rule',
+    'sourceNbp'          => 'National Bank of Poland (NBP)',
+    'sourceEcb'          => 'European Central Bank (ECB)',
+    'sourceCnb'          => 'Czech National Bank (CNB)',
+    'basisDelivery'      => 'Delivery date',
+    'basisIssue'         => 'Issue date',
+    'rulePrevious'       => 'Last rate before the date',
+    'ruleOnOrBefore'     => 'Rate valid on the day, otherwise the last one before it',
+    'hintSource'         => 'The source determines which currency pairs have a rate available.',
+    'hintDateBasis'      => 'The invoice date used to look up the rate.',
+    'hintDayRule'        => 'Per the source API; weekends and holidays are skipped automatically.',
+    'pairs'              => 'NBP provides rates for entities kept in PLN (invoices in EUR, CZK). CNB for entities in CZK (invoices in EUR, PLN). ECB for entities in EUR (invoices in PLN, CZK).',
+    'unsupportedWarning' => 'For a combination the source does not support (e.g. ECB for an entity kept in PLN), the rate will always have to be entered manually.',
+    'defaults'           => 'Defaults: PL NBP, delivery date, last rate before the date · SK ECB, delivery date, last rate before the date · CZ CNB, delivery date, rate valid on the day.',
+    'provisional'        => 'The rules are provisional. Confirm them with the accountant.',
+    'saved'              => 'Settings saved.',
+    'errorInvalid'       => 'Choose a valid value.',
+    'errorStale'         => 'Someone changed the rate settings in the meantime. Reload the page and repeat the edit.',
+    'countrySK'          => 'Slovakia (SK)',
+    'countryPL'          => 'Poland (PL)',
+    'countryCZ'          => 'Czechia (CZ)',
+    'save'               => 'Save',
+    'back'               => 'Back',
+    'backToMore'         => 'Back to More',
+];

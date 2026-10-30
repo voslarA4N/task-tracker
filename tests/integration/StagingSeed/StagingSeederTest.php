@@ -16,6 +16,7 @@ use CodeIgniter\Test\StreamFilterTrait;
 use Config\Services;
 use Config\Staging;
 use PHPUnit\Framework\Attributes\Group;
+use Tests\Support\FakeRateHttpClient;
 use Tests\Support\MasterFixtures;
 use Tests\Support\PgTestCase;
 
@@ -46,6 +47,28 @@ final class StagingSeederTest extends PgTestCase
         Services::resetSingle('clock');
         $this->clean();
         parent::tearDown();
+    }
+
+    public function testForeignCurrencyInvoiceUsesSeededNbpRateWithoutNetwork(): void
+    {
+        $http = new FakeRateHttpClient();
+        Services::injectMock('rateHttpClient', $http);
+
+        $this->seeder()->run(Profile::small());
+
+        $rows = $this->rw()->query("SELECT i.fx_source, i.fx_rate, i.total, i.total_entity_ccy, i.snapshot FROM invoices i JOIN entities e ON e.id = i.entity_id WHERE e.country = 'PL' AND i.currency = 'EUR' ORDER BY i.id")->getResultArray();
+
+        $this->assertNotEmpty($rows);
+        $this->assertSame([], $http->calls);
+
+        foreach ($rows as $r) {
+            $this->assertSame('NBP', $r['fx_source']);
+            $this->assertNotNull($r['fx_rate']);
+            $this->assertNotSame((string) $r['total'], (string) $r['total_entity_ccy']);
+            $snap = json_decode((string) $r['snapshot'], true, 512, JSON_THROW_ON_ERROR);
+            $this->assertStringContainsString('NBP', (string) $snap['fx']['text']['rate_line']);
+            $this->assertStringContainsString('4.2512', (string) $snap['fx']['text']['rate_line']);
+        }
     }
 
     public function testSeedsConsistentHistoryThroughRealIssuePipeline(): void

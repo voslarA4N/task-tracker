@@ -371,7 +371,7 @@ final class Entities extends BaseController
      */
     private function defaults(Country $country): array
     {
-        $values = ['name_internal' => '', 'country' => $country->value, 'currency' => $country->defaultCurrency()->value,
+        $values = ['name_internal' => '', 'country' => $country->value, 'currency' => $country->defaultCurrency(),
             'active_from'          => service('clock')->today(), 'active_to' => ''];
 
         foreach (EntityInput::VERSION_FIELDS as $field) {

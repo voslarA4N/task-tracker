@@ -1,6 +1,5 @@
 <?php
 use App\Libraries\Master\BillingMode;
-use App\Libraries\Master\Currency;
 use App\Libraries\Master\DocLanguage;
 use App\Libraries\Master\IdentifierType;
 
@@ -128,8 +127,8 @@ $title  = lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle');
             <div class="col-4">
                 <label class="form-label" for="f-currency"><?= esc(lang('Clients.currency')) ?></label>
                 <select class="form-select<?= $invalid('currency') ?>" id="f-currency" name="currency"<?= $describe('currency') ?>>
-                    <?php foreach (Currency::cases() as $currency) : ?>
-                        <option value="<?= esc($currency->value, 'attr') ?>"<?= $v('currency') === $currency->value ? ' selected' : '' ?>><?= esc($currency->value) ?></option>
+                    <?php foreach ($currencies as $currency) : ?>
+                        <option value="<?= esc($currency, 'attr') ?>"<?= $v('currency') === $currency ? ' selected' : '' ?>><?= esc($currency) ?></option>
                     <?php endforeach ?>
                 </select>
                 <?= $feedback('currency') ?>

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Invoicing;
 
+use App\Libraries\Fx\FxQuote;
+use App\Libraries\Fx\RateQuote;
+use App\Libraries\Invoicing\InvoiceGuards;
 use App\Libraries\Invoicing\IssueRejected;
 use App\Libraries\Platform\FrozenClock;
 use Config\Services;
@@ -62,8 +65,24 @@ final class CurrencyGuardTest extends PgTestCase
 
         $e = $this->rejectedReason(fn () => $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts'])));
 
-        $this->assertSame('currency_mismatch', $e->reason);
+        $this->assertSame('fx_missing', $e->reason);
         $this->assertSame(0, $this->written());
+    }
+
+    public function testAssertFxRequiresQuoteOnlyForForeignCurrency(): void
+    {
+        $guards = new InvoiceGuards($this->rw());
+        $entity = ['currency' => 'PLN'];
+
+        $e = $this->rejectedReason(static fn () => $guards->assertFx($entity, 'EUR', null));
+        $this->assertSame('fx_missing', $e->reason);
+        $this->assertSame('EUR', $e->context['currency']);
+        $this->assertSame('PLN', $e->context['entity_currency']);
+
+        $guards->assertFx($entity, 'PLN', null);
+        $quote = FxQuote::fromRate(new RateQuote('NBP', 'EUR', '4.4090', 1, '2026-10-27', '209/A/NBP/2026', 'multiply'), 'delivery_date', 'previous_business_day', '2026-10-31', 'PLN', 'EUR');
+        $guards->assertFx($entity, 'EUR', $quote);
+        $this->addToAssertionCount(1);
     }
 
     public function testMixedPartCurrenciesAreRejected(): void

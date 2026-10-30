@@ -1,0 +1,1 @@
+400 BadRequest - Błędny zakres dat / Invalid date range

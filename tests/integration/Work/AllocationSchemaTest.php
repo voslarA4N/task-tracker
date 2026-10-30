@@ -79,7 +79,7 @@ final class AllocationSchemaTest extends PgTestCase
     public function testUnknownCurrencyRejected(): void
     {
         $task = $this->createTask($this->createClient());
-        $this->assertDbError('/violates check constraint/', fn () => $this->insertAllocation($task, '1.00', '2026-10', '27.00', 'USD'));
+        $this->assertDbError('/violates foreign key constraint/', fn () => $this->insertAllocation($task, '1.00', '2026-10', '27.00', 'USD'));
     }
 
     public function testDoneTaskRequiresDoneAt(): void

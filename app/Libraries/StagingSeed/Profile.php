@@ -52,6 +52,7 @@ final readonly class Profile
             self::client('sk_orbit', 'sk', '2026-01', 'monthly', [2, 3], 0, ['2026-02'], false, 0, '36.00', null, null),
             self::client('cz_vltava', 'cz', '2026-01', 'monthly', [2, 3], 0, [], false, 1, '820.00', null, null),
             self::client('pl_wisla', 'pl', '2026-01', 'monthly', [2, 3], 0, [], false, 0, '140.00', null, null),
+            self::client('pl_alpen', 'pl', '2026-01', 'monthly', [2, 3], 0, [], false, 1, '135.00', null, null),
         ]);
     }
 

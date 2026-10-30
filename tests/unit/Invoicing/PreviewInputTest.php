@@ -89,6 +89,20 @@ final class PreviewInputTest extends CIUnitTestCase
         $this->assertSame([], PreviewInput::validate(['client' => '12', 'entity' => '']));
     }
 
+    public function testFxFieldsAreWhitelistedAndOverlongDropped(): void
+    {
+        $request = Services::incomingrequest(null, false);
+        $request->setGlobal('get', ['fx_mode' => 'manual', 'fx_rate' => '4,3', 'fx_source' => 'NBP', 'fx_date' => str_repeat('1', 33)]);
+
+        $out = PreviewInput::fromGet($request);
+
+        $this->assertSame('manual', $out['fx_mode']);
+        $this->assertSame('4,3', $out['fx_rate']);
+        $this->assertSame('', $out['fx_date']);
+        $this->assertArrayNotHasKey('fx_source', $out);
+        $this->assertArrayNotHasKey('fx_table_no', $out);
+    }
+
     public function testFromGetKeepsOnlyWhitelistAndTrims(): void
     {
         $request = Services::incomingrequest(null, false);

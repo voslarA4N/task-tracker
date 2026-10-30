@@ -91,11 +91,11 @@ final class SnapshotBuilderTest extends PgTestCase
         $this->assertSame(array_keys($pl['legal']['texts']['vat_note']), array_keys(SampleSnapshots::invoice('pl')['legal']['texts']['vat_note']));
     }
 
-    public function testSnapshotIsSchemaTwoWithPrintRules(): void
+    public function testSnapshotIsSchemaThreeWithPrintRules(): void
     {
         $snap = $this->build($this->issueSetup());
 
-        $this->assertSame(2, $snap['schema']);
+        $this->assertSame(3, $snap['schema']);
         $this->assertSame('inv-2', $snap['template_version']);
         $this->assertSame(LegalProfile::print('SK', 'sk_non_vat', 'domestic'), $snap['legal']['print']);
         $this->assertSame('vat_note', $snap['legal']['texts']['vat_note']['key']);

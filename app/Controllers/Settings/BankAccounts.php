@@ -7,7 +7,7 @@ namespace App\Controllers\Settings;
 use App\Controllers\BaseController;
 use App\Libraries\Master\BankAccountInput;
 use App\Libraries\Master\BankAccountService;
-use App\Libraries\Master\Currency;
+use App\Libraries\Master\CurrencyRepository;
 use App\Libraries\Master\EntityService;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 use CodeIgniter\Exceptions\PageNotFoundException;
@@ -192,7 +192,7 @@ final class BankAccounts extends BaseController
             'values'      => $values,
             'errors'      => $errors,
             'lockDefault' => $first || ($account !== null && (bool) $account['is_default']),
-            'currencies'  => array_map(static fn (Currency $c): string => $c->value, Currency::cases()),
+            'currencies'  => (new CurrencyRepository())->codes(),
         ];
     }
 }

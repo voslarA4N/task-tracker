@@ -17,6 +17,7 @@ use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\AuthTestCase;
 use Tests\Support\FakePdfRenderer;
+use Tests\Support\FakeRateHttpClient;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
@@ -176,18 +177,19 @@ final class InvoicingIssueTest extends AuthTestCase
         $this->assertSame(2, $this->invoiceCount());
     }
 
-    public function testCurrencyMismatchByDirectPostIs422(): void
+    public function testForeignCurrencyWithoutRateByDirectPostIs422(): void
     {
+        Services::injectMock('rateHttpClient', new FakeRateHttpClient());
         $this->login();
         $s = $this->issueSetup();
         $this->owner()->query("UPDATE clients SET currency = 'PLN' WHERE id = :c:", ['c' => $s['client']]);
         $this->owner()->query("UPDATE billing_allocations SET currency = 'PLN' WHERE id = :p:", ['p' => $s['parts'][0]]);
-        $form = $this->previewForm($s['client']);
+        $form = ['preview_token' => str_repeat('a', 64)] + $this->previewForm($s['client']);
 
         $result = $this->submit($form);
 
         $result->assertStatus(422);
-        $this->assertStringContainsString('Faktúra v mene PLN sa nedá vystaviť', $this->body($result));
+        $this->assertStringContainsString('Pred vystavením je potrebný kurz', $this->body($result));
         $this->assertSame(0, $this->invoiceCount());
     }
 

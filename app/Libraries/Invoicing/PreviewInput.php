@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Fx\FxInput;
 use App\Libraries\Work\BillingMonth;
 use CodeIgniter\HTTP\IncomingRequest;
 
@@ -12,7 +13,7 @@ use CodeIgniter\HTTP\IncomingRequest;
  */
 final class PreviewInput
 {
-    public const FIELDS         = ['client', 'month', 'entity', 'issue_date', 'delivery_date', 'due_date'];
+    public const FIELDS         = ['client', 'month', 'entity', 'issue_date', 'delivery_date', 'due_date', 'fx_mode', 'fx_rate', 'fx_date', 'fx_anchor', 'fx_retry'];
     private const RANGE_BACK    = 24;
     private const RANGE_FORWARD = 1;
 
@@ -58,7 +59,8 @@ final class PreviewInput
 
         foreach (self::FIELDS as $field) {
             $value       = $read($field);
-            $out[$field] = is_string($value) ? trim($value) : '';
+            $limit       = str_starts_with($field, 'fx_') ? FxInput::MAX_LEN : PHP_INT_MAX;
+            $out[$field] = is_string($value) && mb_strlen($value) <= $limit ? trim($value) : '';
         }
 
         return $out + self::paymentFields($read);

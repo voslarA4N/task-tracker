@@ -253,7 +253,7 @@ final class EntityInput
      *
      * @return array<string, string>
      */
-    public static function validateBase(array $v, string $today): array
+    public static function validateBase(array $v, string $today, ?callable $currencyActive = null): array
     {
         $errors = [];
         $name   = trim((string) ($v['name_internal'] ?? ''));
@@ -266,7 +266,9 @@ final class EntityInput
             $errors['country'] = lang('Entities.errorChoice');
         }
 
-        if (Currency::tryFrom((string) ($v['currency'] ?? '')) === null) {
+        $currencyActive ??= static fn (string $c): bool => (new CurrencyRepository())->isActive($c);
+
+        if (! $currencyActive((string) ($v['currency'] ?? ''))) {
             $errors['currency'] = lang('Entities.errorChoice');
         }
 

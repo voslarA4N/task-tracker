@@ -41,4 +41,10 @@ return [
     'qrSpayd'         => 'QR Platba',
     'qrZbp'           => 'Kod QR ZBP',
     'qrCaption'       => 'Pay by QR code',
+    'fxRate'          => 'Exchange rate',
+    'fxFrom'          => 'of',
+    'fxTable'         => 'table',
+    'fxTotalIn'       => 'Total in',
+    'fxManual'        => 'Manually entered rate',
+    'fxManualFrom'    => 'valid on',
 ];

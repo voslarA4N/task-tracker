@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Fx\FxQuote;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
 
@@ -50,16 +51,18 @@ final class InvoiceGuards
     }
 
     /**
+     * D-03: mena faktury sa lisi od meny subjektu, kurz musi byt k dispozicii.
+     *
      * @param array<string, mixed> $entity
      *
      * @throws IssueRejected
      */
-    public function assertCurrency(array $entity, string $invoiceCurrency): void
+    public function assertFx(array $entity, string $invoiceCurrency, ?FxQuote $fx): void
     {
         $entityCurrency = trim((string) $entity['currency']);
 
-        if ($entityCurrency !== $invoiceCurrency) {
-            throw new IssueRejected('currency_mismatch', ['currency' => $invoiceCurrency, 'entity_currency' => $entityCurrency]);
+        if ($entityCurrency !== $invoiceCurrency && $fx === null) {
+            throw new IssueRejected('fx_missing', ['currency' => $invoiceCurrency, 'entity_currency' => $entityCurrency]);
         }
     }
 

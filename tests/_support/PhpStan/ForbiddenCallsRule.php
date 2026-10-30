@@ -22,7 +22,7 @@ use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 
 /**
- * Stroj stráži konvencie: čas len cez Clock, žiadny float, bcmath len v Money a Hours (D-06, NFR-04).
+ * Stroj stráži konvencie: čas len cez Clock, žiadny float, bcmath len v Money, Hours a Fx (FxConverter, FxQuote) (D-06, NFR-04).
  *
  * @implements Rule<Expr>
  */
@@ -57,7 +57,10 @@ final class ForbiddenCallsRule implements Rule
         'app/Libraries/Platform/Clock.php',
         'app/Libraries/Platform/FrozenClock.php',
     ];
-    private const BC_ALLOWED_FILES = ['app/Libraries/Platform/Money.php', 'app/Libraries/Platform/Hours.php'];
+    private const BC_ALLOWED_FILES = [
+        'app/Libraries/Platform/Money.php', 'app/Libraries/Platform/Hours.php',
+        'app/Libraries/Fx/FxConverter.php', 'app/Libraries/Fx/FxQuote.php',
+    ];
 
     public function getNodeType(): string
     {
@@ -105,7 +108,7 @@ final class ForbiddenCallsRule implements Rule
             }
             if (in_array($name, self::BC_FUNCTIONS, true)) {
                 return $this->endsWithAny($file, self::BC_ALLOWED_FILES) ? [] : [
-                    RuleErrorBuilder::message($name . '() je povolené len v App\\Libraries\\Platform\\Money a Hours.')
+                    RuleErrorBuilder::message($name . '() je povolené len v Money, Hours a Fx.')
                         ->identifier('app.forbiddenBcmath')->build(),
                 ];
             }

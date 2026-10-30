@@ -23,3 +23,5 @@ $routes->get('settings/email-templates', 'Settings\EmailTemplates::index');
 $routes->get('settings/email-templates/(:num)/edit', 'Settings\EmailTemplates::edit/$1');
 $routes->post('settings/email-templates/(:num)/preview', 'Settings\EmailTemplates::preview/$1');
 $routes->post('settings/email-templates/(:num)', 'Settings\EmailTemplates::update/$1');
+$routes->get('settings/fx', 'Settings\FxSettings::index');
+$routes->post('settings/fx', 'Settings\FxSettings::update');

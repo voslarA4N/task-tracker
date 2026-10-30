@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Fx\FxConverter;
+use App\Libraries\Fx\FxInput;
+use App\Libraries\Fx\FxQuote;
+use App\Libraries\Fx\FxService;
+use App\Libraries\Fx\RateNotFound;
+use App\Libraries\Fx\RateUnavailable;
+use App\Libraries\Fx\UnsupportedPair;
 use App\Libraries\Invoicing\Qr\PolishZbpQr;
 use App\Libraries\Invoicing\Qr\QrPaymentFailed;
 use App\Libraries\Master\EntityDirectory;
@@ -36,11 +43,12 @@ final class InvoiceDraftService
     private readonly EntityDirectory $entities;
     private readonly EntityVersionResolver $versions;
     private readonly LegalProfileResolver $legal;
+    private readonly FxService $fx;
 
     /**
      * @param BaseConnection<mixed, mixed>|null $db
      */
-    public function __construct(?BaseConnection $db = null)
+    public function __construct(?BaseConnection $db = null, ?FxService $fx = null)
     {
         $this->db       = $db ?? Database::connect();
         $this->parts    = new InvoiceParts($this->db);
@@ -49,6 +57,7 @@ final class InvoiceDraftService
         $this->entities = new EntityDirectory($this->db);
         $this->versions = new EntityVersionResolver($this->db);
         $this->legal    = new LegalProfileResolver($this->db);
+        $this->fx       = $fx ?? new FxService($this->db);
     }
 
     /**
@@ -69,7 +78,7 @@ final class InvoiceDraftService
         return BillingMonth::previous(BillingMonth::current());
     }
 
-    public function draft(int $clientId, string $month, ?int $entityId, ?string $issueDate, ?string $deliveryDate, ?string $dueDate, ?string $paymentMethod = null, ?string $paymentNote = null, bool $noteDirty = false): Draft
+    public function draft(int $clientId, string $month, ?int $entityId, ?string $issueDate, ?string $deliveryDate, ?string $dueDate, ?string $paymentMethod = null, ?string $paymentNote = null, bool $noteDirty = false, bool $fxRetry = false, ?FxInput $fxInput = null): Draft
     {
         $clock = service('clock');
 
@@ -119,6 +128,7 @@ final class InvoiceDraftService
         $currency = null;
         $token    = null;
         $snapshot = null;
+        $fxState  = null;
 
         if ($parts !== []) {
             try {
@@ -130,10 +140,93 @@ final class InvoiceDraftService
                 $currency = $calc['currency'];
 
                 if ($entity !== null) {
-                    // mena sa kontroluje pred vyberom bankoveho uctu, inak by sa ukazal zavadzajuci no_bank_account
-                    $this->guards->assertCurrency($entity, $this->guards->partsCurrency($parts));
-                    $snapshot = $this->builder->build($client, $entity, $parts, $month, $issue, $delivery, $due, null);
-                    $token    = InvoiceCalculator::previewToken($snapshot);
+                    $invoiceCcy = $this->guards->partsCurrency($parts);
+                    $ctx        = $this->fx->context((string) $entity['country'], trim((string) $entity['currency']), $invoiceCcy, $issue, $delivery);
+                    $fetched    = null;
+                    $quote      = null;
+                    $state      = 'ok';
+                    $notYet     = false;
+
+                    // siet sa vola iba tu (nahlad, D-07), nikdy v transakcii vystavenia
+                    if ($ctx !== null) {
+                        try {
+                            $fetched = $this->fx->resolve($ctx, $fxRetry || ($fxInput !== null && $fxInput->retry));
+                            $quote   = $fetched;
+                        } catch (UnsupportedPair) {
+                            $state = 'unsupported';
+                        } catch (RateNotFound $e) {
+                            $state  = 'unavailable';
+                            $notYet = $e->reason === RateNotFound::NOT_YET_PUBLISHED;
+                        } catch (RateUnavailable) {
+                            $state = 'unavailable';
+                        }
+                    }
+
+                    $fxFields      = ['fx_mode' => '', 'fx_rate' => '', 'fx_date' => '', 'fx_anchor' => ''];
+                    $fxFieldErrors = [];
+                    $anchorChanged = false;
+                    $deviation     = false;
+
+                    if ($ctx !== null && $fxInput !== null && $fxInput->mode === 'manual') {
+                        $fxInput = $fxInput->withBound($ctx->bound);
+
+                        if ($fxInput->anchor !== null && $fxInput->anchor !== $ctx->anchor) {
+                            // kotviaci datum sa zmenil: rucny kurz sa zahodi (D-08)
+                            $anchorChanged = true;
+                        } elseif ($fxInput->errors !== []) {
+                            $state         = 'invalid';
+                            $quote         = null;
+                            $fxFieldErrors = $fxInput->errors;
+                            $fxFields      = ['fx_mode' => 'manual', 'fx_rate' => $fxInput->rawRate, 'fx_date' => $fxInput->rawDate, 'fx_anchor' => $ctx->anchor];
+                        } else {
+                            $quote = FxQuote::manual((string) $fxInput->rate, $fxInput->dateFor($ctx->bound, service('clock')->today()), $ctx->direction, $ctx->dateBasis, $ctx->dayRule, $ctx->anchor, $ctx->entityCurrency, $ctx->invoiceCurrency, $fetched?->toRateQuote());
+                            $state = 'manual';
+                            // WR-03: vyrazna odchylka od stiahnuteho kurzu (preklep, opacny smer) sa zobrazi ako varovanie
+                            $deviation = $fetched !== null && FxConverter::deviationExceeds($quote->rate, $quote->amount, $fetched->rate, $fetched->amount);
+                            $fxFields  = ['fx_mode' => 'manual', 'fx_rate' => (string) $fxInput->rate, 'fx_date' => $fxInput->date ?? '', 'fx_anchor' => $ctx->anchor];
+                        }
+                    }
+
+                    if ($ctx !== null) {
+                        $fxState = [
+                            'state'            => $state,
+                            'source'           => $ctx->source,
+                            'date_basis'       => $ctx->dateBasis,
+                            'day_rule'         => $ctx->dayRule,
+                            'anchor'           => $ctx->anchor,
+                            'bound'            => $ctx->bound,
+                            'direction'        => $ctx->direction,
+                            'entity_currency'  => $ctx->entityCurrency,
+                            'invoice_currency' => $ctx->invoiceCurrency,
+                            'quote'            => null,
+                            'fields'           => $fxFields,
+                            'errors'           => $fxFieldErrors,
+                            'fetched'          => $fetched?->core(),
+                            'anchor_changed'   => $anchorChanged,
+                            'future_bound'     => $notYet,
+                            'deviation'        => $deviation,
+                        ];
+                    }
+
+                    try {
+                        $snapshot = $this->builder->build($client, $entity, $parts, $month, $issue, $delivery, $due, null, 'transfer', null, $quote);
+                    } catch (IssueRejected $e) {
+                        if ($e->reason !== 'fx_overflow') {
+                            throw $e;
+                        }
+
+                        $errors[] = ['reason' => $e->reason, 'context' => $e->context];
+                        $state    = 'overflow';
+                        $snapshot = $this->builder->build($client, $entity, $parts, $month, $issue, $delivery, $due, null);
+                    }
+
+                    if ($fxState !== null) {
+                        $fxState['state'] = $state;
+                        $fxState['quote'] = in_array($state, ['ok', 'manual'], true) ? $snapshot['fx'] : null;
+                    }
+
+                    // bez kurzu sa kopia zostavi iba na zobrazenie, vystavit sa nedá (token ostane null)
+                    $token = $ctx !== null && ! in_array($state, ['ok', 'manual'], true) ? null : InvoiceCalculator::previewToken($snapshot);
                 }
             } catch (IssueRejected $e) {
                 $errors[] = ['reason' => $e->reason, 'context' => $e->context];
@@ -204,6 +297,7 @@ final class InvoiceDraftService
             $provisional,
             $zbpWarning,
             $zbpAmountWarning,
+            $fxState,
         );
     }
 

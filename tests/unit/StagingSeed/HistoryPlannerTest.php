@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\StagingSeed;
 
+use App\Libraries\StagingSeed\Catalog;
 use App\Libraries\StagingSeed\HistoryPlan;
 use App\Libraries\StagingSeed\HistoryPlanner;
 use App\Libraries\StagingSeed\Profile;
@@ -146,7 +147,7 @@ final class HistoryPlannerTest extends CIUnitTestCase
             $clients[$c['key']] = $c;
             $entity             = $bank[$c['entity']];
 
-            $this->assertSame($entity['currency'], $c['currency']);
+            $this->assertSame(Catalog::CLIENTS[$c['key']]['currency'] ?? $entity['currency'], $c['currency']);
             $this->assertContains($c['billing_mode'], self::ALLOWED_MODES[$entity['vat_regime']]);
         }
 
@@ -225,7 +226,7 @@ final class HistoryPlannerTest extends CIUnitTestCase
     {
         $plan = HistoryPlanner::build(Profile::small(), '2026-03-20');
 
-        $this->assertCount(3, $plan->clients);
+        $this->assertCount(4, $plan->clients);
         $this->assertGreaterThanOrEqual(5, count($plan->invoices));
         $this->assertLessThanOrEqual(9, count($plan->invoices));
         $this->assertGreaterThanOrEqual(1, count(array_filter($plan->invoices, static fn (array $i): bool => $i['kind'] === 'partial')));

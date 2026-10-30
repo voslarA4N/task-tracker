@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
+use App\Libraries\Fx\FxInput;
 use InvalidArgumentException;
 
 /**
@@ -32,6 +33,7 @@ final readonly class IssueCommand
         public ?int $userId = null,
         public string $paymentMethod = 'transfer',
         public ?string $paymentNote = null,
+        public ?FxInput $fx = null,
     ) {
         if ($clientId < 1 || $entityId < 1) {
             throw new InvalidArgumentException('Invalid client or entity id.');

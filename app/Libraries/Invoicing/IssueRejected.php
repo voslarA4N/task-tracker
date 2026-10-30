@@ -18,7 +18,6 @@ final class IssueRejected extends RuntimeException
         'parts_changed',
         'preview_stale',
         'already_issued',
-        'currency_mismatch',
         'entity_inactive',
         'backdate_unconfirmed',
         'sequence_overflow',
@@ -30,6 +29,10 @@ final class IssueRejected extends RuntimeException
         'not_found',
         'report_failed',
         'qr_failed',
+        'fx_missing',
+        'fx_unavailable',
+        'fx_invalid',
+        'fx_overflow',
     ];
 
     /**
