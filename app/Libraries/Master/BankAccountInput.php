@@ -62,11 +62,12 @@ final class BankAccountInput
     }
 
     /**
-     * @param array<string, mixed> $v normalizovane hodnoty
+     * @param array<string, mixed>          $v normalizovane hodnoty
+     * @param (callable(string): bool)|null $currencyActive overi menu (predvolene tabulka currencies)
      *
      * @return array<string, string>
      */
-    public static function validate(array $v, bool $editing): array
+    public static function validate(array $v, bool $editing, ?callable $currencyActive = null): array
     {
         $errors = [];
         $label  = (string) ($v['label'] ?? '');
@@ -86,7 +87,9 @@ final class BankAccountInput
             $errors['swift'] = lang('Entities.errorSwift');
         }
 
-        if (! $editing && Currency::tryFrom((string) ($v['currency'] ?? '')) === null) {
+        $currencyActive ??= static fn (string $c): bool => (new CurrencyRepository())->isActive($c);
+
+        if (! $editing && ! $currencyActive((string) ($v['currency'] ?? ''))) {
             $errors['currency'] = lang('Entities.errorBankCurrency');
         }
 

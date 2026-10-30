@@ -1,7 +1,8 @@
 <?php
-use App\Libraries\Master\Currency;
+use App\Libraries\Master\CurrencyRepository;
 
 $errors   = $errors ?? [];
+$currencies = $currencies ?? (new CurrencyRepository())->codes();
 $selected = $values['vat_regime'] ?? '';
 $versionMode = $versionMode ?? false;
 ?>
@@ -9,8 +10,8 @@ $versionMode = $versionMode ?? false;
 <div class="mb-3">
     <label class="form-label" for="f-currency"><?= esc(lang('Entities.currency')) ?></label>
     <select class="form-select<?= isset($errors['currency']) ? ' is-invalid' : '' ?>" id="f-currency" name="currency"<?= isset($errors['currency']) ? ' aria-invalid="true" aria-describedby="f-currency-error"' : '' ?>>
-        <?php foreach (Currency::cases() as $currency) : ?>
-            <option value="<?= esc($currency->value, 'attr') ?>"<?= ($values['currency'] ?? '') === $currency->value ? ' selected' : '' ?>><?= esc($currency->value) ?></option>
+        <?php foreach ($currencies as $currency) : ?>
+            <option value="<?= esc($currency, 'attr') ?>"<?= ($values['currency'] ?? '') === $currency ? ' selected' : '' ?>><?= esc($currency) ?></option>
         <?php endforeach ?>
     </select>
     <?php if (isset($errors['currency'])) : ?>

@@ -106,14 +106,14 @@ final class EntityInputTest extends CIUnitTestCase
     public function testBaseDates(): void
     {
         $base = ['name_internal' => 'Moja firma', 'country' => 'SK', 'currency' => 'EUR', 'active_from' => '2026-01-01', 'active_to' => ''];
-        $this->assertSame([], EntityInput::validateBase($base, self::TODAY));
-        $this->assertArrayHasKey('active_to', EntityInput::validateBase(['active_to' => '2025-12-31'] + $base, self::TODAY));
+        $this->assertSame([], EntityInput::validateBase($base, self::TODAY, static fn (string $c): bool => in_array($c, ['EUR', 'PLN', 'CZK'], true)));
+        $this->assertArrayHasKey('active_to', EntityInput::validateBase(['active_to' => '2025-12-31'] + $base, self::TODAY, static fn (string $c): bool => in_array($c, ['EUR', 'PLN', 'CZK'], true)));
 
         foreach (['2026-02-30', '1999-12-31', '2027-10-27'] as $bad) {
-            $this->assertArrayHasKey('active_from', EntityInput::validateBase(['active_from' => $bad] + $base, self::TODAY), $bad);
+            $this->assertArrayHasKey('active_from', EntityInput::validateBase(['active_from' => $bad] + $base, self::TODAY, static fn (string $c): bool => in_array($c, ['EUR', 'PLN', 'CZK'], true)), $bad);
         }
 
-        $this->assertSame([], EntityInput::validateBase(['active_from' => '2027-10-26'] + $base, self::TODAY));
+        $this->assertSame([], EntityInput::validateBase(['active_from' => '2027-10-26'] + $base, self::TODAY, static fn (string $c): bool => in_array($c, ['EUR', 'PLN', 'CZK'], true)));
     }
 
     public function testNormalizeVersion(): void

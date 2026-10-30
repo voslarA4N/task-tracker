@@ -55,7 +55,7 @@ final class ClientInputTest extends CIUnitTestCase
      */
     private function errorsFor(array $over): array
     {
-        return ClientInput::validate($this->valid($over));
+        return ClientInput::validate($this->valid($over), static fn (string $c): bool => in_array($c, ['EUR', 'PLN', 'CZK'], true));
     }
 
     public function testValidClient(): void
@@ -116,7 +116,7 @@ final class ClientInputTest extends CIUnitTestCase
         $values = $this->valid(['identifier_type' => 'eu_vat', 'identifier_value' => 'de 123456789', 'country' => 'DE']);
         $n      = ClientInput::normalize($values);
         $this->assertSame('DE123456789', $n['identifier_value']);
-        $this->assertSame([], ClientInput::validate($values));
+        $this->assertSame([], ClientInput::validate($values, static fn (string $c): bool => in_array($c, ['EUR', 'PLN', 'CZK'], true)));
     }
 
     public function testOtherIdentifierKeepsSpacesAndCase(): void
@@ -124,7 +124,7 @@ final class ClientInputTest extends CIUnitTestCase
         foreach (['HRB 12345 B' => 'HRB 12345 B', 'Reg. no 12/a' => 'Reg. no 12/a', '  HRB   12345  ' => 'HRB 12345'] as $raw => $stored) {
             $values = $this->valid(['identifier_type' => 'other', 'identifier_value' => $raw, 'country' => 'DE']);
 
-            $this->assertSame([], ClientInput::validate($values), $raw);
+            $this->assertSame([], ClientInput::validate($values, static fn (string $c): bool => in_array($c, ['EUR', 'PLN', 'CZK'], true)), $raw);
             $this->assertSame($stored, ClientInput::normalize($values)['identifier_value'], $raw);
         }
     }

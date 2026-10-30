@@ -7,6 +7,7 @@ namespace App\Controllers\Settings;
 use App\Controllers\BaseController;
 use App\Libraries\Master\BillingMode;
 use App\Libraries\Master\ClientCurrencyLocked;
+use App\Libraries\Master\CurrencyRepository;
 use App\Libraries\Master\ClientInput;
 use App\Libraries\Master\ClientService;
 use App\Libraries\Platform\MoneyFormat;
@@ -133,6 +134,16 @@ final class Clients extends BaseController
     }
 
     /**
+     * @return list<string> aktivne meny; aktualna (aj neaktivna) mena zaznamu sa zobrazi na konci
+     */
+    private function currencyOptions(string $current): array
+    {
+        $codes = (new CurrencyRepository())->codes();
+
+        return $current !== '' && ! in_array($current, $codes, true) && (new CurrencyRepository())->exists($current) ? [...$codes, $current] : $codes;
+    }
+
+    /**
      * @param array<string, string> $values
      * @param array<string, string> $errors
      *
@@ -157,6 +168,7 @@ final class Clients extends BaseController
             'values'    => $values,
             'errors'    => $errors,
             'countries' => $countries,
+            'currencies' => $this->currencyOptions((string) ($values['currency'] ?? '')),
         ];
     }
 
