@@ -184,11 +184,11 @@ $history = (array) ($invoice['history'] ?? []);
                     <?php $fxManual = ! empty($fx['manual']); ?>
                     <dt><?= esc(lang('Invoices.fxRate')) ?></dt>
                     <dd>
-                        <?= esc(FxFormat::expression($fx, 'sk')) ?>
+                        <?= esc(FxFormat::expression($fx, service('request')->getLocale())) ?>
                         <?php if ($fxManual) : ?><span class="fx-badge badge text-bg-warning"><?= esc(lang('Invoices.fxBadgeManual')) ?></span><?php endif ?>
                         <?php if ($fxManual && is_array($fx['fetched'] ?? null)) : ?>
                             <?php $f = $fx['fetched']; $fe = $fx; $fe['rate'] = $f['rate']; $fe['rate_display'] = $f['rate']; $fe['amount'] = $f['amount']; ?>
-                            <div class="small text-body-secondary"><?= esc(lang('Invoices.fxOriginal', [FxFormat::sourceLabel((string) $f['source']), FxFormat::expression($fe, 'sk'), (string) $f['valid_for']])) ?></div>
+                            <div class="small text-body-secondary"><?= esc(lang('Invoices.fxOriginal', [FxFormat::sourceLabel((string) $f['source']), FxFormat::expression($fe, service('request')->getLocale()), (string) $f['valid_for']])) ?></div>
                         <?php endif ?>
                     </dd>
                     <dt><?= esc(lang('Invoices.fxSource')) ?></dt>
