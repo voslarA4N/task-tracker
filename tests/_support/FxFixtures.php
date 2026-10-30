@@ -61,7 +61,7 @@ trait FxFixtures
     {
         foreach (['SK' => ['ECB', 'previous_business_day'], 'PL' => ['NBP', 'previous_business_day'], 'CZ' => ['CNB', 'on_or_before']] as $country => [$source, $rule]) {
             $this->owner()->query(
-                "UPDATE fx_country_settings SET source = :s:, date_basis = 'delivery_date', day_rule = :r: WHERE country = :c:",
+                "UPDATE fx_country_settings SET source = :s:, date_basis = 'delivery_date', day_rule = :r:, revision = 1 WHERE country = :c:",
                 ['s' => $source, 'r' => $rule, 'c' => $country],
             );
         }
