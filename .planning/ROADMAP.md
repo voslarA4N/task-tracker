@@ -467,7 +467,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 09-03-PLAN.md — PDF dobropisu cn-1 (renderer, view, CSS), registrácia a názov súboru (vlna 2)
+- [x] 09-03-PLAN.md — PDF dobropisu cn-1 (renderer, view, CSS), registrácia a názov súboru (vlna 2)
 - [ ] 09-04-PLAN.md — CreditNoteIssuer: číslo z radu dobropisov, záporné riadky, PDF, uvoľnenie častí, audit v jednej transakcii (vlna 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -555,7 +555,7 @@ Plans:
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
-| 9. Dobropisy | 2/11 | In Progress|  |
+| 9. Dobropisy | 3/11 | In Progress|  |
 | 10. Limity obratu | 0/0 | Not started | - |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |
