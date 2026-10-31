@@ -103,9 +103,9 @@ final class CreditNoteDraftServiceTest extends PgTestCase
 
     public function testBackdateWarningAfterExistingCreditNoteInSeries(): void
     {
-        $s    = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['5.00', '2026-10']]]);
-        $a    = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][0]]))->id;
-        $b    = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][1]]))->id;
+        $s = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['5.00', '2026-10']]]);
+        $a = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][0]]))->id;
+        $b = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][1]]))->id;
         $this->issueCreditNote($a, ['issueDate' => '2026-10-31']);
 
         $d = $this->service()->draft($b, '2026-10-30', '', null);
@@ -161,8 +161,8 @@ final class CreditNoteDraftServiceTest extends PgTestCase
     public function testForeignCurrencyInvoiceExposesFx(): void
     {
         $s = $this->fxPlEurSetup();
-        $this->seedRate('NBP', 'EUR', '2026-10-31', '2026-10-27', '4.4090', 1, '209/A/NBP/2026');
-        $orig = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts'], ['issueDate' => '2026-10-31']))->id;
+        $this->seedRate('NBP', 'EUR', '2026-10-30', '2026-10-27', '4.4090', 1, '209/A/NBP/2026');
+        $orig = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts'], ['issueDate' => '2026-10-30']))->id;
 
         $d = $this->service()->draft($orig, null, '', null);
 
