@@ -43,6 +43,13 @@ final class CreditNoteListTest extends AuthTestCase
         parent::tearDown();
     }
 
+    private function advanceClock(string $iso): void
+    {
+        Services::injectMock('clock', new FrozenClock($iso));
+        session()->set('last_activity', service('clock')->now()->getTimestamp());
+        $this->withSession();
+    }
+
     private function body(TestResponse $result): string
     {
         return (string) $result->response()->getBody();
@@ -55,8 +62,8 @@ final class CreditNoteListTest extends AuthTestCase
     {
         $s    = $this->issueSetup();
         $orig = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']))->id;
-        $cn = $this->issueCreditNote($orig);
-        Services::injectMock('clock', new FrozenClock('2026-12-31T10:00:00+01:00'));
+        $cn   = $this->issueCreditNote($orig);
+        $this->advanceClock('2026-12-31T10:00:00+01:00');
 
         return [$orig, $cn->number, '202610001'];
     }

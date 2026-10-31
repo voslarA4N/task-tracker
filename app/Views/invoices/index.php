@@ -21,7 +21,7 @@
         <div class="flex-grow-1">
             <label class="form-label small mb-1" for="inv-status"><?= esc(lang('Invoices.filterStatus')) ?></label>
             <select class="form-select btn-touch" id="inv-status" name="status">
-                <?php foreach (['' => 'Invoices.filterAll', 'issued' => 'Invoices.statusIssued', 'sent' => 'Invoices.statusSent', 'partially_paid' => 'Invoices.statusPartiallyPaid', 'paid' => 'Invoices.statusPaid', 'overdue' => 'Invoices.filterOverdue'] as $value => $key) : ?>
+                <?php foreach (['' => 'Invoices.filterAll', 'issued' => 'Invoices.statusIssued', 'sent' => 'Invoices.statusSent', 'partially_paid' => 'Invoices.statusPartiallyPaid', 'paid' => 'Invoices.statusPaid', 'overdue' => 'Invoices.filterOverdue', 'cancelled' => 'Invoices.filterCancelled', 'credit_note' => 'Invoices.filterCreditNote'] as $value => $key) : ?>
                     <option value="<?= esc((string) $value, 'attr') ?>"<?= $status === (string) $value ? ' selected' : '' ?>><?= esc(lang($key)) ?></option>
                 <?php endforeach ?>
             </select>
