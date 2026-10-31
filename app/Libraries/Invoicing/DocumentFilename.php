@@ -12,8 +12,9 @@ use InvalidArgumentException;
 final class DocumentFilename
 {
     private const PREFIXES = [
-        'invoice' => ['sk' => 'Faktura_', 'cs' => 'Faktura_', 'pl' => 'Faktura_', 'en' => 'Invoice_'],
-        'report'  => ['sk' => 'Vykaz_', 'cs' => 'Vykaz_', 'pl' => 'Wykaz_', 'en' => 'Report_'],
+        'invoice'     => ['sk' => 'Faktura_', 'cs' => 'Faktura_', 'pl' => 'Faktura_', 'en' => 'Invoice_'],
+        'report'      => ['sk' => 'Vykaz_', 'cs' => 'Vykaz_', 'pl' => 'Wykaz_', 'en' => 'Report_'],
+        'credit_note' => ['sk' => 'Dobropis_', 'cs' => 'Opravny_doklad_', 'pl' => 'Faktura_korygujaca_', 'en' => 'Credit_note_'],
     ];
 
     public static function for(string $kind, string $docLanguage, string $number): string
