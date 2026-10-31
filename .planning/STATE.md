@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 9 UI-SPEC approved
-last_updated: "2026-10-31T22:45:58.675Z"
-last_activity: 2026-10-31 -- Phase 9 planning complete
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-10-31T23:01:54.054Z"
+last_activity: 2026-10-31
 progress:
   total_phases: 12
   completed_phases: 8
   total_plans: 106
-  completed_plans: 95
+  completed_plans: 96
   percent: 67
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 08 — meny-a-kurzy
+**Current focus:** Phase 9 — dobropisy
 
 ## Current Position
 
-Phase: 9
-Plan: Not started
+Phase: 9 (dobropisy) — EXECUTING
+Plan: 2 of 11
 Status: Ready to execute
-Last activity: 2026-10-31 -- Phase 9 planning complete
+Last activity: 2026-10-31
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -92,6 +92,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 07 P04 | 75min | 2 tasks | 17 files |
 | Phase 07 P10 | 45min | 2 tasks | 14 files |
 | Phase 07 P13 | 40min | 2 tasks | 12 files |
+| Phase 09 P01 | 45min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -127,6 +128,7 @@ Recent decisions affecting current work:
 - [Phase 07]: Payment guard: pg_advisory_xact_lock(hashtext('payments'), invoice_id); void as insert-only payment_voids; total=0 never auto-paid
 - [Phase 07]: Reminder threads via latest non-voided invoice/resend message_id; no_balance guard server-side
 - [Phase ?]: 08-05: fx block built via public static SnapshotBuilder::fxBlock; PDF fx rows in totals table with td.fxnote
+- [Phase 09]: 09-01: cancelled invoice and credit note have balance 0.00 in invoice_status_v; credit_note added to EmailTemplateService::KEYS
 
 ### Pending Todos
 
@@ -163,6 +165,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-31T21:15:30.573Z
-Stopped at: Phase 9 UI-SPEC approved
-Resume file: .planning/phases/09-dobropisy/09-UI-SPEC.md
+Last session: 2026-10-31T23:01:54.047Z
+Stopped at: Completed 09-01-PLAN.md
+Resume file: None
