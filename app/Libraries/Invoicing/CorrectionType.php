@@ -15,7 +15,9 @@ enum CorrectionType: string
     case OrderCancelled = 'order_cancelled';
     case Other          = 'other';
 
-    /** Kluc popisku v InvoicePdf (ulozeny do snapshotu, D-18). */
+    /**
+     * Kluc popisku v InvoicePdf (ulozeny do snapshotu, D-18).
+     */
     public function pdfLabelKey(): string
     {
         return match ($this) {
@@ -27,7 +29,9 @@ enum CorrectionType: string
         };
     }
 
-    /** Kluc UI textu (doplna plan 09-06). */
+    /**
+     * Kluc UI textu (doplna plan 09-06).
+     */
     public function uiLabelKey(): string
     {
         return match ($this) {

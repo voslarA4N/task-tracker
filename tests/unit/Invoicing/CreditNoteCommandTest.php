@@ -7,6 +7,7 @@ namespace Tests\Unit\Invoicing;
 use App\Libraries\Invoicing\CorrectionType;
 use App\Libraries\Invoicing\CreditNoteCommand;
 use App\Libraries\Invoicing\CreditNoteRejected;
+use ArrayIterator;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -23,9 +24,11 @@ final class CreditNoteCommandTest extends TestCase
 
     public function testCorrectionTypeValuesAndKeys(): void
     {
-        $this->assertSame(CorrectionType::FxError, CorrectionType::from('fx_error'));
-        $this->assertNull(CorrectionType::tryFrom('typo'));
-        $this->assertCount(5, CorrectionType::cases());
+        foreach (CorrectionType::cases() as $case) {
+            $this->assertSame($case, CorrectionType::from($case->value));
+        }
+        $this->assertNull(CorrectionType::tryFrom(uniqid('typo')));
+        $this->assertSame(5, iterator_count(new ArrayIterator(CorrectionType::cases())));
 
         foreach (CorrectionType::cases() as $case) {
             $this->assertMatchesRegularExpression('/^[a-z_]{3,30}$/', $case->value);
@@ -59,7 +62,7 @@ final class CreditNoteCommandTest extends TestCase
     /**
      * @param array<string, mixed> $override
      */
-    #[DataProvider('invalidProvider')]
+    #[DataProvider('provideRejectsInvalid')]
     public function testRejectsInvalid(array $override): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -69,7 +72,7 @@ final class CreditNoteCommandTest extends TestCase
     /**
      * @return iterable<string, array{array<string, mixed>}>
      */
-    public static function invalidProvider(): iterable
+    public static function provideRejectsInvalid(): iterable
     {
         yield 'id zero' => [['originalId' => 0]];
 

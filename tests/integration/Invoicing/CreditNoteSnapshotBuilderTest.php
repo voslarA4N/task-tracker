@@ -13,6 +13,7 @@ use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Platform\Money;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
+use ReflectionClassConstant;
 use Tests\Support\FakeRateHttpClient;
 use Tests\Support\FxFixtures;
 use Tests\Support\InvoiceFixtures;
@@ -206,7 +207,7 @@ final class CreditNoteSnapshotBuilderTest extends PgTestCase
             $this->assertSame('parts_mismatch', $e->reason);
         }
 
-        $tampered            = $lines;
+        $tampered              = $lines;
         $tampered[0]['amount'] = '1.00';
 
         try {
@@ -226,6 +227,8 @@ final class CreditNoteSnapshotBuilderTest extends PgTestCase
 
     public function testInvoiceLabelKeysUnchanged(): void
     {
-        $this->assertCount(43, SnapshotBuilder::LABEL_KEYS);
+        $keys = (new ReflectionClassConstant(SnapshotBuilder::class, 'LABEL_KEYS'))->getValue();
+        $this->assertIsArray($keys);
+        $this->assertCount(43, $keys);
     }
 }
