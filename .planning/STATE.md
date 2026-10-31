@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 09-05-PLAN.md
-last_updated: "2026-10-31T23:24:26.454Z"
+stopped_at: Completed 09-06-PLAN.md
+last_updated: "2026-10-31T23:38:55.131Z"
 last_activity: 2026-10-31
 progress:
   total_phases: 12
   completed_phases: 8
   total_plans: 106
-  completed_plans: 100
+  completed_plans: 101
   percent: 67
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 9 (dobropisy) — EXECUTING
-Plan: 6 of 11
+Plan: 7 of 11
 Status: Ready to execute
 Last activity: 2026-10-31
 
@@ -93,6 +93,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 07 P10 | 45min | 2 tasks | 14 files |
 | Phase 07 P13 | 40min | 2 tasks | 12 files |
 | Phase 09 P01 | 45min | 2 tasks | 14 files |
+| Phase 09 P06 | 50min | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -130,6 +131,7 @@ Recent decisions affecting current work:
 - [Phase ?]: 08-05: fx block built via public static SnapshotBuilder::fxBlock; PDF fx rows in totals table with td.fxnote
 - [Phase 09]: 09-01: cancelled invoice and credit note have balance 0.00 in invoice_status_v; credit_note added to EmailTemplateService::KEYS
 - [Phase 09]: 09-02: CreditNoteSnapshotBuilder has its own LABEL_KEYS; SnapshotBuilder::LABEL_KEYS unchanged
+- [Phase 09]: Credit note preview/confirm are POST (reason out of URLs); issue checks request_key replay before draft
 
 ### Pending Todos
 
@@ -166,6 +168,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-31T23:24:26.448Z
-Stopped at: Completed 09-05-PLAN.md
+Last session: 2026-10-31T23:38:55.126Z
+Stopped at: Completed 09-06-PLAN.md
 Resume file: None
