@@ -36,13 +36,13 @@ trait CreditNoteFixtures
             unset($row['id']);
             $row['type']                 = 'credit_note';
             $row['origin']               = 'issued';
-            $row['series_id']            = $seriesRow?->id ?? $orig['series_id'];
+            $row['series_id']            = $seriesRow->id ?? $orig['series_id'];
             $row['number']               = 'DB-TEST-' . $originalId;
             $row['corrected_invoice_id'] = $originalId;
             $row['correction_reason']    = 'Test';
             $row['correction_type']      = 'other';
-            $row['total']                = bcmul((string) $orig['total'], '-1', 2);
-            $row['total_entity_ccy']     = bcmul((string) $orig['total_entity_ccy'], '-1', 2);
+            $row['total']                = '-' . ltrim((string) $orig['total'], '-');
+            $row['total_entity_ccy']     = '-' . ltrim((string) $orig['total_entity_ccy'], '-');
             $row['snapshot']             = '{"schema":4}';
             $row['snapshot_schema']      = 4;
             $row['template_version']     = 'cn-1';

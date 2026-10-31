@@ -12,6 +12,7 @@ return [
     'backToList'          => 'Späť na zoznam',
     'kindInvoice'         => 'Faktúra',
     'kindReminder'        => 'Upomienka',
+    'kindCreditNote'      => 'Dobropis',
     'lang_sk'             => 'Slovenčina',
     'lang_pl'             => 'Poľština',
     'lang_cs'             => 'Čeština',
@@ -51,4 +52,6 @@ return [
     'var_client_name'     => 'názov klienta',
     'var_entity_name'     => 'názov subjektu',
     'var_days_overdue'    => 'dni po splatnosti',
+    'var_original_number' => 'číslo pôvodnej faktúry',
+    'var_original_date'   => 'dátum pôvodnej faktúry',
 ];

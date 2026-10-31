@@ -2,7 +2,7 @@
 /**
  * @var array<string, list<array<string, mixed>>> $groups
  */
-$kindKeys = ['invoice' => 'EmailTemplates.kindInvoice', 'reminder' => 'EmailTemplates.kindReminder'];
+$kindKeys = ['invoice' => 'EmailTemplates.kindInvoice', 'reminder' => 'EmailTemplates.kindReminder', 'credit_note' => 'EmailTemplates.kindCreditNote'];
 $langKeys = ['sk' => 'EmailTemplates.lang_sk', 'pl' => 'EmailTemplates.lang_pl', 'cs' => 'EmailTemplates.lang_cs', 'en' => 'EmailTemplates.lang_en'];
 ?>
 <?= $this->extend('layouts/app') ?>

@@ -25,8 +25,11 @@ final class CreditNoteSchemaTest extends PgTestCase
     use IssueFixtures;
     use MasterFixtures;
 
-    /** @var array{entity: int, client: int, tasks: list<int>, parts: list<int>, series: int} */
+    /**
+     * @var array{entity: int, client: int, tasks: list<int>, parts: list<int>, series: int}
+     */
     private array $s;
+
     private int $invoice;
 
     protected function setUp(): void

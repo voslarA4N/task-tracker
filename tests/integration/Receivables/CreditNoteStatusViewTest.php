@@ -26,7 +26,6 @@ final class CreditNoteStatusViewTest extends PgTestCase
 
     private int $invoice;
     private int $client;
-    private int $entity;
 
     protected function setUp(): void
     {
@@ -36,7 +35,6 @@ final class CreditNoteStatusViewTest extends PgTestCase
 
         $s             = $this->issueSetup();
         $this->client  = $s['client'];
-        $this->entity  = $s['entity'];
         $this->invoice = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']))->id;
     }
 
@@ -99,8 +97,8 @@ final class CreditNoteStatusViewTest extends PgTestCase
 
     public function testCreditNoteRow(): void
     {
-        $cn  = $this->insertRawCreditNote($this->invoice);
-        $row = $this->row($cn);
+        $cn   = $this->insertRawCreditNote($this->invoice);
+        $row  = $this->row($cn);
         $orig = $this->owner()->query('SELECT number, issue_date FROM invoices WHERE id = :i:', ['i' => $this->invoice])->getRow();
 
         $this->assertSame('credit_note', $row['type']);

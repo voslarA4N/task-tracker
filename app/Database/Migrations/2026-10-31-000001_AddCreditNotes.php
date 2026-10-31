@@ -143,10 +143,102 @@ final class AddCreditNotes extends Migration
             $$
             SQL);
         $this->db->query("COMMENT ON FUNCTION invoice_complete_check() IS 'Deferred completeness check: lines, totals, invoice PDF and (type invoice, snapshot_schema >= 2) report PDF; credit notes need no report'");
+
+        $this->db->query(<<<'SQL'
+            CREATE OR REPLACE VIEW invoice_status_v AS
+            SELECT i.id, i.origin, i.type, i.number, i.external_ref, i.client_id, i.entity_id, i.billing_month, i.issue_date, i.due_date,
+                   i.currency, i.total, i.counts_toward_limit, i.line_count, i.created_at,
+                   CASE WHEN i.origin = 'external' THEN 'external'
+                        WHEN i.type = 'invoice' AND cn.id IS NOT NULL THEN 'cancelled'
+                        WHEN i.total > 0 AND COALESCE(p.paid, 0) >= i.total THEN 'paid'
+                        WHEN COALESCE(p.paid, 0) > 0 THEN 'partially_paid'
+                        WHEN s.sent_at IS NOT NULL THEN 'sent'
+                        ELSE 'issued' END AS status,
+                   s.sent_at AS sent_at,
+                   COALESCE(s.send_count, 0)::integer AS send_count,
+                   s.last_reminder_at AS last_reminder_at,
+                   COALESCE(p.paid, 0)::numeric(12,2) AS paid_amount,
+                   (CASE WHEN cn.id IS NOT NULL OR i.type = 'credit_note' THEN 0 ELSE i.total - COALESCE(p.paid, 0) END)::numeric(12,2) AS balance,
+                   p.last_paid_on AS last_paid_on,
+                   cn.id AS credit_note_id,
+                   cn.number AS credit_note_number,
+                   cn.issue_date AS credit_note_issue_date,
+                   i.corrected_invoice_id AS corrected_invoice_id,
+                   o.number AS corrected_number,
+                   o.issue_date AS corrected_issue_date
+            FROM invoices i
+            LEFT JOIN (
+                SELECT x.invoice_id,
+                       MAX(x.sent_at) FILTER (WHERE x.counts_as_sent) AS sent_at,
+                       COUNT(*) FILTER (WHERE x.kind IN ('invoice','resend')) AS send_count,
+                       MAX(x.sent_at) FILTER (WHERE x.kind = 'reminder') AS last_reminder_at
+                FROM invoice_sends x
+                WHERE NOT EXISTS (SELECT 1 FROM invoice_send_voids v WHERE v.send_id = x.id)
+                GROUP BY x.invoice_id
+            ) s ON s.invoice_id = i.id
+            LEFT JOIN (
+                SELECT y.invoice_id, SUM(y.amount) AS paid, MAX(y.paid_on) AS last_paid_on
+                FROM payments y
+                WHERE NOT EXISTS (SELECT 1 FROM payment_voids pv WHERE pv.payment_id = y.id)
+                GROUP BY y.invoice_id
+            ) p ON p.invoice_id = i.id
+            LEFT JOIN invoices cn ON cn.corrected_invoice_id = i.id AND cn.type = 'credit_note'
+            LEFT JOIN invoices o ON o.id = i.corrected_invoice_id
+            SQL);
+        $this->db->query('GRANT SELECT ON invoice_status_v TO app_rw');
+
+        $this->db->query('ALTER TABLE email_templates DROP CONSTRAINT email_templates_key_check');
+        $this->db->query("ALTER TABLE email_templates ADD CONSTRAINT email_templates_key_check CHECK (key IN ('invoice','reminder','credit_note'))");
+
+        foreach ($this->seed() as [$key, $language, $subject, $body]) {
+            $this->db->query(
+                'INSERT INTO email_templates (key, language, subject, body, revision, updated_at) VALUES (:key:, :language:, :subject:, :body:, 1, now())',
+                ['key' => $key, 'language' => $language, 'subject' => $subject, 'body' => $body],
+            );
+        }
     }
 
     public function down(): void
     {
+        $this->db->query("DELETE FROM email_templates WHERE key = 'credit_note'");
+        $this->db->query('ALTER TABLE email_templates DROP CONSTRAINT email_templates_key_check');
+        $this->db->query("ALTER TABLE email_templates ADD CONSTRAINT email_templates_key_check CHECK (key IN ('invoice','reminder'))");
+
+        $this->db->query('DROP VIEW IF EXISTS invoice_status_v');
+        $this->db->query(<<<'SQL'
+            CREATE VIEW invoice_status_v AS
+            SELECT i.id, i.origin, i.type, i.number, i.external_ref, i.client_id, i.entity_id, i.billing_month, i.issue_date, i.due_date,
+                   i.currency, i.total, i.counts_toward_limit, i.line_count, i.created_at,
+                   CASE WHEN i.origin = 'external' THEN 'external'
+                        WHEN i.total > 0 AND COALESCE(p.paid, 0) >= i.total THEN 'paid'
+                        WHEN COALESCE(p.paid, 0) > 0 THEN 'partially_paid'
+                        WHEN s.sent_at IS NOT NULL THEN 'sent'
+                        ELSE 'issued' END AS status,
+                   s.sent_at AS sent_at,
+                   COALESCE(s.send_count, 0)::integer AS send_count,
+                   s.last_reminder_at AS last_reminder_at,
+                   COALESCE(p.paid, 0)::numeric(12,2) AS paid_amount,
+                   (i.total - COALESCE(p.paid, 0))::numeric(12,2) AS balance,
+                   p.last_paid_on AS last_paid_on
+            FROM invoices i
+            LEFT JOIN (
+                SELECT x.invoice_id,
+                       MAX(x.sent_at) FILTER (WHERE x.counts_as_sent) AS sent_at,
+                       COUNT(*) FILTER (WHERE x.kind IN ('invoice','resend')) AS send_count,
+                       MAX(x.sent_at) FILTER (WHERE x.kind = 'reminder') AS last_reminder_at
+                FROM invoice_sends x
+                WHERE NOT EXISTS (SELECT 1 FROM invoice_send_voids v WHERE v.send_id = x.id)
+                GROUP BY x.invoice_id
+            ) s ON s.invoice_id = i.id
+            LEFT JOIN (
+                SELECT y.invoice_id, SUM(y.amount) AS paid, MAX(y.paid_on) AS last_paid_on
+                FROM payments y
+                WHERE NOT EXISTS (SELECT 1 FROM payment_voids pv WHERE pv.payment_id = y.id)
+                GROUP BY y.invoice_id
+            ) p ON p.invoice_id = i.id
+            SQL);
+        $this->db->query('GRANT SELECT ON invoice_status_v TO app_rw');
+
         $this->db->query(<<<'SQL'
             CREATE OR REPLACE FUNCTION invoice_complete_check() RETURNS trigger LANGUAGE plpgsql AS $$
             DECLARE
@@ -209,5 +301,18 @@ final class AddCreditNotes extends Migration
         $this->db->query('ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_credit_note_total_check');
         $this->db->query('ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_credit_note_fields_check');
         $this->db->query('DROP INDEX invoices_one_credit_note_uq');
+    }
+
+    /**
+     * @return list<array{string, string, string, string}>
+     */
+    private function seed(): array
+    {
+        return [
+            ['credit_note', 'sk', 'Dobropis {{number}} k faktúre {{original_number}}', "Dobrý deň,\n\nv prílohe posielame dobropis {{number}} zo dňa {{issue_date}} k faktúre {{original_number}} zo dňa {{original_date}}. Dobropis stornuje celú pôvodnú faktúru.\n\nS pozdravom\n{{entity_name}}"],
+            ['credit_note', 'pl', 'Faktura korygująca {{number}} do faktury {{original_number}}', "Dzień dobry,\n\nw załączeniu przesyłamy fakturę korygującą {{number}} z dnia {{issue_date}} do faktury {{original_number}} z dnia {{original_date}}. Faktura korygująca anuluje całą pierwotną fakturę.\n\nZ poważaniem\n{{entity_name}}"],
+            ['credit_note', 'cs', 'Opravný daňový doklad {{number}} k faktuře {{original_number}}', "Dobrý den,\n\nv příloze zasíláme opravný daňový doklad {{number}} ze dne {{issue_date}} k faktuře {{original_number}} ze dne {{original_date}}. Doklad stornuje celou původní fakturu.\n\nS pozdravem\n{{entity_name}}"],
+            ['credit_note', 'en', 'Credit note {{number}} for invoice {{original_number}}', "Hello,\n\nplease find attached credit note {{number}} dated {{issue_date}} for invoice {{original_number}} dated {{original_date}}. The credit note cancels the entire original invoice.\n\nKind regards\n{{entity_name}}"],
+        ];
     }
 }
