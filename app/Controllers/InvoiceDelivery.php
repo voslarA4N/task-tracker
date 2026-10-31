@@ -142,7 +142,7 @@ final class InvoiceDelivery extends BaseController
         )->getRowArray();
 
         // stav dorucenia podla sent_at (zaplatena, ale neodoslana faktura sa da oznacit, WR-01)
-        if ($row === null || $row['origin'] !== 'issued' || $row['type'] !== 'invoice' || $row['sent_at'] !== null) {
+        if ($row === null || $row['origin'] !== 'issued' || ! in_array($row['type'], ['invoice', 'credit_note'], true) || $row['sent_at'] !== null) {
             throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
         }
 

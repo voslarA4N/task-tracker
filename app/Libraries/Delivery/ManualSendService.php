@@ -175,7 +175,7 @@ final class ManualSendService
             throw new SendRejected('external');
         }
 
-        if ($row['type'] !== 'invoice') {
+        if (! in_array($row['type'], ['invoice', 'credit_note'], true)) {
             throw new SendRejected('not_sendable');
         }
 

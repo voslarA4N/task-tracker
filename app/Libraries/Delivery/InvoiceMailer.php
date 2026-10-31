@@ -63,25 +63,25 @@ class InvoiceMailer
      */
     public function draft(int $invoiceId, string $kind): array
     {
-        $invoice = $this->loadInvoice($invoiceId);
+        $invoice = $this->loadInvoice($invoiceId, $kind);
         $lang    = (string) $invoice['doc_language'];
         $client  = $this->db->query('SELECT invoice_email, cc_emails FROM clients WHERE id = :id:', ['id' => (int) $invoice['client_id']])->getRowArray();
         $email   = trim((string) ($client['invoice_email'] ?? ''));
         $cc      = $kind === 'resend' ? [] : $this->decodeList($client['cc_emails'] ?? '[]');
         $allCc   = $this->decodeList($client['cc_emails'] ?? '[]');
 
-        $template = (new EmailTemplateService($this->db, $this->audit))->effective($kind === 'reminder' ? 'reminder' : 'invoice', $lang);
+        $template = (new EmailTemplateService($this->db, $this->audit))->effective($invoice['type'] === 'credit_note' ? 'credit_note' : ($kind === 'reminder' ? 'reminder' : 'invoice'), $lang);
         $rendered = (new TemplateRenderer())->render($template['subject'], $template['body'], TemplateContext::values($invoice, service('clock')->today()));
 
         $attachments = [];
 
-        foreach ($kind === 'reminder' ? ['invoice'] : ['invoice', 'report'] as $docKind) {
+        foreach (self::docKinds($invoice['type'] === 'credit_note', $kind) as $docKind) {
             $meta = $this->store->meta($invoiceId, $docKind);
 
             if ($meta !== null) {
                 $attachments[] = [
                     'kind'   => $docKind,
-                    'name'   => DocumentFilename::for($docKind, $lang, (string) $invoice['number']),
+                    'name'   => DocumentFilename::for($invoice['type'] === 'credit_note' ? 'credit_note' : $docKind, $lang, (string) $invoice['number']),
                     'size'   => $meta['byte_size'],
                     'sha256' => $meta['sha256'],
                 ];
@@ -346,14 +346,25 @@ class InvoiceMailer
     }
 
     /**
+     * Prílohy: dobropis a upomienka iba PDF dokladu, inak doklad aj výkaz (D-18).
+     *
+     * @return list<string>
+     */
+    private static function docKinds(bool $creditNote, string $kind): array
+    {
+        return $creditNote || $kind === 'reminder' ? ['invoice'] : ['invoice', 'report'];
+    }
+
+    /**
      * @return array<string, mixed>
      *
      * @throws SendRejected
      */
-    private function loadInvoice(int $invoiceId): array
+    private function loadInvoice(int $invoiceId, string $kind): array
     {
         $row = $this->db->query(
             'SELECT id, origin, type, number, doc_language, snapshot_schema, snapshot, client_id, entity_id, total, currency, issue_date, due_date, billing_month,
+                    (SELECT v.status FROM invoice_status_v v WHERE v.id = invoices.id) AS status,
                     (SELECT v.balance FROM invoice_status_v v WHERE v.id = invoices.id) AS balance
              FROM invoices WHERE id = :id:',
             ['id' => $invoiceId],
@@ -367,7 +378,12 @@ class InvoiceMailer
             throw new SendRejected('external');
         }
 
-        if ($row['type'] !== 'invoice') {
+        if (! in_array($row['type'], ['invoice', 'credit_note'], true)) {
+            throw new SendRejected('not_sendable');
+        }
+
+        // upomienka nepatri k dobropisu ani k stornovanej faktúre (D-15)
+        if ($kind === 'reminder' && ($row['type'] === 'credit_note' || $row['status'] === 'cancelled')) {
             throw new SendRejected('not_sendable');
         }
 
@@ -388,7 +404,7 @@ class InvoiceMailer
         $out = [];
 
         try {
-            foreach ($cmd->kind === 'reminder' ? ['invoice'] : ['invoice', 'report'] as $kind) {
+            foreach (self::docKinds($invoice['type'] === 'credit_note', $cmd->kind) as $kind) {
                 $doc = $this->store->read($cmd->invoiceId, $kind);
 
                 if ($doc === null) {
@@ -399,7 +415,7 @@ class InvoiceMailer
                     throw new DocumentIntegrityError('Missing stored document: ' . $kind);
                 }
 
-                $out[] = ['kind' => $kind, 'name' => DocumentFilename::for($kind, $lang, (string) $invoice['number']), 'bytes' => $doc->bytes, 'sha256' => $doc->sha256];
+                $out[] = ['kind' => $kind, 'name' => DocumentFilename::for($invoice['type'] === 'credit_note' ? 'credit_note' : $kind, $lang, (string) $invoice['number']), 'bytes' => $doc->bytes, 'sha256' => $doc->sha256];
             }
         } catch (DocumentIntegrityError $e) {
             log_message('critical', sprintf('mail.attachments_failed invoice=%d reason=%s', $cmd->invoiceId, $e->getMessage()));
