@@ -4,6 +4,7 @@ use App\Controllers\Invoicing;
 use App\Libraries\Fx\FxFormat;
 use App\Libraries\Invoicing\CorrectionType;
 use App\Libraries\Platform\Hours;
+use App\Libraries\Platform\Money;
 use App\Libraries\Platform\MoneyFormat;
 
 /**
@@ -53,7 +54,7 @@ $describe = static fn (string $name): string => isset($errors[$name]) ? ' aria-d
     <p class="small text-body-secondary mb-3"><?= esc(lang('CreditNotes.intro', [(string) $orig['number'], Invoicing::dateLabel((string) $orig['issue_date'])])) ?></p>
     <span class="small text-body-secondary htmx-indicator" id="cn-loading"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> <?= esc(lang('CreditNotes.loading')) ?></span>
 
-    <?php if (bccomp($draft['paid_amount'], '0', 2) > 0) : ?>
+    <?php if (Money::of($draft['paid_amount'])->compare(Money::zero()) > 0) : ?>
         <div class="alert alert-warning small" role="alert"><?= esc(lang('CreditNotes.warnPayments', [$fmt($draft['paid_amount'])])) ?></div>
     <?php endif ?>
     <div class="alert alert-secondary small" role="note"><?= esc(lang('CreditNotes.warnRelease', [$draft['release_count']])) ?></div>
