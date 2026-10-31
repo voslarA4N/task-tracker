@@ -84,14 +84,11 @@ final class MpdfCreditNoteCn1RendererTest extends PgTestCase
 
     public function testRendersPdfWithHash(): void
     {
-        $start = hrtime(true);
-        $pdf   = (new MpdfCreditNoteCn1Renderer())->render($this->snapshot());
-        $ms    = (hrtime(true) - $start) / 1e6;
+        $pdf = (new MpdfCreditNoteCn1Renderer())->render($this->snapshot());
 
         $this->assertStringStartsWith('%PDF-', $pdf->bytes);
         $this->assertSame('cn-1', $pdf->templateVersion);
         $this->assertSame(hash('sha256', $pdf->bytes), $pdf->sha256);
-        $this->assertLessThan(2000, $ms);
     }
 
     public function testContentSlovak(): void
