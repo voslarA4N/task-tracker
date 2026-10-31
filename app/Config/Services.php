@@ -4,6 +4,7 @@ namespace Config;
 
 use App\Libraries\Fx\CurlRateHttpClient;
 use App\Libraries\Fx\RateHttpClient;
+use App\Libraries\Invoicing\CreditNoteIssuer;
 use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Platform\AfterResponse;
 use App\Libraries\Platform\Clock;
@@ -49,6 +50,15 @@ class Services extends BaseService
         }
 
         return new InvoiceIssuer();
+    }
+
+    public static function creditNoteIssuer(bool $getShared = true): CreditNoteIssuer
+    {
+        if ($getShared) {
+            return static::getSharedInstance('creditNoteIssuer');
+        }
+
+        return new CreditNoteIssuer();
     }
 
     public static function afterResponse(bool $getShared = true): AfterResponse

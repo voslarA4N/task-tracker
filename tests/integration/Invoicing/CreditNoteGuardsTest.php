@@ -58,6 +58,9 @@ final class CreditNoteGuardsTest extends PgTestCase
         return (int) $this->owner()->query("SELECT count(*) AS c FROM invoices WHERE type = 'credit_note'")->getRow()->c;
     }
 
+    /**
+     * @param array<string, mixed> $overrides
+     */
     private function assertRejected(int $originalId, string $reason, array $overrides = []): CreditNoteRejected
     {
         $before = $this->creditNoteCount();
