@@ -526,3 +526,13 @@ img, table { max-width: 100%; }
 .fx-manual > summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; }
 .fx-badge { margin-left: 8px; }
 .fx-sub { font-size: 12px; color: var(--app-muted); font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+
+/* Dobropisy (Phase 9, INV-07) */
+.cn-banner { border-left: 4px solid var(--app-muted); padding: 16px; background: #fff; overflow-wrap: anywhere; }
+.cn-lines { margin-bottom: 16px; }
+.cn-line { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--app-border); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.cn-line-desc { min-width: 0; overflow-wrap: anywhere; }
+.cn-line-amount { white-space: nowrap; font-weight: 600; }
+.cn-lines > details > summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; }
+.cn-total { font-size: 28px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.cn-check { font-size: 12px; color: var(--app-muted); font-variant-numeric: tabular-nums; }

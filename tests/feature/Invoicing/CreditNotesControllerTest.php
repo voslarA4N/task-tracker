@@ -7,6 +7,7 @@ namespace Tests\Feature\Invoicing;
 use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Platform\Uuid;
 use App\Libraries\Receivables\PaymentService;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -57,6 +58,16 @@ final class CreditNotesControllerTest extends AuthTestCase
     private function body(TestResponse $result): string
     {
         return (string) $result->response()->getBody();
+    }
+
+    private function assertNotFound(callable $request): void
+    {
+        try {
+            $result = $request();
+            $this->assertSame(404, $result->response()->getStatusCode());
+        } catch (PageNotFoundException) {
+            $this->addToAssertionCount(1);
+        }
     }
 
     private function issuedInvoice(): int
@@ -150,14 +161,14 @@ final class CreditNotesControllerTest extends AuthTestCase
         $s        = $this->issueSetup();
         $external = $this->insertExternalInvoice($s['client'], '2026-10', $s['parts']);
 
-        $this->get('/invoices/' . $external . '/credit-note')->assertStatus(404);
+        $this->assertNotFound(fn () => $this->get('/invoices/' . $external . '/credit-note'));
 
         $s2 = $this->issueSetup(['parts' => [['10.00', '2026-11']]]);
         $id = $this->issuer()->issue($this->issueCommand($s2['client'], '2026-11', $s2['entity'], $s2['parts']))->id;
         $cn = $this->issueCreditNote($id);
 
-        $this->get('/invoices/' . $cn->id . '/credit-note')->assertStatus(404);
-        $this->get('/invoices/999999/credit-note')->assertStatus(404);
+        $this->assertNotFound(fn () => $this->get('/invoices/' . $cn->id . '/credit-note'));
+        $this->assertNotFound(fn () => $this->get('/invoices/999999/credit-note'));
     }
 
     public function testAlreadyCreditedIs409WithLink(): void
