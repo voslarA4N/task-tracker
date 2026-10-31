@@ -60,6 +60,7 @@ final class CreditNoteRollbackTest extends PgTestCase
 
     /**
      * @param array{entity: int, client: int, tasks: list<int>, parts: list<int>, series: int} $s
+     * @param array{0: int, 1: int, 2: int}                                                    $before
      */
     private function assertNothingPersisted(array $s, int $orig, array $before): void
     {
