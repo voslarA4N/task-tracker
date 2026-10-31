@@ -480,7 +480,7 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [x] 09-09-PLAN.md — Detail faktúry a dobropisu (tlačidlo, bannery, odznaky) a zoznam s filtrami (vlna 4)
-- [ ] 09-11-PLAN.md — Odoslanie dobropisu e-mailom (príloha iba PDF dobropisu), resend, mark-sent a zákaz upomienok (vlna 4)
+- [x] 09-11-PLAN.md — Odoslanie dobropisu e-mailom (príloha iba PDF dobropisu), resend, mark-sent a zákaz upomienok (vlna 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -555,7 +555,7 @@ Plans:
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
-| 9. Dobropisy | 9/11 | In Progress|  |
+| 9. Dobropisy | 10/11 | In Progress|  |
 | 10. Limity obratu | 0/0 | Not started | - |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |
