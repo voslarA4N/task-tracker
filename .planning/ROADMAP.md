@@ -463,7 +463,7 @@ Plans:
 **Wave 1**
 
 - [x] 09-01-PLAN.md — Migrácia AddCreditNotes: jeden dobropis na faktúru, CHECK-y, alloc_guard výnimka + release_allocations, complete_check bez výkazu, stav cancelled vo view, šablóna e-mailu (vlna 1)
-- [ ] 09-02-PLAN.md — CorrectionType, CreditNoteCommand, CreditNoteRejected a CreditNoteSnapshotBuilder (záporná kópia, blok correction, popisky cn*) (vlna 1)
+- [x] 09-02-PLAN.md — CorrectionType, CreditNoteCommand, CreditNoteRejected a CreditNoteSnapshotBuilder (záporná kópia, blok correction, popisky cn*) (vlna 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -555,7 +555,7 @@ Plans:
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
-| 9. Dobropisy | 1/11 | In Progress|  |
+| 9. Dobropisy | 2/11 | In Progress|  |
 | 10. Limity obratu | 0/0 | Not started | - |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |

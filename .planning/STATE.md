@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-10-31T23:01:54.054Z"
+stopped_at: Completed-09-02-PLAN.md
+last_updated: "2026-10-31T23:05:54.977Z"
 last_activity: 2026-10-31
 progress:
   total_phases: 12
   completed_phases: 8
   total_plans: 106
-  completed_plans: 96
+  completed_plans: 97
   percent: 67
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 9 (dobropisy) — EXECUTING
-Plan: 2 of 11
+Plan: 3 of 11
 Status: Ready to execute
 Last activity: 2026-10-31
 
@@ -129,6 +129,7 @@ Recent decisions affecting current work:
 - [Phase 07]: Reminder threads via latest non-voided invoice/resend message_id; no_balance guard server-side
 - [Phase ?]: 08-05: fx block built via public static SnapshotBuilder::fxBlock; PDF fx rows in totals table with td.fxnote
 - [Phase 09]: 09-01: cancelled invoice and credit note have balance 0.00 in invoice_status_v; credit_note added to EmailTemplateService::KEYS
+- [Phase 09]: 09-02: CreditNoteSnapshotBuilder has its own LABEL_KEYS; SnapshotBuilder::LABEL_KEYS unchanged
 
 ### Pending Todos
 
@@ -165,6 +166,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-31T23:01:54.047Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-10-31T23:05:54.773Z
+Stopped at: Completed-09-02-PLAN.md
 Resume file: None
