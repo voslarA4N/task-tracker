@@ -102,8 +102,10 @@ final class CreditNoteSchemaTest extends PgTestCase
     {
         $this->assertGreaterThan(0, $this->insertRawCreditNote($this->invoice));
 
-        $this->owner()->query('SELECT 1');
-        $this->assertDbError('/is incomplete/', fn () => $this->insertRawCreditNote($this->invoice, ['number' => 'DB-TEST-N', 'request_key' => $this->uuid4(), 'without_document' => true, 'correction_type' => 'other']));
+        $alloc  = $this->createAllocation($this->createTask($this->s['client']), '2.00', '2026-09');
+        $second = $this->insertIssuedInvoiceRaw($this->s['client'], $this->s['entity'], '2026-09', [$alloc], '%PDF-1.4 test', ['number' => 'SECOND-1', 'with_report' => true]);
+
+        $this->assertDbError('/is incomplete/', fn () => $this->insertRawCreditNote($second, ['without_document' => true]));
     }
 
     public function testInvoiceWithoutReportStillFails(): void
