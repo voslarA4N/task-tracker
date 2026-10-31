@@ -51,7 +51,7 @@ final class InvoiceQueries
 
         $rows = $this->db->query(
             'SELECT i.id, i.origin, i.number, i.external_ref, i.issue_date, i.billing_month, i.currency, i.total, i.created_at, c.name AS client_name,
-                    i.status, i.balance, i.paid_amount, i.due_date, i.type, i.credit_note_number, i.corrected_number,
+                    i.status, i.balance, i.paid_amount, i.due_date, i.type, i.credit_note_number, i.corrected_number, i.sent_at,
                     f.fx_rate, f.total_entity_ccy, f.snapshot->\'fx\'->>\'entity_currency\' AS entity_currency,
                     CASE WHEN ' . $cond . ' THEN 1 ELSE 0 END AS overdue,
                     CASE WHEN ' . $cond . ' THEN CAST(:today: AS date) - i.due_date ELSE 0 END AS days_overdue

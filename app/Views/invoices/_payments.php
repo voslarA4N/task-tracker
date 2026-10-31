@@ -42,7 +42,7 @@ $stamp = static function (mixed $v) use ($stampFmt): string {
                 <li<?= $p['voided'] ? ' class="pay-void"' : '' ?>>
                     <div class="d-flex justify-content-between gap-2">
                         <div class="fw-semibold"><span class="pay-amount tabular-nums"><?= esc(MoneyFormat::format((string) $p['amount'], $currency)) ?></span> · <span class="pay-date"><?= esc($day($p['paid_on'])) ?></span></div>
-                        <?php if (! $p['voided']) : ?>
+                        <?php if (! $p['voided'] && empty($readOnly)) : ?>
                             <a class="btn btn-link btn-touch p-0" href="/payments/<?= (int) $p['id'] ?>/void" hx-get="/payments/<?= (int) $p['id'] ?>/void" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Payments.voidLink')) ?></a>
                         <?php endif ?>
                     </div>
@@ -53,5 +53,8 @@ $stamp = static function (mixed $v) use ($stampFmt): string {
                 </li>
             <?php endforeach ?>
         </ul>
+    <?php endif ?>
+    <?php if (! empty($readOnly)) : ?>
+        <p class="small text-body-secondary mt-2 mb-0"><?= esc(lang('Invoices.paymentsLocked')) ?></p>
     <?php endif ?>
 </section>

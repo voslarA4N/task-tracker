@@ -46,6 +46,13 @@ final class CreditNoteDetailTest extends AuthTestCase
         parent::tearDown();
     }
 
+    private function advanceClock(string $iso): void
+    {
+        Services::injectMock('clock', new FrozenClock($iso));
+        session()->set('last_activity', service('clock')->now()->getTimestamp());
+        $this->withSession();
+    }
+
     private function body(TestResponse $result): string
     {
         return (string) $result->response()->getBody();
@@ -95,7 +102,7 @@ final class CreditNoteDetailTest extends AuthTestCase
         $this->markSent($orig);
         $this->owner()->query('INSERT INTO payments (invoice_id, paid_on, amount, created_at) VALUES (:i:, :d:, :a:, now())', ['i' => $orig, 'd' => '2026-10-30', 'a' => '10.00']);
         $cn = $this->issueCreditNote($orig);
-        Services::injectMock('clock', new FrozenClock('2026-12-31T10:00:00+01:00'));
+        $this->advanceClock('2026-12-31T10:00:00+01:00');
         $html = $this->body($this->get('/invoices/' . $orig));
 
         $this->assertStringContainsString('Stornovaná', $html);
@@ -142,7 +149,7 @@ final class CreditNoteDetailTest extends AuthTestCase
 
     public function testCreditNoteForeignCurrencyShowsRate(): void
     {
-        $s    = $this->fxPlEurSetup();
+        $s = $this->fxPlEurSetup();
         $this->seedRate('NBP', 'EUR', '2026-10-30', '2026-10-27', '4.4090', 1, '209/A/NBP/2026');
         $orig = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts'], ['issueDate' => '2026-10-30']))->id;
         $cn   = $this->issueCreditNote($orig);

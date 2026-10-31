@@ -44,7 +44,7 @@ final class Invoices extends BaseController
         $fmt   = $this->dateFormatter();
         $dates = [];
 
-        foreach (['issue_date', 'delivery_date', 'due_date'] as $field) {
+        foreach (['issue_date', 'delivery_date', 'due_date', 'credit_note_issue_date', 'corrected_issue_date'] as $field) {
             $dates[$field] = self::label($fmt, $invoice[$field] ?? null);
         }
 
