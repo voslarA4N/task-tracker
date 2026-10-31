@@ -238,4 +238,230 @@ final class CreditNotesControllerTest extends AuthTestCase
         $this->assertStringContainsString('Pozor: dátum vystavenia', $this->body($result));
         $this->assertStringContainsString('name="confirm_backdate"', $this->body($result));
     }
+
+    /**
+     * Skryte polia formulara z HTML (potvrdzovaci sheet).
+     *
+     * @return array<string, string>
+     */
+    private function hiddenFields(string $html): array
+    {
+        preg_match_all('/<input type="hidden" name="([a-z_]+)" value="([^"]*)">/', $html, $m, PREG_SET_ORDER);
+        $out = [];
+
+        foreach ($m as $row) {
+            if (! in_array($row[1], ['csrf_test_name', csrf_token()], true)) {
+                $out[$row[1]] = html_entity_decode($row[2]);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function confirmedForm(int $id, string $date = '2026-10-31'): array
+    {
+        $result = $this->submit('/invoices/' . $id . '/credit-note/confirm', ['issue_date' => $date] + $this->validForm());
+        $result->assertStatus(200);
+
+        return $this->hiddenFields($this->body($result));
+    }
+
+    private function creditNoteCount(): int
+    {
+        return (int) $this->owner()->query("SELECT count(*) AS n FROM invoices WHERE type = 'credit_note'")->getRow()->n;
+    }
+
+    public function testConfirmReturnsSheetWithHiddenFields(): void
+    {
+        $this->login();
+        $id = $this->issuedInvoice();
+
+        $result = $this->submit('/invoices/' . $id . '/credit-note/confirm', $this->validForm());
+
+        $result->assertStatus(200);
+        $html = $this->body($result);
+        $this->assertStringContainsString('<h2', $html);
+        $this->assertStringContainsString('Vystaviť dobropis', $html);
+        $this->assertStringContainsString('btn-danger', $html);
+        $this->assertStringContainsString('Dobropis je nemenný doklad.', $html);
+        $this->assertStringContainsString('Chybná sadzba', $html);
+        $fields = $this->hiddenFields($html);
+
+        foreach (['preview_token', 'request_key', 'reason', 'correction_type', 'issue_date', 'confirm_backdate'] as $name) {
+            $this->assertArrayHasKey($name, $fields);
+        }
+        $this->assertSame(64, strlen($fields['preview_token']));
+    }
+
+    public function testConfirmWithoutHtmxIsFullPage(): void
+    {
+        $this->login();
+        $id = $this->issuedInvoice();
+
+        $result = $this->submit('/invoices/' . $id . '/credit-note/confirm', $this->validForm(), true, false);
+
+        $result->assertStatus(200);
+        $this->assertStringContainsString('<html', $this->body($result));
+        $this->assertStringContainsString('btn-danger', $this->body($result));
+    }
+
+    public function testConfirmWithInvalidInputIs422(): void
+    {
+        $this->login();
+        $id = $this->issuedInvoice();
+
+        $result = $this->submit('/invoices/' . $id . '/credit-note/confirm', ['reason' => ''] + $this->validForm());
+
+        $result->assertStatus(422);
+        $this->assertStringContainsString('Zadajte dôvod opravy.', $this->body($result));
+        $this->assertSame('#cn-preview', $result->response()->getHeaderLine('HX-Retarget'));
+    }
+
+    public function testIssueRedirectsToCreditNoteWithFlash(): void
+    {
+        $this->login();
+        $id   = $this->issuedInvoice();
+        $form = $this->confirmedForm($id);
+
+        $result = $this->submit('/invoices/' . $id . '/credit-note', $form);
+
+        $result->assertStatus(200);
+        $cn = (int) $this->owner()->query("SELECT id FROM invoices WHERE type = 'credit_note'")->getRow()->id;
+        $this->assertSame('/invoices/' . $cn, $result->response()->getHeaderLine('HX-Location'));
+        $message = (string) (session()->getFlashdata('app_notice')['message'] ?? '');
+        $this->assertStringContainsString('Dobropis DB-202610001 bol vystavený.', $message);
+        $this->assertStringContainsString('Uvoľnené časti: 2', $message);
+        $this->assertSame(1, $this->creditNoteCount());
+    }
+
+    public function testIssueWithoutHtmxRedirects(): void
+    {
+        $this->login();
+        $id   = $this->issuedInvoice();
+        $form = $this->confirmedForm($id);
+
+        $result = $this->submit('/invoices/' . $id . '/credit-note', $form, true, false);
+
+        $result->assertStatus(302);
+        $this->assertStringContainsString('/invoices/', $result->response()->getHeaderLine('Location'));
+    }
+
+    public function testSameRequestKeyRedirectsToSameCreditNote(): void
+    {
+        $this->login();
+        $id   = $this->issuedInvoice();
+        $form = $this->confirmedForm($id);
+
+        $first  = $this->submit('/invoices/' . $id . '/credit-note', $form);
+        $second = $this->submit('/invoices/' . $id . '/credit-note', $form);
+
+        $this->assertNotSame('', $first->response()->getHeaderLine('HX-Location'));
+        $this->assertSame($first->response()->getHeaderLine('HX-Location'), $second->response()->getHeaderLine('HX-Location'));
+        $this->assertSame(1, $this->creditNoteCount());
+    }
+
+    public function testNewRequestKeyOnCreditedInvoiceIs409(): void
+    {
+        $this->login();
+        $id   = $this->issuedInvoice();
+        $form = $this->confirmedForm($id);
+        $this->submit('/invoices/' . $id . '/credit-note', $form)->assertStatus(200);
+
+        $result = $this->submit('/invoices/' . $id . '/credit-note', ['request_key' => $this->uuid4()] + $form);
+
+        $result->assertStatus(409);
+        $this->assertStringContainsString('Táto faktúra už bola stornovaná dobropisom DB-202610001.', $this->body($result));
+        $this->assertSame(1, $this->creditNoteCount());
+    }
+
+    public function testChangedReasonAgainstTokenIs409(): void
+    {
+        $this->login();
+        $id   = $this->issuedInvoice();
+        $form = $this->confirmedForm($id);
+
+        $result = $this->submit('/invoices/' . $id . '/credit-note', ['reason' => 'Iný dôvod'] + $form);
+
+        $result->assertStatus(409);
+        $this->assertStringContainsString('Údaje sa medzitým zmenili.', $this->body($result));
+        $this->assertSame(0, $this->creditNoteCount());
+    }
+
+    public function testBackdateWithoutConfirmationIs422(): void
+    {
+        $this->login();
+        $s = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['5.00', '2026-10']]]);
+        $a = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][0]]))->id;
+        $b = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][1]]))->id;
+        $this->issueCreditNote($a, ['issueDate' => '2026-10-31']);
+
+        $confirm = $this->submit('/invoices/' . $b . '/credit-note/confirm', ['issue_date' => '2026-10-30'] + $this->validForm());
+        $confirm->assertStatus(422);
+        $this->assertStringContainsString('Potvrďte vystavenie so spätným dátumom.', $this->body($confirm));
+
+        $token = $this->creditNoteCommand($b, ['issueDate' => '2026-10-30', 'reason' => 'Chybná sadzba'])->previewToken;
+        $form  = ['issue_date' => '2026-10-30', 'preview_token' => $token, 'request_key' => $this->uuid4()] + $this->validForm();
+
+        $denied = $this->submit('/invoices/' . $b . '/credit-note', $form);
+        $denied->assertStatus(422);
+        $this->assertStringContainsString('Potvrďte vystavenie so spätným dátumom.', $this->body($denied));
+        $this->assertSame(1, $this->creditNoteCount());
+
+        $this->submit('/invoices/' . $b . '/credit-note', $form + ['confirm_backdate' => '1'])->assertStatus(200);
+        $this->assertSame(2, $this->creditNoteCount());
+    }
+
+    public function testDateBeforeOriginalIs422(): void
+    {
+        $this->login();
+        $id   = $this->issuedInvoice();
+        $form = $this->confirmedForm($id);
+
+        $result = $this->submit('/invoices/' . $id . '/credit-note', ['issue_date' => '2026-10-26'] + $form);
+
+        $result->assertStatus(422);
+        $this->assertStringContainsString('Dátum dobropisu nemôže byť skorší', $this->body($result));
+        $this->assertSame(0, $this->creditNoteCount());
+    }
+
+    public function testPostWithoutCsrfIs403(): void
+    {
+        $this->login();
+        $id = $this->issuedInvoice();
+
+        $this->submit('/invoices/' . $id . '/credit-note', $this->validForm(), false)->assertStatus(403);
+        $this->submit('/invoices/' . $id . '/credit-note/preview', $this->validForm(), false)->assertStatus(403);
+        $this->submit('/invoices/' . $id . '/credit-note/confirm', $this->validForm(), false)->assertStatus(403);
+    }
+
+    public function testIssueForExternalInvoiceIs404(): void
+    {
+        $this->login();
+        $s        = $this->issueSetup();
+        $external = $this->insertExternalInvoice($s['client'], '2026-10', $s['parts']);
+
+        $this->assertNotFound(fn () => $this->submit('/invoices/' . $external . '/credit-note', $this->validForm()));
+    }
+
+    public function testServiceFailureIs500WithMessage(): void
+    {
+        $this->login();
+        $id   = $this->issuedInvoice();
+        $form = $this->confirmedForm($id);
+        Services::injectMock('creditNoteIssuer', new class () {
+            public function issue(): never
+            {
+                throw new \RuntimeException('boom');
+            }
+        });
+
+        $result = $this->submit('/invoices/' . $id . '/credit-note', $form);
+
+        $result->assertStatus(500);
+        $this->assertStringContainsString('Dobropis sa nepodarilo vystaviť. Nič sa neuložilo, skúste to znova.', $this->body($result));
+        $this->assertSame(0, $this->creditNoteCount());
+    }
 }
