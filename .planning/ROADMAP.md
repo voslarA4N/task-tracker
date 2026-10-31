@@ -475,7 +475,7 @@ Plans:
 - [x] 09-05-PLAN.md — Súbeh, rollback, opätovná fakturácia v inom mesiaci a nemennosť (testy) (vlna 3)
 - [x] 09-06-PLAN.md — Stránka náhľadu dobropisu, potvrdzovací sheet a vystavenie (POST, PRG) (vlna 3)
 - [x] 09-07-PLAN.md — Stav stornovaná v po splatnosti, zozname, detaile, úhradách a sťahovaní PDF (vlna 3)
-- [ ] 09-08-PLAN.md — Šablóna e-mailu credit_note v Nastaveniach a premenné pôvodnej faktúry v TemplateContext (vlna 3)
+- [x] 09-08-PLAN.md — Šablóna e-mailu credit_note v Nastaveniach a premenné pôvodnej faktúry v TemplateContext (vlna 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -555,7 +555,7 @@ Plans:
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
-| 9. Dobropisy | 7/11 | In Progress|  |
+| 9. Dobropisy | 8/11 | In Progress|  |
 | 10. Limity obratu | 0/0 | Not started | - |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |
