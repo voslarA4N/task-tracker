@@ -44,10 +44,10 @@ final class CreditNoteQueriesTest extends PgTestCase
      */
     private function setupDocs(): array
     {
-        $s    = $this->issueSetup(['parts' => [['40.00', '2026-10'], ['10.00', '2026-10']]]);
-        $orig = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][0]], ['dueDate' => '2026-10-28']))->id;
+        $s     = $this->issueSetup(['parts' => [['40.00', '2026-10'], ['10.00', '2026-10']]]);
+        $orig  = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][0]], ['dueDate' => '2026-10-28']))->id;
         $plain = $this->issuer()->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][1]], ['dueDate' => '2026-10-28']))->id;
-        $cn   = $this->issueCreditNote($orig);
+        $cn    = $this->issueCreditNote($orig);
 
         return [$orig, $cn->id, $plain];
     }

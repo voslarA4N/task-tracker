@@ -139,6 +139,12 @@ final class PaymentService
                 $invoiceId = (int) $payment['invoice_id'];
                 $this->lock($invoiceId);
 
+                $state = $this->db->query('SELECT status FROM invoice_status_v WHERE id = :id:', ['id' => $invoiceId])->getRowArray();
+
+                if (($state['status'] ?? null) === 'cancelled') {
+                    throw new PaymentRejected('cancelled');
+                }
+
                 if ($this->db->query('SELECT 1 FROM payment_voids WHERE payment_id = :id:', ['id' => $paymentId])->getRowArray() !== null) {
                     throw new PaymentRejected('already_voided');
                 }
@@ -179,6 +185,10 @@ final class PaymentService
             return ['amount' => '0.00', 'balance_after' => '0.00', 'status_after' => 'issued'];
         }
 
+        if ((string) $row['status'] === 'cancelled') {
+            return ['amount' => '0.00', 'balance_after' => '0.00', 'status_after' => 'cancelled'];
+        }
+
         $balance = (string) $row['balance'];
         $current = ['amount' => '0.00', 'balance_after' => $balance, 'status_after' => (string) $row['status']];
         $parsed  = $amount === null || trim($amount) === '' ? $balance : self::parseAmount($amount);
@@ -209,7 +219,7 @@ final class PaymentService
         }
 
         $row = $this->db->query(
-            'SELECT v.origin, v.type, v.balance, i.issue_date FROM invoice_status_v v JOIN invoices i ON i.id = v.id WHERE v.id = :id:',
+            'SELECT v.origin, v.type, v.status, v.balance, i.issue_date FROM invoice_status_v v JOIN invoices i ON i.id = v.id WHERE v.id = :id:',
             ['id' => $invoiceId],
         )->getRowArray();
 
@@ -219,6 +229,10 @@ final class PaymentService
 
         if ($row['origin'] !== 'issued' || $row['type'] !== 'invoice') {
             throw new PaymentRejected('not_payable');
+        }
+
+        if ($row['status'] === 'cancelled') {
+            throw new PaymentRejected('cancelled');
         }
 
         // uhrada pred vystavenim je preklep (WR-06); zaznam je insert-only, oprava by bola len storno

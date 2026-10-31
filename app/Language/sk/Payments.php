@@ -34,6 +34,7 @@ return [
     'errorReason'      => 'Zadajte dôvod storna.',
     'errorReasonLong'  => 'Dôvod môže mať najviac 200 znakov.',
     'errorVoided'      => 'Úhrada už bola stornovaná.',
+    'errorCancelled'   => 'Faktúra je stornovaná. Úhrady sa už nedajú meniť.',
     'cardTitle'        => 'Úhrady',
     'balance'          => 'Zostatok {0}',
     'cardMeta'         => 'Celkom {0} · Uhradené {1} · Splatnosť {2}',

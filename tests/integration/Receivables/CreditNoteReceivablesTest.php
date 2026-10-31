@@ -83,12 +83,12 @@ final class CreditNoteReceivablesTest extends PgTestCase
 
     public function testPaymentsRejectedOnCancelledAndCreditNote(): void
     {
-        $id = $this->issuedInvoice();
-        $cn = $this->issueCreditNote($id);
+        $id  = $this->issuedInvoice();
+        $cn  = $this->issueCreditNote($id);
         $svc = new PaymentService($this->rw());
 
-        $this->assertSame('cancelled', $this->rejection(fn () => $svc->record($id, '10.00', '2026-10-31', null, Uuid::v4(), null)));
-        $this->assertSame('not_payable', $this->rejection(fn () => $svc->record($cn->id, '10.00', '2026-10-31', null, Uuid::v4(), null)));
+        $this->assertSame('cancelled', $this->rejection(static fn () => $svc->record($id, '10.00', '2026-10-31', null, Uuid::v4(), null)));
+        $this->assertSame('not_payable', $this->rejection(static fn () => $svc->record($cn->id, '10.00', '2026-10-31', null, Uuid::v4(), null)));
 
         $impact = $svc->impact($id, '10.00');
         $this->assertSame('0.00', $impact['amount']);
@@ -103,12 +103,12 @@ final class CreditNoteReceivablesTest extends PgTestCase
         $svc->record($id, '100.00', '2026-10-30', null, Uuid::v4(), null);
         $this->issueCreditNote($id);
 
-        $q = new InvoiceStatusQueries($this->rw());
+        $q        = new InvoiceStatusQueries($this->rw());
         $payments = $q->payments($id);
         $this->assertCount(1, $payments);
         $this->assertSame('100.00', $q->forInvoice($id, '2026-10-31')['paid_amount']);
 
-        $this->assertSame('cancelled', $this->rejection(fn () => $svc->void($payments[0]['id'], 'Omyl', null)));
+        $this->assertSame('cancelled', $this->rejection(static fn () => $svc->void($payments[0]['id'], 'Omyl', null)));
         $this->assertFalse($q->payments($id)[0]['voided']);
     }
 }
