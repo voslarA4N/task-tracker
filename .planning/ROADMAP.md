@@ -458,7 +458,33 @@ Plans:
   3. Časti zo stornovanej faktúry sa uvoľnia a dajú sa fakturovať znova do iného mesiaca; storno je možné aj pre ukončený subjekt.
   4. Dobropis má vlastné uložené PDF so sha256 a dá sa odoslať e-mailom rovnako ako faktúra.
 
-**Plans**: TBD
+**Plans**: 11 plans (5 vĺn)
+Plans:
+**Wave 1**
+
+- [ ] 09-01-PLAN.md — Migrácia AddCreditNotes: jeden dobropis na faktúru, CHECK-y, alloc_guard výnimka + release_allocations, complete_check bez výkazu, stav cancelled vo view, šablóna e-mailu (vlna 1)
+- [ ] 09-02-PLAN.md — CorrectionType, CreditNoteCommand, CreditNoteRejected a CreditNoteSnapshotBuilder (záporná kópia, blok correction, popisky cn*) (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 09-03-PLAN.md — PDF dobropisu cn-1 (renderer, view, CSS), registrácia a názov súboru (vlna 2)
+- [ ] 09-04-PLAN.md — CreditNoteIssuer: číslo z radu dobropisov, záporné riadky, PDF, uvoľnenie častí, audit v jednej transakcii (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 09-05-PLAN.md — Súbeh, rollback, opätovná fakturácia v inom mesiaci a nemennosť (testy) (vlna 3)
+- [ ] 09-06-PLAN.md — Stránka náhľadu dobropisu, potvrdzovací sheet a vystavenie (POST, PRG) (vlna 3)
+- [ ] 09-07-PLAN.md — Stav stornovaná v po splatnosti, zozname, detaile, úhradách a sťahovaní PDF (vlna 3)
+- [ ] 09-08-PLAN.md — Šablóna e-mailu credit_note v Nastaveniach a premenné pôvodnej faktúry v TemplateContext (vlna 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 09-09-PLAN.md — Detail faktúry a dobropisu (tlačidlo, bannery, odznaky) a zoznam s filtrami (vlna 4)
+- [ ] 09-11-PLAN.md — Odoslanie dobropisu e-mailom (príloha iba PDF dobropisu), resend, mark-sent a zákaz upomienok (vlna 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 09-10-PLAN.md — Staging seed s dobropismi a fázová brána composer check (vlna 5)
 **Poznámky**: Štruktúra dobropisu je pripravená už vo Phase 5. **Závislosť od účtovníčky:** PL dobropis (`PrzyczynaKorekty`, číslo KSeF pôvodnej faktúry) a obdobie, v ktorom sa dobropis odpočíta od obratu (predvolene obdobie pôvodnej faktúry).
 
 ### Phase 10: Limity obratu

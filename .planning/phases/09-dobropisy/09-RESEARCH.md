@@ -314,11 +314,14 @@ Rovnaky zoznam stlpcov ako `InvoiceIssuer::insertInvoice`, ale: `type='credit_no
 | A5 | PL/CS/EN nazvy a texty (`PrzyczynaKorekty`, nadpisy) su predbezne do potvrdenia uctovnickou | UI-SPEC G | Obsahova, nie technicka; texty su v `lang()` |
 | A6 | Schema dobropisu snapshotu = 4 (kluc `schema` nema ziadny konzument, ktory by pre >3 padol) | Pattern 2 | Treba grep `snapshot_schema` konzumentov pri implementacii (`Invoices::serve` a mailer pouzivaju `< 2`) |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Ma `balance` stornovanej = 0?** (A2) Odporucanie: ano v view + explicitne filtre; potvrdit pri discuss/plan.
+   **RESOLVED:** ano. `invoice_status_v.balance` = 0.00 pre stornovanu fakturu aj pre dobropis (migracia v 09-01, Task 2) a dotazy na pohladavky/po splatnosti/zoznam maju explicitne filtre `status <> 'cancelled'` a `type = 'invoice'` (plan 09-07).
 2. **Presna sablona `labels` pre dobropis:** vsetky `LABEL_KEYS` z faktúry plus `cn*`; faktúra uz ma `labels` v snapshote povodnej v **jazyku povodnej** (rovnaky `doc_language`), takze staci len doplnit `cn*` kluce. Pridat `cn*` do `LABEL_KEYS`? Nie: LABEL_KEYS plni `SnapshotBuilder::build` pre fakturu (zmenilo by to `previewToken` a snapshot novych faktur). Pouzit samostatny `CreditNoteSnapshotBuilder::LABEL_KEYS`. (UI-SPEC pise "Nový preklad popiskov do SnapshotBuilder::LABEL_KEYS": **konflikt**, doporucujem NEpridavat do faktúrneho zoznamu; planner nech rozhodne a zosuladi `SampleSnapshotShapeTest`.)
+   **RESOLVED:** `SnapshotBuilder::LABEL_KEYS` sa NEMENI (snapshot a `previewToken` faktur ostavaju). Dobropis ma samostatny `CreditNoteSnapshotBuilder::LABEL_KEYS` = popisky povodnej faktury + kluce `cn*` v jazyku dokladu (plan 09-02); `SampleSnapshotShapeTest` sa nemeni. Odchylka od UI-SPEC zapisana v 09-02.
 3. **Obdobie odpoctu od obratu** (D-08): len ulozene stlpce; Phase 10 to dopocita.
+   **RESOLVED:** odlozene do Phase 10 (Limity obratu) a na potvrdenie uctovnickou. Vo Phase 9 sa per D-08 iba ukladaju stlpce dobropisu: `delivery_date`, `turnover_date`, `billing_month` a `counts_toward_limit` kopirovane z povodnej faktury (D-07, D-08) a `total_entity_ccy` = zaporny sucet povodnej (D-11); ziadny vypocet obratu v tejto faze.
 
 ## Environment Availability
 
