@@ -61,7 +61,7 @@ $htmxConfig = [
         <?= $this->include('layouts/_install_hint') ?>
         <?php $notice = session()->getFlashdata('app_notice'); ?>
         <?php if (is_array($notice) && isset($notice['message'])) : ?>
-            <div class="alert alert-<?= match ($notice['type'] ?? '') { 'warning' => 'warning', 'success' => 'success', default => 'info' } ?>" role="status"><?= esc((string) $notice['message']) ?></div>
+            <div class="alert alert-<?= match ($notice['type'] ?? '') { 'warning' => 'warning', 'success' => 'success', default => 'info' } ?>" role="status"><?= esc((string) $notice['message']) ?><?php if (is_array($notice['link'] ?? null) && isset($notice['link']['href'], $notice['link']['label']) && str_starts_with((string) $notice['link']['href'], '/')) : ?> <a class="alert-link d-inline-block py-2" href="<?= esc((string) $notice['link']['href'], 'attr') ?>"><?= esc((string) $notice['link']['label']) ?></a><?php endif ?></div>
         <?php endif ?>
         <div id="app-alert" role="alert" aria-live="polite" hidden></div>
         <?= $this->renderSection('content') ?>
