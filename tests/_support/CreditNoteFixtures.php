@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
+use App\Libraries\Invoicing\CorrectionType;
+use App\Libraries\Invoicing\CreditNoteCommand;
+use App\Libraries\Invoicing\CreditNoteIssuer;
+use App\Libraries\Invoicing\CreditNoteSnapshotBuilder;
+use App\Libraries\Invoicing\IssuedCreditNote;
+use App\Libraries\Invoicing\PdfRenderer;
+use App\Libraries\Invoicing\RendererRegistry;
+use App\Libraries\Platform\Money;
 use App\Libraries\Platform\Transaction;
 
 /**
@@ -78,5 +86,66 @@ trait CreditNoteFixtures
 
             return $id;
         });
+    }
+
+    protected function creditNoteIssuer(?PdfRenderer $cn = null): CreditNoteIssuer
+    {
+        return new CreditNoteIssuer($this->rw(), null, new RendererRegistry(['cn-1' => $cn ?? new FakePdfRenderer('cn-1')]));
+    }
+
+    /**
+     * @return array{0: array<string, mixed>, 1: list<array<string, mixed>>}
+     */
+    protected function loadOriginal(int $id): array
+    {
+        $row = $this->owner()->query('SELECT * FROM invoices WHERE id = :i:', ['i' => $id])->getRowArray();
+        $this->assertNotNull($row);
+
+        return [$row, $this->owner()->query('SELECT * FROM invoice_lines WHERE invoice_id = :i: ORDER BY position', ['i' => $id])->getResultArray()];
+    }
+
+    /**
+     * @param array<string, mixed> $overrides issueDate, reason, correctionType, previewToken, requestKey, confirmBackdate, userId
+     */
+    protected function creditNoteCommand(int $originalId, array $overrides = []): CreditNoteCommand
+    {
+        $issueDate = (string) ($overrides['issueDate'] ?? service('clock')->today());
+        $reason    = (string) ($overrides['reason'] ?? 'Chybná sadzba');
+        $type      = $overrides['correctionType'] ?? CorrectionType::AmountError;
+
+        if (isset($overrides['previewToken'])) {
+            $token = (string) $overrides['previewToken'];
+        } else {
+            [$orig, $lines] = $this->loadOriginal($originalId);
+            $token          = CreditNoteSnapshotBuilder::previewToken((new CreditNoteSnapshotBuilder())->build($orig, $lines, $issueDate, $reason, $type, null));
+        }
+
+        return new CreditNoteCommand(
+            $originalId,
+            $issueDate,
+            $reason,
+            $type,
+            $token,
+            (string) ($overrides['requestKey'] ?? $this->uuid4()),
+            (bool) ($overrides['confirmBackdate'] ?? false),
+            $overrides['userId'] ?? null,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $overrides
+     */
+    protected function issueCreditNote(int $originalId, array $overrides = []): IssuedCreditNote
+    {
+        return $this->creditNoteIssuer()->issue($this->creditNoteCommand($originalId, $overrides));
+    }
+
+    protected function assertSumsToZero(int $originalId, int $creditNoteId): void
+    {
+        foreach (['total', 'total_entity_ccy'] as $col) {
+            $rows = $this->owner()->query("SELECT {$col} AS v FROM invoices WHERE id IN (:a:, :b:)", ['a' => $originalId, 'b' => $creditNoteId])->getResultArray();
+            $this->assertCount(2, $rows);
+            $this->assertSame('0.00', Money::of((string) $rows[0]['v'])->plus(Money::of((string) $rows[1]['v']))->toDecimalString(), $col);
+        }
     }
 }
