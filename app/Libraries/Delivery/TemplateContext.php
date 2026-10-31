@@ -26,6 +26,7 @@ final class TemplateContext
         $month    = (string) ($invoice['billing_month'] ?? '');
         $iban     = (string) ($snapshot['bank']['iban'] ?? '');
         $due      = (string) ($invoice['due_date'] ?? '');
+        $original = is_array($snapshot['correction'] ?? null) ? $snapshot['correction'] : [];
 
         return [
             'number'          => (string) ($invoice['number'] ?? ''),
@@ -39,6 +40,8 @@ final class TemplateContext
             'iban'            => trim(implode(' ', str_split(str_replace(' ', '', $iban), 4))),
             'client_name'     => (string) ($snapshot['client']['name'] ?? ''),
             'entity_name'     => (string) ($snapshot['entity']['trade_name'] ?? ''),
+            'original_number' => (string) ($original['original_number'] ?? ''),
+            'original_date'   => self::date($original['original_issue_date'] ?? null, $lang),
             'days_overdue'    => (string) self::daysOverdue($due, $today),
         ];
     }
