@@ -11,6 +11,7 @@ use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
+use RuntimeException;
 use Tests\Support\AuthTestCase;
 use Tests\Support\CreditNoteFixtures;
 use Tests\Support\FakeRateHttpClient;
@@ -454,7 +455,7 @@ final class CreditNotesControllerTest extends AuthTestCase
         Services::injectMock('creditNoteIssuer', new class () {
             public function issue(): never
             {
-                throw new \RuntimeException('boom');
+                throw new RuntimeException('boom');
             }
         });
 
