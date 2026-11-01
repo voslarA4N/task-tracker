@@ -141,6 +141,8 @@ if ($row['type'] === 'invoice' && $row['status'] === 'cancelled' && $kind !== 'r
 ```
 and add the same status check in `ManualSendService` / `InvoiceDelivery::markSentForm`.
 
+**Status: FIXED** in d00c006. Cancelled invoices (type invoice) are rejected with `not_sendable` for send, resend and mark-sent (InvoiceMailer, ManualSendService, InvoiceDelivery forms 404); show.php hides the buttons; credit notes remain deliverable.
+
 ### WR-02: Payments recorded before storno can never be voided afterwards
 
 **File:** `app/Libraries/Receivables/PaymentService.php:142-146`, `app/Views/invoices/show.php:200` (`readOnly`)
