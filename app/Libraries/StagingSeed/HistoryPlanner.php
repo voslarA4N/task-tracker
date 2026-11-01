@@ -7,6 +7,7 @@ namespace App\Libraries\StagingSeed;
 use App\Libraries\Platform\Clock;
 use DateTimeImmutable;
 use InvalidArgumentException;
+use LogicException;
 use Random\Engine\Mt19937;
 use Random\Randomizer;
 
@@ -54,9 +55,11 @@ final class HistoryPlanner
         $clients  = $this->clients();
         $tasks    = $this->tasks($clients);
 
-        $invoices = $this->invoices($clients, $tasks, $entities);
+        $invoices    = $this->invoices($clients, $tasks, $entities);
+        $creditNotes = $this->creditNotes($invoices, $this->deliveries($invoices, []), $entities, $clients);
+        $reserved    = array_column($creditNotes, 'invoice');
 
-        return new HistoryPlan($this->today, $this->seed, $entities, $clients, $tasks, $invoices, $this->deliveries($invoices));
+        return new HistoryPlan($this->today, $this->seed, $entities, $clients, $tasks, $invoices, $this->deliveries($invoices, $reserved), $creditNotes);
     }
 
     /**
@@ -346,11 +349,14 @@ final class HistoryPlanner
      * faktury so splatnostou aspon 20 dni pred dnes sa uhradia 3 dni pred splatnostou, kazda 5. iba polovicou,
      * kazda 6. ostane neuhradena a dostane upomienku 7 dni po splatnosti; prva plne uhradena sa storno-uje a zada sa znova.
      *
+     * Faktury v `$reserved` (ciel dobropisu) sa iba odosielaju, bez uhrad a upomienok (D-15, D-17).
+     *
      * @param list<array<string, mixed>> $invoices
+     * @param list<string>               $reserved
      *
      * @return list<array<string, mixed>>
      */
-    private function deliveries(array $invoices): array
+    private function deliveries(array $invoices, array $reserved): array
     {
         $events = [];
         $cutoff = $this->addDays($this->today, -20);
@@ -372,7 +378,7 @@ final class HistoryPlanner
 
             $due = (string) $inv['due_date'];
 
-            if (! $sent || $due > $cutoff) {
+            if (! $sent || $due > $cutoff || in_array($key, $reserved, true)) {
                 continue;
             }
 
@@ -412,6 +418,90 @@ final class HistoryPlanner
 
             return $e;
         }, $events);
+    }
+
+    /**
+     * Dva dobropisy pre UAT (D-03): jeden k SK faktúre v mene subjektu, jeden k PL faktúre v EUR (kurz NBP).
+     * Kandidát nesmie mať v `deliveries` úhradu, storno úhrady ani upomienku (stornovaná faktúra by ich odmietla,
+     * D-15, D-17); odoslanie je povolené. Dátum dobropisu = 3 dni po vystavení, nie po `today`.
+     *
+     * @param list<array<string, mixed>> $invoices
+     * @param list<array<string, mixed>> $deliveries
+     * @param list<array<string, mixed>> $entities
+     * @param list<array<string, mixed>> $clients
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function creditNotes(array $invoices, array $deliveries, array $entities, array $clients): array
+    {
+        if ($invoices === []) {
+            return [];
+        }
+
+        $blocked = [];
+
+        foreach ($deliveries as $e) {
+            if (in_array($e['type'], ['payment', 'payment_void', 'reminder'], true)) {
+                $blocked[(string) $e['invoice']] = true;
+            }
+        }
+
+        $country = [];
+
+        foreach ($entities as $e) {
+            $country[$e['key']] = [$e['country'], $e['currency']];
+        }
+
+        $currency = [];
+
+        foreach ($clients as $c) {
+            $currency[$c['key']] = $c['currency'];
+        }
+
+        $wanted = [
+            'sk' => ['reason' => 'Chybná suma za hodiny, faktúra sa stornuje a vystaví sa nová.', 'type' => 'amount_error'],
+            'pl' => ['reason' => 'Nesprávne fakturačné údaje klienta, faktúra sa stornuje.', 'type' => 'data_error'],
+        ];
+        $out = [];
+
+        foreach ($wanted as $kind => $spec) {
+            // PL cielom je najnovsia vhodna faktura v cudzej mene (deliveries sa pre nu doplni bez uhrad), SK prva bez uhrad
+            foreach ($kind === 'pl' ? array_reverse($invoices) : $invoices as $inv) {
+                if ($kind === 'sk' && isset($blocked[(string) $inv['key']])) {
+                    continue;
+                }
+
+                [$cc, $entityCcy] = $country[$inv['entity']];
+                $invoiceCcy       = $currency[$inv['client']];
+                $date             = $this->addDays((string) $inv['issue_date'], 3);
+
+                $matches = $kind === 'sk'
+                    ? ($cc === 'SK' && $invoiceCcy === $entityCcy)
+                    : ($cc === 'PL' && $invoiceCcy === 'EUR' && $entityCcy !== 'EUR');
+
+                if (! $matches || $date > $this->today) {
+                    continue;
+                }
+
+                $out[] = [
+                    'key'         => 'C' . sprintf('%02d', count($out) + 1),
+                    'invoice'     => $inv['key'],
+                    'at'          => $date . 'T11:00:00',
+                    'issue_date'  => $date,
+                    'reason'      => $spec['reason'],
+                    'type'        => $spec['type'],
+                    'request_key' => $this->uuid(),
+                ];
+
+                continue 2;
+            }
+
+            throw new LogicException('Plan has no invoice eligible for a ' . $kind . ' credit note.');
+        }
+
+        usort($out, static fn (array $a, array $b): int => [$a['at'], $a['key']] <=> [$b['at'], $b['key']]);
+
+        return $out;
     }
 
     /**
