@@ -163,7 +163,7 @@ final class ManualSendService
 
         // stav dorucenia je sent_at, nie status: status v2 uprednostnuje platby (paid pred sent, WR-01)
         $row = $this->db->query(
-            'SELECT v.origin, v.type, v.sent_at, i.issue_date FROM invoice_status_v v JOIN invoices i ON i.id = v.id WHERE v.id = :id:',
+            'SELECT v.origin, v.type, v.status, v.sent_at, i.issue_date FROM invoice_status_v v JOIN invoices i ON i.id = v.id WHERE v.id = :id:',
             ['id' => $invoiceId],
         )->getRowArray();
 
@@ -176,6 +176,11 @@ final class ManualSendService
         }
 
         if (! in_array($row['type'], ['invoice', 'credit_note'], true)) {
+            throw new SendRejected('not_sendable');
+        }
+
+        // stornovanu fakturu nie je mozne oznacit ako odoslanu (WR-01); dobropis ma tiez status cancelled
+        if ($row['type'] === 'invoice' && $row['status'] === 'cancelled') {
             throw new SendRejected('not_sendable');
         }
 

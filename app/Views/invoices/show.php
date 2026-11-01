@@ -63,8 +63,8 @@ $overdue   = ! $external && ! $cancelled && ! $isCreditNote && is_array($payStat
 $canPay    = ! $external && ! $cancelled && ! $isCreditNote && in_array($status, ['issued', 'sent', 'partially_paid'], true);
 $payPrimary = $canPay && $status !== 'issued';
 // Dorucenie podla sent_at, nie podla status (paid/partially_paid maju prednost pred sent, WR-01)
-$canSend   = ! $external && ! $isSent;
-$canResend = ! $external && $isSent;
+$canSend   = ! $external && ! $isSent && ! $cancelled;
+$canResend = ! $external && $isSent && ! $cancelled;
 $canCredit = ! $external && ! $isCreditNote && ! $cancelled;
 $canRemind = ! $external && ! $cancelled && ! $isCreditNote && in_array($status, ['sent', 'partially_paid'], true) && is_array($payState) && \App\Libraries\Platform\Money::of((string) $payState['balance'])->compare(\App\Libraries\Platform\Money::zero()) > 0;
 $history = (array) ($invoice['history'] ?? []);

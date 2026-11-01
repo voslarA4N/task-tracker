@@ -6,6 +6,7 @@ namespace Tests\Feature\Invoicing;
 
 use App\Libraries\Invoicing\CorrectionType;
 use App\Libraries\Platform\FrozenClock;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -118,7 +119,29 @@ final class CreditNoteDetailTest extends AuthTestCase
         $this->assertStringContainsString('Úhrady sa už nedajú meniť.', $html);
         $this->assertStringContainsString('/invoices/' . $orig . '/pdf', $html);
         $this->assertStringContainsString('/invoices/' . $orig . '/report', $html);
-        $this->assertStringContainsString('/invoices/' . $orig . '/resend', $html);
+        $this->assertStringNotContainsString('/invoices/' . $orig . '/resend', $html);
+        $this->assertStringNotContainsString('/invoices/' . $orig . '/send', $html);
+        $this->assertStringNotContainsString('/invoices/' . $orig . '/mark-sent', $html);
+    }
+
+    public function testCancelledUnsentInvoiceHasNoDeliveryButtonsAndFormsAre404(): void
+    {
+        $orig = $this->invoice();
+        $this->issueCreditNote($orig);
+        $html = $this->body($this->get('/invoices/' . $orig));
+
+        $this->assertStringNotContainsString('/invoices/' . $orig . '/send', $html);
+        $this->assertStringNotContainsString('/invoices/' . $orig . '/mark-sent', $html);
+        $this->assertStringNotContainsString('/invoices/' . $orig . '/resend', $html);
+
+        foreach (['/send', '/resend', '/mark-sent'] as $suffix) {
+            try {
+                $this->get('/invoices/' . $orig . $suffix);
+                $this->fail('Expected PageNotFoundException for ' . $suffix);
+            } catch (PageNotFoundException) {
+                $this->addToAssertionCount(1);
+            }
+        }
     }
 
     public function testCreditNoteDetail(): void

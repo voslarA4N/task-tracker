@@ -349,7 +349,7 @@ final class HistoryPlanner
      * faktury so splatnostou aspon 20 dni pred dnes sa uhradia 3 dni pred splatnostou, kazda 5. iba polovicou,
      * kazda 6. ostane neuhradena a dostane upomienku 7 dni po splatnosti; prva plne uhradena sa storno-uje a zada sa znova.
      *
-     * Faktury v `$reserved` (ciel dobropisu) sa iba odosielaju, bez uhrad a upomienok (D-15, D-17).
+     * Faktury v `$reserved` (ciel dobropisu) sa neodosielaju, bez uhrad a upomienok (D-15, D-17, WR-01).
      *
      * @param list<array<string, mixed>> $invoices
      * @param list<string>               $reserved
@@ -369,7 +369,8 @@ final class HistoryPlanner
             $sendDate = $this->nextWorkday($this->addDays((string) $inv['issue_date'], 1));
             $sent     = $sendDate <= $this->today;
 
-            if ($sent) {
+            // cieľ dobropisu je už stornovaný, takže sa nedá doručiť (WR-01): bez odoslania, úhrad a upomienok
+            if ($sent && ! in_array($key, $reserved, true)) {
                 $manual   = $i % 7 === 0 && $i % 6 !== 0;
                 $events[] = $manual
                     ? ['invoice' => $key, 'type' => 'manual', 'at' => $stamp($sendDate, '10:00:00'), 'note' => 'Odovzdané osobne']
@@ -423,7 +424,7 @@ final class HistoryPlanner
     /**
      * Dva dobropisy pre UAT (D-03): jeden k SK faktúre v mene subjektu, jeden k PL faktúre v EUR (kurz NBP).
      * Kandidát nesmie mať v `deliveries` úhradu, storno úhrady ani upomienku (stornovaná faktúra by ich odmietla,
-     * D-15, D-17); odoslanie je povolené. Dátum dobropisu = 3 dni po vystavení, nie po `today`.
+     * D-15, D-17); odoslanie plánuje len prvotný plán, cieľ dobropisu sa neodosiela (WR-01). Dátum dobropisu = 3 dni po vystavení, nie po `today`.
      *
      * @param list<array<string, mixed>> $invoices
      * @param list<array<string, mixed>> $deliveries

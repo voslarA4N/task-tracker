@@ -115,13 +115,28 @@ final class CreditNoteMailerTest extends PgTestCase
         }
     }
 
-    public function testCancelledInvoiceCanBeResentWithInvoiceAndReport(): void
+    public function testCancelledInvoiceCannotBeDeliveredInAnyWay(): void
     {
         $c = $this->creditNote();
         $this->assertSame('cancelled', $this->docStatus($c['original']));
 
-        $d = $this->mailer()->draft($c['original'], 'resend');
-        $this->assertSame(['invoice', 'report'], array_column($d['attachments'], 'kind'));
+        foreach (['invoice', 'resend', 'reminder'] as $kind) {
+            $before = $this->sendCount();
+            $this->assertSame('not_sendable', $this->reason(fn () => $this->mailer()->draft($c['original'], $kind)), $kind);
+            $this->assertSame('not_sendable', $this->reason(fn () => $this->mailer()->send($this->sendCommand($c['original'], ['fakturacia@all4net.example'], [], ['kind' => $kind]))), $kind);
+            $this->assertSame($before, $this->sendCount());
+        }
+
+        $this->assertSame('not_sendable', $this->reason(fn () => (new ManualSendService($this->rw()))->markSent($c['original'], '2026-10-31', null, $this->uuid4(), null)));
+    }
+
+    public function testCreditNoteStaysSendableWhileOriginalIsCancelled(): void
+    {
+        $c = $this->creditNote();
+
+        $d = $this->mailer()->draft($c['cn'], 'invoice');
+        $this->assertCount(1, $d['attachments']);
+        $this->assertSame('cancelled', $this->docStatus($c['original']));
     }
 
     public function testManualMarkSentPassesForCreditNote(): void

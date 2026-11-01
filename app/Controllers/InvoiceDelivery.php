@@ -141,8 +141,11 @@ final class InvoiceDelivery extends BaseController
             ['id' => $id],
         )->getRowArray();
 
-        // stav dorucenia podla sent_at (zaplatena, ale neodoslana faktura sa da oznacit, WR-01)
-        if ($row === null || $row['origin'] !== 'issued' || ! in_array($row['type'], ['invoice', 'credit_note'], true) || $row['sent_at'] !== null) {
+        // stav dorucenia podla sent_at (zaplatena, ale neodoslana faktura sa da oznacit, WR-01);
+        // stornovana faktura sa neda dorucit (dobropis ma status cancelled tiez, preto najprv typ)
+        $cancelled = $row !== null && $row['type'] === 'invoice' && $row['status'] === 'cancelled';
+
+        if ($row === null || $cancelled || $row['origin'] !== 'issued' || ! in_array($row['type'], ['invoice', 'credit_note'], true) || $row['sent_at'] !== null) {
             throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
         }
 

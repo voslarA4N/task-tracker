@@ -387,6 +387,11 @@ class InvoiceMailer
             throw new SendRejected('not_sendable');
         }
 
+        // stornovana faktura sa uz nesmie dorucit v ziadnej podobe (WR-01); dobropis ma tiez status cancelled, preto najprv typ
+        if ($row['type'] === 'invoice' && $row['status'] === 'cancelled') {
+            throw new SendRejected('not_sendable');
+        }
+
         $row['snapshot'] = json_decode((string) $row['snapshot'], true, 512, JSON_THROW_ON_ERROR);
 
         return $row;
