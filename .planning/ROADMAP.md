@@ -16,7 +16,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 - [x] **Phase 6: Dokumenty faktúry a výkazu** - Právne profily, PDF faktúra a výkaz, QR platba, editovateľné zákonné texty (completed 2026-10-28)
 - [x] **Phase 7: Doručenie, úhrady a upomienky** - E-mail s PDF, opätovné odoslanie, úhrady, po splatnosti, upomienka (completed 2026-10-29)
 - [x] **Phase 8: Meny a kurzy** - NBP/ECB/ČNB kurzy s ručným prepisom a uložením do kópie údajov (completed 2026-10-30)
-- [ ] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí
+- [x] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí (completed 2026-11-01)
 - [ ] **Phase 10: Limity obratu** - Tabuľka limitov, výpočet obratu, upozornenia a predkontrola pri vystavení
 - [ ] **Phase 11: Prehľady, exporty a audit** - Mesačné a ročné prehľady, CSV/XLSX, ZIP pre účtovníčku, prehliadač denníka, PC zoznamy
 - [ ] **Phase 12: Lokalizácia a produkcia** - Preklady PL/CZ/EN, zálohy s overenou obnovou, archív dokladov, hardening a meranie výkonu
@@ -484,7 +484,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 09-10-PLAN.md — Staging seed s dobropismi a fázová brána composer check (vlna 5)
+- [x] 09-10-PLAN.md — Staging seed s dobropismi a fázová brána composer check (vlna 5)
 
 **Poznámky**: Štruktúra dobropisu je pripravená už vo Phase 5. **Závislosť od účtovníčky:** PL dobropis (`PrzyczynaKorekty`, číslo KSeF pôvodnej faktúry) a obdobie, v ktorom sa dobropis odpočíta od obratu (predvolene obdobie pôvodnej faktúry).
 
@@ -555,7 +555,7 @@ Plans:
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
-| 9. Dobropisy | 10/11 | In Progress|  |
+| 9. Dobropisy | 11/11 | Complete   | 2026-11-01 |
 | 10. Limity obratu | 0/0 | Not started | - |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |
