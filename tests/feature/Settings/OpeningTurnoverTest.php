@@ -10,8 +10,12 @@ use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\AuthTestCase;
+use Tests\Support\CreditNoteFixtures;
+use Tests\Support\InvoiceFixtures;
+use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
 use Tests\Support\TurnoverFixtures;
+use Throwable;
 
 /**
  * Zadanie poctoveho obratu za subjekt a rok z UI (LIM-02, D-06, D-07).
@@ -22,6 +26,9 @@ use Tests\Support\TurnoverFixtures;
 final class OpeningTurnoverTest extends AuthTestCase
 {
     use MasterFixtures;
+    use CreditNoteFixtures;
+    use InvoiceFixtures;
+    use IssueFixtures;
     use TurnoverFixtures;
 
     private int $entity = 0;
@@ -182,7 +189,7 @@ final class OpeningTurnoverTest extends AuthTestCase
         try {
             $result = $this->send($this->data(), true, false);
             $this->assertNotSame(200, $result->response()->getStatusCode());
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $this->addToAssertionCount(1);
         }
 

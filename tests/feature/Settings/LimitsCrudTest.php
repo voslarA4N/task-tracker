@@ -10,6 +10,9 @@ use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\AuthTestCase;
+use Tests\Support\CreditNoteFixtures;
+use Tests\Support\InvoiceFixtures;
+use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
 use Tests\Support\TurnoverFixtures;
 
@@ -22,6 +25,9 @@ use Tests\Support\TurnoverFixtures;
 final class LimitsCrudTest extends AuthTestCase
 {
     use MasterFixtures;
+    use CreditNoteFixtures;
+    use InvoiceFixtures;
+    use IssueFixtures;
     use TurnoverFixtures;
 
     protected function setUp(): void
@@ -156,7 +162,7 @@ final class LimitsCrudTest extends AuthTestCase
         $result->assertStatus(302);
         $this->assertSame(1, $this->limitCount());
 
-        $bad    = $this->send('/settings/limits', $this->data(['currency' => 'PLN', 'name' => 'Iny', 'amount' => '0']));
+        $bad = $this->send('/settings/limits', $this->data(['currency' => 'PLN', 'name' => 'Iny', 'amount' => '0']));
         $bad->assertStatus(422);
         $this->assertStringContainsString('Mena nezodpovedá mene subjektu pre túto krajinu (EUR).', $this->body($bad));
     }

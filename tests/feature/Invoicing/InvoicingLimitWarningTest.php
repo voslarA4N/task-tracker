@@ -12,6 +12,7 @@ use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use RuntimeException;
 use Tests\Support\AuthTestCase;
+use Tests\Support\CreditNoteFixtures;
 use Tests\Support\FakeRateHttpClient;
 use Tests\Support\FxFixtures;
 use Tests\Support\InvoiceFixtures;
@@ -31,6 +32,7 @@ final class InvoicingLimitWarningTest extends AuthTestCase
     use InvoiceFixtures;
     use IssueFixtures;
     use MasterFixtures;
+    use CreditNoteFixtures;
     use TurnoverFixtures;
 
     protected function setUp(): void
