@@ -8,6 +8,7 @@ use App\Libraries\Invoicing\CreditNoteIssuer;
 use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Platform\AfterResponse;
 use App\Libraries\Platform\Clock;
+use App\Libraries\Reporting\LimitPrecheck;
 use CodeIgniter\Config\BaseService;
 
 /**
@@ -50,6 +51,15 @@ class Services extends BaseService
         }
 
         return new InvoiceIssuer();
+    }
+
+    public static function limitPrecheck(bool $getShared = true): LimitPrecheck
+    {
+        if ($getShared) {
+            return static::getSharedInstance('limitPrecheck');
+        }
+
+        return new LimitPrecheck();
     }
 
     public static function creditNoteIssuer(bool $getShared = true): CreditNoteIssuer
