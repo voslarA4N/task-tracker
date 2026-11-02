@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Settings;
 
 use App\Libraries\Platform\FrozenClock;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -93,16 +94,16 @@ final class LimitsCrudTest extends AuthTestCase
 
     public function testNewFormSheetAndPage(): void
     {
-        $this->withHeaders(['HX-Request' => 'true']);
-        $sheet = $this->body($this->get('/settings/limits/new'));
-        $this->assertStringContainsString('dl-sheet', $sheet);
-        $this->assertStringContainsString('name="thresholds"', $sheet);
-
         $page = $this->body($this->get('/settings/limits/new?country=SK&year=2027'));
         $this->assertStringContainsString('name="thresholds"', $page);
         $this->assertStringContainsString('<html', $page);
         $this->assertMatchesRegularExpression('/<option value="SK" selected>/', $page);
         $this->assertMatchesRegularExpression('/name="year"[^>]*value="2027"/', $page);
+
+        $this->withHeaders(['HX-Request' => 'true']);
+        $sheet = $this->body($this->get('/settings/limits/new'));
+        $this->assertStringContainsString('dl-sheet', $sheet);
+        $this->assertStringContainsString('name="thresholds"', $sheet);
     }
 
     public function testCreate(): void
@@ -128,14 +129,14 @@ final class LimitsCrudTest extends AuthTestCase
 
     public function testCreateInvalid(): void
     {
-        $result = $this->send('/settings/limits', $this->data(['amount' => '0', 'thresholds' => '80,250', 'name' => 'Moj nazov']));
+        $result = $this->send('/settings/limits', $this->data(['amount' => '0', 'thresholds' => '80,250', 'name' => 'Mojnazov']));
         $result->assertStatus(422);
         $html = $this->body($result);
         $this->assertStringContainsString('Zadajte sumu väčšiu ako 0.', $html);
         $this->assertStringContainsString('Zadajte 1 až 3 celé čísla od 1 do 200 oddelené čiarkou.', $html);
         $this->assertMatchesRegularExpression('/is-invalid[^>]*name="amount"|name="amount"[^>]*is-invalid/', $html);
         $this->assertMatchesRegularExpression('/is-invalid[^>]*name="thresholds"|name="thresholds"[^>]*is-invalid/', $html);
-        $this->assertStringContainsString('Moj nazov', $html);
+        $this->assertStringContainsString('Mojnazov', $html);
         $this->assertSame(0, $this->limitCount());
     }
 
@@ -184,7 +185,8 @@ final class LimitsCrudTest extends AuthTestCase
 
     public function testEditMissing404(): void
     {
-        $this->get('/settings/limits/999999/edit')->assertStatus(404);
+        $this->expectException(PageNotFoundException::class);
+        $this->get('/settings/limits/999999/edit');
     }
 
     public function testDelete(): void
