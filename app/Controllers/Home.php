@@ -6,6 +6,8 @@ namespace App\Controllers;
 
 use App\Libraries\Master\ClientService;
 use App\Libraries\Receivables\InvoiceStatusQueries;
+use App\Libraries\Reporting\LimitAlerts;
+use App\Libraries\Reporting\TurnoverCalculator;
 use App\Libraries\Work\DashboardFilter;
 use App\Libraries\Work\LastClient;
 use App\Libraries\Work\TaskQueries;
@@ -62,6 +64,8 @@ final class Home extends BaseController
             'clients' => $service->listAll(false),
             'data'    => (new TaskQueries())->dashboard($filter->month, $filter->clientId),
             'overdue' => (new InvoiceStatusQueries())->overdue(service('clock')->today(), $filter->clientId, 10),
+            // Limity su za subjekt, nezavisle od filtra klienta (D-11).
+            'limits' => LimitAlerts::fromEntities((new TurnoverCalculator())->forActiveEntities(service('clock')->today())),
         ];
     }
 }

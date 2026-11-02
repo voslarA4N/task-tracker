@@ -110,10 +110,17 @@ final class DashboardLimitsTest extends AuthTestCase
 
         $html = $this->home();
 
-        $this->assertStringContainsString('Limit pre rok 2026 chýba, použitý rok 2025', $html);
+        $this->assertStringContainsString('limit pre rok 2026 chýba, použitý rok 2025', $html);
         $this->assertStringContainsString('lim-alert--info', $html);
-        $this->assertStringNotContainsString('btn-close', $html);
-        $this->assertStringNotContainsString('data-bs-dismiss', $html);
+
+        // Layout ma vlastne zatvaracie prvky, kontroluje sa iba samotny blok limitov.
+        $start = strpos($html, 'aria-labelledby="limits-title"');
+        $end   = strpos($html, '</section>', (int) $start);
+        $this->assertNotFalse($start);
+        $this->assertNotFalse($end);
+        $block = substr($html, $start, $end - $start);
+        $this->assertStringNotContainsString('btn-close', $block);
+        $this->assertStringNotContainsString('data-bs-dismiss', $block);
     }
 
     public function testMultipleRows(): void
