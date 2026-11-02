@@ -117,7 +117,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **LIM-01**: Tabuľka limitov je upraviteľná v nastaveniach (nie v kóde): krajina, rok platnosti, názov, suma, mena, spôsob výpočtu, prahy upozornenia. Počiatočné hodnoty: SK 50 000 € a okamžite pri 62 500 €; PL 240 000 zł, v prvom roku pomerne.
 - [x] **LIM-02**: Obrat sa počíta za subjekt a rok, predvolene z vystavených faktúr podľa dátumu dodania, mínus dobropisy, len klienti s príznakom „započítavať“. Pre každý subjekt a rok sa dá zadať počiatočný obrat.
 - [x] **LIM-03**: Dashboard upozorní pri 80 % a 100 % limitu a aj vtedy, keď pre aktuálny rok chýba riadok limitu (použije sa posledný známy).
-- [ ] **LIM-04** [nové, M9]: Náhľad faktúry upozorní, ak by jej vystavenie prekročilo prah limitu.
+- [x] **LIM-04** [nové, M9]: Náhľad faktúry upozorní, ak by jej vystavenie prekročilo prah limitu.
 - [x] **LIM-05** [nové, M10]: Spôsob výpočtu limitu podporuje kalendárny rok, kĺzavých 12 mesiacov a pomerný prvý rok (výber v tabuľke limitov).
 
 ### Audit (E11)
@@ -268,7 +268,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIM-01 | Phase 10 | Complete |
 | LIM-02 | Phase 10 | Complete |
 | LIM-03 | Phase 10 | Complete |
-| LIM-04 | Phase 10 | Pending |
+| LIM-04 | Phase 10 | Complete |
 | LIM-05 | Phase 10 | Complete |
 | CUR-04 | Phase 10 | Complete |
 | RPT-01 | Phase 11 | Pending |
