@@ -56,6 +56,36 @@ final class LimitSelector
     }
 
     /**
+     * Vsetky riadky limitov pre zoznam v nastaveniach: krajina, rok zostupne, nazov.
+     *
+     * @return list<array{id: int, country: string, year: int, name: string, amount: string, currency: string, calc_method: string, thresholds: list<int>, is_seed: bool, revision: int}>
+     */
+    public function all(): array
+    {
+        $out = [];
+
+        foreach ($this->db->query(
+            "SELECT id, country, year, name, amount, currency, calc_method, array_to_string(thresholds, ',') AS thresholds_csv, is_seed, revision
+             FROM turnover_limits ORDER BY country, year DESC, name, id",
+        )->getResultArray() as $r) {
+            $out[] = [
+                'id'          => (int) $r['id'],
+                'country'     => trim((string) $r['country']),
+                'year'        => (int) $r['year'],
+                'name'        => (string) $r['name'],
+                'amount'      => (string) $r['amount'],
+                'currency'    => trim((string) $r['currency']),
+                'calc_method' => (string) $r['calc_method'],
+                'thresholds'  => self::parseThresholds((string) $r['thresholds_csv']),
+                'is_seed'     => DbBool::of($r['is_seed']),
+                'revision'    => (int) $r['revision'],
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * @return list<int>
      */
     public static function parseThresholds(string $csv): array
