@@ -510,7 +510,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 10-02-PLAN.md — Migrácia turnover_limits + entity_opening_turnover so seedom-návrhom, LimitSelector s fallbackom roka, TurnoverCalculator nad total_entity_ccy (vlna 2)
+- [x] 10-02-PLAN.md — Migrácia turnover_limits + entity_opening_turnover so seedom-návrhom, LimitSelector s fallbackom roka, TurnoverCalculator nad total_entity_ccy (vlna 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -580,6 +580,6 @@ Plans:
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
-| 10. Limity obratu | 1/8 | In Progress|  |
+| 10. Limity obratu | 2/8 | In Progress|  |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |

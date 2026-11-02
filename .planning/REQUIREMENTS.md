@@ -105,7 +105,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **CUR-01**: Podporované meny sú EUR, PLN a CZK. Zoznam sa dá rozšíriť bez zmeny modelu.
 - [x] **CUR-02**: Ak sa mena faktúry líši od meny subjektu, aplikácia stiahne kurz (PL: NBP, posledný pracovný deň pred dátumom dodania; SK: ECB; CZ: ČNB), dovolí ho ručne prepísať a uloží kurz, zdroj, dátum a prepočítanú sumu do kópie údajov. Obe sumy sa vytlačia na PDF.
 - [x] **CUR-03**: Ak API kurzov nie je dostupné, aplikácia si kurz vypýta ručne.
-- [ ] **CUR-04**: Prehľady a limity počítajú v mene subjektu iba z uložených prepočítaných súm.
+- [x] **CUR-04**: Prehľady a limity počítajú v mene subjektu iba z uložených prepočítaných súm.
 - [x] **CUR-05** [nové, M15]: Dátum, ku ktorému sa hľadá kurz (predvolene dátum dodania), sa dá nastaviť v právnom profile krajiny.
 
 ### Prehľady, exporty a limity (E10)
@@ -114,8 +114,8 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [ ] **RPT-01**: Mesačný a ročný prehľad: vyfakturované a uhradené, podľa klienta, v mene subjektu.
 - [ ] **RPT-02**: Export prehľadov a zoznamu faktúr do CSV a XLSX (s ochranou pred vložením vzorcov).
 - [ ] **RPT-03** [nové, M11]: Export balíka pre účtovníčku za obdobie (ZIP: PDF dokladov a CSV zoznam).
-- [ ] **LIM-01**: Tabuľka limitov je upraviteľná v nastaveniach (nie v kóde): krajina, rok platnosti, názov, suma, mena, spôsob výpočtu, prahy upozornenia. Počiatočné hodnoty: SK 50 000 € a okamžite pri 62 500 €; PL 240 000 zł, v prvom roku pomerne.
-- [ ] **LIM-02**: Obrat sa počíta za subjekt a rok, predvolene z vystavených faktúr podľa dátumu dodania, mínus dobropisy, len klienti s príznakom „započítavať“. Pre každý subjekt a rok sa dá zadať počiatočný obrat.
+- [x] **LIM-01**: Tabuľka limitov je upraviteľná v nastaveniach (nie v kóde): krajina, rok platnosti, názov, suma, mena, spôsob výpočtu, prahy upozornenia. Počiatočné hodnoty: SK 50 000 € a okamžite pri 62 500 €; PL 240 000 zł, v prvom roku pomerne.
+- [x] **LIM-02**: Obrat sa počíta za subjekt a rok, predvolene z vystavených faktúr podľa dátumu dodania, mínus dobropisy, len klienti s príznakom „započítavať“. Pre každý subjekt a rok sa dá zadať počiatočný obrat.
 - [x] **LIM-03**: Dashboard upozorní pri 80 % a 100 % limitu a aj vtedy, keď pre aktuálny rok chýba riadok limitu (použije sa posledný známy).
 - [ ] **LIM-04** [nové, M9]: Náhľad faktúry upozorní, ak by jej vystavenie prekročilo prah limitu.
 - [x] **LIM-05** [nové, M10]: Spôsob výpočtu limitu podporuje kalendárny rok, kĺzavých 12 mesiacov a pomerný prvý rok (výber v tabuľke limitov).
@@ -265,12 +265,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CUR-05 | Phase 8 | Complete |
 | INV-07 | Phase 9 | Complete |
 | INV-10 | Phase 9 | Complete |
-| LIM-01 | Phase 10 | Pending |
-| LIM-02 | Phase 10 | Pending |
+| LIM-01 | Phase 10 | Complete |
+| LIM-02 | Phase 10 | Complete |
 | LIM-03 | Phase 10 | Complete |
 | LIM-04 | Phase 10 | Pending |
 | LIM-05 | Phase 10 | Complete |
-| CUR-04 | Phase 10 | Pending |
+| CUR-04 | Phase 10 | Complete |
 | RPT-01 | Phase 11 | Pending |
 | RPT-02 | Phase 11 | Pending |
 | RPT-03 | Phase 11 | Pending |
