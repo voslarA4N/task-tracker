@@ -18,12 +18,12 @@ final class LimitAlertsTest extends CIUnitTestCase
 {
     public function testNoReasonNoAlert(): void
     {
-        $this->assertSame([], LimitAlerts::fromEntities([$this->entity(1, 'A', [$this->status('normal'), $this->status('normal')])]));
+        $this->assertSame([], LimitAlerts::fromEntities([$this->entity(1, 'A', [$this->st('normal'), $this->st('normal')])]));
     }
 
     public function testCritBeforeWarn(): void
     {
-        $out = LimitAlerts::fromEntities([$this->entity(1, 'A', [$this->status('warn', null, 'W'), $this->status('crit', null, 'C')])]);
+        $out = LimitAlerts::fromEntities([$this->entity(1, 'A', [$this->st('warn', null, 'W'), $this->st('crit', null, 'C')])]);
 
         $this->assertSame(['crit', 'warn'], array_column($out, 'kind'));
         $this->assertSame('C', $out[0]['status']?->name);
@@ -31,14 +31,14 @@ final class LimitAlertsTest extends CIUnitTestCase
 
     public function testCurrencyMismatchIsConfig(): void
     {
-        $out = LimitAlerts::fromEntities([$this->entity(1, 'A', [$this->status('normal', 'currency_mismatch')])]);
+        $out = LimitAlerts::fromEntities([$this->entity(1, 'A', [$this->st('normal', 'currency_mismatch')])]);
 
         $this->assertSame(['config'], array_column($out, 'kind'));
     }
 
     public function testFallbackYearInfo(): void
     {
-        $out = LimitAlerts::fromEntities([$this->entity(1, 'A', [$this->status('normal')], 2025)]);
+        $out = LimitAlerts::fromEntities([$this->entity(1, 'A', [$this->st('normal')], 2025)]);
 
         $this->assertCount(1, $out);
         $this->assertSame('info', $out[0]['kind']);
@@ -59,8 +59,8 @@ final class LimitAlertsTest extends CIUnitTestCase
     public function testTwoEntitiesOrdering(): void
     {
         $out = LimitAlerts::fromEntities([
-            $this->entity(1, 'A', [$this->status('warn')]),
-            $this->entity(2, 'B', [$this->status('crit')], 2025),
+            $this->entity(1, 'A', [$this->st('warn')]),
+            $this->entity(2, 'B', [$this->st('crit')], 2025),
         ]);
 
         $this->assertSame(['crit', 'warn', 'info'], array_column($out, 'kind'));
@@ -75,7 +75,7 @@ final class LimitAlertsTest extends CIUnitTestCase
         return new EntityLimits($id, $name, 'SK', 'EUR', 2026, $usedYear, $noLimit, $statuses);
     }
 
-    private function status(string $level, ?string $error = null, string $name = 'L'): LimitStatus
+    private function st(string $level, ?string $error = null, string $name = 'L'): LimitStatus
     {
         return new LimitStatus(
             1, 1, $name, 'SK', 2026, 2026, null, 'calendar_year', [80, 100],
