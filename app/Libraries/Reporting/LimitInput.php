@@ -53,8 +53,8 @@ final class LimitInput
     }
 
     /**
-     * @param array<string, string>      $v              normalizovane hodnoty
-     * @param callable(string): bool     $currencyActive overi menu
+     * @param array<string, string>  $v              normalizovane hodnoty
+     * @param callable(string): bool $currencyActive overi menu
      *
      * @return array<string, string> pole => lang kluc
      */

@@ -14,8 +14,7 @@ use RoundingMode;
  */
 final class PeriodResolver
 {
-    public const METHODS = ['calendar_year', 'rolling_12m', 'pro_rata_first_year'];
-
+    public const METHODS            = ['calendar_year', 'rolling_12m', 'pro_rata_first_year'];
     public const PRO_RATA_BASE_DAYS = 365;
 
     public static function resolve(string $method, string $refDate, ?string $activeFrom): LimitPeriod

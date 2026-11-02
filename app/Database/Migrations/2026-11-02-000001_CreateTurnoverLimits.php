@@ -49,7 +49,7 @@ final class CreateTurnoverLimits extends Migration
         );
 
         $this->db->query(
-            "CREATE TABLE entity_opening_turnover (
+            'CREATE TABLE entity_opening_turnover (
                 id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 entity_id bigint NOT NULL REFERENCES entities(id),
                 year smallint NOT NULL CHECK (year BETWEEN 2000 AND 2100),
@@ -59,7 +59,7 @@ final class CreateTurnoverLimits extends Migration
                 created_at timestamptz NOT NULL,
                 updated_at timestamptz NOT NULL,
                 CONSTRAINT entity_opening_turnover_uq UNIQUE (entity_id, year)
-            )",
+            )',
         );
 
         $this->grantUpdateColumns('turnover_limits', ['country', 'year', 'name', 'amount', 'currency', 'calc_method', 'thresholds', 'is_seed', 'revision', 'updated_at']);

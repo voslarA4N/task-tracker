@@ -17,9 +17,23 @@ use PHPUnit\Framework\Attributes\Group;
 final class PeriodResolverTest extends CIUnitTestCase
 {
     /**
+     * @param list<int> $years
+     */
+    #[DataProvider('provideResolve')]
+    public function testResolve(string $method, string $ref, ?string $activeFrom, string $from, string $to, array $years, ?int $days, bool $outside): void
+    {
+        $p = PeriodResolver::resolve($method, $ref, $activeFrom);
+        $this->assertSame($from, $p->from);
+        $this->assertSame($to, $p->to);
+        $this->assertSame($years, $p->openingYears);
+        $this->assertSame($days, $p->proRataDays);
+        $this->assertSame($outside, $p->proRataOutsideFirstYear);
+    }
+
+    /**
      * @return iterable<string, array{string, string, ?string, string, string, list<int>, ?int, bool}>
      */
-    public static function periods(): iterable
+    public static function provideResolve(): iterable
     {
         yield 'cal start' => ['calendar_year', '2026-01-01', null, '2026-01-01', '2026-12-31', [2026], null, false];
 
@@ -46,20 +60,6 @@ final class PeriodResolverTest extends CIUnitTestCase
         yield 'prorata null' => ['pro_rata_first_year', '2026-05-01', null, '2026-01-01', '2026-12-31', [2026], null, true];
     }
 
-    /**
-     * @param list<int> $years
-     */
-    #[DataProvider('periods')]
-    public function testResolve(string $method, string $ref, ?string $activeFrom, string $from, string $to, array $years, ?int $days, bool $outside): void
-    {
-        $p = PeriodResolver::resolve($method, $ref, $activeFrom);
-        $this->assertSame($from, $p->from);
-        $this->assertSame($to, $p->to);
-        $this->assertSame($years, $p->openingYears);
-        $this->assertSame($days, $p->proRataDays);
-        $this->assertSame($outside, $p->proRataOutsideFirstYear);
-    }
-
     public function testProRataLimit(): void
     {
         $this->assertSame('111780.82', PeriodResolver::proRataLimit('240000.00', 170));
@@ -67,23 +67,23 @@ final class PeriodResolverTest extends CIUnitTestCase
         $this->assertSame('136.99', PeriodResolver::proRataLimit('50000.00', 1));
     }
 
+    #[DataProvider('provideInvalidInput')]
+    public function testInvalidInput(string $method, string $ref): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        PeriodResolver::resolve($method, $ref, null);
+    }
+
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function invalid(): iterable
+    public static function provideInvalidInput(): iterable
     {
         yield 'method' => ['monthly', '2026-05-01'];
 
         yield 'feb 30' => ['calendar_year', '2026-02-30'];
 
         yield 'format' => ['calendar_year', '31.12.2026'];
-    }
-
-    #[DataProvider('invalid')]
-    public function testInvalidInput(string $method, string $ref): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        PeriodResolver::resolve($method, $ref, null);
     }
 
     public function testInvalidActiveFrom(): void

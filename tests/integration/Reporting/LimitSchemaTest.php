@@ -23,12 +23,12 @@ final class LimitSchemaTest extends PgTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->owner()->query("DELETE FROM turnover_limits WHERE year = 2030");
+        $this->owner()->query('DELETE FROM turnover_limits WHERE year = 2030');
     }
 
     protected function tearDown(): void
     {
-        $this->owner()->query("DELETE FROM turnover_limits WHERE year = 2030");
+        $this->owner()->query('DELETE FROM turnover_limits WHERE year = 2030');
         parent::tearDown();
     }
 
@@ -43,10 +43,10 @@ final class LimitSchemaTest extends PgTestCase
             $m = $e->getMessage();
 
             return match (true) {
-                str_contains($m, 'check constraint') => 'check',
+                str_contains($m, 'check constraint')                            => 'check',
                 str_contains($m, 'unique') || str_contains($m, 'duplicate key') => 'unique',
-                str_contains($m, 'foreign key') => 'foreign',
-                default => $m,
+                str_contains($m, 'foreign key')                                 => 'foreign',
+                default                                                         => $m,
             };
         } finally {
             $db->query('ROLLBACK');
@@ -121,7 +121,7 @@ final class LimitSchemaTest extends PgTestCase
         try {
             $rw->query(self::INSERT);
             $rw->query("UPDATE turnover_limits SET amount = 200, thresholds = '{50}', updated_at = now() WHERE year = 2030");
-            $rw->query("DELETE FROM turnover_limits WHERE year = 2030");
+            $rw->query('DELETE FROM turnover_limits WHERE year = 2030');
             $rw->query("INSERT INTO entity_opening_turnover (entity_id, year, amount, created_at, updated_at) VALUES ({$entity}, 2026, 10.00, now(), now())");
             $rw->query("UPDATE entity_opening_turnover SET amount = 20, note = 'x', updated_at = now() WHERE entity_id = {$entity}");
             $rw->query("DELETE FROM entity_opening_turnover WHERE entity_id = {$entity}");
@@ -129,8 +129,8 @@ final class LimitSchemaTest extends PgTestCase
             $rw->query('ROLLBACK');
         }
 
-        $this->assertPermissionDenied(fn () => $rw->query('UPDATE turnover_limits SET created_at = now()'));
-        $this->assertPermissionDenied(fn () => $rw->query('UPDATE entity_opening_turnover SET entity_id = entity_id + 1'));
+        $this->assertPermissionDenied(static fn () => $rw->query('UPDATE turnover_limits SET created_at = now()'));
+        $this->assertPermissionDenied(static fn () => $rw->query('UPDATE entity_opening_turnover SET entity_id = entity_id + 1'));
         $this->resetMasterTables();
     }
 

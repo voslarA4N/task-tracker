@@ -76,7 +76,7 @@ final class TurnoverCalculatorTest extends PgTestCase
         $alloc = $this->createAllocation($task, '5.00', '2026-03', ['rate' => '100.00']);
         $this->insertExternalInvoice($this->client, '2026-03', [$alloc]);
 
-        $other       = $this->createEntity('SK', ['name_internal' => 'Iny subjekt', 'active_from' => '2025-01-01']);
+        $other = $this->createEntity('SK', ['name_internal' => 'Iny subjekt', 'active_from' => '2025-01-01']);
         $this->turnoverInvoice($other, $this->client, '2026-03-10', '700.00');
 
         $this->assertSame(['total' => '0.00', 'invoices' => 0, 'credit_notes' => 0], $this->calc()->turnover($this->entity, '2026-01-01', '2026-12-31'));

@@ -14,7 +14,7 @@ final class LimitAlerts
     /**
      * @param list<EntityLimits> $entities
      *
-     * @return list<array{kind: 'crit'|'config'|'warn'|'info', entityName: string, status: ?LimitStatus, refYear: int, usedYear: ?int, country: string}>
+     * @return list<array{kind: 'config'|'crit'|'info'|'warn', entityName: string, status: ?LimitStatus, refYear: int, usedYear: ?int, country: string}>
      */
     public static function fromEntities(array $entities): array
     {
@@ -51,9 +51,9 @@ final class LimitAlerts
     }
 
     /**
-     * @param 'crit'|'config'|'warn'|'info' $kind
+     * @param 'config'|'crit'|'info'|'warn' $kind
      *
-     * @return array{kind: 'crit'|'config'|'warn'|'info', entityName: string, status: ?LimitStatus, refYear: int, usedYear: ?int, country: string}
+     * @return array{kind: 'config'|'crit'|'info'|'warn', entityName: string, status: ?LimitStatus, refYear: int, usedYear: ?int, country: string}
      */
     private static function row(string $kind, EntityLimits $entity, ?LimitStatus $status, ?int $usedYear): array
     {
