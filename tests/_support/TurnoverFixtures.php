@@ -24,9 +24,10 @@ trait TurnoverFixtures
     protected function turnoverInvoice(int $entityId, int $clientId, string $turnoverDate, string $amount, array $overrides = []): int
     {
         $this->turnoverSeq++;
-        $month = substr($turnoverDate, 0, 7) . '-01';
-        $task  = $this->createTask($clientId, ['rate' => '100.00', 'hours' => bcdiv($amount, '100', 2)]);
-        $alloc = $this->createAllocation($task, bcdiv($amount, '100', 2), $month, ['rate' => '100.00']);
+        $month = substr($turnoverDate, 0, 7);
+        $hours = $this->hoursForAmount($amount);
+        $task  = $this->createTask($clientId, ['rate' => '100.00', 'hours' => $hours]);
+        $alloc = $this->createAllocation($task, $hours, $month, ['rate' => '100.00']);
 
         return $this->insertIssuedInvoiceRaw($clientId, $entityId, $month, [$alloc], '%PDF-1.4 test', $overrides + [
             'number'        => 'T' . str_pad((string) (900000 + $this->turnoverSeq), 8, '0', STR_PAD_LEFT) . $entityId,
@@ -58,5 +59,15 @@ trait TurnoverFixtures
             'INSERT INTO entity_opening_turnover (entity_id, year, amount, created_at, updated_at) VALUES (:e:, :y:, :a:, now(), now())',
             ['e' => $entityId, 'y' => $year, 'a' => $amount],
         );
+    }
+
+    /**
+     * Hodiny pri sadzbe 100,00: suma / 100, iba celociselne (bez float a bcmath).
+     */
+    private function hoursForAmount(string $amount): string
+    {
+        $hundredths = intdiv((int) str_replace('.', '', $amount), 100);
+
+        return sprintf('%d.%02d', intdiv($hundredths, 100), $hundredths % 100);
     }
 }

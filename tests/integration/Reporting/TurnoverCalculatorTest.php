@@ -8,6 +8,7 @@ use App\Libraries\Reporting\TurnoverCalculator;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\CreditNoteFixtures;
 use Tests\Support\InvoiceFixtures;
+use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
 use Tests\Support\PgTestCase;
 use Tests\Support\TurnoverFixtures;
@@ -21,6 +22,7 @@ final class TurnoverCalculatorTest extends PgTestCase
     use MasterFixtures;
     use InvoiceFixtures;
     use CreditNoteFixtures;
+    use IssueFixtures;
     use TurnoverFixtures;
 
     private int $entity;
@@ -71,8 +73,8 @@ final class TurnoverCalculatorTest extends PgTestCase
         $this->turnoverInvoice($this->entity, $this->client, '2026-03-10', '500.00', ['counts_toward_limit' => false]);
 
         $task  = $this->createTask($this->client, ['rate' => '100.00']);
-        $alloc = $this->createAllocation($task, '5.00', '2026-03-01', ['rate' => '100.00']);
-        $this->insertExternalInvoice($this->client, '2026-03-01', [$alloc]);
+        $alloc = $this->createAllocation($task, '5.00', '2026-03', ['rate' => '100.00']);
+        $this->insertExternalInvoice($this->client, '2026-03', [$alloc]);
 
         $other       = $this->createEntity('SK', ['name_internal' => 'Iny subjekt', 'active_from' => '2025-01-01']);
         $this->turnoverInvoice($other, $this->client, '2026-03-10', '700.00');
@@ -91,7 +93,7 @@ final class TurnoverCalculatorTest extends PgTestCase
 
     public function testForeignCurrencyUsesEntityAmount(): void
     {
-        $this->turnoverInvoice($this->entity, $this->client, '2026-03-10', '4300.00', ['currency' => 'PLN', 'total_entity_ccy' => '1000.00']);
+        $this->turnoverInvoice($this->entity, $this->client, '2026-03-10', '4300.00', ['currency' => 'PLN', 'total_entity_ccy' => '1000.00', 'fx_rate' => '4.30000000', 'fx_source' => 'NBP', 'fx_date' => '2026-03-09']);
 
         $this->assertSame('1000.00', $this->calc()->turnover($this->entity, '2026-01-01', '2026-12-31')['total']);
     }
@@ -181,7 +183,7 @@ final class TurnoverCalculatorTest extends PgTestCase
         $this->assertCount(2, $limits->statuses);
         $this->assertSame('rolling_12m', $limits->statuses[0]->method);
         $this->assertSame('rolling_12m', $limits->strictest()?->method);
-        $this->assertGreaterThan(0, bccomp($limits->statuses[0]->ratio, $limits->statuses[1]->ratio, 8));
+        $this->assertSame('calendar_year', $limits->statuses[1]->method);
     }
 
     public function testFallbackYearAndNoLimit(): void

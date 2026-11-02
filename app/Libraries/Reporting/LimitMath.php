@@ -23,6 +23,14 @@ final class LimitMath
         return bcdiv($total, $limit, 8);
     }
 
+    /**
+     * Porovnanie dvoch pomerov (retazce z ratio()), zostupne zoradenie pouziva zaporny vysledok.
+     */
+    public static function compareRatio(string $a, string $b): int
+    {
+        return bccomp($a, $b, 8);
+    }
+
     public static function reached(string $total, string $limit, int $threshold): bool
     {
         return bccomp(bcmul($total, '100', 4), bcmul((string) $threshold, $limit, 4), 4) >= 0;

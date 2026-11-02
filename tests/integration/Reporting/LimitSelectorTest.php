@@ -8,6 +8,7 @@ use App\Libraries\Reporting\LimitSelector;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\CreditNoteFixtures;
 use Tests\Support\InvoiceFixtures;
+use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
 use Tests\Support\PgTestCase;
 use Tests\Support\TurnoverFixtures;
@@ -21,6 +22,7 @@ final class LimitSelectorTest extends PgTestCase
     use MasterFixtures;
     use InvoiceFixtures;
     use CreditNoteFixtures;
+    use IssueFixtures;
     use TurnoverFixtures;
 
     protected function setUp(): void
@@ -60,7 +62,7 @@ final class LimitSelectorTest extends PgTestCase
         $this->assertSame(2025, $sel->forCountry('SK', 2026)['usedYear']);
 
         $this->owner()->query('DELETE FROM turnover_limits WHERE year = 2025');
-        $r = $sel->forCountry('SK', 2026);
+        $r = (new LimitSelector($this->rw()))->forCountry('SK', 2026);
         $this->assertSame(2027, $r['usedYear']);
         $this->assertSame(['V'], array_column($r['rows'], 'name'));
 
