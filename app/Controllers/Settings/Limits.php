@@ -11,6 +11,7 @@ use App\Libraries\Reporting\LimitInput;
 use App\Libraries\Reporting\LimitRejected;
 use App\Libraries\Reporting\LimitSelector;
 use App\Libraries\Reporting\LimitService;
+use App\Libraries\Reporting\OpeningTurnoverService;
 use App\Libraries\Reporting\PeriodResolver;
 use App\Libraries\Reporting\TurnoverCalculator;
 use CodeIgniter\Exceptions\PageNotFoundException;
@@ -35,13 +36,175 @@ final class Limits extends BaseController
         }
 
         return view('settings/limits/index', [
-            'entities'   => (new TurnoverCalculator())->forActiveEntities($today),
-            'limits'     => $limits,
-            'hasSeed'    => array_filter($limits, static fn (array $l): bool => $l['is_seed']) !== [],
-            'activeFrom' => $activeFrom,
-            'locale'     => $this->request->getLocale(),
-            'today'      => $today,
+            'entities'    => (new TurnoverCalculator())->forActiveEntities($today),
+            'limits'      => $limits,
+            'hasSeed'     => array_filter($limits, static fn (array $l): bool => $l['is_seed']) !== [],
+            'activeFrom'  => $activeFrom,
+            'locale'      => $this->request->getLocale(),
+            'today'       => $today,
+            'openingRows' => $this->openingRows($today),
         ]);
+    }
+
+    /**
+     * Riadky sekcie Pociatocny obrat: zadane roky + aktualny rok (ak chyba), subjekt, rok zostupne.
+     *
+     * @return list<array{entityId: int, entityName: string, currency: string, year: int, amount: ?string, note: ?string}>
+     */
+    private function openingRows(string $today): array
+    {
+        $active = array_values(array_filter((new EntityDirectory())->listAll($today), static fn (array $e): bool => $e['status'] === 'active'));
+        $saved  = (new OpeningTurnoverService())->listForEntities(array_map(static fn (array $e): int => $e['id'], $active));
+        $year   = (int) substr($today, 0, 4);
+        $rows   = [];
+
+        foreach ($active as $entity) {
+            $years = [];
+
+            foreach ($saved as $o) {
+                if ($o['entity_id'] === $entity['id']) {
+                    $years[$o['year']] = $o;
+                }
+            }
+
+            $years[$year] ??= null;
+            krsort($years);
+
+            foreach ($years as $y => $o) {
+                $rows[] = [
+                    'entityId'   => $entity['id'],
+                    'entityName' => $entity['name_internal'],
+                    'currency'   => $entity['currency'],
+                    'year'       => $y,
+                    'amount'     => $o['amount'] ?? null,
+                    'note'       => $o['note'] ?? null,
+                ];
+            }
+        }
+
+        return $rows;
+    }
+
+    public function openingForm(): ResponseInterface
+    {
+        $today    = service('clock')->today();
+        $entities = $this->activeEntities($today);
+
+        if ($entities === []) {
+            throw PageNotFoundException::forPageNotFound();
+        }
+
+        $entityQ = $this->request->getGet('entity');
+        $locked  = is_string($entityQ) && ctype_digit($entityQ) && isset($entities[(int) $entityQ]);
+        $entity  = $locked ? (int) $entityQ : array_key_first($entities);
+        $yearQ   = $this->request->getGet('year');
+        $year    = is_string($yearQ) && preg_match('/^\d{4}$/D', $yearQ) === 1 && (int) $yearQ >= 2000 && (int) $yearQ <= 2100
+            ? (int) $yearQ
+            : (int) substr($today, 0, 4);
+
+        $found  = (new OpeningTurnoverService())->find($entity, $year);
+        $values = [
+            'entity_id' => (string) $entity,
+            'year'      => (string) $year,
+            'amount'    => $found['amount'] ?? '',
+            'note'      => $found['note'] ?? '',
+            'revision'  => $found === null ? '' : (string) $found['revision'],
+        ];
+
+        return $this->renderOpening(true, $this->openingData($entities, $values, [], null, $locked));
+    }
+
+    public function saveOpening(): ResponseInterface
+    {
+        $request = $this->request;
+        assert($request instanceof IncomingRequest);
+
+        $values = [];
+
+        foreach (['entity_id', 'year', 'amount', 'note', 'revision'] as $k) {
+            $v          = $request->getPost($k);
+            $values[$k] = is_string($v) ? trim($v) : '';
+        }
+
+        $entities = $this->activeEntities(service('clock')->today());
+        $locked   = isset($entities[(int) $values['entity_id']]);
+
+        try {
+            (new OpeningTurnoverService())->save($values);
+        } catch (LimitRejected $e) {
+            if ($e->reason === 'stale') {
+                $fresh = (new OpeningTurnoverService())->find((int) $values['entity_id'], (int) $values['year']);
+                $this->response->setStatusCode(409);
+
+                if ($fresh !== null) {
+                    $values['amount']   = $fresh['amount'];
+                    $values['note']     = $fresh['note'] ?? '';
+                    $values['revision'] = (string) $fresh['revision'];
+                }
+
+                return $this->renderOpening(false, $this->openingData($entities, $values, [], 'Limits.errOpeningStale', $locked));
+            }
+
+            $this->response->setStatusCode(422);
+
+            return $this->renderOpening(false, $this->openingData($entities, $values, $e->fields, null, $locked));
+        }
+
+        return $this->done(lang('Limits.flashOpeningSaved'));
+    }
+
+    /**
+     * @return array<int, array{id: int, name_internal: string, currency: string}>
+     */
+    private function activeEntities(string $today): array
+    {
+        $out = [];
+
+        foreach ((new EntityDirectory())->listAll($today) as $e) {
+            if ($e['status'] === 'active') {
+                $out[$e['id']] = ['id' => $e['id'], 'name_internal' => $e['name_internal'], 'currency' => $e['currency']];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<int, array{id: int, name_internal: string, currency: string}> $entities
+     * @param array<string, string>                                               $values
+     * @param array<string, string>                                               $errors
+     *
+     * @return array<string, mixed>
+     */
+    private function openingData(array $entities, array $values, array $errors, ?string $formError, bool $locked): array
+    {
+        $selected = ctype_digit($values['entity_id']) && isset($entities[(int) $values['entity_id']]) ? (int) $values['entity_id'] : (int) array_key_first($entities);
+
+        return [
+            'entities'     => $entities,
+            'values'       => $values,
+            'errors'       => $errors,
+            'formError'    => $formError,
+            'lockedEntity' => $locked,
+            'selected'     => $selected,
+            'currency'     => $entities[$selected]['currency'] ?? 'EUR',
+            'locale'       => $this->request->getLocale(),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function renderOpening(bool $get, array $data): ResponseInterface
+    {
+        $this->response->setHeader('Vary', 'HX-Request');
+        $data['sheet'] = is_htmx_fragment_request();
+
+        if ($get) {
+            return $this->response->setBody($data['sheet'] ? view('settings/limits/_opening_sheet', $data) : view('settings/limits/opening', $data));
+        }
+
+        return $this->response->setBody(htmx_view('settings/limits/_opening_form', $data, 'settings/limits/opening'));
     }
 
     public function newForm(): ResponseInterface
@@ -136,7 +299,7 @@ final class Limits extends BaseController
 
     /**
      * @param array{id: int, country: string, year: int, name: string, amount: string, currency: string, calc_method: string, thresholds: list<int>, is_seed: bool, revision: int}|null $limit
-     * @param array<string, string>                                                                                                                                                 $values
+     * @param array<string, string>                                                                                                                                                     $values
      */
     private function rejected(LimitRejected $e, ?array $limit, array $values): ResponseInterface
     {
@@ -201,8 +364,8 @@ final class Limits extends BaseController
 
     /**
      * @param array{id: int, country: string, year: int, name: string, amount: string, currency: string, calc_method: string, thresholds: list<int>, is_seed: bool, revision: int}|null $limit
-     * @param array<string, string>                                                                                                                                                 $values
-     * @param array<string, string>                                                                                                                                                 $errors
+     * @param array<string, string>                                                                                                                                                     $values
+     * @param array<string, string>                                                                                                                                                     $errors
      *
      * @return array<string, mixed>
      */

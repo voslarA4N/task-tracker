@@ -5,6 +5,7 @@
  * @var bool                                                                                                                                                                             $hasSeed
  * @var array<int|string, string>                                                                                                                                                        $activeFrom
  * @var string                                                                                                                                                                           $locale
+ * @var list<array{entityId: int, entityName: string, currency: string, year: int, amount: ?string, note: ?string}>                                                                      $openingRows
  */
 
 use App\Libraries\Platform\MoneyFormat;
@@ -91,6 +92,28 @@ $methods   = ['calendar_year' => 'Limits.methodCalendar', 'rolling_12m' => 'Limi
                             <?php $editUrl = '/settings/limits/' . (int) $limit['id'] . '/edit'; $delUrl = '/settings/limits/' . (int) $limit['id'] . '/delete'; ?>
                             <a class="btn btn-outline-secondary btn-touch" href="<?= esc($editUrl) ?>" hx-get="<?= esc($editUrl) ?>" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Limits.edit')) ?></a>
                             <a class="btn btn-outline-secondary btn-touch" href="<?= esc($delUrl) ?>" hx-get="<?= esc($delUrl) ?>" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Limits.delete')) ?></a>
+                        </div>
+                    </div>
+                <?php endforeach ?>
+            </div>
+        <?php endif ?>
+    </section>
+    <section class="work-group mb-4">
+        <h2 class="h5 fw-semibold"><?= esc(lang('Limits.sectionOpening')) ?></h2>
+        <?php if ($openingRows !== []) : ?>
+            <div class="app-card p-0">
+                <?php foreach ($openingRows as $row) : ?>
+                    <?php $url = '/settings/limits/opening?entity=' . (int) $row['entityId'] . '&year=' . (int) $row['year']; ?>
+                    <div class="lim-row border-bottom">
+                        <div>
+                            <div><?= esc($row['entityName'] . ' · ' . $row['year']) ?></div>
+                            <div class="small text-body-secondary"><?= $row['amount'] === null ? esc(lang('Limits.openingUnset')) : esc(MoneyFormat::format($row['amount'], $row['currency'], $locale)) ?></div>
+                            <?php if ($row['note'] !== null && $row['note'] !== '') : ?>
+                                <div class="small text-body-secondary"><?= esc($row['note']) ?></div>
+                            <?php endif ?>
+                        </div>
+                        <div class="lim-actions d-flex gap-2 mt-2">
+                            <a class="btn btn-outline-secondary btn-touch" href="<?= esc($url) ?>" hx-get="<?= esc($url) ?>" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang($row['amount'] === null ? 'Limits.openingAdd' : 'Limits.openingEdit')) ?></a>
                         </div>
                     </div>
                 <?php endforeach ?>

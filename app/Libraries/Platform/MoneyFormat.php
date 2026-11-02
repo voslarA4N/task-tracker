@@ -30,4 +30,15 @@ final class MoneyFormat
 
         return $minus . (str_starts_with($formatter->getPattern(), '¤') ? $symbol . $number : $number . "\u{00A0}" . $symbol);
     }
+
+    /**
+     * Samotny symbol meny podla lokality (pre input-group-text).
+     */
+    public static function symbol(string $currency, ?string $locale = null): string
+    {
+        $formatter = new NumberFormatter($locale ?? service('request')->getLocale(), NumberFormatter::CURRENCY);
+        $formatter->setTextAttribute(NumberFormatter::CURRENCY_CODE, $currency);
+
+        return $formatter->getSymbol(NumberFormatter::CURRENCY_SYMBOL);
+    }
 }

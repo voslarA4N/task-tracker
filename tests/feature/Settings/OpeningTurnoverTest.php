@@ -126,8 +126,9 @@ final class OpeningTurnoverTest extends AuthTestCase
         $this->assertSame('/settings/limits', $result->response()->getHeaderLine('HX-Location'));
         $this->assertSame(1, $this->openingCount());
 
+        $this->assertSame('Počiatočný obrat bol uložený.', session()->getFlashdata('app_notice')['message'] ?? '');
+
         $html = $this->body($this->get('/settings/limits'));
-        $this->assertStringContainsString('Počiatočný obrat bol uložený.', $html);
         $this->assertStringContainsString(esc(MoneyFormat::format('3000.00', 'EUR', 'sk')), $html);
         $this->assertStringContainsString('Počiatočný obrat: ' . esc(MoneyFormat::format('3000.00', 'EUR', 'sk')), $html);
     }
