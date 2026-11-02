@@ -514,7 +514,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 10-03-PLAN.md — Nastavenia → Limity: karty čerpania so vzorcom, zoznam limitov, CSS .lim-* (vlna 3)
+- [x] 10-03-PLAN.md — Nastavenia → Limity: karty čerpania so vzorcom, zoznam limitov, CSS .lim-* (vlna 3)
 - [ ] 10-04-PLAN.md — LimitInput, LimitService a OpeningTurnoverService s auditom a revision (vlna 3)
 - [ ] 10-05-PLAN.md — Upozornenia limitov na dashboarde (80 %, 100 %, chýbajúci rok) (vlna 3)
 - [ ] 10-06-PLAN.md — Predkontrola limitu v náhľade faktúry, neblokuje vystavenie (vlna 3)
@@ -580,6 +580,6 @@ Plans:
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
-| 10. Limity obratu | 2/8 | In Progress|  |
+| 10. Limity obratu | 3/8 | In Progress|  |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |
