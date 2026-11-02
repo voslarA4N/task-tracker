@@ -1,7 +1,8 @@
 ---
 phase: 10
 slug: limity-obratu
-status: draft
+status: approved
+reviewed_at: 2026-11-02
 shadcn_initialized: false
 preset: none
 created: 2026-11-02
@@ -144,7 +145,7 @@ Výber rokov v sekcii 6: aktuálny rok (`Clock`) a rok `active_from` subjektu, a
 
 ### A1. Riadok limitu `.lim-row`
 
-Zhora nadol: názov limitu (16px 400 tučne iba cez štruktúru nie, 16px 400) + odznaky `lim-draft` (ak seed) · meta 12px muted „{krajina} · {rok} · {suma} · {spôsob výpočtu} · prahy {80, 100} %“ · akcie vpravo/dole: `Upraviť` (`btn-outline-secondary btn-touch`), `Zmazať` (`btn-outline-secondary btn-touch`). Celý riadok `p-3 border-bottom`, v karte `.app-card p-0`.
+Zhora nadol: názov limitu (16px 400) + odznaky `lim-draft` (ak seed) · meta 12px muted „{krajina} · {rok} · {suma} · {spôsob výpočtu} · prahy {80, 100} %“ · akcie vpravo/dole: `Upraviť` (`btn-outline-secondary btn-touch`), `Zmazať` (`btn-outline-secondary btn-touch`). Celý riadok `p-3 border-bottom`, v karte `.app-card p-0`.
 
 ### A2. Prázdny stav (tabuľka limitov prázdna, seed sa nevložil alebo zmazaný)
 
