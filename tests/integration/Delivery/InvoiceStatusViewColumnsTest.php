@@ -74,7 +74,8 @@ final class InvoiceStatusViewColumnsTest extends PgTestCase
         $this->assertSame(
             ['id', 'origin', 'type', 'number', 'external_ref', 'client_id', 'entity_id', 'billing_month', 'issue_date', 'due_date',
                 'currency', 'total', 'counts_toward_limit', 'line_count', 'created_at', 'status', 'sent_at', 'send_count', 'last_reminder_at',
-                'paid_amount', 'balance', 'last_paid_on'],
+                'paid_amount', 'balance', 'last_paid_on',
+                'credit_note_id', 'credit_note_number', 'credit_note_issue_date', 'corrected_invoice_id', 'corrected_number', 'corrected_issue_date'],
             array_keys($map),
         );
         $this->assertSame('bigint', $map['id']);
@@ -86,6 +87,12 @@ final class InvoiceStatusViewColumnsTest extends PgTestCase
         $this->assertSame('numeric', $map['paid_amount']);
         $this->assertSame('numeric', $map['balance']);
         $this->assertSame('date', $map['last_paid_on']);
+        $this->assertSame('bigint', $map['credit_note_id']);
+        $this->assertSame('text', $map['credit_note_number']);
+        $this->assertSame('date', $map['credit_note_issue_date']);
+        $this->assertSame('bigint', $map['corrected_invoice_id']);
+        $this->assertSame('text', $map['corrected_number']);
+        $this->assertSame('date', $map['corrected_issue_date']);
     }
 
     public function testIssuedWithoutSendsAndExternal(): void
@@ -180,6 +187,6 @@ final class InvoiceStatusViewColumnsTest extends PgTestCase
             $db->query('ROLLBACK');
         }
 
-        $this->assertSame(22, (int) $db->query("SELECT count(*) AS c FROM information_schema.columns WHERE table_name = 'invoice_status_v'")->getRow()->c);
+        $this->assertSame(28, (int) $db->query("SELECT count(*) AS c FROM information_schema.columns WHERE table_name = 'invoice_status_v'")->getRow()->c);
     }
 }

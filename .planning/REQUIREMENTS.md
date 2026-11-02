@@ -75,10 +75,10 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **INV-04**: Číslovanie podľa nastaviteľného formátu s tokenmi `RRRR`, `RR`, `MM`, `#…` a pevným textom (predvolene `RRRRMM###`). Rad patrí subjektu. Poradie sa vynuluje každý mesiac, ak formát obsahuje `MM`, inak každý rok. Počiatočné číslo sa dá nastaviť. Čísla idú bez medzier a pridelenie je bezpečné voči súbehu (prvá faktúra 10/2026 = `202610001`, druhá `202610002`, prvá v 11/2026 = `202611001`).
 - [x] **INV-05**: PDF faktúry vzniká z kópie údajov, má jednoduchý dizajn a len zákonné náležitosti podľa právneho profilu krajiny, DPH režimu a režimu fakturácie (SK neplatiteľ s textom „Nie som platiteľ DPH.“ a údajom o zápise, PL art. 113, EÚ B2B). Jazyk podľa klienta alebo subjektu.
 - [x] **INV-06**: Faktúra má stavy vystavená → odoslaná → uhradená. „Po splatnosti“ sa odvodzuje. „Stornovaná“ nastane po dobropise.
-- [ ] **INV-07**: Dobropis je celé storno pôvodnej faktúry so zápornými položkami, s vlastným radom alebo prefixom. Uvoľní zamknuté časti, aby sa dali fakturovať znova.
+- [x] **INV-07**: Dobropis je celé storno pôvodnej faktúry so zápornými položkami, s vlastným radom alebo prefixom. Uvoľní zamknuté časti, aby sa dali fakturovať znova.
 - [x] **INV-08**: Všetky údaje faktúry sú uložené štruktúrovane (nielen v PDF a JSONB), aby bol neskôr možný export do KSeF FA(3).
 - [x] **INV-09** [nové, M1]: Každá položka má kód DPH (napr. `zw`, `np`, `0`, sadzba) s predvolenou hodnotou podľa právneho profilu. Výpočty pre platiteľa DPH sa neimplementujú.
-- [ ] **INV-10** [nové, M6]: Dobropis má povinný dôvod, odkaz na číslo a dátum pôvodnej faktúry, vlastný dátum vystavenia a typ opravy.
+- [x] **INV-10** [nové, M6]: Dobropis má povinný dôvod, odkaz na číslo a dátum pôvodnej faktúry, vlastný dátum vystavenia a typ opravy.
 - [x] **INV-11** [nové, M8, rozhodnutie]: PDF faktúry obsahuje QR kód na platbu (SK: PAY by square; PL/CZ: zodpovedajúci štandard) zo snapshotu.
 - [x] **INV-12** [nové, M13]: Faktúra má formu úhrady (predvolene prevod) a voliteľnú poznámku (napr. o úrokoch z omeškania).
 - [x] **INV-13** [nové, M14, rozhodnutie]: PDF faktúry aj výkazu sa vygeneruje raz pri vystavení a uloží sa ako autoritatívny doklad so `sha256` a verziou šablóny. Zobrazenie a opätovné odoslanie použijú uložené bajty, nikdy sa neregenerujú.
@@ -105,7 +105,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [x] **CUR-01**: Podporované meny sú EUR, PLN a CZK. Zoznam sa dá rozšíriť bez zmeny modelu.
 - [x] **CUR-02**: Ak sa mena faktúry líši od meny subjektu, aplikácia stiahne kurz (PL: NBP, posledný pracovný deň pred dátumom dodania; SK: ECB; CZ: ČNB), dovolí ho ručne prepísať a uloží kurz, zdroj, dátum a prepočítanú sumu do kópie údajov. Obe sumy sa vytlačia na PDF.
 - [x] **CUR-03**: Ak API kurzov nie je dostupné, aplikácia si kurz vypýta ručne.
-- [ ] **CUR-04**: Prehľady a limity počítajú v mene subjektu iba z uložených prepočítaných súm.
+- [x] **CUR-04**: Prehľady a limity počítajú v mene subjektu iba z uložených prepočítaných súm.
 - [x] **CUR-05** [nové, M15]: Dátum, ku ktorému sa hľadá kurz (predvolene dátum dodania), sa dá nastaviť v právnom profile krajiny.
 
 ### Prehľady, exporty a limity (E10)
@@ -114,11 +114,11 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 - [ ] **RPT-01**: Mesačný a ročný prehľad: vyfakturované a uhradené, podľa klienta, v mene subjektu.
 - [ ] **RPT-02**: Export prehľadov a zoznamu faktúr do CSV a XLSX (s ochranou pred vložením vzorcov).
 - [ ] **RPT-03** [nové, M11]: Export balíka pre účtovníčku za obdobie (ZIP: PDF dokladov a CSV zoznam).
-- [ ] **LIM-01**: Tabuľka limitov je upraviteľná v nastaveniach (nie v kóde): krajina, rok platnosti, názov, suma, mena, spôsob výpočtu, prahy upozornenia. Počiatočné hodnoty: SK 50 000 € a okamžite pri 62 500 €; PL 240 000 zł, v prvom roku pomerne.
-- [ ] **LIM-02**: Obrat sa počíta za subjekt a rok, predvolene z vystavených faktúr podľa dátumu dodania, mínus dobropisy, len klienti s príznakom „započítavať“. Pre každý subjekt a rok sa dá zadať počiatočný obrat.
-- [ ] **LIM-03**: Dashboard upozorní pri 80 % a 100 % limitu a aj vtedy, keď pre aktuálny rok chýba riadok limitu (použije sa posledný známy).
-- [ ] **LIM-04** [nové, M9]: Náhľad faktúry upozorní, ak by jej vystavenie prekročilo prah limitu.
-- [ ] **LIM-05** [nové, M10]: Spôsob výpočtu limitu podporuje kalendárny rok, kĺzavých 12 mesiacov a pomerný prvý rok (výber v tabuľke limitov).
+- [x] **LIM-01**: Tabuľka limitov je upraviteľná v nastaveniach (nie v kóde): krajina, rok platnosti, názov, suma, mena, spôsob výpočtu, prahy upozornenia. Počiatočné hodnoty: SK 50 000 € a okamžite pri 62 500 €; PL 240 000 zł, v prvom roku pomerne.
+- [x] **LIM-02**: Obrat sa počíta za subjekt a rok, predvolene z vystavených faktúr podľa dátumu dodania, mínus dobropisy, len klienti s príznakom „započítavať“. Pre každý subjekt a rok sa dá zadať počiatočný obrat.
+- [x] **LIM-03**: Dashboard upozorní pri 80 % a 100 % limitu a aj vtedy, keď pre aktuálny rok chýba riadok limitu (použije sa posledný známy).
+- [x] **LIM-04** [nové, M9]: Náhľad faktúry upozorní, ak by jej vystavenie prekročilo prah limitu.
+- [x] **LIM-05** [nové, M10]: Spôsob výpočtu limitu podporuje kalendárny rok, kĺzavých 12 mesiacov a pomerný prvý rok (výber v tabuľke limitov).
 
 ### Audit (E11)
 
@@ -263,14 +263,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CUR-02 | Phase 8 | Complete |
 | CUR-03 | Phase 8 | Complete |
 | CUR-05 | Phase 8 | Complete |
-| INV-07 | Phase 9 | Pending |
-| INV-10 | Phase 9 | Pending |
-| LIM-01 | Phase 10 | Pending |
-| LIM-02 | Phase 10 | Pending |
-| LIM-03 | Phase 10 | Pending |
-| LIM-04 | Phase 10 | Pending |
-| LIM-05 | Phase 10 | Pending |
-| CUR-04 | Phase 10 | Pending |
+| INV-07 | Phase 9 | Complete |
+| INV-10 | Phase 9 | Complete |
+| LIM-01 | Phase 10 | Complete |
+| LIM-02 | Phase 10 | Complete |
+| LIM-03 | Phase 10 | Complete |
+| LIM-04 | Phase 10 | Complete |
+| LIM-05 | Phase 10 | Complete |
+| CUR-04 | Phase 10 | Complete |
 | RPT-01 | Phase 11 | Pending |
 | RPT-02 | Phase 11 | Pending |
 | RPT-03 | Phase 11 | Pending |

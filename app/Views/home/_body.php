@@ -11,6 +11,7 @@ use App\Libraries\Work\DashboardFilter;
  * @var DashboardFilter      $filter
  * @var array<string, mixed> $data
  * @var array<string, mixed> $overdue
+ * @var list<array<string, mixed>> $limits
  */
 $locale   = service('request')->getLocale();
 $due      = $data['due'];
@@ -35,6 +36,7 @@ foreach ($groups as $g) {
 }
 ?>
 <div id="dashboard-body" hx-get="/fragments/dashboard?<?= htmlspecialchars(http_build_query($query), ENT_QUOTES) ?>" hx-trigger="allocationChanged from:body" hx-swap="outerHTML">
+    <?= view('home/_limits', ['limits' => $limits]) ?>
     <?= view('home/_overdue', ['overdue' => $overdue]) ?>
 
     <?php if ($due === [] && $wip === [] && ! $hasGroups) : ?>

@@ -31,7 +31,10 @@ use App\Libraries\Platform\MoneyFormat;
                 $title    = $external ? ($number !== '' ? $number : lang('Invoices.externalTitle')) : $number;
                 $meta     = $row['issue_date_label'] !== '' ? lang('Invoices.rowMeta', [(string) $row['client_name'], (string) $row['issue_date_label']]) : (string) $row['client_name'];
                 $st       = (string) ($row['status'] ?? 'issued');
+                $isCn     = ($row['type'] ?? 'invoice') === 'credit_note';
                 [$stKey, $stClass] = match (true) {
+                    $isCn                    => ['Invoices.badgeCreditNote', 'text-bg-info'],
+                    $st === 'cancelled'      => ['Invoices.statusCancelled', 'text-bg-dark'],
                     $st === 'sent'           => ['Invoices.statusSent', 'text-bg-light border'],
                     $st === 'partially_paid' => ['Invoices.statusPartiallyPaid', 'text-bg-warning'],
                     $st === 'paid'           => ['Invoices.statusPaid', 'text-bg-success'],
@@ -45,12 +48,20 @@ use App\Libraries\Platform\MoneyFormat;
                             <span class="st-badge badge text-bg-secondary"><?= esc(lang('Invoices.badgeExternal')) ?></span>
                         <?php else : ?>
                             <span class="st-badge badge <?= esc($stClass, 'attr') ?>"><?= esc(lang($stKey)) ?></span>
-                            <?php if (! empty($row['overdue'])) : ?>
+                            <?php if ($isCn) : ?>
+                                <span class="st-badge badge text-bg-secondary"><?= esc(lang(! empty($row['sent_at']) ? 'Invoices.statusCnSent' : 'Invoices.statusCnIssued')) ?></span>
+                            <?php endif ?>
+                            <?php if (! empty($row['overdue']) && ! $isCn && $st !== 'cancelled') : ?>
                                 <span class="st-badge badge text-bg-danger"><?= esc(lang('Invoices.statusOverdue', [(int) $row['days_overdue']])) ?></span>
                             <?php endif ?>
                         <?php endif ?>
                     </span>
                     <span class="inv-row-meta w-100"><?= esc($meta) ?></span>
+                    <?php if ($isCn && (string) ($row['corrected_number'] ?? '') !== '') : ?>
+                        <span class="small text-body-secondary w-100"><?= esc(lang('Invoices.listCorrects', [(string) $row['corrected_number']])) ?></span>
+                    <?php elseif (! $isCn && $st === 'cancelled' && (string) ($row['credit_note_number'] ?? '') !== '') : ?>
+                        <span class="small text-body-secondary w-100"><?= esc(lang('Invoices.listCreditNote', [(string) $row['credit_note_number']])) ?></span>
+                    <?php endif ?>
                     <span class="inv-row-amount w-100"><?= esc(MoneyFormat::format((string) $row['total'], (string) $row['currency'])) ?></span>
                     <?php if (($row['fx_rate'] ?? null) !== null && trim((string) ($row['entity_currency'] ?? '')) !== '') : ?>
                         <span class="fx-sub w-100"><?= esc(MoneyFormat::format((string) $row['total_entity_ccy'], trim((string) $row['entity_currency']))) ?></span>

@@ -526,3 +526,40 @@ img, table { max-width: 100%; }
 .fx-manual > summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; }
 .fx-badge { margin-left: 8px; }
 .fx-sub { font-size: 12px; color: var(--app-muted); font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+
+/* Dobropisy (Phase 9, INV-07) */
+.cn-banner { border-left: 4px solid var(--app-muted); padding: 16px; background: #fff; overflow-wrap: anywhere; }
+.cn-lines { margin-bottom: 16px; }
+.cn-line { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--app-border); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.cn-line-desc { min-width: 0; overflow-wrap: anywhere; }
+.cn-line-amount { white-space: nowrap; font-weight: 600; }
+.cn-lines > details > summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; }
+.cn-total { font-size: 28px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.cn-check { font-size: 12px; color: var(--app-muted); font-variant-numeric: tabular-nums; }
+.cn-reason { white-space: pre-wrap; }
+
+/* Phase 10: limity obratu */
+.lim-card { padding: 16px; overflow-wrap: anywhere; border-left: 4px solid transparent; }
+.lim-card--warn { border-left-color: var(--bs-warning); }
+.lim-card--crit { border-left-color: var(--bs-danger); }
+.lim-cards { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.lim-bar { appearance: none; width: 100%; height: 8px; border: 0; border-radius: 4px; background: #e9ecef; }
+.lim-bar::-webkit-progress-bar { background: #e9ecef; border-radius: 4px; }
+.lim-bar::-webkit-progress-value { background: var(--bs-secondary); border-radius: 4px; }
+.lim-bar::-moz-progress-bar { background: var(--bs-secondary); border-radius: 4px; }
+.lim-card--warn .lim-bar::-webkit-progress-value { background: var(--bs-warning); }
+.lim-card--warn .lim-bar::-moz-progress-bar { background: var(--bs-warning); }
+.lim-card--crit .lim-bar::-webkit-progress-value { background: var(--bs-danger); }
+.lim-card--crit .lim-bar::-moz-progress-bar { background: var(--bs-danger); }
+.lim-formula { font-size: 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; background: #f5f6f8; padding: 8px 12px; border-radius: 4px; }
+.lim-draft { font-size: 12px; font-weight: 400; }
+.lim-row { padding: 16px; display: grid; grid-template-columns: 1fr; gap: 8px; overflow-wrap: anywhere; }
+.lim-pct { font-size: 20px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lim-alert { display: block; min-height: 44px; padding: 8px 16px; border-left: 4px solid transparent; overflow-wrap: anywhere; color: inherit; text-decoration: none; }
+.lim-alert--crit { border-left-color: var(--bs-danger); }
+.lim-alert--warn { border-left-color: var(--bs-warning); }
+.lim-alert--info { border-left-color: var(--bs-info); }
+@media (min-width: 992px) {
+    .lim-row { grid-template-columns: 1fr auto; }
+    .lim-cards { grid-template-columns: 1fr 1fr; }
+}

@@ -25,3 +25,12 @@ $routes->post('settings/email-templates/(:num)/preview', 'Settings\EmailTemplate
 $routes->post('settings/email-templates/(:num)', 'Settings\EmailTemplates::update/$1');
 $routes->get('settings/fx', 'Settings\FxSettings::index');
 $routes->post('settings/fx', 'Settings\FxSettings::update');
+$routes->get('settings/limits', 'Settings\Limits::index');
+$routes->get('settings/limits/new', 'Settings\Limits::newForm');
+$routes->post('settings/limits', 'Settings\Limits::create');
+$routes->get('settings/limits/opening', 'Settings\Limits::openingForm');
+$routes->post('settings/limits/opening', 'Settings\Limits::saveOpening');
+$routes->get('settings/limits/(:num)/edit', 'Settings\Limits::edit/$1');
+$routes->post('settings/limits/(:num)', 'Settings\Limits::update/$1');
+$routes->get('settings/limits/(:num)/delete', 'Settings\Limits::deleteForm/$1');
+$routes->post('settings/limits/(:num)/delete', 'Settings\Limits::delete/$1');

@@ -28,6 +28,16 @@ final class TemplateRendererTest extends TestCase
         $this->assertSame('X {{total}} 5', $r['text']);
     }
 
+    public function testOriginalNumberCrLfStrippedAndPlaceholdersKnown(): void
+    {
+        $r = (new TemplateRenderer())->render('Dobropis {{number}} k faktúre {{original_number}}', '', ['number' => 'DB-202610001', 'original_number' => "2026\r\n10005"]);
+
+        $this->assertStringNotContainsString("\r", $r['subject']);
+        $this->assertStringNotContainsString("\n", $r['subject']);
+        $this->assertSame([], (new TemplateRenderer())->unknownPlaceholders('{{original_date}}'));
+        $this->assertSame(['sender_name'], (new TemplateRenderer())->unknownPlaceholders('{{sender_name}}'));
+    }
+
     public function testSubjectHasNoLineBreaks(): void
     {
         $r = (new TemplateRenderer())->render('Hi {{client_name}}', 'b', ['client_name' => "A\r\nBcc: evil@x.test"]);

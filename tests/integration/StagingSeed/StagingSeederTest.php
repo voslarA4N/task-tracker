@@ -80,7 +80,7 @@ final class StagingSeederTest extends PgTestCase
         $this->assertSame(count($plan->entities), $result['counts']['entities']);
         $this->assertSame(count($plan->clients), $result['counts']['clients']);
         $this->assertSame(count($plan->tasks), $result['counts']['tasks']);
-        $this->assertSame(count($plan->invoices), $result['counts']['invoices']);
+        $this->assertSame(count($plan->invoices) + count($plan->creditNotes), $result['counts']['invoices']);
         $this->assertGreaterThan(0, count($plan->invoices));
 
         // cislovanie bez medzier: v kazdom rade a obdobi po sebe iduce cisla od pociatocneho
@@ -101,7 +101,7 @@ final class StagingSeederTest extends PgTestCase
         }
 
         // dokumenty a sucty
-        $invoices = $db->query('SELECT id, total, issue_date, created_at, snapshot FROM invoices ORDER BY id')->getResultArray();
+        $invoices = $db->query("SELECT id, total, issue_date, created_at, snapshot FROM invoices WHERE type = 'invoice' ORDER BY id")->getResultArray();
 
         foreach ($invoices as $inv) {
             $docs = $db->query('SELECT kind, byte_size FROM invoice_documents WHERE invoice_id = :i: ORDER BY kind', ['i' => $inv['id']])->getResultArray();
@@ -112,12 +112,13 @@ final class StagingSeederTest extends PgTestCase
                 $this->assertGreaterThan(0, (int) $d['byte_size']);
             }
 
-            $lines = (string) $db->query('SELECT COALESCE(SUM(amount), 0) AS s FROM invoice_lines WHERE invoice_id = :i:', ['i' => $inv['id']])->getRow()->s;
-            $parts = (string) $db->query('SELECT COALESCE(SUM(amount), 0) AS s FROM billing_allocations WHERE invoice_id = :i:', ['i' => $inv['id']])->getRow()->s;
-            $snap  = (string) ((array) ((array) json_decode((string) $inv['snapshot'], true))['totals'])['total'];
+            $lines     = (string) $db->query('SELECT COALESCE(SUM(amount), 0) AS s FROM invoice_lines WHERE invoice_id = :i:', ['i' => $inv['id']])->getRow()->s;
+            $parts     = (string) $db->query('SELECT COALESCE(SUM(amount), 0) AS s FROM billing_allocations WHERE invoice_id = :i:', ['i' => $inv['id']])->getRow()->s;
+            $snap      = (string) ((array) ((array) json_decode((string) $inv['snapshot'], true))['totals'])['total'];
+            $cancelled = (int) $db->query("SELECT count(*) AS c FROM invoices WHERE type = 'credit_note' AND corrected_invoice_id = :i:", ['i' => $inv['id']])->getRow()->c === 1;
 
             $this->assertSame((string) $inv['total'], $lines);
-            $this->assertSame((string) $inv['total'], $parts);
+            $this->assertSame($cancelled ? '0' : (string) $inv['total'], $parts);
             $this->assertSame((string) $inv['total'], $snap);
             $this->assertLessThanOrEqual(self::TODAY, (string) $inv['issue_date']);
             $this->assertSame((string) $inv['issue_date'], substr((string) $inv['created_at'], 0, 10));
@@ -144,6 +145,41 @@ final class StagingSeederTest extends PgTestCase
 
         // hodiny sa po behu vratili
         $this->assertSame(self::TODAY, service('clock')->today());
+    }
+
+    public function testSeedsCreditNotesThroughRealIssuer(): void
+    {
+        Services::injectMock('clock', new FrozenClock('2026-10-28T12:00:00+01:00'));
+        Services::injectMock('rateHttpClient', new FakeRateHttpClient());
+
+        $plan   = HistoryPlanner::build(Profile::full(), '2026-10-28');
+        $result = $this->seeder()->run(Profile::full());
+        $db     = $this->rw();
+
+        $this->assertSame(2, $result['notes']['credit_notes']);
+        $this->assertSame(2, (int) $db->query("SELECT COUNT(*) AS c FROM invoices WHERE type = 'credit_note'")->getRow()->c);
+        $this->assertSame(1, (int) $db->query("SELECT COUNT(*) AS c FROM invoices WHERE type = 'credit_note' AND fx_rate IS NOT NULL")->getRow()->c);
+
+        $notes = $db->query("SELECT * FROM invoices WHERE type = 'credit_note' ORDER BY id")->getResultArray();
+
+        foreach ($notes as $cn) {
+            $orig = $db->query('SELECT * FROM invoices WHERE id = :i:', ['i' => $cn['corrected_invoice_id']])->getRowArray();
+
+            $this->assertSame('0.00', $db->query('SELECT (:a:::numeric + :b:::numeric)::text AS s', ['a' => $cn['total'], 'b' => $orig['total']])->getRow()->s);
+            $this->assertSame('0.00', $db->query('SELECT (:a:::numeric + :b:::numeric)::text AS s', ['a' => $cn['total_entity_ccy'], 'b' => $orig['total_entity_ccy']])->getRow()->s);
+            $this->assertSame(['invoice'], array_column($db->query('SELECT kind FROM invoice_documents WHERE invoice_id = :i: ORDER BY kind', ['i' => $cn['id']])->getResultArray(), 'kind'));
+            $this->assertSame('cancelled', $db->query('SELECT status FROM invoice_status_v WHERE id = :i:', ['i' => $orig['id']])->getRow()->status);
+            $this->assertSame(0, (int) $db->query('SELECT COUNT(*) AS c FROM billing_allocations WHERE invoice_id = :i:', ['i' => $orig['id']])->getRow()->c);
+        }
+
+        $numbers = array_column($notes, 'number');
+        $this->assertCount(2, array_unique($numbers));
+        $this->assertCount(2, $plan->creditNotes);
+
+        $this->clean();
+        $again = $this->seeder()->run(Profile::full());
+        $this->assertSame($numbers, array_column($db->query("SELECT number FROM invoices WHERE type = 'credit_note' ORDER BY id")->getResultArray(), 'number'));
+        $this->assertSame(2, $again['notes']['credit_notes']);
     }
 
     public function testSeedsDeliveriesAndPaymentsThroughServicesWithoutSending(): void
@@ -194,8 +230,8 @@ final class StagingSeederTest extends PgTestCase
         $result = $this->seeder()->run(Profile::full());
 
         $this->assertSame(count($plan->tasks), $result['counts']['tasks']);
-        $this->assertSame(count($plan->invoices), $result['counts']['invoices']);
-        $this->assertSame(2 * count($plan->invoices), $result['counts']['invoice_documents']);
+        $this->assertSame(count($plan->invoices) + count($plan->creditNotes), $result['counts']['invoices']);
+        $this->assertSame(2 * count($plan->invoices) + count($plan->creditNotes), $result['counts']['invoice_documents']);
         $this->assertSame(
             2,
             (int) $this->rw()->query('SELECT count(*) AS c FROM entity_versions WHERE entity_id = (SELECT id FROM entities WHERE country = \'SK\')')->getRow()->c,

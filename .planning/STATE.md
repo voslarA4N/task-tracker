@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Phase 8 UI-SPEC approved
-last_updated: "2026-10-30T18:49:31.323Z"
-last_activity: 2026-10-30
+stopped_at: Completed 10-08-PLAN.md
+last_updated: "2026-11-02T20:40:54.638Z"
+last_activity: 2026-11-02
 progress:
   total_phases: 12
-  completed_phases: 8
-  total_plans: 95
-  completed_plans: 95
-  percent: 67
+  completed_phases: 10
+  total_plans: 114
+  completed_plans: 114
+  percent: 83
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 08 — meny-a-kurzy
+**Current focus:** Phase 10 — limity-obratu
 
 ## Current Position
 
-Phase: 9
+Phase: 11
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-10-30
+Last activity: 2026-11-02
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -36,7 +36,7 @@ Progress: [░░░░░░░░░░] 0%
 
 **Velocity:**
 
-- Total plans completed: 85
+- Total plans completed: 104
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -51,6 +51,8 @@ Progress: [░░░░░░░░░░] 0%
 | 06 | 9 | - | - |
 | 7 | 14 | - | - |
 | 08 | 10 | - | - |
+| 9 | 11 | - | - |
+| 10 | 8 | - | - |
 
 **Recent Trend:**
 
@@ -92,6 +94,15 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 07 P04 | 75min | 2 tasks | 17 files |
 | Phase 07 P10 | 45min | 2 tasks | 14 files |
 | Phase 07 P13 | 40min | 2 tasks | 12 files |
+| Phase 09 P01 | 45min | 2 tasks | 14 files |
+| Phase 09 P06 | 50min | 3 tasks | 14 files |
+| Phase 09 P07 | 25min | 2 tasks | 11 files |
+| Phase 10 P01 | 15min | 2 tasks | 7 files |
+| Phase 10 P02 | 40min | 3 tasks | 11 files |
+| Phase 10 P03 | 25min | 3 tasks | 10 files |
+| Phase 10 P04 | 25min | 3 tasks | 7 files |
+| Phase 10 P07 | 40min | 3 tasks | 13 files |
+| Phase 10 P08 | 35min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -127,6 +138,11 @@ Recent decisions affecting current work:
 - [Phase 07]: Payment guard: pg_advisory_xact_lock(hashtext('payments'), invoice_id); void as insert-only payment_voids; total=0 never auto-paid
 - [Phase 07]: Reminder threads via latest non-voided invoice/resend message_id; no_balance guard server-side
 - [Phase ?]: 08-05: fx block built via public static SnapshotBuilder::fxBlock; PDF fx rows in totals table with td.fxnote
+- [Phase 09]: 09-01: cancelled invoice and credit note have balance 0.00 in invoice_status_v; credit_note added to EmailTemplateService::KEYS
+- [Phase 09]: 09-02: CreditNoteSnapshotBuilder has its own LABEL_KEYS; SnapshotBuilder::LABEL_KEYS unchanged
+- [Phase 09]: Credit note preview/confirm are POST (reason out of URLs); issue checks request_key replay before draft
+- [Phase ?]: [10-01] Pro-rata days capped at 365; thresholds decided by exact bccomp, percent half-up 1dp; rolling_12m openingYears = all window years
+- [Phase 10]: 10-02: thresholds via array_to_string/string_to_array; fallback year nearest lower else higher; is_seed + invoices_turnover_idx in schema; LimitMath::compareRatio keeps bcmath allow-list unchanged
 
 ### Pending Todos
 
@@ -163,6 +179,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-30T11:17:39.636Z
-Stopped at: Phase 8 UI-SPEC approved
+Last session: 2026-11-02T19:16:36.896Z
+Stopped at: Completed 10-08-PLAN.md
 Resume file: None

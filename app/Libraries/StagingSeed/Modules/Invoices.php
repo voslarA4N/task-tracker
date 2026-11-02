@@ -6,6 +6,11 @@ namespace App\Libraries\StagingSeed\Modules;
 
 use App\Libraries\Fx\FxQuote;
 use App\Libraries\Fx\FxService;
+use App\Libraries\Invoicing\CorrectionType;
+use App\Libraries\Invoicing\CreditNoteCommand;
+use App\Libraries\Invoicing\CreditNoteDraftService;
+use App\Libraries\Invoicing\CreditNoteIssuer;
+use App\Libraries\Invoicing\CreditNoteRejected;
 use App\Libraries\Invoicing\InvoiceCalculator;
 use App\Libraries\Invoicing\InvoiceDraftService;
 use App\Libraries\Invoicing\InvoiceIssuer;
@@ -89,6 +94,36 @@ final class Invoices implements SeedModule
         }
 
         $ctx->notes['invoice_numbers'] = $issued;
+
+        $this->creditNotes($ctx, $userId);
+    }
+
+    /**
+     * Dobropisy cez skutocnu cestu (D-03): CreditNoteDraftService token + CreditNoteIssuer, ziadne priame INSERT.
+     */
+    private function creditNotes(SeedContext $ctx, int $userId): void
+    {
+        $drafts = new CreditNoteDraftService($ctx->db);
+        $issuer = new CreditNoteIssuer($ctx->db);
+        $count  = 0;
+
+        foreach ($ctx->plan->creditNotes as $cn) {
+            $ctx->clock->at($cn['at']);
+
+            $originalId = $ctx->id('invoice', $cn['invoice']);
+            $type       = CorrectionType::from($cn['type']);
+
+            try {
+                $draft = $drafts->draft($originalId, $cn['issue_date'], $cn['reason'], $type);
+                $issuer->issue(new CreditNoteCommand($originalId, $cn['issue_date'], $cn['reason'], $type, $draft['token'], $cn['request_key'], false, $userId));
+            } catch (CreditNoteRejected $e) {
+                throw new RuntimeException('Seed credit note ' . $cn['key'] . ' for ' . $cn['invoice'] . ' rejected: ' . $e->reason, 0, $e);
+            }
+
+            $count++;
+        }
+
+        $ctx->notes['credit_notes'] = $count;
     }
 
     /**

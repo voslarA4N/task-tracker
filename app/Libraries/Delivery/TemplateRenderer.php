@@ -14,7 +14,7 @@ final class TemplateRenderer
 {
     public const PLACEHOLDERS = [
         'number', 'total', 'balance', 'currency', 'issue_date', 'due_date', 'billing_month',
-        'variable_symbol', 'iban', 'client_name', 'entity_name', 'days_overdue',
+        'variable_symbol', 'iban', 'client_name', 'entity_name', 'days_overdue', 'original_number', 'original_date',
     ];
 
     /**
@@ -58,6 +58,8 @@ final class TemplateRenderer
             'client_name'     => 'Vzorový klient s.r.o.',
             'entity_name'     => 'Vzorový subjekt',
             'days_overdue'    => '12',
+            'original_number' => '202609004',
+            'original_date'   => PdfFormat::date('2026-09-30', $language),
         ];
     }
 

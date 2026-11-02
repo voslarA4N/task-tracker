@@ -33,7 +33,7 @@ final class InvoiceStatusQueries
     {
         $row = $this->db->query(
             "SELECT status, sent_at, send_count, last_reminder_at, paid_amount, balance, last_paid_on, due_date, total, currency,
-                    CASE WHEN origin = 'issued' AND type = 'invoice' AND balance > 0 AND due_date < CAST(:today: AS date) THEN 1 ELSE 0 END AS overdue,
+                    CASE WHEN origin = 'issued' AND type = 'invoice' AND status <> 'cancelled' AND balance > 0 AND due_date < CAST(:today: AS date) THEN 1 ELSE 0 END AS overdue,
                     CASE WHEN origin = 'issued' AND type = 'invoice' AND balance > 0 AND due_date < CAST(:today: AS date)
                          THEN CAST(:today: AS date) - due_date ELSE 0 END AS days_overdue
              FROM invoice_status_v WHERE id = :id:",
@@ -79,7 +79,7 @@ final class InvoiceStatusQueries
             "SELECT i.id, i.number, c.name AS client_name, i.due_date, CAST(:today: AS date) - i.due_date AS days_overdue,
                     i.balance, i.currency, i.status, i.last_reminder_at
              FROM invoice_status_v i JOIN clients c ON c.id = i.client_id
-             WHERE i.origin = 'issued' AND i.type = 'invoice' AND i.balance > 0 AND i.due_date < CAST(:today: AS date)" . $where . '
+             WHERE i.origin = 'issued' AND i.type = 'invoice' AND i.status <> 'cancelled' AND i.balance > 0 AND i.due_date < CAST(:today: AS date)" . $where . '
              ORDER BY i.due_date ASC, i.id ASC
              LIMIT :n:',
             $binds,
@@ -113,7 +113,7 @@ final class InvoiceStatusQueries
 
         $row = $this->db->query(
             "SELECT count(*) AS n FROM invoice_status_v
-             WHERE origin = 'issued' AND type = 'invoice' AND balance > 0 AND due_date < CAST(:today: AS date)" . $where,
+             WHERE origin = 'issued' AND type = 'invoice' AND status <> 'cancelled' AND balance > 0 AND due_date < CAST(:today: AS date)" . $where,
             $binds,
         )->getRowArray();
 

@@ -32,11 +32,13 @@ final class InvoiceQueries
     public function list(int $limit = 100, ?string $status = null, ?string $today = null): array
     {
         $today ??= service('clock')->today();
-        $cond  = "(i.origin = 'issued' AND i.type = 'invoice' AND i.balance > 0 AND i.due_date < CAST(:today: AS date))";
+        $cond  = "(i.origin = 'issued' AND i.type = 'invoice' AND i.status <> 'cancelled' AND i.balance > 0 AND i.due_date < CAST(:today: AS date))";
         $where = '';
 
-        if (in_array($status, ['issued', 'sent', 'partially_paid', 'paid'], true)) {
-            $where = ' WHERE i.status = :status:';
+        if (in_array($status, ['issued', 'sent', 'partially_paid', 'paid', 'cancelled'], true)) {
+            $where = ' WHERE i.type = \'invoice\' AND i.status = :status:';
+        } elseif ($status === 'credit_note') {
+            $where = " WHERE i.type = 'credit_note'";
         } elseif ($status === 'overdue') {
             $where = ' WHERE ' . $cond;
         }
@@ -49,7 +51,7 @@ final class InvoiceQueries
 
         $rows = $this->db->query(
             'SELECT i.id, i.origin, i.number, i.external_ref, i.issue_date, i.billing_month, i.currency, i.total, i.created_at, c.name AS client_name,
-                    i.status, i.balance, i.paid_amount, i.due_date,
+                    i.status, i.balance, i.paid_amount, i.due_date, i.type, i.credit_note_number, i.corrected_number, i.sent_at,
                     f.fx_rate, f.total_entity_ccy, f.snapshot->\'fx\'->>\'entity_currency\' AS entity_currency,
                     CASE WHEN ' . $cond . ' THEN 1 ELSE 0 END AS overdue,
                     CASE WHEN ' . $cond . ' THEN CAST(:today: AS date) - i.due_date ELSE 0 END AS days_overdue
@@ -81,7 +83,8 @@ final class InvoiceQueries
             'SELECT i.id, i.origin, i.type, i.number, i.external_ref, i.client_id, i.billing_month, i.issue_date, i.delivery_date, i.due_date,
                     i.currency, i.total, i.line_count, i.doc_language, i.vat_regime, i.exemption_code, i.payment_method,
                     i.template_version, i.snapshot_schema, i.snapshot, i.created_at, c.name AS client_name,
-                    i.total_entity_ccy, i.fx_rate, i.fx_source, i.fx_date, i.fx_table_no, i.fx_date_basis
+                    i.total_entity_ccy, i.fx_rate, i.fx_source, i.fx_date, i.fx_table_no, i.fx_date_basis,
+                    i.corrected_invoice_id, i.correction_reason, i.correction_type
              FROM invoices i JOIN clients c ON c.id = i.client_id
              WHERE i.id = :id:',
             ['id' => $id],
@@ -108,17 +111,22 @@ final class InvoiceQueries
             return $l;
         }, $lines);
 
-        $st = $this->db->query('SELECT status, sent_at, send_count, last_reminder_at FROM invoice_status_v WHERE id = :id:', ['id' => $id])->getRowArray() ?? [];
+        $st = $this->db->query('SELECT status, sent_at, send_count, last_reminder_at, paid_amount, credit_note_id, credit_note_number, credit_note_issue_date, corrected_number, corrected_issue_date FROM invoice_status_v WHERE id = :id:', ['id' => $id])->getRowArray() ?? [];
 
         $invoice['status']           = (string) ($st['status'] ?? 'issued');
         $invoice['sent_at']          = $st['sent_at'] ?? null;
         $invoice['send_count']       = (int) ($st['send_count'] ?? 0);
         $invoice['last_reminder_at'] = $st['last_reminder_at'] ?? null;
-        $invoice['history']          = $invoice['origin'] === 'external' ? [] : (new InvoiceMailer($this->db))->history($id);
+
+        foreach (['paid_amount', 'credit_note_id', 'credit_note_number', 'credit_note_issue_date', 'corrected_number', 'corrected_issue_date'] as $col) {
+            $invoice[$col] = $st[$col] ?? null;
+        }
+
+        $invoice['history'] = $invoice['origin'] === 'external' ? [] : (new InvoiceMailer($this->db))->history($id);
 
         $store                      = new DocumentStore($this->db);
         $invoice['document']        = $store->meta($id);
-        $invoice['report_document'] = $store->meta($id, 'report');
+        $invoice['report_document'] = $invoice['type'] === 'credit_note' ? null : $store->meta($id, 'report');
 
         return $invoice;
     }

@@ -34,13 +34,24 @@ $fx       = (($invoice['fx_rate'] ?? null) !== null && is_array($snap['fx'] ?? n
 $entityCcy = trim((string) ($fx['entity_currency'] ?? ''));
 $fxBasisKey = ($invoice['fx_date_basis'] ?? '') === 'issue_date' ? 'Invoices.fxBasisIssue' : 'Invoices.fxBasisDelivery';
 
-foreach ($invoice['lines'] as $l) {
-    $hoursSum = Hours::plus($hoursSum, (string) $l['hours']);
+$isCreditNote = ($invoice['type'] ?? 'invoice') === 'credit_note';
+$status       = (string) ($invoice['status'] ?? 'issued');
+$cancelled    = ! $isCreditNote && $status === 'cancelled';
+
+if ($isCreditNote) {
+    // D-06: dobropis ma zaporne hodiny, suma je zo snapshotu (Hours::plus zaporne nepodporuje)
+    $hoursSum = (string) ($snap['totals']['hours'] ?? '0.00');
+} else {
+    foreach ($invoice['lines'] as $l) {
+        $hoursSum = Hours::plus($hoursSum, (string) $l['hours']);
+    }
 }
 $empty = lang('Tasks.empty');
-$status = (string) ($invoice['status'] ?? 'issued');
+$isSent    = ($invoice['sent_at'] ?? null) !== null;
 [$statusKey, $statusClass] = match (true) {
     $external          => ['Invoices.badgeExternal', 'text-bg-secondary'],
+    $isCreditNote      => ['Invoices.badgeCreditNote', 'text-bg-info'],
+    $cancelled         => ['Invoices.statusCancelled', 'text-bg-dark'],
     $status === 'sent' => ['Invoices.statusSent', 'text-bg-light border'],
     $status === 'partially_paid' => ['Invoices.statusPartiallyPaid', 'text-bg-warning'],
     $status === 'paid' => ['Invoices.statusPaid', 'text-bg-success'],
@@ -48,14 +59,14 @@ $status = (string) ($invoice['status'] ?? 'issued');
 };
 $payState  = $payState ?? null;
 $payments  = $payments ?? [];
-$overdue   = ! $external && is_array($payState) && $payState['overdue'];
-$canPay    = ! $external && in_array($status, ['issued', 'sent', 'partially_paid'], true);
+$overdue   = ! $external && ! $cancelled && ! $isCreditNote && is_array($payState) && $payState['overdue'];
+$canPay    = ! $external && ! $cancelled && ! $isCreditNote && in_array($status, ['issued', 'sent', 'partially_paid'], true);
 $payPrimary = $canPay && $status !== 'issued';
 // Dorucenie podla sent_at, nie podla status (paid/partially_paid maju prednost pred sent, WR-01)
-$isSent    = ($invoice['sent_at'] ?? null) !== null;
-$canSend   = ! $external && ! $isSent;
-$canResend = ! $external && $isSent;
-$canRemind = ! $external && in_array($status, ['sent', 'partially_paid'], true) && is_array($payState) && \App\Libraries\Platform\Money::of((string) $payState['balance'])->compare(\App\Libraries\Platform\Money::zero()) > 0;
+$canSend   = ! $external && ! $isSent && ! $cancelled;
+$canResend = ! $external && $isSent && ! $cancelled;
+$canCredit = ! $external && ! $isCreditNote && ! $cancelled;
+$canRemind = ! $external && ! $cancelled && ! $isCreditNote && in_array($status, ['sent', 'partially_paid'], true) && is_array($payState) && \App\Libraries\Platform\Money::of((string) $payState['balance'])->compare(\App\Libraries\Platform\Money::zero()) > 0;
 $history = (array) ($invoice['history'] ?? []);
 ?>
 <?= $this->extend('layouts/app') ?>
@@ -66,11 +77,26 @@ $history = (array) ($invoice['history'] ?? []);
 <div class="work-wide">
     <p class="mb-2"><a class="d-inline-block py-2" href="/invoices"><?= esc(lang('Invoices.backToList')) ?></a></p>
 
+    <?php if ($cancelled) : ?>
+        <div class="cn-banner mb-3" role="status">
+            <div><?= esc(lang('Invoices.bannerCancelled', [(string) $invoice['credit_note_number'], (string) ($dates['credit_note_issue_date'] ?? '')])) ?></div>
+            <a class="d-inline-block py-2" href="/invoices/<?= (int) $invoice['credit_note_id'] ?>"><?= esc(lang('Invoices.linkCreditNote')) ?></a>
+        </div>
+    <?php elseif ($isCreditNote) : ?>
+        <div class="cn-banner mb-3" role="status">
+            <div><?= esc(lang('Invoices.bannerCorrects', [(string) $invoice['corrected_number'], (string) ($dates['corrected_issue_date'] ?? '')])) ?></div>
+            <a class="d-inline-block py-2" href="/invoices/<?= (int) $invoice['corrected_invoice_id'] ?>"><?= esc(lang('Invoices.linkOriginal')) ?></a>
+        </div>
+    <?php endif ?>
+
     <section class="app-card mb-4" aria-labelledby="inv-title">
         <h1 class="h4 mb-1" id="inv-title"><?= esc($heading) ?></h1>
         <p class="mb-1">
             <span class="st-badges">
                 <span class="st-badge badge <?= esc($statusClass, 'attr') ?>"><?= esc(lang($statusKey)) ?></span>
+                <?php if ($isCreditNote) : ?>
+                    <span class="st-badge badge text-bg-secondary"><?= esc(lang($isSent ? 'Invoices.statusCnSent' : 'Invoices.statusCnIssued')) ?></span>
+                <?php endif ?>
                 <?php if ($overdue) : ?>
                     <span class="st-badge badge text-bg-danger"><?= esc(lang('Invoices.statusOverdue', [$payState['days_overdue']])) ?></span>
                 <?php endif ?>
@@ -91,6 +117,9 @@ $history = (array) ($invoice['history'] ?? []);
             <div class="inv-summary-total tabular-nums"><?= esc($total) ?></div>
             <?php if ($fx !== null) : ?>
                 <div class="fx-sub"><?= esc(lang('Invoices.fxTotalIn', [$entityCcy])) ?> <?= esc(MoneyFormat::format((string) $invoice['total_entity_ccy'], $entityCcy)) ?></div>
+            <?php endif ?>
+            <?php if ($cancelled) : ?>
+                <div class="small text-body-secondary"><?= esc(lang('Invoices.afterCreditNote', [MoneyFormat::format('0.00', $currency)])) ?></div>
             <?php endif ?>
         </div>
 
@@ -120,11 +149,16 @@ $history = (array) ($invoice['history'] ?? []);
                     <a class="btn <?= $payPrimary ? 'btn-primary' : 'btn-outline-secondary' ?> btn-touch" href="/invoices/<?= $id ?>/payments" hx-get="/invoices/<?= $id ?>/payments" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Payments.cta')) ?></a>
                 <?php endif ?>
 <?php endif ?>
-                <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/pdf" target="_blank" rel="noopener noreferrer"><?= esc(lang('Invoices.invoicePdf')) ?></a>
-                <?php if ($reportDoc !== null || $schema >= 2) : ?>
+                <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/pdf" target="_blank" rel="noopener noreferrer"><?= esc(lang($isCreditNote ? 'Invoices.creditNotePdf' : 'Invoices.invoicePdf')) ?></a>
+                <?php if ($isCreditNote) : ?>
+                    <?php /* D-18: dobropis nema vykaz */ ?>
+                <?php elseif ($reportDoc !== null || $schema >= 2) : ?>
                     <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/report" target="_blank" rel="noopener noreferrer"><?= esc(lang('Invoices.reportPdf')) ?></a>
                 <?php else : ?>
                     <span class="small text-body-secondary"><?= esc(lang('Invoices.noReport')) ?></span>
+                <?php endif ?>
+                <?php if ($canCredit) : ?>
+                    <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/credit-note"><?= esc(lang('Invoices.issueCreditNote')) ?></a>
                 <?php endif ?>
             </div>
             <?php if (is_array($doc)) : ?>
@@ -138,6 +172,7 @@ $history = (array) ($invoice['history'] ?? []);
 
     <section class="app-card mb-4" aria-labelledby="inv-items-title">
         <h2 class="h5 mb-2" id="inv-items-title"><?= esc(lang('Invoices.labelItems')) ?></h2>
+        <div class="<?= $isCreditNote ? 'cn-lines' : '' ?>">
         <?php foreach ($invoice['lines'] as $l) : ?>
             <div class="inv-line">
                 <div>
@@ -150,6 +185,7 @@ $history = (array) ($invoice['history'] ?? []);
                 <div class="fw-semibold text-end tabular-nums"><?= esc(MoneyFormat::format((string) $l['amount'], $currency)) ?></div>
             </div>
         <?php endforeach ?>
+        </div>
         <div class="inv-total">
             <div class="d-flex justify-content-between">
                 <span><?= esc(lang('Invoices.labelTotal')) ?></span>
@@ -160,14 +196,24 @@ $history = (array) ($invoice['history'] ?? []);
     </section>
 
     <?php if (! $external) : ?>
-        <?php if (is_array($payState)) : ?>
-            <?= view('invoices/_payments', ['invoice' => $invoice, 'payState' => $payState, 'payments' => $payments, 'locale' => $locale, 'dates' => $dates, 'canPay' => $canPay]) ?>
+        <?php if (is_array($payState) && ! $isCreditNote) : ?>
+            <?= view('invoices/_payments', ['invoice' => $invoice, 'payState' => $payState, 'payments' => $payments, 'locale' => $locale, 'dates' => $dates, 'canPay' => $canPay, 'readOnly' => $cancelled]) ?>
         <?php endif ?>
         <?= view('invoices/_history', ['invoice' => $invoice, 'history' => $history, 'locale' => $locale]) ?>
 
         <section class="app-card mb-4" aria-labelledby="inv-data-title">
             <h2 class="h5 mb-2" id="inv-data-title"><?= esc(lang('Invoices.labelDetails')) ?></h2>
             <dl class="master-kv">
+                <?php if ($isCreditNote) : ?>
+                    <dt><?= esc(lang('Invoices.labelCorrects')) ?></dt>
+                    <dd><a href="/invoices/<?= (int) $invoice['corrected_invoice_id'] ?>"><?= esc((string) $invoice['corrected_number']) ?></a> · <?= esc((string) ($dates['corrected_issue_date'] ?? '')) ?></dd>
+                    <dt><?= esc(lang('Invoices.labelCorrectionType')) ?></dt>
+                    <dd><?= esc(lang(\App\Libraries\Invoicing\CorrectionType::from((string) $invoice['correction_type'])->uiLabelKey())) ?></dd>
+                    <dt><?= esc(lang('Invoices.labelCorrectionReason')) ?></dt>
+                    <dd class="cn-reason"><?= nl2br(esc((string) $invoice['correction_reason'])) ?></dd>
+                    <dt><?= esc(lang('Invoices.labelCorrectionScope')) ?></dt>
+                    <dd><?= esc(lang('CreditNotes.scopeFull')) ?></dd>
+                <?php endif ?>
                 <dt><?= esc(lang('Invoices.labelEntity')) ?></dt>
                 <dd><?= esc((string) ($entity['trade_name'] ?? $empty)) ?><?= ($entity['company_id'] ?? null) !== null ? ' · ' . esc((string) $entity['company_id']) : '' ?></dd>
                 <dt><?= esc(lang('Invoices.labelClient')) ?></dt>
@@ -176,8 +222,10 @@ $history = (array) ($invoice['history'] ?? []);
                 <dd><?= esc($dates['issue_date']) ?></dd>
                 <dt><?= esc(lang('Invoices.labelDeliveryDate')) ?></dt>
                 <dd><?= esc($dates['delivery_date']) ?></dd>
-                <dt><?= esc(lang('Invoices.labelDueDate')) ?></dt>
-                <dd><?= esc($dates['due_date']) ?></dd>
+                <?php if (! $isCreditNote) : ?>
+                    <dt><?= esc(lang('Invoices.labelDueDate')) ?></dt>
+                    <dd><?= esc($dates['due_date']) ?></dd>
+                <?php endif ?>
                 <dt><?= esc(lang('Invoices.labelCurrency')) ?></dt>
                 <dd><?= esc($currency) ?></dd>
                 <?php if ($fx !== null) : ?>
@@ -208,8 +256,10 @@ $history = (array) ($invoice['history'] ?? []);
                 <dd class="small"><?= $legalTxt === '' ? esc($empty) : esc($legalTxt) ?></dd>
                 <dt><?= esc(lang('Invoices.labelTemplate')) ?></dt>
                 <dd><?= esc((string) ($invoice['template_version'] ?? $empty)) ?></dd>
-                <dt><?= esc(lang('Invoices.labelReportTemplate')) ?></dt>
-                <dd><?= is_array($reportDoc) ? esc((string) $reportDoc['template_version']) : esc($empty) ?></dd>
+                <?php if (! $isCreditNote) : ?>
+                    <dt><?= esc(lang('Invoices.labelReportTemplate')) ?></dt>
+                    <dd><?= is_array($reportDoc) ? esc((string) $reportDoc['template_version']) : esc($empty) ?></dd>
+                <?php endif ?>
                 <dt><?= esc(lang('Invoices.labelSha')) ?></dt>
                 <dd class="small"><?= is_array($doc) ? esc((string) $doc['sha256']) : esc($empty) ?></dd>
             </dl>

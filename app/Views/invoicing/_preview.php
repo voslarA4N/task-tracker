@@ -20,6 +20,7 @@ use App\Libraries\Platform\MoneyFormat;
  * @var string                          $requestKey
  * @var array<string, mixed>|null       $notice
  * @var list<array<string, mixed>>      $alerts
+ * @var array<string, mixed>|null       $limitWarning
  */
 $empty = lang('Tasks.empty');
 $query = http_build_query($values);
@@ -109,6 +110,7 @@ $dateAttrs = static fn (string $include): string => 'hx-get="/fragments/invoice-
         <?php
         $fxState = $draft->fx['state'] ?? 'ok';
         echo view('invoicing/_fx_card', ['draft' => $draft, 'locale' => $locale]);
+        echo view('invoicing/_limit_warning', ['limitWarning' => $limitWarning ?? null, 'locale' => $locale]);
         ?>
         <div x-data="invIssue" data-can-issue="<?= $draft->canIssue ? '1' : '0' ?>" data-needs-confirm="<?= $needsConfirm ? '1' : '0' ?>">
             <div x-data="invPay" data-dirty="<?= $draft->paymentNoteDirty ? '1' : '0' ?>">

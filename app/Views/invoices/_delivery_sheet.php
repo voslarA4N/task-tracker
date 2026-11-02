@@ -11,10 +11,12 @@
 <div class="offcanvas offcanvas-bottom work-sheet dl-sheet" tabindex="-1" id="work-sheet" aria-labelledby="work-sheet-title">
     <div class="offcanvas-header px-0 pt-0">
         <div>
-            <h2 class="offcanvas-title h5 mb-1" id="work-sheet-title"><?= esc(lang(match ($kind ?? 'invoice') {
-                'resend'   => 'Deliveries.resendTitle',
-                'reminder' => 'Deliveries.reminderTitle',
-                default    => 'Deliveries.sendTitle',
+            <h2 class="offcanvas-title h5 mb-1" id="work-sheet-title"><?= esc(lang(match (true) {
+                ($invoice['type'] ?? 'invoice') === 'credit_note' && ($kind ?? 'invoice') === 'resend' => 'Deliveries.resendCreditNoteTitle',
+                ($invoice['type'] ?? 'invoice') === 'credit_note' && ($kind ?? 'invoice') !== 'reminder' => 'Deliveries.sendCreditNoteTitle',
+                ($kind ?? 'invoice') === 'resend' => 'Deliveries.resendTitle',
+                ($kind ?? 'invoice') === 'reminder' => 'Deliveries.reminderTitle',
+                default => 'Deliveries.sendTitle',
             })) ?></h2>
             <p class="small text-body-secondary mb-0"><?= esc(lang('Deliveries.sendMeta', [(string) $invoice['number'], $clientName, strtoupper((string) $draft['language'])])) ?></p>
         </div>

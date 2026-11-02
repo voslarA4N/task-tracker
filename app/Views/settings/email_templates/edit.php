@@ -11,9 +11,9 @@
 use App\Libraries\Delivery\TemplateRenderer;
 
 $id       = (int) $tpl['id'];
-$kindKeys = ['invoice' => 'EmailTemplates.kindInvoice', 'reminder' => 'EmailTemplates.kindReminder'];
+$kindKeys = ['invoice' => 'EmailTemplates.kindInvoice', 'reminder' => 'EmailTemplates.kindReminder', 'credit_note' => 'EmailTemplates.kindCreditNote'];
 $langKeys = ['sk' => 'EmailTemplates.lang_sk', 'pl' => 'EmailTemplates.lang_pl', 'cs' => 'EmailTemplates.lang_cs', 'en' => 'EmailTemplates.lang_en'];
-$varKeys  = ['number' => 'EmailTemplates.var_number', 'total' => 'EmailTemplates.var_total', 'balance' => 'EmailTemplates.var_balance', 'currency' => 'EmailTemplates.var_currency', 'issue_date' => 'EmailTemplates.var_issue_date', 'due_date' => 'EmailTemplates.var_due_date', 'billing_month' => 'EmailTemplates.var_billing_month', 'variable_symbol' => 'EmailTemplates.var_variable_symbol', 'iban' => 'EmailTemplates.var_iban', 'client_name' => 'EmailTemplates.var_client_name', 'entity_name' => 'EmailTemplates.var_entity_name', 'days_overdue' => 'EmailTemplates.var_days_overdue'];
+$varKeys  = ['number' => 'EmailTemplates.var_number', 'total' => 'EmailTemplates.var_total', 'balance' => 'EmailTemplates.var_balance', 'currency' => 'EmailTemplates.var_currency', 'issue_date' => 'EmailTemplates.var_issue_date', 'due_date' => 'EmailTemplates.var_due_date', 'billing_month' => 'EmailTemplates.var_billing_month', 'variable_symbol' => 'EmailTemplates.var_variable_symbol', 'iban' => 'EmailTemplates.var_iban', 'client_name' => 'EmailTemplates.var_client_name', 'entity_name' => 'EmailTemplates.var_entity_name', 'days_overdue' => 'EmailTemplates.var_days_overdue', 'original_number' => 'EmailTemplates.var_original_number', 'original_date' => 'EmailTemplates.var_original_date'];
 $subjectErr = $error !== null && $errorField === 'subject';
 $bodyErr    = $error !== null && $errorField === 'body';
 ?>

@@ -222,6 +222,42 @@ final class HistoryPlannerTest extends CIUnitTestCase
         }
     }
 
+    #[DataProvider('provideInvariants')]
+    public function testCreditNoteTargetsHaveNoPaymentOrReminderEvents(string $today): void
+    {
+        foreach ([Profile::full(), Profile::small()] as $profile) {
+            $plan = HistoryPlanner::build($profile, $today);
+
+            if ($plan->invoices === []) {
+                $this->assertSame([], $plan->creditNotes);
+
+                continue;
+            }
+
+            $this->assertCount(2, $plan->creditNotes);
+            $this->assertNotSame($plan->creditNotes[0]['invoice'], $plan->creditNotes[1]['invoice']);
+
+            $byKey = [];
+
+            foreach ($plan->invoices as $inv) {
+                $byKey[$inv['key']] = $inv;
+            }
+
+            foreach ($plan->creditNotes as $cn) {
+                $this->assertArrayHasKey($cn['invoice'], $byKey);
+                $this->assertSame([], array_filter(
+                    $plan->deliveries,
+                    static fn (array $e): bool => $e['invoice'] === $cn['invoice'] && in_array($e['type'], ['payment', 'payment_void', 'reminder'], true),
+                ));
+                $this->assertGreaterThanOrEqual($byKey[$cn['invoice']]['issue_date'], $cn['issue_date']);
+                $this->assertLessThanOrEqual($today, $cn['issue_date']);
+            }
+
+            $again = HistoryPlanner::build($profile, $today);
+            $this->assertSame(serialize($plan->toArray()['credit_notes']), serialize($again->toArray()['credit_notes']));
+        }
+    }
+
     public function testSmallProfile(): void
     {
         $plan = HistoryPlanner::build(Profile::small(), '2026-03-20');

@@ -18,7 +18,7 @@ final class Invoices extends BaseController
     public function index(): ResponseInterface
     {
         $status = (string) $this->request->getGet('status');
-        $status = in_array($status, ['', 'issued', 'sent', 'partially_paid', 'paid', 'overdue'], true) ? $status : '';
+        $status = in_array($status, ['', 'issued', 'sent', 'partially_paid', 'paid', 'overdue', 'cancelled', 'credit_note'], true) ? $status : '';
         $result = (new InvoiceQueries())->list(100, $status === '' ? null : $status, service('clock')->today());
         $fmt    = $this->dateFormatter();
 
@@ -44,7 +44,7 @@ final class Invoices extends BaseController
         $fmt   = $this->dateFormatter();
         $dates = [];
 
-        foreach (['issue_date', 'delivery_date', 'due_date'] as $field) {
+        foreach (['issue_date', 'delivery_date', 'due_date', 'credit_note_issue_date', 'corrected_issue_date'] as $field) {
             $dates[$field] = self::label($fmt, $invoice[$field] ?? null);
         }
 
@@ -78,10 +78,17 @@ final class Invoices extends BaseController
 
     private function serve(int $id, string $kind): ResponseInterface
     {
-        $row = db_connect()->query('SELECT origin, number, doc_language, snapshot_schema FROM invoices WHERE id = :id:', ['id' => $id])->getRowArray();
+        $row = db_connect()->query('SELECT origin, type, number, doc_language, snapshot_schema FROM invoices WHERE id = :id:', ['id' => $id])->getRowArray();
 
         if ($row === null || $row['origin'] !== 'issued') {
             throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
+        }
+
+        $isCreditNote = $row['type'] === 'credit_note';
+
+        // D-18: dobropis nema vykaz prace
+        if ($isCreditNote && $kind === 'report') {
+            throw PageNotFoundException::forPageNotFound(lang('Invoices.reportMissing'));
         }
 
         $errorKey = $kind === 'report' ? 'Invoices.errorReport' : 'Invoices.errorPdf';
@@ -104,7 +111,7 @@ final class Invoices extends BaseController
             return $this->response->setStatusCode(500)->setBody(lang($errorKey));
         }
 
-        $filename    = DocumentFilename::for($kind, trim((string) $row['doc_language']), (string) $row['number']);
+        $filename    = DocumentFilename::for($isCreditNote && $kind === 'invoice' ? 'credit_note' : $kind, trim((string) $row['doc_language']), (string) $row['number']);
         $disposition = $this->request->getGet('download') === '1' ? 'attachment' : 'inline';
 
         return $this->response

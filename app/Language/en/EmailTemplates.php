@@ -12,6 +12,7 @@ return [
     'backToList'          => 'Back to list',
     'kindInvoice'         => 'Invoice',
     'kindReminder'        => 'Reminder',
+    'kindCreditNote'      => 'Credit note',
     'lang_sk'             => 'Slovak',
     'lang_pl'             => 'Polish',
     'lang_cs'             => 'Czech',
@@ -51,4 +52,6 @@ return [
     'var_client_name'     => 'client name',
     'var_entity_name'     => 'entity name',
     'var_days_overdue'    => 'days overdue',
+    'var_original_number' => 'original invoice number',
+    'var_original_date'   => 'original invoice date',
 ];

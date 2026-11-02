@@ -96,7 +96,7 @@ final class EmailTemplatesControllerTest extends AuthTestCase
         $html = $this->body($this->call('get', '/settings/email-templates'));
         $this->assertStringContainsString('Faktúra', $html);
         $this->assertStringContainsString('Upomienka', $html);
-        $this->assertSame(8, substr_count($html, 'class="lt-row'));
+        $this->assertSame(12, substr_count($html, 'class="lt-row'));
         $this->assertLessThan(strpos($html, 'Poľština'), strpos($html, 'Slovenčina'));
         $this->assertLessThan(strpos($html, 'Čeština'), strpos($html, 'Poľština'));
         $this->assertLessThan(strpos($html, 'Angličtina'), strpos($html, 'Čeština'));
@@ -106,13 +106,13 @@ final class EmailTemplatesControllerTest extends AuthTestCase
         $this->assertDoesNotMatchRegularExpression('/delete|zmaza/i', $html);
     }
 
-    public function testEditShowsFieldsAndTwelveVariables(): void
+    public function testEditShowsFieldsAndAllVariables(): void
     {
         $this->login();
         $html = $this->body($this->call('get', '/settings/email-templates/' . $this->id . '/edit'));
         $this->assertStringContainsString('name="subject"', $html);
         $this->assertStringContainsString('name="body"', $html);
-        $this->assertSame(12, substr_count($html, 'data-var="'));
+        $this->assertSame(14, substr_count($html, 'data-var="'));
         $this->assertStringContainsString('name="revision" value="1"', $html);
         $this->assertStringNotContainsString('style=', $html);
         $this->assertStringNotContainsString('onclick', $html);

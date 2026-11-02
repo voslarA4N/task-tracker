@@ -52,7 +52,8 @@ trait InvoiceFixtures
 
     /**
      * @param list<int>            $allocationIds
-     * @param array<string, mixed> $overrides     number, series_id, total, line_count, vat_code, sha256, without_document, snapshot_schema, with_report
+     * @param array<string, mixed> $overrides     number, series_id, total, line_count, vat_code, sha256, without_document, snapshot_schema, with_report,
+     *                                            issue_date, delivery_date, turnover_date, total_entity_ccy, counts_toward_limit, currency, snapshot, fx_rate, fx_source, fx_date
      */
     protected function insertIssuedInvoiceRaw(int $clientId, int $entityId, string $month, array $allocationIds, string $pdfBytes = '%PDF-1.4 test', array $overrides = []): int
     {
@@ -68,24 +69,34 @@ trait InvoiceFixtures
 
             $db->query(
                 "INSERT INTO invoices (origin, type, entity_id, entity_version_id, series_id, number, client_id, billing_month, issue_date, delivery_date, due_date, turnover_date,
-                    currency, total, total_entity_ccy, counts_toward_limit, line_count, doc_language, vat_regime, billing_mode, template_version, snapshot, snapshot_schema, created_at)
-                 VALUES ('issued', 'invoice', :entity:, :ver:, :series:, :number:, :client:, :month:, '2026-10-27', '2026-10-27', :due:, '2026-10-27',
-                    :ccy:, :total:, :total:, true, :n:, :lang:, :regime:, 'domestic', 'test-1', '{\"schema\":1}', :schema:, :now:)",
+                    currency, total, total_entity_ccy, counts_toward_limit, fx_rate, fx_source, fx_date, line_count, doc_language, vat_regime, billing_mode, template_version, snapshot, snapshot_schema, created_at)
+                 VALUES ('issued', 'invoice', :entity:, :ver:, :series:, :number:, :client:, :month:,
+                    :issue:, :delivery:, :due:, :turnover:,
+                    :ccy:, :total:, :totalent:, :counts:, :fxrate:, :fxsource:, :fxdate:, :n:, :lang:, :regime:, 'domestic', 'test-1', :snapshot:, :schema:, :now:)",
                 [
-                    'entity' => $entityId,
-                    'ver'    => $version->id,
-                    'series' => $series,
-                    'number' => $number,
-                    'client' => $clientId,
-                    'month'  => $month,
-                    'due'    => (string) ($overrides['due_date'] ?? '2026-11-10'),
-                    'ccy'    => trim((string) $allocs[0]->currency),
-                    'total'  => $total,
-                    'n'      => (int) ($overrides['line_count'] ?? count($allocs)),
-                    'lang'   => $version->doc_language,
-                    'regime' => $version->vat_regime,
-                    'now'    => $now,
-                    'schema' => (int) ($overrides['snapshot_schema'] ?? 1),
+                    'entity'   => $entityId,
+                    'ver'      => $version->id,
+                    'series'   => $series,
+                    'number'   => $number,
+                    'client'   => $clientId,
+                    'month'    => $month,
+                    'due'      => (string) ($overrides['due_date'] ?? '2026-11-10'),
+                    'ccy'      => (string) ($overrides['currency'] ?? trim((string) $allocs[0]->currency)),
+                    'total'    => $total,
+                    'issue'    => (string) ($overrides['issue_date'] ?? '2026-10-27'),
+                    'delivery' => (string) ($overrides['delivery_date'] ?? '2026-10-27'),
+                    'turnover' => (string) ($overrides['turnover_date'] ?? '2026-10-27'),
+                    'totalent' => (string) ($overrides['total_entity_ccy'] ?? $total),
+                    'counts'   => ($overrides['counts_toward_limit'] ?? true) ? 'true' : 'false',
+                    'fxrate'   => $overrides['fx_rate'] ?? null,
+                    'fxsource' => $overrides['fx_source'] ?? null,
+                    'fxdate'   => $overrides['fx_date'] ?? null,
+                    'snapshot' => (string) ($overrides['snapshot'] ?? '{"schema":1}'),
+                    'n'        => (int) ($overrides['line_count'] ?? count($allocs)),
+                    'lang'     => $version->doc_language,
+                    'regime'   => $version->vat_regime,
+                    'now'      => $now,
+                    'schema'   => (int) ($overrides['snapshot_schema'] ?? 1),
                 ],
             );
             $invoiceId = (int) $db->query('SELECT max(id) AS id FROM invoices')->getRow()->id;

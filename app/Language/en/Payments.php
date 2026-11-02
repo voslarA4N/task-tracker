@@ -34,6 +34,7 @@ return [
     'errorReason'      => 'Enter the reason for voiding.',
     'errorReasonLong'  => 'The reason can have at most 200 characters.',
     'errorVoided'      => 'The payment has already been voided.',
+    'errorCancelled'   => 'The invoice is cancelled. Payments can no longer be changed.',
     'cardTitle'        => 'Payments',
     'balance'          => 'Balance {0}',
     'cardMeta'         => 'Total {0} · Paid {1} · Due {2}',

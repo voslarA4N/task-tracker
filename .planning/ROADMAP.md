@@ -16,8 +16,8 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 - [x] **Phase 6: Dokumenty faktúry a výkazu** - Právne profily, PDF faktúra a výkaz, QR platba, editovateľné zákonné texty (completed 2026-10-28)
 - [x] **Phase 7: Doručenie, úhrady a upomienky** - E-mail s PDF, opätovné odoslanie, úhrady, po splatnosti, upomienka (completed 2026-10-29)
 - [x] **Phase 8: Meny a kurzy** - NBP/ECB/ČNB kurzy s ručným prepisom a uložením do kópie údajov (completed 2026-10-30)
-- [ ] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí
-- [ ] **Phase 10: Limity obratu** - Tabuľka limitov, výpočet obratu, upozornenia a predkontrola pri vystavení
+- [x] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí (completed 2026-11-01)
+- [x] **Phase 10: Limity obratu** - Tabuľka limitov, výpočet obratu, upozornenia a predkontrola pri vystavení (completed 2026-11-02)
 - [ ] **Phase 11: Prehľady, exporty a audit** - Mesačné a ročné prehľady, CSV/XLSX, ZIP pre účtovníčku, prehliadač denníka, PC zoznamy
 - [ ] **Phase 12: Lokalizácia a produkcia** - Preklady PL/CZ/EN, zálohy s overenou obnovou, archív dokladov, hardening a meranie výkonu
 
@@ -458,7 +458,34 @@ Plans:
   3. Časti zo stornovanej faktúry sa uvoľnia a dajú sa fakturovať znova do iného mesiaca; storno je možné aj pre ukončený subjekt.
   4. Dobropis má vlastné uložené PDF so sha256 a dá sa odoslať e-mailom rovnako ako faktúra.
 
-**Plans**: TBD
+**Plans**: 11 plans (5 vĺn)
+Plans:
+**Wave 1**
+
+- [x] 09-01-PLAN.md — Migrácia AddCreditNotes: jeden dobropis na faktúru, CHECK-y, alloc_guard výnimka + release_allocations, complete_check bez výkazu, stav cancelled vo view, šablóna e-mailu (vlna 1)
+- [x] 09-02-PLAN.md — CorrectionType, CreditNoteCommand, CreditNoteRejected a CreditNoteSnapshotBuilder (záporná kópia, blok correction, popisky cn*) (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 09-03-PLAN.md — PDF dobropisu cn-1 (renderer, view, CSS), registrácia a názov súboru (vlna 2)
+- [x] 09-04-PLAN.md — CreditNoteIssuer: číslo z radu dobropisov, záporné riadky, PDF, uvoľnenie častí, audit v jednej transakcii (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 09-05-PLAN.md — Súbeh, rollback, opätovná fakturácia v inom mesiaci a nemennosť (testy) (vlna 3)
+- [x] 09-06-PLAN.md — Stránka náhľadu dobropisu, potvrdzovací sheet a vystavenie (POST, PRG) (vlna 3)
+- [x] 09-07-PLAN.md — Stav stornovaná v po splatnosti, zozname, detaile, úhradách a sťahovaní PDF (vlna 3)
+- [x] 09-08-PLAN.md — Šablóna e-mailu credit_note v Nastaveniach a premenné pôvodnej faktúry v TemplateContext (vlna 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 09-09-PLAN.md — Detail faktúry a dobropisu (tlačidlo, bannery, odznaky) a zoznam s filtrami (vlna 4)
+- [x] 09-11-PLAN.md — Odoslanie dobropisu e-mailom (príloha iba PDF dobropisu), resend, mark-sent a zákaz upomienok (vlna 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 09-10-PLAN.md — Staging seed s dobropismi a fázová brána composer check (vlna 5)
+
 **Poznámky**: Štruktúra dobropisu je pripravená už vo Phase 5. **Závislosť od účtovníčky:** PL dobropis (`PrzyczynaKorekty`, číslo KSeF pôvodnej faktúry) a obdobie, v ktorom sa dobropis odpočíta od obratu (predvolene obdobie pôvodnej faktúry).
 
 ### Phase 10: Limity obratu
@@ -475,7 +502,31 @@ Plans:
   4. Dashboard upozorní pri 80 % a 100 % limitu aj vtedy, keď pre aktuálny rok chýba riadok limitu (použije sa posledný známy).
   5. Náhľad faktúry upozorní, ak by jej vystavenie prekročilo prah limitu.
 
-**Plans**: TBD
+**Plans**: 8 plans (5 vĺn)
+Plans:
+**Wave 1**
+
+- [x] 10-01-PLAN.md — PeriodResolver (calendar, rolling 12m, pomerný prvý rok), LimitMath a LimitStatus cez TDD (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 10-02-PLAN.md — Migrácia turnover_limits + entity_opening_turnover so seedom-návrhom, LimitSelector s fallbackom roka, TurnoverCalculator nad total_entity_ccy (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 10-03-PLAN.md — Nastavenia → Limity: karty čerpania so vzorcom, zoznam limitov, CSS .lim-* (vlna 3)
+- [x] 10-04-PLAN.md — LimitInput, LimitService a OpeningTurnoverService s auditom a revision (vlna 3)
+- [x] 10-05-PLAN.md — Upozornenia limitov na dashboarde (80 %, 100 %, chýbajúci rok) (vlna 3)
+- [x] 10-06-PLAN.md — Predkontrola limitu v náhľade faktúry, neblokuje vystavenie (vlna 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 10-07-PLAN.md — Pridanie, úprava a zmazanie limitu v sheete (vlna 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 10-08-PLAN.md — Zadanie počiatočného obratu za subjekt a rok (vlna 5)
+
 **UI hint**: yes
 **Poznámky**: **Potrebuje /gsd-research-phase.** **Silná závislosť od účtovníčky:** SK limit (50 000 € kalendárny rok vs 49 790 € kĺzavo, prah 62 500 €), PL 240 000 zł (rozhodujúci dátum, pomerný prvý rok, započítanie EÚ B2B). Do potvrdenia sa nesmie seedovať jedna hodnota ako pravda, zobrazuje sa prísnejšia hodnota so vzorcom. Obrat číta denormalizované stĺpce zapísané pri vystavení (`total_entity_ccy`, `counts_toward_limit`, `turnover_date`), nikdy JSONB ani živé nastavenia klienta.
 
@@ -528,7 +579,7 @@ Plans:
 | 6. Dokumenty faktúry a výkazu | 9/9 | Complete    | 2026-10-28 |
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
-| 9. Dobropisy | 0/0 | Not started | - |
-| 10. Limity obratu | 0/0 | Not started | - |
+| 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
+| 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |

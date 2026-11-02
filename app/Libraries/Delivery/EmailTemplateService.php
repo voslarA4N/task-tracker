@@ -15,7 +15,7 @@ use RuntimeException;
  */
 class EmailTemplateService
 {
-    public const KEYS           = ['invoice', 'reminder'];
+    public const KEYS           = ['invoice', 'reminder', 'credit_note'];
     public const LANGUAGE_ORDER = ['sk', 'pl', 'cs', 'en'];
     public const MAX_SUBJECT    = 200;
     public const MAX_BODY       = 4000;
