@@ -75,12 +75,12 @@ final class ThresholdTest extends CIUnitTestCase
 
     public function testIsAlert(): void
     {
-        $this->assertFalse($this->status('normal', null)->isAlert());
-        $this->assertTrue($this->status('warn', null)->isAlert());
-        $this->assertTrue($this->status('normal', 'currency_mismatch')->isAlert());
+        $this->assertFalse($this->makeStatus('normal', null)->isAlert());
+        $this->assertTrue($this->makeStatus('warn', null)->isAlert());
+        $this->assertTrue($this->makeStatus('normal', 'currency_mismatch')->isAlert());
     }
 
-    private function status(string $level, ?string $error): LimitStatus
+    private function makeStatus(string $level, ?string $error): LimitStatus
     {
         return new LimitStatus(
             1, 1, 'SK', 'SK', 2026, 2026, null, 'calendar_year', [80, 100],

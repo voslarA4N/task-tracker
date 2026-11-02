@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Libraries\Reporting;
 
+use App\Libraries\Platform\Clock;
 use DateTimeImmutable;
-use DateTimeZone;
 use InvalidArgumentException;
 use RoundingMode;
 
@@ -72,8 +72,8 @@ final class PeriodResolver
 
     private static function parse(string $iso): DateTimeImmutable
     {
-        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $iso, new DateTimeZone('UTC'));
-        if ($date === false || $date->format('Y-m-d') !== $iso) {
+        $date = (new Clock('UTC'))->parseDate($iso);
+        if ($date === null) {
             throw new InvalidArgumentException('Invalid date: ' . $iso);
         }
 
