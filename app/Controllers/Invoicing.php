@@ -360,6 +360,7 @@ final class Invoicing extends BaseController
             'requestKey' => self::uuid4(),
             'alerts'     => $alerts,
             'payErrors'  => $payErrors,
+            'limitWarning' => null,
         ];
 
         $status = 200;
@@ -392,7 +393,8 @@ final class Invoicing extends BaseController
                 $forcedStatus = 422;
             }
 
-            $data['draft']      = $draft;
+            $data['draft']        = $draft;
+            $data['limitWarning'] = $this->limitWarning($draft);
             $data['entities']   = $draft->entities;
             $data['monthLabel'] = mb_strtolower(BillingMonth::label($month, $request->getLocale()));
             $data['values']     = $this->selection($draft);
@@ -418,6 +420,22 @@ final class Invoicing extends BaseController
         return $this->response->setStatusCode($status)
             ->setHeader('Vary', 'HX-Request')
             ->setBody(htmx_view('invoicing/_preview', $data, 'invoicing/index'));
+    }
+
+    /**
+     * Predkontrola limitu obratu (D-16): nikdy neblokuje vystavenie, pri chybe iba informuje.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function limitWarning(Draft $draft): ?array
+    {
+        try {
+            return service('limitPrecheck')->forDraft($draft);
+        } catch (Throwable $e) {
+            log_message('error', 'Limit precheck failed: ' . $e->getMessage());
+
+            return ['state' => 'failed'];
+        }
     }
 
     /**
