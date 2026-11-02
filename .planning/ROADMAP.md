@@ -521,7 +521,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 10-07-PLAN.md — Pridanie, úprava a zmazanie limitu v sheete (vlna 4)
+- [x] 10-07-PLAN.md — Pridanie, úprava a zmazanie limitu v sheete (vlna 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -580,6 +580,6 @@ Plans:
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
-| 10. Limity obratu | 6/8 | In Progress|  |
+| 10. Limity obratu | 7/8 | In Progress|  |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |
