@@ -30,6 +30,8 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 - [x] Meny a kurzy (E9): zoznam mien v tabuľke `currencies` (EUR, PLN, CZK, rozšíriteľný bez zmeny modelu), kurz podľa krajiny subjektu (PL: NBP, SK: ECB, CZ: ČNB) s nastaviteľným dátumom a zdrojom (Nastavenia → Kurz mien, auditované), cache kurzov, ručné zadanie pri výpadku API alebo budúcom dátume dodania, kurz, zdroj, dátum a suma v mene subjektu v kópii údajov, na PDF, v detaile aj zozname faktúr. Vystavenie číta kurz len z cache (bez siete). Validated in Phase 8: Meny a kurzy (2026-10-30; prehľady a limity v mene subjektu, CUR-04, prídu vo Phase 10)
 
+- [x] Limity obratu (E10, CUR-04): tabuľka limitov editovateľná v aplikácii (návrhy SK/PL označené ako návrh), obrat subjektu v jeho mene z uložených súm faktúr a dobropisov plus počiatočný obrat, spôsoby výpočtu kalendárny rok / kĺzavých 12 mesiacov / pomerný prvý rok so vzorcom na karte čerpania, upozornenia na dashboarde (prahy, chýbajúci rok) a neblokujúca predkontrola v náhľade faktúry. Validated in Phase 10: Limity obratu (UAT staging 2026-11-02; CR-01 a WR-01 až WR-06 z 10-REVIEW.md otvorené)
+
 ### Active
 
 Úplný zoznam s ID je v `.planning/REQUIREMENTS.md` (prevzatý z `docs/PRD.md`, epiky E1–E12, priority P0 + P1 + P2).
@@ -121,4 +123,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-02 after Phase 9 (Dobropisy)*
+*Last updated: 2026-11-02 after Phase 10 (Limity obratu)*
