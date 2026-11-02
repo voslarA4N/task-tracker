@@ -502,7 +502,30 @@ Plans:
   4. Dashboard upozorní pri 80 % a 100 % limitu aj vtedy, keď pre aktuálny rok chýba riadok limitu (použije sa posledný známy).
   5. Náhľad faktúry upozorní, ak by jej vystavenie prekročilo prah limitu.
 
-**Plans**: TBD
+**Plans**: 8 plans (5 vĺn)
+Plans:
+**Wave 1**
+
+- [ ] 10-01-PLAN.md — PeriodResolver (calendar, rolling 12m, pomerný prvý rok), LimitMath a LimitStatus cez TDD (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 10-02-PLAN.md — Migrácia turnover_limits + entity_opening_turnover so seedom-návrhom, LimitSelector s fallbackom roka, TurnoverCalculator nad total_entity_ccy (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 10-03-PLAN.md — Nastavenia → Limity: karty čerpania so vzorcom, zoznam limitov, CSS .lim-* (vlna 3)
+- [ ] 10-04-PLAN.md — LimitInput, LimitService a OpeningTurnoverService s auditom a revision (vlna 3)
+- [ ] 10-05-PLAN.md — Upozornenia limitov na dashboarde (80 %, 100 %, chýbajúci rok) (vlna 3)
+- [ ] 10-06-PLAN.md — Predkontrola limitu v náhľade faktúry, neblokuje vystavenie (vlna 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 10-07-PLAN.md — Pridanie, úprava a zmazanie limitu v sheete (vlna 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 10-08-PLAN.md — Zadanie počiatočného obratu za subjekt a rok (vlna 5)
 **UI hint**: yes
 **Poznámky**: **Potrebuje /gsd-research-phase.** **Silná závislosť od účtovníčky:** SK limit (50 000 € kalendárny rok vs 49 790 € kĺzavo, prah 62 500 €), PL 240 000 zł (rozhodujúci dátum, pomerný prvý rok, započítanie EÚ B2B). Do potvrdenia sa nesmie seedovať jedna hodnota ako pravda, zobrazuje sa prísnejšia hodnota so vzorcom. Obrat číta denormalizované stĺpce zapísané pri vystavení (`total_entity_ccy`, `counts_toward_limit`, `turnover_date`), nikdy JSONB ani živé nastavenia klienta.
 
