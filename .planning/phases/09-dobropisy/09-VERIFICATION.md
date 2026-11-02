@@ -1,7 +1,8 @@
 ---
 phase: 09-dobropisy
 verified: 2026-11-01T12:00:00Z
-status: human_needed
+status: passed
+human_approved: 2026-11-02 (09-HUMAN-UAT.md, 6/6 pass)
 score: 4/4 must-haves verified
 overrides_applied: 0
 human_verification:
