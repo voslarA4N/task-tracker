@@ -152,7 +152,7 @@ final class LimitsControllerTest extends AuthTestCase
         $html = $this->page();
 
         $this->assertStringContainsString('Limit pre rok 2026 chýba, použitý rok 2025', $html);
-        $this->assertMatchesRegularExpression('/role="alert"[^>]*>\s*Limit pre rok 2026 chýba/', $html);
+        $this->assertMatchesRegularExpression('/role="alert"[^>]*>\s*(<p class="mb-2">)?Limit pre rok 2026 chýba/', $html);
     }
 
     public function testCurrencyMismatch(): void

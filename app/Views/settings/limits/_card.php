@@ -48,10 +48,18 @@ $hasOpen = $status->openingTurnover !== '0.00' || $status->openingYears !== [];
         <?php endif ?>
     </p>
     <?php if ($status->fallbackFromYear !== null) : ?>
-        <div class="alert alert-warning small" role="alert"><?= esc(lang('Limits.alertFallbackYear', [(string) $status->refYear, (string) $status->limitYear])) ?></div>
+        <div class="alert alert-warning small" role="alert">
+            <p class="mb-2"><?= esc(lang('Limits.alertFallbackYear', [(string) $status->refYear, (string) $status->limitYear])) ?></p>
+            <?php $addUrl = '/settings/limits/new?country=' . rawurlencode($status->country) . '&year=' . $status->refYear ?>
+            <a class="btn btn-outline-secondary btn-touch" href="<?= esc($addUrl) ?>" hx-get="<?= esc($addUrl) ?>" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Limits.addForYear', [(string) $status->refYear])) ?></a>
+        </div>
     <?php endif ?>
     <?php if ($isError) : ?>
-        <div class="alert alert-danger small mb-0" role="alert"><?= esc(lang('Limits.alertCurrencyMismatch', [$status->currency, (string) ($entityCurrency ?? '')])) ?></div>
+        <div class="alert alert-danger small mb-0" role="alert">
+            <p class="mb-2"><?= esc(lang('Limits.alertCurrencyMismatch', [$status->currency, (string) ($entityCurrency ?? '')])) ?></p>
+            <?php $fixUrl = '/settings/limits/' . (int) $status->limitId . '/edit' ?>
+            <a class="btn btn-outline-secondary btn-touch" href="<?= esc($fixUrl) ?>" hx-get="<?= esc($fixUrl) ?>" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Limits.edit')) ?></a>
+        </div>
     <?php else : ?>
         <div class="d-flex align-items-center gap-2 mb-2">
             <progress class="lim-bar flex-grow-1" value="<?= $barVal ?>" max="100" aria-label="<?= esc(lang('Limits.barLabel', [$status->name]), 'attr') ?>"></progress>

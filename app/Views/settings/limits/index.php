@@ -38,7 +38,11 @@ $methods   = ['calendar_year' => 'Limits.methodCalendar', 'rolling_12m' => 'Limi
             <div class="mb-4">
                 <p class="mb-2"><?= esc($entity->entityName) ?> <span class="small text-body-secondary"><?= esc(lang('Limits.entityMeta', [$entity->country, $entity->currency])) ?></span></p>
                 <?php if ($entity->noLimit) : ?>
-                    <div class="alert alert-info small" role="status"><?= esc(lang('Limits.alertNoLimit', [$countryName])) ?></div>
+                    <div class="alert alert-info small" role="status">
+                        <p class="mb-2"><?= esc(lang('Limits.alertNoLimit', [$countryName])) ?></p>
+                        <?php $addNew = '/settings/limits/new?country=' . rawurlencode($entity->country) ?>
+                        <a class="btn btn-outline-secondary btn-touch" href="<?= esc($addNew) ?>" hx-get="<?= esc($addNew) ?>" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Limits.addCta')) ?></a>
+                    </div>
                 <?php else : ?>
                     <div class="lim-cards">
                         <?php foreach ($entity->statuses as $i => $status) : ?>
@@ -58,10 +62,12 @@ $methods   = ['calendar_year' => 'Limits.methodCalendar', 'rolling_12m' => 'Limi
 
     <section class="work-group mb-4">
         <h2 class="h5 fw-semibold"><?= esc(lang('Limits.sectionTable')) ?></h2>
+        <p><a class="btn btn-primary btn-touch w-100 w-lg-auto" href="/settings/limits/new" hx-get="/settings/limits/new" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Limits.addCta')) ?></a></p>
         <?php if ($limits === []) : ?>
             <div class="text-center py-5">
                 <h3 class="h5 fw-semibold"><?= esc(lang('Limits.emptyTitle')) ?></h3>
                 <p class="text-body-secondary"><?= esc(lang('Limits.emptyBody')) ?></p>
+                <a class="btn btn-primary btn-touch" href="/settings/limits/new" hx-get="/settings/limits/new" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Limits.addCta')) ?></a>
             </div>
         <?php else : ?>
             <div class="app-card p-0">
@@ -81,10 +87,16 @@ $methods   = ['calendar_year' => 'Limits.methodCalendar', 'rolling_12m' => 'Limi
                                 lang('Limits.thresholdsList', [implode(', ', $limit['thresholds'])]),
                             ])) ?></div>
                         </div>
+                        <div class="lim-actions d-flex gap-2 mt-2">
+                            <?php $editUrl = '/settings/limits/' . (int) $limit['id'] . '/edit'; $delUrl = '/settings/limits/' . (int) $limit['id'] . '/delete'; ?>
+                            <a class="btn btn-outline-secondary btn-touch" href="<?= esc($editUrl) ?>" hx-get="<?= esc($editUrl) ?>" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Limits.edit')) ?></a>
+                            <a class="btn btn-outline-secondary btn-touch" href="<?= esc($delUrl) ?>" hx-get="<?= esc($delUrl) ?>" hx-target="#sheet" hx-swap="innerHTML"><?= esc(lang('Limits.delete')) ?></a>
+                        </div>
                     </div>
                 <?php endforeach ?>
             </div>
         <?php endif ?>
     </section>
 </div>
+<div id="sheet"></div>
 <?= $this->endSection() ?>
