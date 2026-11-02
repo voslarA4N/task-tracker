@@ -34,7 +34,7 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 Úplný zoznam s ID je v `.planning/REQUIREMENTS.md` (prevzatý z `docs/PRD.md`, epiky E1–E12, priority P0 + P1 + P2).
 
-- [ ] Faktúry (E6): zvyšok – dobropis (Phase 9). Jadro hotové vo Phase 5, PDF podľa právneho profilu vo Phase 6
+- [x] Faktúry (E6): dobropis (celé storno) s povinným dôvodom a typom opravy, vlastným číslom, odkazom na pôvodnú faktúru, zápornými položkami (aj v cudzej mene s pôvodným kurzom), vlastným PDF `cn-1` so sha256 a odoslaním e-mailom; pôvodná faktúra je stornovaná (bez úhrad, upomienok a doručovania), jej PDF sa nemení, časti sa uvoľnia na opätovnú fakturáciu. Jadro vo Phase 5, PDF podľa právneho profilu vo Phase 6. Validated in Phase 9: Dobropisy (UAT staging 2026-11-02; WR-02/WR-04 odložené na koniec fáz)
 - [ ] Dashboard (mobil, variant B), mesačné a ročné prehľady, export CSV a XLSX, limity obratu nastaviteľné v aplikácii (E10)
 - [ ] Denník zmien s prehliadaním a filtrami (E11)
 - [ ] Responzívne UI (Bootstrap 5.3), jazyky SK, PL, CZ, EN, PWA, import z Excelu, editovateľné zákonné texty (E12)
@@ -121,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-30 after Phase 8 (Meny a kurzy)*
+*Last updated: 2026-11-02 after Phase 9 (Dobropisy)*
