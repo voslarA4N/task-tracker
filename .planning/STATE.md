@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 10 UI-SPEC approved
-last_updated: "2026-11-02T17:56:03.837Z"
-last_activity: 2026-11-02 -- Phase 10 planning complete
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-11-02T17:59:35.130Z"
+last_activity: 2026-11-02
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 114
-  completed_plans: 106
+  completed_plans: 107
   percent: 75
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 9 — dobropisy
+**Current focus:** Phase 10 — limity-obratu
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
+Phase: 10 (limity-obratu) — EXECUTING
+Plan: 2 of 8
 Status: Ready to execute
-Last activity: 2026-11-02 -- Phase 10 planning complete
+Last activity: 2026-11-02
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -96,6 +96,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 09 P01 | 45min | 2 tasks | 14 files |
 | Phase 09 P06 | 50min | 3 tasks | 14 files |
 | Phase 09 P07 | 25min | 2 tasks | 11 files |
+| Phase 10 P01 | 15min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -134,6 +135,7 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-01: cancelled invoice and credit note have balance 0.00 in invoice_status_v; credit_note added to EmailTemplateService::KEYS
 - [Phase 09]: 09-02: CreditNoteSnapshotBuilder has its own LABEL_KEYS; SnapshotBuilder::LABEL_KEYS unchanged
 - [Phase 09]: Credit note preview/confirm are POST (reason out of URLs); issue checks request_key replay before draft
+- [Phase ?]: [10-01] Pro-rata days capped at 365; thresholds decided by exact bccomp, percent half-up 1dp; rolling_12m openingYears = all window years
 
 ### Pending Todos
 
@@ -170,6 +172,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-02T17:28:45.260Z
-Stopped at: Phase 10 UI-SPEC approved
-Resume file: .planning/phases/10-limity-obratu/10-UI-SPEC.md
+Last session: 2026-11-02T17:59:35.124Z
+Stopped at: Completed 10-01-PLAN.md
+Resume file: None

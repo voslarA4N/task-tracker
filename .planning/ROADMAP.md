@@ -506,7 +506,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 10-01-PLAN.md — PeriodResolver (calendar, rolling 12m, pomerný prvý rok), LimitMath a LimitStatus cez TDD (vlna 1)
+- [x] 10-01-PLAN.md — PeriodResolver (calendar, rolling 12m, pomerný prvý rok), LimitMath a LimitStatus cez TDD (vlna 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -526,6 +526,7 @@ Plans:
 **Wave 5** *(blocked on Wave 4 completion)*
 
 - [ ] 10-08-PLAN.md — Zadanie počiatočného obratu za subjekt a rok (vlna 5)
+
 **UI hint**: yes
 **Poznámky**: **Potrebuje /gsd-research-phase.** **Silná závislosť od účtovníčky:** SK limit (50 000 € kalendárny rok vs 49 790 € kĺzavo, prah 62 500 €), PL 240 000 zł (rozhodujúci dátum, pomerný prvý rok, započítanie EÚ B2B). Do potvrdenia sa nesmie seedovať jedna hodnota ako pravda, zobrazuje sa prísnejšia hodnota so vzorcom. Obrat číta denormalizované stĺpce zapísané pri vystavení (`total_entity_ccy`, `counts_toward_limit`, `turnover_date`), nikdy JSONB ani živé nastavenia klienta.
 
@@ -579,6 +580,6 @@ Plans:
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
-| 10. Limity obratu | 0/0 | Not started | - |
+| 10. Limity obratu | 1/8 | In Progress|  |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |
