@@ -17,7 +17,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 - [x] **Phase 7: Doručenie, úhrady a upomienky** - E-mail s PDF, opätovné odoslanie, úhrady, po splatnosti, upomienka (completed 2026-10-29)
 - [x] **Phase 8: Meny a kurzy** - NBP/ECB/ČNB kurzy s ručným prepisom a uložením do kópie údajov (completed 2026-10-30)
 - [x] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí (completed 2026-11-01)
-- [ ] **Phase 10: Limity obratu** - Tabuľka limitov, výpočet obratu, upozornenia a predkontrola pri vystavení
+- [x] **Phase 10: Limity obratu** - Tabuľka limitov, výpočet obratu, upozornenia a predkontrola pri vystavení (completed 2026-11-02)
 - [ ] **Phase 11: Prehľady, exporty a audit** - Mesačné a ročné prehľady, CSV/XLSX, ZIP pre účtovníčku, prehliadač denníka, PC zoznamy
 - [ ] **Phase 12: Lokalizácia a produkcia** - Preklady PL/CZ/EN, zálohy s overenou obnovou, archív dokladov, hardening a meranie výkonu
 
@@ -525,7 +525,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 10-08-PLAN.md — Zadanie počiatočného obratu za subjekt a rok (vlna 5)
+- [x] 10-08-PLAN.md — Zadanie počiatočného obratu za subjekt a rok (vlna 5)
 
 **UI hint**: yes
 **Poznámky**: **Potrebuje /gsd-research-phase.** **Silná závislosť od účtovníčky:** SK limit (50 000 € kalendárny rok vs 49 790 € kĺzavo, prah 62 500 €), PL 240 000 zł (rozhodujúci dátum, pomerný prvý rok, započítanie EÚ B2B). Do potvrdenia sa nesmie seedovať jedna hodnota ako pravda, zobrazuje sa prísnejšia hodnota so vzorcom. Obrat číta denormalizované stĺpce zapísané pri vystavení (`total_entity_ccy`, `counts_toward_limit`, `turnover_date`), nikdy JSONB ani živé nastavenia klienta.
@@ -580,6 +580,6 @@ Plans:
 | 7. Doručenie, úhrady a upomienky | 14/14 | Complete    | 2026-10-29 |
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
-| 10. Limity obratu | 7/8 | In Progress|  |
+| 10. Limity obratu | 8/8 | Complete   | 2026-11-02 |
 | 11. Prehľady, exporty a audit | 0/0 | Not started | - |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |
