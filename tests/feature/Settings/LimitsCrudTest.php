@@ -189,6 +189,21 @@ final class LimitsCrudTest extends AuthTestCase
         $this->assertStringContainsString('Limit sa medzitým zmenil.', $this->body($result));
     }
 
+    public function testEditInvalidKeepsSubmittedRevision(): void
+    {
+        $id = $this->insertLimit('SK', 2026, 'Registrácia DPH', '50000.00', 'EUR', 'calendar_year');
+        $this->send('/settings/limits/' . $id, $this->data(['year' => '2026', 'revision' => '1']))->assertStatus(302);
+
+        // Stara revision + chybna suma: 422 nesmie podstrcit aktualnu revision 2.
+        $invalid = $this->send('/settings/limits/' . $id, $this->data(['year' => '2026', 'revision' => '1', 'amount' => '0']));
+        $invalid->assertStatus(422);
+        $html = $this->body($invalid);
+        $this->assertMatchesRegularExpression('/name="revision" value="1"/', $html);
+        $this->assertDoesNotMatchRegularExpression('/name="revision" value="2"/', $html);
+
+        $this->send('/settings/limits/' . $id, $this->data(['year' => '2026', 'revision' => '1']))->assertStatus(409);
+    }
+
     public function testEditMissing404(): void
     {
         $this->expectException(PageNotFoundException::class);
