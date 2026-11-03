@@ -418,7 +418,7 @@ V testoch XLSX čítať cez `ZipArchive`/`SimpleXML`, **nie** cez PhpSpreadsheet
 | A5 | Nginx/FPM prostredie zvláda ZIP do 12 mesiacov v čase pod 30 s | Pitfall 9 | Timeout; zmerať na staging |
 | A6 | Excel v SK/PL/CZ otvorí CSV `;` + BOM + čiarku dvojklikom správne (podľa D-06/CONTEXT) | Pitfall 7 | Overiť manuálne na staging (HV krok) |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Externé faktúry v prehľade a balíku (Critical)**
    - What we know: nemajú `entity_id`, `turnover_date`, `total_entity_ccy`, `number`; `TurnoverCalculator` ich vylučuje.
