@@ -104,11 +104,12 @@ final class Limits extends BaseController
 
         $found  = (new OpeningTurnoverService())->find($entity, $year);
         $values = [
-            'entity_id' => (string) $entity,
-            'year'      => (string) $year,
-            'amount'    => $found['amount'] ?? '',
-            'note'      => $found['note'] ?? '',
-            'revision'  => $found === null ? '' : (string) $found['revision'],
+            'entity_id'  => (string) $entity,
+            'year'       => (string) $year,
+            'amount'     => $found['amount'] ?? '',
+            'note'       => $found['note'] ?? '',
+            'revision'   => $found === null ? '' : (string) $found['revision'],
+            'opening_id' => $found === null ? '' : (string) $found['id'],
         ];
 
         return $this->renderOpening(true, $this->openingData($entities, $values, [], null, $locked));
@@ -121,7 +122,7 @@ final class Limits extends BaseController
 
         $values = [];
 
-        foreach (['entity_id', 'year', 'amount', 'note', 'revision'] as $k) {
+        foreach (['entity_id', 'year', 'amount', 'note', 'revision', 'opening_id'] as $k) {
             $v          = $request->getPost($k);
             $values[$k] = is_string($v) ? trim($v) : '';
         }
@@ -137,9 +138,14 @@ final class Limits extends BaseController
                 $this->response->setStatusCode(409);
 
                 if ($fresh !== null) {
-                    $values['amount']   = $fresh['amount'];
-                    $values['note']     = $fresh['note'] ?? '';
-                    $values['revision'] = (string) $fresh['revision'];
+                    $values['amount']     = $fresh['amount'];
+                    $values['note']       = $fresh['note'] ?? '';
+                    $values['revision']   = (string) $fresh['revision'];
+                    $values['opening_id'] = (string) $fresh['id'];
+                } else {
+                    // Riadok uz neexistuje: dalsie ulozenie ho vytvori nanovo (vedome, po zobrazeni chyby).
+                    $values['revision']   = '';
+                    $values['opening_id'] = '';
                 }
 
                 return $this->renderOpening(false, $this->openingData($entities, $values, [], 'Limits.errOpeningStale', $locked));

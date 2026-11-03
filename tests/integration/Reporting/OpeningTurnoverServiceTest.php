@@ -85,19 +85,45 @@ final class OpeningTurnoverServiceTest extends PgTestCase
         $this->assertSame(1, $row['revision']);
         $this->assertSame('Excel do 30. 9.', $row['note']);
 
-        $this->assertSame('updated', $this->service()->save($this->input(['amount' => '3500', 'revision' => '1'])));
+        $id = (string) $row['id'];
+        $this->assertSame('updated', $this->service()->save($this->input(['amount' => '3500', 'revision' => '1', 'opening_id' => $id])));
         $this->assertSame(2, $this->service()->find($this->sk, 2026)['revision']);
 
         try {
-            $this->service()->save($this->input(['revision' => '1']));
+            $this->service()->save($this->input(['revision' => '1', 'opening_id' => $id]));
             $this->fail('stale expected');
         } catch (LimitRejected $e) {
             $this->assertSame('stale', $e->reason);
         }
 
-        $this->assertSame('deleted', $this->service()->save($this->input(['amount' => '', 'revision' => '2'])));
+        $this->assertSame('deleted', $this->service()->save($this->input(['amount' => '', 'revision' => '2', 'opening_id' => $id])));
         $this->assertNull($this->service()->find($this->sk, 2026));
         $this->assertSame(['create', 'update', 'delete'], $this->actions());
+    }
+
+    public function testRevisionIsBoundToLoadedRow(): void
+    {
+        $this->service()->save($this->input(['year' => '2025', 'amount' => '1000']));
+        $this->service()->save($this->input(['year' => '2026', 'amount' => '2000']));
+        $id2026 = (string) $this->service()->find($this->sk, 2026)['id'];
+
+        // Formular nacital 2026 (rev 1), pouzivatel prepisal rok na 2025 (tiez rev 1).
+        try {
+            $this->service()->save($this->input(['year' => '2025', 'amount' => '9999', 'revision' => '1', 'opening_id' => $id2026]));
+            $this->fail('stale expected');
+        } catch (LimitRejected $e) {
+            $this->assertSame('stale', $e->reason);
+        }
+
+        // Novy formular (bez revision) na existujuci riadok tiez nesmie prepisat.
+        try {
+            $this->service()->save($this->input(['year' => '2025', 'amount' => '9999']));
+            $this->fail('stale expected');
+        } catch (LimitRejected $e) {
+            $this->assertSame('stale', $e->reason);
+        }
+
+        $this->assertSame('1000.00', $this->service()->find($this->sk, 2025)['amount']);
     }
 
     public function testEmptyWithoutRecordIsNoop(): void
