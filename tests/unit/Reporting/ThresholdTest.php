@@ -65,6 +65,18 @@ final class ThresholdTest extends CIUnitTestCase
         $this->assertSame('0.80000000', LimitMath::ratio('40000.00', '50000.00'));
     }
 
+    public function testPercentRejectsZeroLimit(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        LimitMath::percent('10.00', '0.00');
+    }
+
+    public function testRatioRejectsZeroLimit(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        LimitMath::ratio('10.00', '0.00');
+    }
+
     public function testFormatPercent(): void
     {
         $this->assertSame('88,5', LimitMath::formatPercent('88.5', 'sk'));

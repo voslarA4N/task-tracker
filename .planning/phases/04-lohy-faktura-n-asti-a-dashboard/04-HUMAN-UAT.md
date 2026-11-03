@@ -1,14 +1,14 @@
 ---
-status: partial
+status: complete
 phase: 04-lohy-faktura-n-asti-a-dashboard
 source: [04-VERIFICATION.md]
 started: 2026-10-26T12:30:00Z
-updated: 2026-10-26T15:00:00Z
+updated: 2026-11-03T12:00:00Z
 ---
 
 ## Current Test
 
-[awaiting human testing]
+[testing complete]
 
 ## Tests
 
@@ -26,7 +26,7 @@ result: passed (vlastník na produkcii work-tracker.vostack.dev, 2026-10-26)
 
 ### 4. Otvoriť importovanú úlohu /tasks/{id}
 expected: detail sa zobrazí bez chyby, odkaz na portál funguje, súhrn hodín a zoznam častí sedí
-result: [pending]
+result: pass (vlastník označil ako otestované, 2026-11-03)
 
 ### 5. Rozhodnutie vlastníka k WR-07 (riadky „Fakturované = ÁNO“)
 expected: vlastník potvrdí „importovať ako nezamknuté“ (podľa textu špecifikácie), alebo požiada, aby sa už fakturované riadky (napr. 09/2026: 11 častí, 89 h, 2 403,00 €) neimportovali ako fakturovateľné časti pred začiatkom Phase 5
@@ -35,9 +35,9 @@ result: resolved: vlastník zvolil C (2026-10-26). Časti sa vo Phase 5 zamknú 
 ## Summary
 
 total: 5
-passed: 4
+passed: 5
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
 blocked: 0
 

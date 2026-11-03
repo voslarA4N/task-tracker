@@ -91,12 +91,20 @@ final class LimitPrecheckTest extends CIUnitTestCase
         $this->assertSame('102.0', $r['rows'][0]['afterPercent']);
     }
 
+    public function testAboveWarningThresholdIsNotAlreadyOver(): void
+    {
+        $r = LimitPrecheck::evaluate($this->limits([$this->st('45000.00')]), '500.00');
+
+        $this->assertFalse($r['rows'][0]['alreadyOver']);
+        $this->assertSame('warn', $r['level']);
+    }
+
     public function testAlreadyOver(): void
     {
-        $r = LimitPrecheck::evaluate($this->limits([$this->st('42000.00')]), '500.00');
+        $r = LimitPrecheck::evaluate($this->limits([$this->st('50500.00')]), '500.00');
 
         $this->assertTrue($r['rows'][0]['alreadyOver']);
-        $this->assertSame('warn', $r['level']);
+        $this->assertSame('crit', $r['level']);
     }
 
     public function testOnlyReachedLimitListed(): void

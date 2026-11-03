@@ -36,6 +36,8 @@ return [
     'limitsBadgeWarn'      => 'Blíži sa limit',
     'limitsBadgeInfo'      => 'Chýba limit',
     'limitsBadgeConfig'    => 'Chyba konfigurácie',
+    'limitsBadgeFailed'    => 'Výpočet zlyhal',
+    'limitsFailed'         => 'Limity obratu sa nepodarilo vypočítať. Skontrolujte nastavenie limitov.',
     'limitsRow'            => '{0}: {1} {2} % ({3} z {4})',
     'limitsRowMeta'        => '{0} · {1} – {2}',
     'limitsMissingYear'    => '{0}: limit pre rok {1} chýba, použitý rok {2}. Skontrolujte hodnoty.',

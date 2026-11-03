@@ -41,7 +41,8 @@ $mLabels   = ['calendar_year' => 'Limits.methodCalendar', 'rolling_12m' => 'Limi
 <form method="post" action="<?= esc($action, 'attr') ?>"<?php if ($sheet) : ?> hx-post="<?= esc($action, 'attr') ?>" hx-target="#sheet-body" hx-swap="innerHTML"<?php endif ?> data-submit-once novalidate>
     <?= csrf_field() ?>
     <?php if ($limit !== null) : ?>
-        <input type="hidden" name="revision" value="<?= (int) $limit['revision'] ?>">
+        <?php // CR-01: na 422 vratit odoslanu revision, nie aktualnu z DB (inak sa obide optimisticky zamok). ?>
+        <input type="hidden" name="revision" value="<?= esc($values['revision'] ?? (string) $limit['revision'], 'attr') ?>">
     <?php endif ?>
 
     <div class="mb-3">

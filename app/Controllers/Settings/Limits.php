@@ -94,9 +94,9 @@ final class Limits extends BaseController
             throw PageNotFoundException::forPageNotFound();
         }
 
+        // WR-05: subjekt je vo formulari vzdy pevny (mena sumy je mena subjektu), volny vyber by ukazal zlu menu.
         $entityQ = $this->request->getGet('entity');
-        $locked  = is_string($entityQ) && ctype_digit($entityQ) && isset($entities[(int) $entityQ]);
-        $entity  = $locked ? (int) $entityQ : array_key_first($entities);
+        $entity  = is_string($entityQ) && ctype_digit($entityQ) && isset($entities[(int) $entityQ]) ? (int) $entityQ : array_key_first($entities);
         $yearQ   = $this->request->getGet('year');
         $year    = is_string($yearQ) && preg_match('/^\d{4}$/D', $yearQ) === 1 && (int) $yearQ >= 2000 && (int) $yearQ <= 2100
             ? (int) $yearQ
@@ -104,14 +104,15 @@ final class Limits extends BaseController
 
         $found  = (new OpeningTurnoverService())->find($entity, $year);
         $values = [
-            'entity_id' => (string) $entity,
-            'year'      => (string) $year,
-            'amount'    => $found['amount'] ?? '',
-            'note'      => $found['note'] ?? '',
-            'revision'  => $found === null ? '' : (string) $found['revision'],
+            'entity_id'  => (string) $entity,
+            'year'       => (string) $year,
+            'amount'     => $found['amount'] ?? '',
+            'note'       => $found['note'] ?? '',
+            'revision'   => $found === null ? '' : (string) $found['revision'],
+            'opening_id' => $found === null ? '' : (string) $found['id'],
         ];
 
-        return $this->renderOpening(true, $this->openingData($entities, $values, [], null, $locked));
+        return $this->renderOpening(true, $this->openingData($entities, $values, [], null));
     }
 
     public function saveOpening(): ResponseInterface
@@ -121,13 +122,12 @@ final class Limits extends BaseController
 
         $values = [];
 
-        foreach (['entity_id', 'year', 'amount', 'note', 'revision'] as $k) {
+        foreach (['entity_id', 'year', 'amount', 'note', 'revision', 'opening_id'] as $k) {
             $v          = $request->getPost($k);
             $values[$k] = is_string($v) ? trim($v) : '';
         }
 
         $entities = $this->activeEntities(service('clock')->today());
-        $locked   = isset($entities[(int) $values['entity_id']]);
 
         try {
             (new OpeningTurnoverService())->save($values);
@@ -137,17 +137,22 @@ final class Limits extends BaseController
                 $this->response->setStatusCode(409);
 
                 if ($fresh !== null) {
-                    $values['amount']   = $fresh['amount'];
-                    $values['note']     = $fresh['note'] ?? '';
-                    $values['revision'] = (string) $fresh['revision'];
+                    $values['amount']     = $fresh['amount'];
+                    $values['note']       = $fresh['note'] ?? '';
+                    $values['revision']   = (string) $fresh['revision'];
+                    $values['opening_id'] = (string) $fresh['id'];
+                } else {
+                    // Riadok uz neexistuje: dalsie ulozenie ho vytvori nanovo (vedome, po zobrazeni chyby).
+                    $values['revision']   = '';
+                    $values['opening_id'] = '';
                 }
 
-                return $this->renderOpening(false, $this->openingData($entities, $values, [], 'Limits.errOpeningStale', $locked));
+                return $this->renderOpening(false, $this->openingData($entities, $values, [], 'Limits.errOpeningStale'));
             }
 
             $this->response->setStatusCode(422);
 
-            return $this->renderOpening(false, $this->openingData($entities, $values, $e->fields, null, $locked));
+            return $this->renderOpening(false, $this->openingData($entities, $values, $e->fields, null));
         }
 
         return $this->done(lang('Limits.flashOpeningSaved'));
@@ -176,19 +181,18 @@ final class Limits extends BaseController
      *
      * @return array<string, mixed>
      */
-    private function openingData(array $entities, array $values, array $errors, ?string $formError, bool $locked): array
+    private function openingData(array $entities, array $values, array $errors, ?string $formError): array
     {
         $selected = ctype_digit($values['entity_id']) && isset($entities[(int) $values['entity_id']]) ? (int) $values['entity_id'] : (int) array_key_first($entities);
 
         return [
-            'entities'     => $entities,
-            'values'       => $values,
-            'errors'       => $errors,
-            'formError'    => $formError,
-            'lockedEntity' => $locked,
-            'selected'     => $selected,
-            'currency'     => $entities[$selected]['currency'] ?? 'EUR',
-            'locale'       => $this->request->getLocale(),
+            'entities'  => $entities,
+            'values'    => $values,
+            'errors'    => $errors,
+            'formError' => $formError,
+            'selected'  => $selected,
+            'currency'  => $entities[$selected]['currency'] ?? 'EUR',
+            'locale'    => $this->request->getLocale(),
         ];
     }
 

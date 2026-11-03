@@ -15,12 +15,26 @@ final class LimitMath
 {
     public static function percent(string $total, string $limit): string
     {
+        self::assertPositive($limit);
+
         return bcround(bcdiv(bcmul($total, '100', 4), $limit, 6), 1, RoundingMode::HalfAwayFromZero);
     }
 
     public static function ratio(string $total, string $limit): string
     {
+        self::assertPositive($limit);
+
         return bcdiv($total, $limit, 8);
+    }
+
+    /**
+     * Limit je delitel: nulovy alebo zaporny je chyba konfiguracie, nie chyba enginu (DivisionByZeroError).
+     */
+    private static function assertPositive(string $limit): void
+    {
+        if (bccomp($limit, '0', 8) <= 0) {
+            throw new InvalidArgumentException('Limit must be positive: ' . $limit);
+        }
     }
 
     /**

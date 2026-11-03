@@ -71,6 +71,25 @@ final class DashboardLimitsTest extends AuthTestCase
         return $this->body($this->get('/' . $query));
     }
 
+    public function testLimitFailureDoesNotBreakDashboard(): void
+    {
+        $this->insertLimit('SK', 2026, 'Registrácia DPH', '50000.00', 'EUR', 'calendar_year');
+        // Vypocet limitov zlyha na DB chybe (app_rw docasne nema SELECT na pociatocny obrat).
+        $this->owner()->query('REVOKE SELECT ON entity_opening_turnover FROM app_rw');
+
+        try {
+            $this->login();
+            $result = $this->get('/');
+        } finally {
+            $this->owner()->query('GRANT SELECT ON entity_opening_turnover TO app_rw');
+        }
+
+        $result->assertStatus(200);
+        $html = $this->body($result);
+        $this->assertStringContainsString('id="limits-title"', $html);
+        $this->assertStringContainsString('Limity obratu sa nepodarilo vypočítať.', $html);
+    }
+
     public function testNoBlockWithoutReason(): void
     {
         $this->insertLimit('SK', 2026, 'Registrácia DPH', '50000.00', 'EUR', 'calendar_year');

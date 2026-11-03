@@ -84,17 +84,23 @@ final class OpeningTurnoverTest extends AuthTestCase
     private function data(array $override = []): array
     {
         return $override + [
-            'entity_id' => (string) $this->entity,
-            'year'      => '2026',
-            'amount'    => '3 000,00',
-            'note'      => 'Excel do 30. 9. 2026',
-            'revision'  => '',
+            'entity_id'  => (string) $this->entity,
+            'year'       => '2026',
+            'amount'     => '3 000,00',
+            'note'       => 'Excel do 30. 9. 2026',
+            'revision'   => '',
+            'opening_id' => '',
         ];
     }
 
     private function openingCount(): int
     {
         return (int) $this->owner()->query('SELECT count(*) AS c FROM entity_opening_turnover')->getRow()->c;
+    }
+
+    private function openingId(int $year): string
+    {
+        return (string) $this->owner()->query('SELECT id FROM entity_opening_turnover WHERE entity_id = :e: AND year = :y:', ['e' => $this->entity, 'y' => $year])->getRow()->id;
     }
 
     public function testSectionListsCurrentYearUnset(): void
@@ -126,6 +132,21 @@ final class OpeningTurnoverTest extends AuthTestCase
         $this->assertStringNotContainsString('name="currency"', $html);
     }
 
+    public function testEntityIsAlwaysFixedSoCurrencyMatches(): void
+    {
+        $pl = $this->createEntity('PL');
+
+        $plForm = $this->body($this->get('/settings/limits/opening?entity=' . $pl . '&year=2026'));
+        $this->assertStringContainsString('<span class="input-group-text">' . esc(MoneyFormat::symbol('PLN', 'sk')) . '</span>', $plForm);
+        $this->assertMatchesRegularExpression('/type="hidden" name="entity_id" value="' . $pl . '"/', $plForm);
+
+        // Bez ?entity= sa neponuka volny vyber (mena by sa po zmene neaktualizovala).
+        $free = $this->body($this->get('/settings/limits/opening'));
+        $this->assertMatchesRegularExpression('/<select[^>]*disabled/', $free);
+        $this->assertDoesNotMatchRegularExpression('/<select[^>]*name="entity_id"/', $free);
+        $this->assertMatchesRegularExpression('/type="hidden" name="entity_id" value="\d+"/', $free);
+    }
+
     public function testSaveCreatesAndCardUsesIt(): void
     {
         $result = $this->send($this->data());
@@ -151,7 +172,7 @@ final class OpeningTurnoverTest extends AuthTestCase
     public function testEmptyAmountDeletes(): void
     {
         $this->insertOpening($this->entity, 2026, '1500.00');
-        $this->send($this->data(['amount' => '', 'revision' => '1']))->assertStatus(200);
+        $this->send($this->data(['amount' => '', 'revision' => '1', 'opening_id' => $this->openingId(2026)]))->assertStatus(200);
         $this->assertSame(0, $this->openingCount());
         $audit = (int) $this->owner()->query("SELECT count(*) AS c FROM audit_log WHERE entity_type = 'entity_opening_turnover' AND action = 'delete'")->getRow()->c;
         $this->assertSame(1, $audit);
@@ -175,6 +196,22 @@ final class OpeningTurnoverTest extends AuthTestCase
         $result = $this->send($this->data(['revision' => '7']));
         $result->assertStatus(409);
         $this->assertStringContainsString('Počiatočný obrat sa medzitým zmenil.', $this->body($result));
+    }
+
+    public function testChangedYearCannotOverwriteOtherRow(): void
+    {
+        $this->insertOpening($this->entity, 2025, '1200.00');
+        $this->insertOpening($this->entity, 2026, '1500.00');
+
+        $form = $this->body($this->get('/settings/limits/opening?entity=' . $this->entity . '&year=2026'));
+        $this->assertMatchesRegularExpression('/name="opening_id" value="' . $this->openingId(2026) . '"/', $form);
+
+        $result = $this->send($this->data(['year' => '2025', 'amount' => '9 999,00', 'revision' => '1', 'opening_id' => $this->openingId(2026)]));
+        $result->assertStatus(409);
+        $html = $this->body($result);
+        $this->assertMatchesRegularExpression('/name="opening_id" value="' . $this->openingId(2025) . '"/', $html);
+        $amount = $this->owner()->query('SELECT amount FROM entity_opening_turnover WHERE entity_id = :e: AND year = 2025', ['e' => $this->entity])->getRow()->amount;
+        $this->assertSame('1200.00', $amount);
     }
 
     public function testNoJsSaveRedirects(): void

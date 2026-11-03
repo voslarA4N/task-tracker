@@ -9,12 +9,12 @@ namespace App\Libraries\Reporting;
  */
 final class LimitAlerts
 {
-    private const ORDER = ['crit' => 0, 'config' => 1, 'warn' => 2, 'info' => 3];
+    private const ORDER = ['crit' => 0, 'failed' => 1, 'config' => 1, 'warn' => 2, 'info' => 3];
 
     /**
      * @param list<EntityLimits> $entities
      *
-     * @return list<array{kind: 'config'|'crit'|'info'|'warn', entityName: string, status: ?LimitStatus, refYear: int, usedYear: ?int, country: string}>
+     * @return list<array{kind: 'config'|'crit'|'failed'|'info'|'warn', entityName: string, status: ?LimitStatus, refYear: int, usedYear: ?int, country: string}>
      */
     public static function fromEntities(array $entities): array
     {
@@ -51,9 +51,19 @@ final class LimitAlerts
     }
 
     /**
-     * @param 'config'|'crit'|'info'|'warn' $kind
+     * Riadok pre dashboard, ked sa limity nepodarilo vypocitat (WR-04).
      *
-     * @return array{kind: 'config'|'crit'|'info'|'warn', entityName: string, status: ?LimitStatus, refYear: int, usedYear: ?int, country: string}
+     * @return array{kind: 'config'|'crit'|'failed'|'info'|'warn', entityName: string, status: ?LimitStatus, refYear: int, usedYear: ?int, country: string}
+     */
+    public static function failed(int $refYear): array
+    {
+        return ['kind' => 'failed', 'entityName' => '', 'status' => null, 'refYear' => $refYear, 'usedYear' => null, 'country' => ''];
+    }
+
+    /**
+     * @param 'config'|'crit'|'failed'|'info'|'warn' $kind
+     *
+     * @return array{kind: 'config'|'crit'|'failed'|'info'|'warn', entityName: string, status: ?LimitStatus, refYear: int, usedYear: ?int, country: string}
      */
     private static function row(string $kind, EntityLimits $entity, ?LimitStatus $status, ?int $usedYear): array
     {
