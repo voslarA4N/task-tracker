@@ -1,21 +1,21 @@
 ---
-status: partial
+status: complete
 phase: 06-dokumenty-fakt-ry-a-v-kazu
 source: [06-VERIFICATION.md]
 started: 2026-10-28T00:29:23Z
-updated: 2026-10-28T20:00:00Z
+updated: 2026-11-03T12:00:00Z
 ---
 
 ## Current Test
 
-[awaiting human testing]
+[testing complete]
 
 ## Tests
 
 ### 1. Vzorové PDF pre účtovníčku
 Na stagingu `php spark documents:samples`, poslať 5 vzorov (sk-sk faktúra/výkaz, pl-pl, pl_eu_b2b-sk, cz-cs) účtovníčke, prejsť otvorené otázky 1-7 z 06-CONTEXT.md, potvrdené znenia upraviť v Nastavenia → Zákonné texty.
 expected: účtovníčka potvrdí zákonné náležitosti a znenia
-result: [pending]
+result: pass (vlastník označil ako otestované, 2026-11-03)
 
 ### 2. QR PAY by square (SK)
 Naskenovať QR na SK vzore dvoma slovenskými bankovými aplikáciami.
@@ -45,9 +45,9 @@ result: pass (vlastník na stagingu, 2026-10-28)
 ## Summary
 
 total: 6
-passed: 5
+passed: 6
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
 blocked: 0
 
