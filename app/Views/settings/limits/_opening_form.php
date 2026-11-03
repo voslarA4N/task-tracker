@@ -7,7 +7,6 @@
  * @var array<string, string>                                               $values
  * @var array<string, string>                                               $errors       pole => lang kluc
  * @var string|null                                                         $formError    lang kluc
- * @var bool                                                                $lockedEntity
  * @var int                                                                 $selected
  * @var string                                                              $currency
  * @var string                                                              $locale
@@ -37,10 +36,9 @@ $desc = static function (string $k, string $hint = '') use ($errors): string {
 
     <div class="mb-3">
         <label class="form-label" for="of-entity"><?= esc(lang('Limits.fieldEntity')) ?></label>
-        <?php if ($lockedEntity) : ?>
-            <input type="hidden" name="entity_id" value="<?= (int) $selected ?>">
-        <?php endif ?>
-        <select class="form-select<?= $cls('entity_id') ?>" id="of-entity"<?= $lockedEntity ? ' disabled' : ' name="entity_id"' ?><?= $desc('entity_id') ?>>
+        <?php // WR-05: subjekt je pevny, symbol meny a napoveda patria vzdy k nemu. ?>
+        <input type="hidden" name="entity_id" value="<?= (int) $selected ?>">
+        <select class="form-select<?= $cls('entity_id') ?>" id="of-entity" disabled<?= $desc('entity_id') ?>>
             <?php foreach ($entities as $entity) : ?>
                 <option value="<?= (int) $entity['id'] ?>"<?= $selected === $entity['id'] ? ' selected' : '' ?>><?= esc($entity['name_internal']) ?></option>
             <?php endforeach ?>

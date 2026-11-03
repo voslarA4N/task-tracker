@@ -132,6 +132,21 @@ final class OpeningTurnoverTest extends AuthTestCase
         $this->assertStringNotContainsString('name="currency"', $html);
     }
 
+    public function testEntityIsAlwaysFixedSoCurrencyMatches(): void
+    {
+        $pl = $this->createEntity('PL');
+
+        $plForm = $this->body($this->get('/settings/limits/opening?entity=' . $pl . '&year=2026'));
+        $this->assertStringContainsString('<span class="input-group-text">' . esc(MoneyFormat::symbol('PLN', 'sk')) . '</span>', $plForm);
+        $this->assertMatchesRegularExpression('/type="hidden" name="entity_id" value="' . $pl . '"/', $plForm);
+
+        // Bez ?entity= sa neponuka volny vyber (mena by sa po zmene neaktualizovala).
+        $free = $this->body($this->get('/settings/limits/opening'));
+        $this->assertMatchesRegularExpression('/<select[^>]*disabled/', $free);
+        $this->assertDoesNotMatchRegularExpression('/<select[^>]*name="entity_id"/', $free);
+        $this->assertMatchesRegularExpression('/type="hidden" name="entity_id" value="\d+"/', $free);
+    }
+
     public function testSaveCreatesAndCardUsesIt(): void
     {
         $result = $this->send($this->data());
