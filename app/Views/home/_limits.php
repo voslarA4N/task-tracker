@@ -23,6 +23,7 @@ $methods = [
 $badges = [
     'crit'   => ['text-bg-danger', 'Dashboard.limitsBadgeCrit'],
     'config' => ['text-bg-danger', 'Dashboard.limitsBadgeConfig'],
+    'failed' => ['text-bg-danger', 'Dashboard.limitsBadgeFailed'],
     'warn'   => ['text-bg-warning', 'Dashboard.limitsBadgeWarn'],
     'info'   => ['text-bg-info', 'Dashboard.limitsBadgeInfo'],
 ];
@@ -34,12 +35,14 @@ $badges = [
             <?php
             $kind   = (string) $row['kind'];
             $status = $row['status'];
-            $mod    = $kind === 'config' ? 'crit' : $kind;
+            $mod    = in_array($kind, ['config', 'failed'], true) ? 'crit' : $kind;
             [$badgeClass, $badgeKey] = $badges[$kind];
             ?>
             <a class="lim-alert lim-alert--<?= esc($mod, 'attr') ?> d-block border-bottom" href="/settings/limits">
                 <span class="badge <?= esc($badgeClass, 'attr') ?> me-1"><?= esc(lang($badgeKey)) ?></span>
-                <?php if ($status !== null && $kind !== 'config') : ?>
+                <?php if ($kind === 'failed') : ?>
+                    <span><?= esc(lang('Dashboard.limitsFailed')) ?></span>
+                <?php elseif ($status !== null && $kind !== 'config') : ?>
                     <span><?= esc(lang('Dashboard.limitsRow', [
                         $row['entityName'],
                         $status->name,

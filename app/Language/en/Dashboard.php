@@ -36,6 +36,8 @@ return [
     'limitsBadgeWarn'      => 'Limit approaching',
     'limitsBadgeInfo'      => 'Limit missing',
     'limitsBadgeConfig'    => 'Configuration error',
+    'limitsBadgeFailed'    => 'Calculation failed',
+    'limitsFailed'         => 'Turnover limits could not be calculated. Check the limit settings.',
     'limitsRow'            => '{0}: {1} {2}% ({3} of {4})',
     'limitsRowMeta'        => '{0} · {1} – {2}',
     'limitsMissingYear'    => '{0}: limit for {1} is missing, using {2}. Check the values.',

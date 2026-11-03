@@ -7,12 +7,14 @@ namespace App\Controllers;
 use App\Libraries\Master\ClientService;
 use App\Libraries\Receivables\InvoiceStatusQueries;
 use App\Libraries\Reporting\LimitAlerts;
+use App\Libraries\Reporting\LimitStatus;
 use App\Libraries\Reporting\TurnoverCalculator;
 use App\Libraries\Work\DashboardFilter;
 use App\Libraries\Work\LastClient;
 use App\Libraries\Work\TaskQueries;
 use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\ResponseInterface;
+use Throwable;
 
 final class Home extends BaseController
 {
@@ -65,7 +67,25 @@ final class Home extends BaseController
             'data'    => (new TaskQueries())->dashboard($filter->month, $filter->clientId),
             'overdue' => (new InvoiceStatusQueries())->overdue(service('clock')->today(), $filter->clientId, 10),
             // Limity su za subjekt, nezavisle od filtra klienta (D-11).
-            'limits' => LimitAlerts::fromEntities((new TurnoverCalculator())->forActiveEntities(service('clock')->today())),
+            'limits' => $this->limitAlerts(),
         ];
+    }
+
+    /**
+     * WR-04: vedlajsi blok limitov nesmie zhodit prehlad; chyba vypoctu sa zaloguje a zobrazi ako jeden riadok.
+     *
+     * @return list<array{kind: 'config'|'crit'|'failed'|'info'|'warn', entityName: string, status: ?LimitStatus, refYear: int, usedYear: ?int, country: string}>
+     */
+    private function limitAlerts(): array
+    {
+        $today = service('clock')->today();
+
+        try {
+            return LimitAlerts::fromEntities((new TurnoverCalculator())->forActiveEntities($today));
+        } catch (Throwable $e) {
+            log_message('error', 'Dashboard limits failed: {class}: {message}', ['class' => $e::class, 'message' => $e->getMessage()]);
+
+            return [LimitAlerts::failed((int) substr($today, 0, 4))];
+        }
     }
 }
