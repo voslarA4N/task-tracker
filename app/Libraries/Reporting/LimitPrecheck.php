@@ -60,6 +60,7 @@ final class LimitPrecheck
                 continue;
             }
 
+            // WR-02: alreadyOver ("Limit uz je prekroceny") iba ked obrat pred fakturou dosiahol 100 % limitu, nie najnizsi prah.
             $level  = LimitMath::level($after, $status->limit, $status->thresholds);
             $crit   = $crit || $level === 'crit';
             $rows[] = [
@@ -73,7 +74,7 @@ final class LimitPrecheck
                 'limit'         => $status->limit,
                 'currency'      => $status->currency,
                 'level'         => $level,
-                'alreadyOver'   => LimitMath::reached($status->total, $status->limit, min($status->thresholds)),
+                'alreadyOver'   => LimitMath::reached($status->total, $status->limit, 100),
             ];
         }
 

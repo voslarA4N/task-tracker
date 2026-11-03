@@ -118,9 +118,20 @@ final class InvoicingLimitWarningTest extends AuthTestCase
     {
         $s = $this->setup1000();
         $this->skLimit();
-        $this->turnoverInvoice($s['entity'], $s['client'], '2026-06-01', '45000.00');
+        $this->turnoverInvoice($s['entity'], $s['client'], '2026-06-01', '50500.00');
 
         $this->assertStringContainsString('Limit už je prekročený', $this->preview($s));
+    }
+
+    public function testWarningThresholdIsNotReportedAsExceeded(): void
+    {
+        $s = $this->setup1000();
+        $this->skLimit();
+        $this->turnoverInvoice($s['entity'], $s['client'], '2026-06-01', '45000.00');
+
+        $html = $this->preview($s);
+        $this->assertStringContainsString('prah limitu', $html);
+        $this->assertStringNotContainsString('Limit už je prekročený', $html);
     }
 
     public function testNoWarningBelowThreshold(): void
