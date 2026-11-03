@@ -65,6 +65,8 @@ final class PeriodResolverTest extends CIUnitTestCase
         $this->assertSame('111780.82', PeriodResolver::proRataLimit('240000.00', 170));
         $this->assertSame('240000.00', PeriodResolver::proRataLimit('240000.00', 365));
         $this->assertSame('136.99', PeriodResolver::proRataLimit('50000.00', 1));
+        $this->assertSame('0.01', PeriodResolver::proRataLimit('0.01', 100));
+        $this->assertSame('0.01', PeriodResolver::proRataLimit('1.00', 1));
     }
 
     #[DataProvider('provideInvalidInput')]

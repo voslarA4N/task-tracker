@@ -62,11 +62,18 @@ final class PeriodResolver
             throw new InvalidArgumentException('Pro-rata days out of range: ' . $days);
         }
 
-        return bcround(
+        $limit = bcround(
             bcdiv(bcmul($amount, (string) $days, 2), (string) self::PRO_RATA_BASE_DAYS, 6),
             2,
             RoundingMode::HalfAwayFromZero,
         );
+
+        // WR-03: kladny limit sa zaokruhlenim nesmie stat 0.00 (delenie nulou v percent/ratio).
+        if (bccomp($amount, '0', 2) > 0 && bccomp($limit, '0.01', 2) < 0) {
+            return '0.01';
+        }
+
+        return $limit;
     }
 
     private static function parse(string $iso): DateTimeImmutable
