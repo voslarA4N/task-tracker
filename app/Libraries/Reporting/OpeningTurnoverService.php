@@ -156,11 +156,23 @@ final class OpeningTurnoverService
                     return 'noop';
                 }
 
-                $this->db->query(
-                    'INSERT INTO entity_opening_turnover (entity_id, year, amount, note, revision, created_at, updated_at) VALUES (:e:, :y:, :a:, :n:, 1, :now:, :now:)',
+                // WR-06: formular nacital existujuci riadok, ktory medzitym niekto zmazal: nevytvarat ho potichu nanovo.
+                if ($revision !== '' || $openingId !== '') {
+                    throw new LimitRejected('stale');
+                }
+
+                // WR-06: FOR UPDATE nezamkne neexistujuci riadok; subezne prve ulozenie skonci ako stale, nie 500.
+                $inserted = $this->db->query(
+                    'INSERT INTO entity_opening_turnover (entity_id, year, amount, note, revision, created_at, updated_at) VALUES (:e:, :y:, :a:, :n:, 1, :now:, :now:)
+                     ON CONFLICT (entity_id, year) DO NOTHING RETURNING id',
                     ['e' => $entityId, 'y' => $year, 'a' => $amount, 'n' => $note, 'now' => $now],
-                );
-                $id = (int) $this->db->query('SELECT currval(pg_get_serial_sequence(\'entity_opening_turnover\', \'id\')) AS id')->getRow()->id;
+                )->getRowArray();
+
+                if ($inserted === null) {
+                    throw new LimitRejected('stale');
+                }
+
+                $id = (int) $inserted['id'];
                 $this->audit->record('entity_opening_turnover', $id, 'create', null, ['entity_id' => $entityId, 'year' => $year, 'amount' => $amount, 'note' => $note, 'revision' => 1]);
 
                 return 'created';

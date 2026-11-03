@@ -126,6 +126,23 @@ final class OpeningTurnoverServiceTest extends PgTestCase
         $this->assertSame('1000.00', $this->service()->find($this->sk, 2025)['amount']);
     }
 
+    public function testDeletedRowIsNotSilentlyRecreated(): void
+    {
+        $this->service()->save($this->input());
+        $id = (string) $this->service()->find($this->sk, 2026)['id'];
+        $this->owner()->query('DELETE FROM entity_opening_turnover WHERE id = :id:', ['id' => (int) $id]);
+
+        try {
+            $this->service()->save($this->input(['amount' => '4000', 'revision' => '1', 'opening_id' => $id]));
+            $this->fail('stale expected');
+        } catch (LimitRejected $e) {
+            $this->assertSame('stale', $e->reason);
+        }
+
+        $this->assertNull($this->service()->find($this->sk, 2026));
+        $this->assertSame('noop', $this->service()->save($this->input(['amount' => '', 'revision' => '1', 'opening_id' => $id])));
+    }
+
     public function testEmptyWithoutRecordIsNoop(): void
     {
         $this->assertSame('noop', $this->service()->save($this->input(['amount' => ''])));
