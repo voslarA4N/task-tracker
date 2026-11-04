@@ -14,11 +14,10 @@ use InvalidArgumentException;
 final readonly class ReportPeriod
 {
     public const MAX_RANGE_MONTHS = 12;
-
-    private const DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    private const DAYS            = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
     /**
-     * @param 'month'|'year'|'range' $kind
+     * @param 'month'|'range'|'year' $kind
      */
     private function __construct(
         public string $kind,
