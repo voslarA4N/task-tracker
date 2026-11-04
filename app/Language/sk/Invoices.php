@@ -114,7 +114,7 @@ return [
     'regenReport'              => 'Pregenerovať výkaz',
     'regenInvoice'             => 'Pregenerovať faktúru',
     'regenInvoiceUntil'        => 'Faktúru je možné pregenerovať do {0}.',
-    'regenSameTemplate'        => 'Posledná verzia už má aktuálnu šablónu.',
+    'regenSameTemplate'        => '{0}: posledná verzia už má aktuálnu šablónu.',
     'regenDone'                => '{0}: vytvorená verzia {1} (šablóna {2}).',
     'regenErrorWindow'         => 'Lehota na pregenerovanie PDF faktúry uplynula.',
     'regenErrorNotRegenerable' => 'Tento doklad sa nedá pregenerovať.',

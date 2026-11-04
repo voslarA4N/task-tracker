@@ -114,7 +114,7 @@ return [
     'regenReport'              => 'Regenerate report',
     'regenInvoice'             => 'Regenerate invoice',
     'regenInvoiceUntil'        => 'The invoice can be regenerated until {0}.',
-    'regenSameTemplate'        => 'The latest version already uses the current template.',
+    'regenSameTemplate'        => '{0}: the latest version already uses the current template.',
     'regenDone'                => '{0}: version {1} created (template {2}).',
     'regenErrorWindow'         => 'The window for regenerating the invoice PDF has passed.',
     'regenErrorNotRegenerable' => 'This document cannot be regenerated.',

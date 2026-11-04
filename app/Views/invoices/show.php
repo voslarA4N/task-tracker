@@ -178,8 +178,11 @@ $history = (array) ($invoice['history'] ?? []);
             <?php if (! empty($invoice['can_regenerate_invoice']) && ($dates['regen_invoice_deadline'] ?? '') !== '') : ?>
                 <p class="small text-body-secondary mt-2 mb-0"><?= esc(lang('Invoices.regenInvoiceUntil', [$dates['regen_invoice_deadline']])) ?></p>
             <?php endif ?>
-            <?php if ((! empty($invoice['can_regenerate_report']) && ! empty($invoice['report_is_current'])) || (! empty($invoice['can_regenerate_invoice']) && ! empty($invoice['invoice_is_current']))) : ?>
-                <p class="small text-body-secondary mt-1 mb-0"><?= esc(lang('Invoices.regenSameTemplate')) ?></p>
+            <?php if (! empty($invoice['can_regenerate_report']) && ! empty($invoice['report_is_current'])) : ?>
+                <p class="small text-body-secondary mt-1 mb-0"><?= esc(lang('Invoices.regenSameTemplate', [lang('Invoices.versionsKindReport')])) ?></p>
+            <?php endif ?>
+            <?php if (! empty($invoice['can_regenerate_invoice']) && ! empty($invoice['invoice_is_current'])) : ?>
+                <p class="small text-body-secondary mt-1 mb-0"><?= esc(lang('Invoices.regenSameTemplate', [lang($isCreditNote ? 'Invoices.versionsKindCreditNote' : 'Invoices.versionsKindInvoice')])) ?></p>
             <?php endif ?>
             <?php if (is_array($doc)) : ?>
                 <p class="small text-body-secondary mt-2 mb-0" title="<?= esc((string) $doc['sha256'], 'attr') ?>"><?= esc(lang('Invoices.shaHint', [substr((string) $doc['sha256'], 0, 16)])) ?></p>

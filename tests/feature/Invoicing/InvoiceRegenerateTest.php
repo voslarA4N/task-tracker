@@ -382,10 +382,12 @@ final class InvoiceRegenerateTest extends AuthTestCase
         $leg  = $this->insertLegacyRep1Invoice($s['client'], $s['entity'], '2026-10', $s['parts']);
         $html = $this->detail($leg);
         $this->assertStringContainsString('/regenerate/report"', $html);
-        $this->assertStringNotContainsString(lang('Invoices.regenSameTemplate'), $html);
+        $this->assertStringNotContainsString(lang('Invoices.regenSameTemplate', [lang('Invoices.versionsKindReport')]), $html);
 
-        $id = $this->issued();
-        $this->assertStringContainsString(lang('Invoices.regenSameTemplate'), $this->detail($id));
+        $id   = $this->issued();
+        $html = $this->detail($id);
+        $this->assertStringContainsString(lang('Invoices.regenSameTemplate', [lang('Invoices.versionsKindReport')]), $html);
+        $this->assertStringContainsString(lang('Invoices.regenSameTemplate', [lang('Invoices.versionsKindInvoice')]), $html);
     }
 
     private function numberOf(int $id): string
