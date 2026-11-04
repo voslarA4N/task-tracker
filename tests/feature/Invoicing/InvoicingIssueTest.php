@@ -117,6 +117,28 @@ final class InvoicingIssueTest extends AuthTestCase
         $this->assertSame('Faktúra 202610001 bola vystavená.', session()->getFlashdata('app_notice')['message'] ?? '');
     }
 
+    public function testMissingDocumentSettingsShowsMessageAndRollsBack(): void
+    {
+        $this->login();
+        $s    = $this->issueSetup();
+        $form = $this->previewForm($s['client']);
+        $this->owner()->query('DELETE FROM document_settings WHERE id = 1');
+
+        try {
+            $result = $this->submit($form);
+        } finally {
+            $this->owner()->query('INSERT INTO document_settings (id, regen_invoice_hours, revision, updated_at) VALUES (1, 72, 1, now())');
+        }
+
+        $result->assertStatus(500);
+        $this->assertStringContainsString('chýba nastavenie dokladov', $this->body($result));
+        $this->assertSame(0, $this->invoiceCount());
+
+        // transakcia sa vratila: cislo ostalo volne
+        $this->submit($form)->assertStatus(200);
+        $this->assertSame(1, (int) $this->owner()->query("SELECT count(*) AS n FROM invoices WHERE number = '202610001'")->getRow()->n);
+    }
+
     public function testSameRequestKeyRedirectsToFirstInvoice(): void
     {
         $this->login();

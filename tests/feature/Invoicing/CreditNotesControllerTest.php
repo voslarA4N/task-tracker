@@ -338,6 +338,27 @@ final class CreditNotesControllerTest extends AuthTestCase
         $this->assertSame(1, $this->creditNoteCount());
     }
 
+    public function testMissingDocumentSettingsShowsMessageAndRollsBack(): void
+    {
+        $this->login();
+        $id   = $this->issuedInvoice();
+        $form = $this->confirmedForm($id);
+        $this->owner()->query('DELETE FROM document_settings WHERE id = 1');
+
+        try {
+            $result = $this->submit('/invoices/' . $id . '/credit-note', $form);
+        } finally {
+            $this->owner()->query('INSERT INTO document_settings (id, regen_invoice_hours, revision, updated_at) VALUES (1, 72, 1, now())');
+        }
+
+        $result->assertStatus(500);
+        $this->assertStringContainsString('chýba nastavenie dokladov', $this->body($result));
+        $this->assertSame(0, $this->creditNoteCount());
+
+        $this->submit('/invoices/' . $id . '/credit-note', $form)->assertStatus(200);
+        $this->assertSame(1, $this->creditNoteCount());
+    }
+
     public function testIssueWithoutHtmxRedirects(): void
     {
         $this->login();

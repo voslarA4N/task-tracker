@@ -57,6 +57,7 @@ return [
     'errorStale'              => 'Údaje sa medzitým zmenili. Skontrolujte náhľad a vystavte dobropis znova.',
     'errorSum'                => 'Súčet dobropisu a pôvodnej faktúry nie je nula. Dobropis nie je možné vystaviť. Kontaktujte správcu.',
     'errorFailed'             => 'Dobropis sa nepodarilo vystaviť. Nič sa neuložilo, skúste to znova.',
+    'errorSettingsMissing'    => 'Dobropis sa nepodarilo vystaviť, chýba nastavenie dokladov. Nič sa neuložilo. Kontaktujte správcu.',
     'errorBackdate'           => 'Potvrďte vystavenie so spätným dátumom.',
     'errorSeries'             => 'Rad dobropisov nie je správne nastavený alebo je vyčerpaný. Skontrolujte Nastavenia, Subjekty.',
     'errorNumber'             => 'Číslo dobropisu sa nepodarilo prideliť. Skúste to znova.',

@@ -57,6 +57,7 @@ return [
     'errorStale'              => 'The data changed in the meantime. Check the preview and issue the credit note again.',
     'errorSum'                => 'The sum of the credit note and the original invoice is not zero. The credit note cannot be issued. Contact the administrator.',
     'errorFailed'             => 'The credit note could not be issued. Nothing was saved, try again.',
+    'errorSettingsMissing'    => 'The credit note could not be issued because the document settings are missing. Nothing was saved. Contact the administrator.',
     'errorBackdate'           => 'Confirm issuing with a back date.',
     'errorSeries'             => 'The credit note series is not set up correctly or is exhausted. Check Settings, Entities.',
     'errorNumber'             => 'The credit note number could not be assigned. Try again.',
