@@ -43,7 +43,7 @@ use App\Libraries\Reporting\ReportResult;
             <?php endif ?>
         </div>
 
-        <?= view('reports/_export', ['csvUrl' => '/reports/year.csv?' . http_build_query(['entity' => $entityId, 'year' => $year])]) ?>
+        <?= view('reports/_export', ['csvUrl' => '/reports/year.csv?' . http_build_query(['entity' => $entityId, 'year' => $year]), 'xlsxUrl' => '/reports/year.xlsx?' . http_build_query(['entity' => $entityId, 'year' => $year])]) ?>
 
         <div aria-live="polite">
             <section class="app-card mb-3">

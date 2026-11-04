@@ -8,6 +8,7 @@ use App\Libraries\Export\CsvWriter;
 use App\Libraries\Export\ExportFilename;
 use App\Libraries\Export\ExportResponse;
 use App\Libraries\Export\ReportTable;
+use App\Libraries\Export\XlsxWriter;
 use App\Libraries\Master\EntityDirectory;
 use App\Libraries\Reporting\ReportCalculator;
 use App\Libraries\Reporting\ReportPeriod;
@@ -147,18 +148,7 @@ final class Reports extends BaseController
      */
     public function monthCsv(): ResponseInterface
     {
-        $ctx    = $this->context();
-        $entity = $ctx['entity'];
-        $period = BillingMonth::parse((string) $this->request->getGet('period'));
-
-        if ($entity === null || $period === null) {
-            throw PageNotFoundException::forPageNotFound();
-        }
-
-        $report = ReportPeriod::month($period);
-        $result = (new ReportCalculator())->forPeriod($entity['id'], $report);
-
-        return $this->csv(CsvWriter::render(ReportTable::month($result, $this->request->getLocale())), $report->key, $entity['name_internal']);
+        return $this->export('month', 'csv');
     }
 
     /**
@@ -166,25 +156,68 @@ final class Reports extends BaseController
      */
     public function yearCsv(): ResponseInterface
     {
+        return $this->export('year', 'csv');
+    }
+
+    /**
+     * XLSX mesacneho prehladu (D-06), rovnaka tabulka ako CSV.
+     */
+    public function monthXlsx(): ResponseInterface
+    {
+        return $this->export('month', 'xlsx');
+    }
+
+    /**
+     * XLSX rocneho prehladu.
+     */
+    public function yearXlsx(): ResponseInterface
+    {
+        return $this->export('year', 'xlsx');
+    }
+
+    /**
+     * Spolocna priprava tabulky pre CSV aj XLSX, aby formaty nemohli divergovat.
+     *
+     * @param 'month'|'year' $view
+     * @param 'csv'|'xlsx'   $format
+     */
+    private function export(string $view, string $format): ResponseInterface
+    {
         $ctx    = $this->context();
         $entity = $ctx['entity'];
-        $raw    = (string) $this->request->getGet('year');
 
-        if ($entity === null || preg_match('/^\d{4}$/D', $raw) !== 1 || (int) $raw < 2000 || (int) $raw > 2100) {
+        if ($entity === null) {
             throw PageNotFoundException::forPageNotFound();
         }
 
-        $report = ReportPeriod::year((int) $raw);
+        if ($view === 'month') {
+            $period = BillingMonth::parse((string) $this->request->getGet('period'));
+
+            if ($period === null) {
+                throw PageNotFoundException::forPageNotFound();
+            }
+
+            $report = ReportPeriod::month($period);
+        } else {
+            $raw = (string) $this->request->getGet('year');
+
+            if (preg_match('/^\d{4}$/D', $raw) !== 1 || (int) $raw < 2000 || (int) $raw > 2100) {
+                throw PageNotFoundException::forPageNotFound();
+            }
+
+            $report = ReportPeriod::year((int) $raw);
+        }
+
         $result = (new ReportCalculator())->forPeriod($entity['id'], $report);
+        $locale = $this->request->getLocale();
+        $table  = $view === 'month' ? ReportTable::month($result, $locale) : ReportTable::year($result, $locale);
+        $name   = ExportFilename::make(lang('Export.filePrefixReport'), [$report->key, $entity['name_internal']], $format);
 
-        return $this->csv(CsvWriter::render(ReportTable::year($result, $this->request->getLocale())), $report->key, $entity['name_internal']);
-    }
+        if ($format === 'xlsx') {
+            return ExportResponse::attachment($this->response, XlsxWriter::render($table), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $name);
+        }
 
-    private function csv(string $bytes, string $periodKey, string $entityName): ResponseInterface
-    {
-        $filename = ExportFilename::make(lang('Export.filePrefixReport'), [$periodKey, $entityName], 'csv');
-
-        return ExportResponse::attachment($this->response, $bytes, 'text/csv; charset=UTF-8', $filename);
+        return ExportResponse::attachment($this->response, CsvWriter::render($table), 'text/csv; charset=UTF-8', $name);
     }
 
     /**

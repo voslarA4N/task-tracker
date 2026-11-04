@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Integration\Reporting;
 
 use App\Libraries\Export\CsvWriter;
+use App\Libraries\Export\ExportTable;
 use App\Libraries\Export\ReportTable;
+use App\Libraries\Export\XlsxWriter;
 use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Platform\Money;
 use App\Libraries\Reporting\ReportCalculator;
@@ -21,6 +23,7 @@ use Tests\Support\MasterFixtures;
 use Tests\Support\PgTestCase;
 use Tests\Support\ReportFixtures;
 use Tests\Support\TurnoverFixtures;
+use Tests\Support\XlsxReader;
 
 /**
  * D-05, NFR-04: prehlad = sucet vystavenych faktur = obrat (TurnoverCalculator) = hodnoty v CSV.
@@ -148,5 +151,39 @@ final class ReportTotalsMatchTest extends PgTestCase
         $this->assertSame($r->invoicedTotal, self::dot($last[2]));
         $this->assertSame($r->invoicedTotal, Money::sum(...array_map(static fn (array $c): Money => Money::of(self::dot($c[2])), $months))->toDecimalString());
         $this->assertSame($r->paidTotal, Money::sum(...array_map(static fn (array $c): Money => Money::of(self::dot($c[3])), $months))->toDecimalString());
+    }
+
+    /**
+     * @return array{rows: list<list<array{type: string, value: string, style: ?string}>>}
+     */
+    private function xlsx(ExportTable $t): array
+    {
+        $rows = XlsxReader::cells(XlsxWriter::render($t));
+        array_shift($rows);
+
+        return ['rows' => $rows];
+    }
+
+    public function testMonthXlsxMatches(): void
+    {
+        $r    = $this->report(ReportPeriod::month('2026-10'));
+        $rows = $this->xlsx(ReportTable::month($r, 'sk'))['rows'];
+        $last = array_pop($rows);
+
+        $this->assertSame($r->invoicedTotal, Money::of($last[1]['value'])->toDecimalString());
+        $this->assertSame($r->paidTotal, Money::of($last[2]['value'])->toDecimalString());
+        $this->assertSame($r->invoicedTotal, Money::sum(...array_map(static fn (array $c): Money => Money::of($c[1]['value']), $rows))->toDecimalString());
+    }
+
+    public function testYearXlsxMatches(): void
+    {
+        $r      = $this->report(ReportPeriod::year(2026));
+        $rows   = $this->xlsx(ReportTable::year($r, 'sk'))['rows'];
+        $last   = array_pop($rows);
+        $months = array_slice($rows, 0, 12);
+
+        $this->assertSame($r->invoicedTotal, Money::of($last[2]['value'])->toDecimalString());
+        $this->assertSame($r->paidTotal, Money::of($last[3]['value'])->toDecimalString());
+        $this->assertSame($r->invoicedTotal, Money::sum(...array_map(static fn (array $c): Money => Money::of($c[2]['value']), $months))->toDecimalString());
     }
 }

@@ -16,6 +16,7 @@ use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
 use Tests\Support\ReportFixtures;
 use Tests\Support\TurnoverFixtures;
+use Tests\Support\XlsxReader;
 
 /**
  * CSV export prehladov (RPT-02, D-06 az D-08).
@@ -135,5 +136,48 @@ final class ExportEndpointsTest extends AuthTestCase
         $body = $this->body($this->get('/reports/month?period=2026-10'));
 
         $this->assertMatchesRegularExpression('#href="/reports/month\.csv\?[^"]*" download#', $body);
+    }
+
+    public function testMonthXlsx(): void
+    {
+        $this->seed();
+        $this->login();
+        $result = $this->get('/reports/month.xlsx?period=2026-10');
+        $result->assertStatus(200);
+        $res = $result->response();
+
+        $this->assertSame('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $res->getHeaderLine('Content-Type'));
+        $this->assertSame('attachment; filename="prehlad-2026-10-moja-firma-sk.xlsx"', $res->getHeaderLine('Content-Disposition'));
+
+        $body = $this->body($result);
+        $this->assertSame('PK', substr($body, 0, 2));
+        $this->assertStringNotContainsString('<f>', XlsxReader::sheetXml($body));
+        $cells = XlsxReader::cells($body);
+        $this->assertSame('inlineStr', $cells[1][0]['type']);
+        $this->assertSame('=1+1', $cells[1][0]['value']);
+    }
+
+    public function testYearXlsx(): void
+    {
+        $this->seed();
+        $this->login();
+        $result = $this->get('/reports/year.xlsx?year=2026');
+        $result->assertStatus(200);
+
+        $this->assertSame('attachment; filename="prehlad-2026-moja-firma-sk.xlsx"', $result->response()->getHeaderLine('Content-Disposition'));
+    }
+
+    public function testXlsxAccountantIsForbidden(): void
+    {
+        $this->seed();
+        $this->login('accountant');
+        $this->get('/reports/month.xlsx?period=2026-10')->assertStatus(403);
+    }
+
+    public function testMonthPageHasXlsxLink(): void
+    {
+        $this->seed();
+        $this->login();
+        $this->assertStringContainsString('href="/reports/month.xlsx?', $this->body($this->get('/reports/month?period=2026-10')));
     }
 }

@@ -39,7 +39,7 @@ use App\Libraries\Reporting\ReportResult;
             <?php endif ?>
         </div>
 
-        <?= view('reports/_export', ['csvUrl' => '/reports/month.csv?' . http_build_query(['entity' => $entityId, 'period' => $period])]) ?>
+        <?= view('reports/_export', ['csvUrl' => '/reports/month.csv?' . http_build_query(['entity' => $entityId, 'period' => $period]), 'xlsxUrl' => '/reports/month.xlsx?' . http_build_query(['entity' => $entityId, 'period' => $period])]) ?>
 
         <p class="small mb-2"><a href="<?= esc('/reports/year?' . http_build_query(['entity' => $entityId, 'year' => $yearKey])) ?>"><?= esc(lang('Reports.showYear', [$yearKey])) ?></a></p>
 
