@@ -572,7 +572,7 @@ final class LangKeysTest extends CIUnitTestCase
         foreach ($actual as $name => $pairs) {
             foreach ($pairs as $key => $value) {
                 $len = mb_strlen($value);
-                if ($len > 20 && $len > 1.4 * mb_strlen($sk[$name][$key] ?? '')) {
+                if ($len > 20 && $len * 10 > 14 * mb_strlen($sk[$name][$key] ?? '')) {
                     $long[] = basename($name, '.php') . '.' . $key . " ({$len})";
                 }
             }
@@ -582,7 +582,7 @@ final class LangKeysTest extends CIUnitTestCase
             fwrite(STDERR, "\n[i18n {$locale}] dlhsie ako 140 % sk: " . implode(', ', $long) . "\n");
         }
 
-        $this->assertTrue(true);
+        $this->addToAssertionCount(1);
     }
 
     /**
