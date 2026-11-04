@@ -330,6 +330,19 @@ final class InvoiceRegenerateTest extends AuthTestCase
         $this->assertStringNotContainsString('/regenerate/invoice', $html);
     }
 
+    public function testSuccessNoticeLabelsCreditNoteAndInvoice(): void
+    {
+        $id = $this->issued();
+        $cn = $this->issueCreditNote($id);
+
+        $this->postRegen('/invoices/' . $cn->id . '/regenerate/invoice')->assertStatus(302);
+        $this->assertStringStartsWith(lang('Invoices.versionsKindCreditNote') . ':', $this->notice()['message']);
+
+        unset($_SESSION['app_notice']);
+        $this->postRegen('/invoices/' . $id . '/regenerate/invoice')->assertStatus(302);
+        $this->assertStringStartsWith(lang('Invoices.versionsKindInvoice') . ':', $this->notice()['message']);
+    }
+
     public function testCreditNoteHasInvoiceFormOnly(): void
     {
         $id   = $this->issued();

@@ -204,7 +204,8 @@ final class Invoices extends BaseController
             };
         }
 
-        $label = lang($kind === 'report' ? 'Invoices.versionsKindReport' : 'Invoices.versionsKindInvoice');
+        $type  = (string) (db_connect()->query('SELECT type FROM invoices WHERE id = :id:', ['id' => $id])->getRowArray()['type'] ?? 'invoice');
+        $label = lang($kind === 'report' ? 'Invoices.versionsKindReport' : ($type === 'credit_note' ? 'Invoices.versionsKindCreditNote' : 'Invoices.versionsKindInvoice'));
 
         return $this->regenNotice($id, 'success', lang('Invoices.regenDone', [$label, $r->version, $r->templateVersion]));
     }
