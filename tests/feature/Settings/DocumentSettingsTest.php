@@ -136,6 +136,9 @@ final class DocumentSettingsTest extends AuthTestCase
         $result->assertStatus(409);
         $this->assertStringContainsString('Nastavenie medzitým zmenil niekto iný.', $this->body($result));
         $this->assertSame(24, $this->hours());
+        $this->assertMatchesRegularExpression('/name="regen_invoice_hours"[^>]*value="48"/', $this->body($result));
+        $this->assertStringContainsString('Uložená hodnota je 24 h', $this->body($result));
+        $this->assertMatchesRegularExpression('/name="revision" value="2"/', $this->body($result));
     }
 
     public function testMoreLinksToScreen(): void

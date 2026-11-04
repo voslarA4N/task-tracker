@@ -30,7 +30,7 @@ final class DocumentSettings extends BaseController
             (new DocumentSettingsService())->update($hours, $revision);
         } catch (DocumentSettingsRejected $e) {
             if ($e->reason === 'stale') {
-                return $this->response->setStatusCode(409)->setBody(view('settings/documents/index', $this->data(null, null, true, false)));
+                return $this->response->setStatusCode(409)->setBody(view('settings/documents/index', $this->data($hours, null, true, false)));
             }
 
             return $this->response->setStatusCode(422)->setBody(view('settings/documents/index', $this->data($hours, $revision, false, true)));
@@ -54,6 +54,7 @@ final class DocumentSettings extends BaseController
 
         return [
             'hours'    => $draft ?? (string) $current['regen_invoice_hours'],
+            'current'  => $current['regen_invoice_hours'],
             'revision' => $draftRevision ?? $current['revision'],
             'stale'    => $stale,
             'invalid'  => $invalid,

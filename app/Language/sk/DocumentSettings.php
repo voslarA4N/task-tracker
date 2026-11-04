@@ -12,6 +12,6 @@ return [
     'save'         => 'Uložiť',
     'saved'        => 'Nastavenia boli uložené.',
     'errorInvalid' => 'Zadajte celé číslo od 0 do 8760.',
-    'errorStale'   => 'Nastavenie medzitým zmenil niekto iný. Načítali sme aktuálnu hodnotu.',
+    'errorStale'   => 'Nastavenie medzitým zmenil niekto iný. Uložená hodnota je {0} h, vaša zadaná hodnota ostala vo formulári. Skontrolujte ju a uložte znova.',
     'back'         => 'Späť',
 ];

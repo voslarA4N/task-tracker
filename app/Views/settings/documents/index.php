@@ -1,6 +1,7 @@
 <?php
 /**
  * @var string $hours
+ * @var int    $current
  * @var int    $revision
  * @var bool   $stale
  * @var bool   $invalid
@@ -17,7 +18,7 @@
 <p class="small text-body-secondary"><?= esc(lang('DocumentSettings.intro')) ?></p>
 
 <?php if ($stale) : ?>
-    <div class="alert alert-warning" role="alert"><?= esc(lang('DocumentSettings.errorStale')) ?></div>
+    <div class="alert alert-warning" role="alert"><?= esc(lang('DocumentSettings.errorStale', [$current])) ?></div>
 <?php endif ?>
 
 <form method="post" action="/settings/documents" data-submit-once novalidate>

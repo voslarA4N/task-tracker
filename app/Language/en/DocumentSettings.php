@@ -12,6 +12,6 @@ return [
     'save'         => 'Save',
     'saved'        => 'Settings saved.',
     'errorInvalid' => 'Enter a whole number from 0 to 8760.',
-    'errorStale'   => 'Someone else changed the setting in the meantime. We loaded the current value.',
+    'errorStale'   => 'Someone else changed the setting in the meantime. The saved value is {0} h; your entered value was kept in the form. Check it and save again.',
     'back'         => 'Back',
 ];
