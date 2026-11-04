@@ -79,6 +79,7 @@ return [
     'errorBackdate'          => 'Confirm issuing with a back date.',
     'errorSequence'          => 'The invoice series with format {0} is exhausted. Change the series format in Settings, Entities.',
     'errorFailed'            => 'The invoice could not be issued. Nothing was saved and the number stays free. Try again.',
+    'errorSettingsMissing'   => 'The invoice could not be issued because the document settings are missing. Nothing was saved and the number stays free. Contact the administrator.',
     'confirmTitle'           => 'Issue invoice for {0}?',
     'confirmHint'            => 'After issuing, the invoice and its PDF cannot be changed. The number is assigned on issue.',
     'confirmItems'           => '{0} items',

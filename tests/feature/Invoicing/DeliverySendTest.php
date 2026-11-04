@@ -14,6 +14,7 @@ use Tests\Support\DeliveryFixtures;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
+use Tests\Support\RegenerateFixtures;
 
 /**
  * @internal
@@ -25,6 +26,7 @@ final class DeliverySendTest extends AuthTestCase
     use InvoiceFixtures;
     use IssueFixtures;
     use MasterFixtures;
+    use RegenerateFixtures;
 
     protected function setUp(): void
     {
@@ -62,7 +64,7 @@ final class DeliverySendTest extends AuthTestCase
     }
 
     /**
-     * @param array<string, string> $data
+     * @param array<string, array<string, string>|string> $data
      */
     private function submit(int $id, array $data, bool $csrf = true, bool $htmx = true): TestResponse
     {
@@ -73,11 +75,11 @@ final class DeliverySendTest extends AuthTestCase
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, array<string, string>|string>
      */
     private function valid(string $key, string $to = 'fakturacia@all4net.example'): array
     {
-        return ['to' => $to, 'cc' => '', 'subject' => 'Faktura 202610001', 'body' => "Dobry den,\n\nv prilohe faktura.", 'request_key' => $key];
+        return ['to' => $to, 'cc' => '', 'subject' => 'Faktura 202610001', 'body' => "Dobry den,\n\nv prilohe faktura.", 'request_key' => $key, 'attachment_versions' => ['invoice' => '1', 'report' => '1']];
     }
 
     private function externalInvoice(): int
@@ -139,6 +141,82 @@ final class DeliverySendTest extends AuthTestCase
         $this->assertStringEndsWith('/invoices/' . $inv['id'], $result->response()->getHeaderLine('Location'));
         $this->assertSame(1, $this->sendCount());
         $this->assertStringContainsString('testovacie prostredie', session()->getFlashdata('app_notice')['message'] ?? '');
+    }
+
+    public function testFormCarriesConfirmedAttachmentVersions(): void
+    {
+        $this->login();
+        $inv = $this->issuedInvoice();
+        $this->regenerator()->regenerate($inv['id'], 'report', 1);
+
+        $html = $this->body($this->withHeaders(['HX-Request' => 'true'])->call('get', '/invoices/' . $inv['id'] . '/send'));
+
+        $this->assertStringContainsString('name="attachment_versions[invoice]" value="1"', $html);
+        $this->assertStringContainsString('name="attachment_versions[report]" value="2"', $html);
+    }
+
+    public function testStaleConfirmedVersionIsRejectedAndFormRefreshed(): void
+    {
+        $this->login();
+        $inv = $this->issuedInvoice();
+        $this->regenerator()->regenerate($inv['id'], 'report', 1);
+
+        $result = $this->submit($inv['id'], $this->valid('55555555-5555-4555-8555-555555555555'));
+
+        $result->assertStatus(409);
+        $html = $this->body($result);
+        $this->assertStringContainsString('pregenerovaný', $html);
+        $this->assertStringContainsString('name="attachment_versions[report]" value="2"', $html);
+        $this->assertSame(0, $this->sendCount());
+
+        $data                        = $this->valid('55555555-5555-4555-8555-555555555555');
+        $data['attachment_versions'] = ['invoice' => '1', 'report' => '2'];
+        $this->submit($inv['id'], $data)->assertStatus(200);
+        $this->assertSame(1, $this->sendCount());
+    }
+
+    public function testStaleVersionsWithBadAddressNeverSilentlyReconfirm(): void
+    {
+        $this->login();
+        $inv = $this->issuedInvoice();
+        $this->regenerator()->regenerate($inv['id'], 'report', 1);
+
+        // WR-01: stale confirmation + typo: no 422 re-render that would adopt v2 without the alert
+        $result = $this->submit($inv['id'], $this->valid('77777777-7777-4777-8777-777777777777', 'not-an-address'));
+        $result->assertStatus(409);
+        $this->assertStringContainsString('pregenerovaný', $this->body($result));
+
+        // the stale form is posted again with a valid address: still rejected, nothing sent
+        $this->submit($inv['id'], $this->valid('77777777-7777-4777-8777-777777777777'))->assertStatus(409);
+        $this->assertSame(0, $this->sendCount());
+    }
+
+    public function testValidationErrorKeepsConfirmedVersionsThenSends(): void
+    {
+        $this->login();
+        $inv = $this->issuedInvoice();
+
+        $result = $this->submit($inv['id'], $this->valid('88888888-8888-4888-8888-888888888888', 'not-an-address'));
+        $result->assertStatus(422);
+        $this->assertStringContainsString('name="attachment_versions[report]" value="1"', $this->body($result));
+
+        $this->submit($inv['id'], $this->valid('88888888-8888-4888-8888-888888888888'))->assertStatus(200);
+        $this->assertSame(1, $this->sendCount());
+    }
+
+    public function testPostWithoutConfirmedVersionsIsRejected(): void
+    {
+        $this->login();
+        $inv  = $this->issuedInvoice();
+        $data = $this->valid('66666666-6666-4666-8666-666666666666');
+        unset($data['attachment_versions']);
+
+        $result = $this->submit($inv['id'], $data);
+        $result->assertStatus(409);
+        $html = $this->body($result);
+        $this->assertStringContainsString('zastaraný', $html);
+        $this->assertStringNotContainsString('pregenerovaný', $html);
+        $this->assertSame(0, $this->sendCount());
     }
 
     public function testHtmxPostReturnsLocationAndTrigger(): void

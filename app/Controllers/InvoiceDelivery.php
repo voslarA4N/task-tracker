@@ -269,6 +269,25 @@ final class InvoiceDelivery extends BaseController
             return $this->panel('invoices/_delivery_form', 422, $draft, array_merge($values, ['request_key' => Uuid::v4()]), [], lang('Deliveries.errorRequest'), $kind);
         }
 
+        // WR-01: potvrdene verzie priloh sa porovnaju s aktualnymi PRED validaciou aj odoslanim; inak by 422/502 prekreslenie
+        // potichu potvrdilo novsie verzie, ktore vlastnik nevidel
+        $confirmed = $this->confirmedVersions();
+        $latest    = [];
+
+        foreach ((array) $draft['attachments'] as $a) {
+            $latest[(string) $a['kind']] = (int) $a['version'];
+        }
+
+        ksort($latest);
+        ksort($confirmed);
+
+        if ($confirmed !== $latest) {
+            // IN-04: formular otvoreny pred nasadenim neposiela ziadne verzie, to nie je pregenerovanie
+            $message = $confirmed === [] ? lang('Deliveries.errorFormOutdated') : lang('Deliveries.errorAttachChanged');
+
+            return $this->panel('invoices/_delivery_form', 409, $draft, $values, [], $message, $kind);
+        }
+
         $command = new SendCommand(
             invoiceId: $id,
             kind: $kind,
@@ -278,6 +297,7 @@ final class InvoiceDelivery extends BaseController
             body: str_replace("\r\n", "\n", $values['body']),
             requestKey: $values['request_key'],
             userId: auth()->id() === null ? null : (int) auth()->id(),
+            confirmedVersions: $this->confirmedVersions(),
         );
 
         try {
@@ -315,6 +335,31 @@ final class InvoiceDelivery extends BaseController
             'request_key' => Uuid::v4(),
             'return_to'   => '/invoices/' . (int) $draft['invoice']['id'],
         ], [], lang('Deliveries.errorNoBalance'), $kind);
+    }
+
+    /**
+     * Verzie priloh potvrdene vo formulari (WR-02); chybajuce alebo neplatne polozky odoslanie odmietne.
+     *
+     * @return array<string, int>
+     */
+    private function confirmedVersions(): array
+    {
+        $raw = $this->request->getPost('attachment_versions');
+        $out = [];
+
+        if (! is_array($raw)) {
+            return $out;
+        }
+
+        foreach (['invoice', 'report'] as $kind) {
+            $v = $raw[$kind] ?? null;
+
+            if (is_string($v) && preg_match('/^[1-9]\d{0,8}$/D', $v) === 1) {
+                $out[$kind] = (int) $v;
+            }
+        }
+
+        return $out;
     }
 
     private function returnTo(mixed $raw, int $id): string
@@ -366,6 +411,13 @@ final class InvoiceDelivery extends BaseController
             case 'attachments_failed':
                 $status = 502;
                 $alert  = lang('Deliveries.errorAttachments');
+                break;
+
+            case 'attachments_changed':
+                // pregenerovanie dokladu medzi nacitanim konceptu a odoslanim; koncept z POST sa znovu nenacitava (IN-01),
+                // pripadny novy rozdiel zachyti dalsie odoslanie
+                $status = 409;
+                $alert  = lang('Deliveries.errorAttachChanged');
                 break;
 
             case 'record_failed':

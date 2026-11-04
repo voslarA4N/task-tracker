@@ -246,6 +246,7 @@ final class InvoiceIssuer
 
         // 10. faktura so strukturovanymi stlpcami zo snapshotu
         $invoiceId = $this->insertInvoice($cmd, $snapshot, $client, $series, $created);
+        (new InvoiceRegenWindows($this->db))->freeze($invoiceId, $created);
 
         // 11. riadky a dokument
         foreach ($snapshot['lines'] as $line) {

@@ -87,6 +87,7 @@ $describe = static fn (string $name): string => isset($errors[$name]) ? ' aria-d
     <ul class="dl-attach list-unstyled mb-3">
         <?php foreach ((array) $draft['attachments'] as $a) : ?>
             <li>
+                <input type="hidden" name="attachment_versions[<?= esc((string) $a['kind'], 'attr') ?>]" value="<?= (int) $a['version'] ?>">
                 <span class="dl-attach-name"><?= esc((string) $a['name']) ?></span>
                 <span class="small text-body-secondary"><?= esc(lang('Deliveries.attachMeta', [max(1, intdiv((int) $a['size'] + 1023, 1024)), substr((string) $a['sha256'], 0, 12)])) ?></span>
             </li>

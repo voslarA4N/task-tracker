@@ -8,6 +8,7 @@
     <a class="list-group-item list-group-item-action more-item" href="/settings/clients"><?= esc(lang('Clients.navTitle')) ?></a>
     <a class="list-group-item list-group-item-action more-item" href="/settings/legal-texts"><?= esc(lang('LegalTexts.navTitle')) ?></a>
     <a class="list-group-item list-group-item-action more-item" href="/settings/fx"><?= esc(lang('FxSettings.navTitle')) ?></a>
+    <a class="list-group-item list-group-item-action more-item" href="/settings/documents"><?= esc(lang('DocumentSettings.navTitle')) ?></a>
     <a class="list-group-item list-group-item-action more-item" href="/settings/limits"><?= esc(lang('Limits.navTitle')) ?></a>
     <a class="list-group-item list-group-item-action more-item" href="/settings/audit"><?= esc(lang('AuditLog.navTitle')) ?><span class="d-block small text-body-secondary"><?= esc(lang('AuditLog.navHint')) ?></span></a>
     <a class="list-group-item list-group-item-action more-item" href="/settings/users"><?= esc(lang('Users.navTitle')) ?><span class="d-block small text-body-secondary"><?= esc(lang('Users.navHint')) ?></span></a>

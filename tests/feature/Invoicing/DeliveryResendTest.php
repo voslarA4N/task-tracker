@@ -55,7 +55,7 @@ final class DeliveryResendTest extends AuthTestCase
     }
 
     /**
-     * @param array<string, string> $data
+     * @param array<string, array<string, string>|string> $data
      */
     private function postForm(string $path, array $data, bool $csrf = true): TestResponse
     {
@@ -65,11 +65,11 @@ final class DeliveryResendTest extends AuthTestCase
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, array<string, string>|string>
      */
     private function valid(string $key, string $to): array
     {
-        return ['to' => $to, 'cc' => '', 'subject' => 'Faktura 202610001', 'body' => 'Dobry den', 'request_key' => $key];
+        return ['to' => $to, 'cc' => '', 'subject' => 'Faktura 202610001', 'body' => 'Dobry den', 'request_key' => $key, 'attachment_versions' => ['invoice' => '1', 'report' => '1']];
     }
 
     public function testResendSheetRenders(): void

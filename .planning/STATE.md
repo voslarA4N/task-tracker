@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 11-11-PLAN.md
-last_updated: "2026-11-04T09:50:59.388Z"
+stopped_at: Completed 11.1-05-PLAN.md (human-check pending)
+last_updated: "2026-11-04T17:00:58.409Z"
 last_activity: 2026-11-04
 progress:
-  total_phases: 12
-  completed_phases: 11
-  total_plans: 125
-  completed_plans: 125
+  total_phases: 13
+  completed_phases: 12
+  total_plans: 130
+  completed_plans: 130
   percent: 92
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 11 — preh-ady-exporty-a-audit
+**Current focus:** Phase 11.1 — pregenerovanie-dokladov-z-k-pie-dajov
 
 ## Current Position
 
-Phase: 11 (preh-ady-exporty-a-audit) — EXECUTING
-Plan: 11 of 11
+Phase: 12
+Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-11-04
 
@@ -36,7 +36,7 @@ Progress: [░░░░░░░░░░] 0%
 
 **Velocity:**
 
-- Total plans completed: 104
+- Total plans completed: 109
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 | 08 | 10 | - | - |
 | 9 | 11 | - | - |
 | 10 | 8 | - | - |
+| 11.1 | 5 | - | - |
 
 **Recent Trend:**
 
@@ -108,6 +109,9 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 11 P07 | 30min | 2 tasks | 40 files |
 | Phase 11 P09 | 25min | 3 tasks | 15 files |
 | Phase 11 P10 | 40min | 2 tasks | 16 files |
+| Phase 11.1 P01 | 25min | 3 tasks | 9 files |
+| Phase 11.1 P04 | 30min | 3 tasks | 10 files |
+| Phase 11.1 P05 | 40min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -150,6 +154,14 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-02: thresholds via array_to_string/string_to_array; fallback year nearest lower else higher; is_seed + invoices_turnover_idx in schema; LimitMath::compareRatio keeps bcmath allow-list unchanged
 - [Phase 11]: XLSX text always StringCell, float cast allowed only in XlsxNumber.php
 - [Phase 11]: 11-10: bundle selects issued docs by turnover_date like ReportCalculator, externals excluded; PDFs only via DocumentStore::read; reject before ZIP on missing PDF/64MB
+- [Phase 11]: work statement rep-2 (title + direct portal link in one column); rep-1 kept for already issued documents
+- [Phase 11.1]: Document version gapless guard is a BEFORE INSERT trigger (no SEQUENCE); migration down() refuses rollback when versions > 1 exist
+- [Phase 11.1]: Regenerate: render outside transaction, advisory lock + expected_version under lock; template only from DocumentTemplates
+- [Phase 11.1]: Regenerate POST reads only expected_version; kind from explicit routes; button flags from RegeneratePolicy shared with server
+
+### Roadmap Evolution
+
+- Phase 11.1 inserted after Phase 11: Pregenerovanie dokladov z kópie údajov — nová verzia výkazu (kedykoľvek) a PDF faktúry (do nastaviteľných 72 h) zo snapshotu, append-only (URGENT)
 
 ### Pending Todos
 
@@ -186,6 +198,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-04T09:50:59.383Z
-Stopped at: Completed 11-11-PLAN.md
+Last session: 2026-11-04T15:42:54.664Z
+Stopped at: Completed 11.1-05-PLAN.md (human-check pending)
 Resume file: None

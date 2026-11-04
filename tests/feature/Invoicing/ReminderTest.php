@@ -73,7 +73,7 @@ final class ReminderTest extends AuthTestCase
     }
 
     /**
-     * @param array<string, string> $data
+     * @param array<string, array<string, string>|string> $data
      */
     private function postRemind(int $id, array $data, bool $csrf = true): TestResponse
     {
@@ -83,11 +83,11 @@ final class ReminderTest extends AuthTestCase
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, array<string, string>|string>
      */
     private function valid(string $returnTo = '/'): array
     {
-        return ['to' => 'fakturacia@all4net.example', 'cc' => '', 'subject' => 'Upomienka: faktura 202610001', 'body' => 'Dobry den', 'request_key' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'return_to' => $returnTo];
+        return ['to' => 'fakturacia@all4net.example', 'cc' => '', 'subject' => 'Upomienka: faktura 202610001', 'body' => 'Dobry den', 'request_key' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'return_to' => $returnTo, 'attachment_versions' => ['invoice' => '1']];
     }
 
     public function testDashboardRowOffersReminderAndSheetRenders(): void

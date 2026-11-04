@@ -37,7 +37,7 @@ final class BundleSelector
              FROM invoices f
              JOIN invoice_status_v i ON i.id = f.id
              JOIN clients c ON c.id = f.client_id
-             LEFT JOIN invoice_documents d ON d.invoice_id = f.id AND d.kind = 'invoice'
+             LEFT JOIN LATERAL (SELECT x.byte_size FROM invoice_documents x WHERE x.invoice_id = f.id AND x.kind = 'invoice' ORDER BY x.version DESC LIMIT 1) d ON true
              WHERE f.entity_id = :e: AND f.origin = 'issued'
                AND f.turnover_date >= :from: AND f.turnover_date < :until:
              ORDER BY f.turnover_date, f.number, f.id",

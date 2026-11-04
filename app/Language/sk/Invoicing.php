@@ -79,6 +79,7 @@ return [
     'errorBackdate'          => 'Potvrďte vystavenie so spätným dátumom.',
     'errorSequence'          => 'Rad faktúr s formátom {0} je vyčerpaný. Zmeňte formát radu v Nastavenia, Subjekty.',
     'errorFailed'            => 'Faktúru sa nepodarilo vystaviť. Nič sa nezapísalo a číslo ostáva voľné. Skúste to znova.',
+    'errorSettingsMissing'   => 'Faktúru sa nepodarilo vystaviť, chýba nastavenie dokladov. Nič sa nezapísalo a číslo ostáva voľné. Kontaktujte správcu.',
     'confirmTitle'           => 'Vystaviť faktúru pre {0}?',
     'confirmHint'            => 'Po vystavení sa faktúra a jej PDF nedajú zmeniť. Číslo sa pridelí pri vystavení.',
     'confirmItems'           => '{0} položiek',

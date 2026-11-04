@@ -77,7 +77,7 @@ final class Deliveries implements SeedModule
                     case 'reminder':
                         $kind  = $e['type'] === 'send' ? 'invoice' : 'reminder';
                         $draft = $mailer->draft($invoiceId, $kind);
-                        $mailer->send(new SendCommand($invoiceId, $kind, $draft['to'], $draft['cc'], $draft['subject'], $draft['body'], Uuid::v4(), $userId));
+                        $mailer->send(new SendCommand($invoiceId, $kind, $draft['to'], $draft['cc'], $draft['subject'], $draft['body'], Uuid::v4(), $userId, array_column($draft['attachments'], 'version', 'kind')));
                         break;
 
                     case 'manual':

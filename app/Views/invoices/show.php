@@ -157,10 +157,33 @@ $history = (array) ($invoice['history'] ?? []);
                 <?php else : ?>
                     <span class="small text-body-secondary"><?= esc(lang('Invoices.noReport')) ?></span>
                 <?php endif ?>
+                <?php if (! empty($invoice['can_regenerate_report']) && is_array($reportDoc)) : ?>
+                    <form method="post" action="/invoices/<?= $id ?>/regenerate/report" data-submit-once class="d-inline">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="expected_version" value="<?= (int) $reportDoc['version'] ?>">
+                        <button type="submit" class="btn btn-outline-secondary btn-touch"><?= esc(lang('Invoices.regenReport')) ?></button>
+                    </form>
+                <?php endif ?>
+                <?php if (! empty($invoice['can_regenerate_invoice']) && is_array($doc)) : ?>
+                    <form method="post" action="/invoices/<?= $id ?>/regenerate/invoice" data-submit-once class="d-inline">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="expected_version" value="<?= (int) $doc['version'] ?>">
+                        <button type="submit" class="btn btn-outline-secondary btn-touch"><?= esc(lang('Invoices.regenInvoice')) ?></button>
+                    </form>
+                <?php endif ?>
                 <?php if ($canCredit) : ?>
                     <a class="btn btn-outline-secondary btn-touch" href="/invoices/<?= $id ?>/credit-note"><?= esc(lang('Invoices.issueCreditNote')) ?></a>
                 <?php endif ?>
             </div>
+            <?php if (! empty($invoice['can_regenerate_invoice']) && ($dates['regen_invoice_deadline'] ?? '') !== '') : ?>
+                <p class="small text-body-secondary mt-2 mb-0"><?= esc(lang('Invoices.regenInvoiceUntil', [$dates['regen_invoice_deadline']])) ?></p>
+            <?php endif ?>
+            <?php if (! empty($invoice['can_regenerate_report']) && ! empty($invoice['report_is_current'])) : ?>
+                <p class="small text-body-secondary mt-1 mb-0"><?= esc(lang('Invoices.regenSameTemplate', [lang('Invoices.versionsKindReport')])) ?></p>
+            <?php endif ?>
+            <?php if (! empty($invoice['can_regenerate_invoice']) && ! empty($invoice['invoice_is_current'])) : ?>
+                <p class="small text-body-secondary mt-1 mb-0"><?= esc(lang('Invoices.regenSameTemplate', [lang($isCreditNote ? 'Invoices.versionsKindCreditNote' : 'Invoices.versionsKindInvoice')])) ?></p>
+            <?php endif ?>
             <?php if (is_array($doc)) : ?>
                 <p class="small text-body-secondary mt-2 mb-0" title="<?= esc((string) $doc['sha256'], 'attr') ?>"><?= esc(lang('Invoices.shaHint', [substr((string) $doc['sha256'], 0, 16)])) ?></p>
             <?php endif ?>
@@ -199,6 +222,7 @@ $history = (array) ($invoice['history'] ?? []);
         <?php if (is_array($payState) && ! $isCreditNote) : ?>
             <?= view('invoices/_payments', ['invoice' => $invoice, 'payState' => $payState, 'payments' => $payments, 'locale' => $locale, 'dates' => $dates, 'canPay' => $canPay, 'readOnly' => $cancelled]) ?>
         <?php endif ?>
+        <?= view('invoices/_versions', ['invoice' => $invoice, 'dates' => $dates]) ?>
         <?= view('invoices/_history', ['invoice' => $invoice, 'history' => $history, 'locale' => $locale]) ?>
 
         <section class="app-card mb-4" aria-labelledby="inv-data-title">

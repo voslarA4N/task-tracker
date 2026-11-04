@@ -26,6 +26,8 @@ return [
     'sentLogged'            => 'E-mail bol zaznamenaný (testovacie prostredie, nič sa neodoslalo).',
     'errorSmtp'             => 'E-mail sa nepodarilo odoslať. Faktúra aj PDF ostali bez zmeny. Skúste to znova.',
     'errorAttachments'      => 'Prílohy sa nepodarilo načítať. E-mail sa neodoslal. Skúste to znova; ak chyba pretrvá, obráťte sa na správcu.',
+    'errorAttachChanged'    => 'Doklad bol medzitým pregenerovaný. E-mail sa neodoslal. Skontrolujte aktuálne prílohy nižšie a odošlite znova.',
+    'errorFormOutdated'     => 'Formulár je zastaraný. E-mail sa neodoslal. Skontrolujte aktuálne prílohy nižšie a odošlite znova.',
     'errorRecord'           => 'E-mail odišiel, ale záznam sa nepodarilo uložiť. Neodosielajte ho znova; kópia je v archíve.',
     'errorSender'           => 'Adresa odosielateľa nie je povolená. Skontrolujte nastavenia odosielania v subjekte.',
     'errorAddress'          => 'Zadajte platnú e-mailovú adresu.',

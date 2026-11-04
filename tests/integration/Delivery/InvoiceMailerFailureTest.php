@@ -78,7 +78,7 @@ final class InvoiceMailerFailureTest extends PgTestCase
     {
         $inv   = $this->issuedInvoice();
         $store = new class ($this->rw()) extends DocumentStore {
-            public function read(int $invoiceId, string $kind = 'invoice'): ?StoredDocument
+            public function readVersion(int $invoiceId, string $kind, int $version): ?StoredDocument
             {
                 throw new DocumentIntegrityError('boom');
             }

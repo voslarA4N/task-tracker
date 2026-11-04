@@ -78,4 +78,42 @@ final class ClockTest extends CIUnitTestCase
         $this->expectException(InvalidArgumentException::class);
         new FrozenClock('not-a-date');
     }
+
+    public function testParseInstantAcceptsTimestamptz(): void
+    {
+        $this->assertSame('2026-11-01T10:00:00+01:00', Clock::parseInstant('2026-11-01 10:00:00+01')->format('c'));
+        $this->assertSame('2026-11-01T09:00:00+00:00', Clock::parseInstant('2026-11-01T09:00:00Z')->format('c'));
+        $this->assertSame('2026-11-01T10:00:00+01:00', Clock::parseInstant('2026-11-01 10:00:00.123456+01:00')->format('c'));
+    }
+
+    #[DataProvider('provideParseInstantRejectsNonAbsolute')]
+    public function testParseInstantRejectsNonAbsolute(string $value): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Clock::parseInstant($value);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideParseInstantRejectsNonAbsolute(): iterable
+    {
+        yield 'empty' => [''];
+
+        yield 'now' => ['now'];
+
+        yield 'relative' => ['+1 day'];
+
+        yield 'no offset' => ['2026-11-01 10:00:00'];
+
+        yield 'date only' => ['2026-11-01'];
+
+        yield 'garbage' => ['garbage'];
+
+        yield 'impossible date' => ['2026-13-45 10:00:00+01'];
+
+        yield 'calendar overflow' => ['2026-02-31 10:00:00+01'];
+
+        yield 'trailing newline' => ["2026-11-01 10:00:00+01\n"];
+    }
 }

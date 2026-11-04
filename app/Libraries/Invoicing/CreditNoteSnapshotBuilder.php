@@ -14,7 +14,7 @@ use App\Libraries\Platform\Money;
 final class CreditNoteSnapshotBuilder
 {
     public const SCHEMA           = 4;
-    public const TEMPLATE_VERSION = 'cn-1';
+    public const TEMPLATE_VERSION = DocumentTemplates::CREDIT_NOTE;
     public const LABEL_KEYS       = ['cnTitle', 'cnCorrects', 'cnOfDate', 'cnType', 'cnReason', 'cnScopeFull', 'cnTypeDataError', 'cnTypeAmountError', 'cnTypeFxError', 'cnTypeOrderCancelled', 'cnTypeOther'];
 
     /**

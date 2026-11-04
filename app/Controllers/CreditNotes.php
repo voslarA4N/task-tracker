@@ -8,6 +8,7 @@ use App\Libraries\Invoicing\CorrectionType;
 use App\Libraries\Invoicing\CreditNoteDraftService;
 use App\Libraries\Invoicing\CreditNoteInput;
 use App\Libraries\Invoicing\CreditNoteRejected;
+use App\Libraries\Invoicing\DocumentSettingsRejected;
 use App\Libraries\Invoicing\PreviewInput;
 use App\Libraries\Platform\Uuid;
 use CodeIgniter\Exceptions\PageNotFoundException;
@@ -137,6 +138,11 @@ final class CreditNotes extends BaseController
             $issued = service('creditNoteIssuer')->issue(CreditNoteInput::toCommand($values, $id, auth()->id() === null ? null : (int) auth()->id()));
         } catch (CreditNoteRejected $e) {
             return $this->rejected($e, $id, $loaded, $values);
+        } catch (DocumentSettingsRejected $e) {
+            // IN-05: chyba riadok nastavenia dokladov; transakcia sa vratila (ziadna medzera v cislovani)
+            log_message('critical', 'Credit note issue failed: document settings {reason}', ['reason' => $e->reason]);
+
+            return $this->render($id, $loaded, $values, [], 500, [['type' => 'danger', 'message' => lang('CreditNotes.errorSettingsMissing')]]);
         } catch (Throwable $e) {
             log_message('error', 'Credit note issue failed: {class}: {message}', ['class' => $e::class, 'message' => $e->getMessage()]);
 

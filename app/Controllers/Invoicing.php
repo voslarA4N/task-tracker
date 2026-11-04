@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Libraries\Fx\FxInput;
+use App\Libraries\Invoicing\DocumentSettingsRejected;
 use App\Libraries\Invoicing\Draft;
 use App\Libraries\Invoicing\InvoiceDraftService;
 use App\Libraries\Invoicing\IssueCommand;
@@ -133,6 +134,11 @@ final class Invoicing extends BaseController
             }
 
             return $this->rejected($e, $raw);
+        } catch (DocumentSettingsRejected $e) {
+            // IN-05: chyba riadok nastavenia dokladov; transakcia sa vratila (ziadna medzera v cislovani)
+            log_message('critical', 'Invoice issue failed: document settings {reason}', ['reason' => $e->reason]);
+
+            return $this->renderPreview(false, $raw, 500, [['message' => lang('Invoicing.errorSettingsMissing')]]);
         } catch (Throwable $e) {
             log_message('error', 'Invoice issue failed: {class}: {message}', ['class' => $e::class, 'message' => $e->getMessage()]);
 
