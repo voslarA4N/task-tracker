@@ -578,6 +578,32 @@ Plans:
 **UI hint**: yes
 **Poznámky**: Štandardné vzory (OpenSpout na XLSX). Test zhody súčtov (NFR-04) rozšíriť o prehľady a exporty. Plné UI pre rolu `accountant` je v2.
 
+### Phase 11.1: Pregenerovanie dokladov z kópie údajov (INSERTED)
+
+**Goal:** Vlastník z detailu faktúry pregeneruje výkaz práce (kedykoľvek) a PDF faktúry (len do nastaviteľnej lehoty od vystavenia, predvolene 72 h) aktuálnou šablónou z tej istej zmrazenej kópie údajov. Pôvodné dokumenty ostávajú v DB nezmenené, vzniká nová verzia.
+**Requirements**: TBD
+**Depends on:** Phase 11
+
+**Rozhodnutia vlastníka (2026-11-04):**
+
+- Append-only verzie: pôvodný záznam v `invoice_documents` sa nemení ani nemaže (trigger nemennosti ostáva), nová verzia vzniká ako ďalší nemenný záznam.
+- Výkaz sa dá pregenerovať vždy. PDF faktúry len do N hodín od vystavenia, N sa nastavuje v nastaveniach (predvolene 72).
+- Údaje (čísla, sumy, klient, hodiny, kurz) sa berú výhradne zo snapshotu faktúry, nikdy zo živých nastavení. Mení sa iba šablóna (napr. rep-1 → rep-2).
+- Spúšťač: dôvod motivujúci fázu je faktúra 202611001 vystavená s rep-1 pred nasadením rep-2 (nefunkčný odkaz do portálu).
+
+**Success Criteria** (what must be TRUE):
+
+1. Na detaile faktúry je akcia „Pregenerovať výkaz“, ktorá vytvorí novú verziu výkazu aktuálnou šablónou zo snapshotu; pôvodná verzia ostane uložená a dostupná v histórii verzií.
+2. Akcia „Pregenerovať faktúru“ je dostupná len do nastaviteľnej lehoty od vystavenia (predvolene 72 h); po lehote ju server odmietne, nielen UI.
+3. Detail, stiahnutie PDF, e-mail s prílohami a balík pre účtovníčku používajú najnovšiu verziu dokumentu; suma a údaje v novej verzii sa zhodujú s pôvodnou.
+4. Každé pregenerovanie sa zapíše do denníka zmien (kto, kedy, ktorý dokument, stará a nová verzia šablóny, sha256).
+5. Lehota pre faktúru sa nastavuje v nastaveniach; testy pokrývajú lehotu, nemennosť pôvodného záznamu a zhodu údajov.
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 11.1 to break down)
+
 ### Phase 12: Lokalizácia a produkcia
 
 **Goal**: Aplikácia je dostupná v SK, PL, CZ a EN a je pripravená na ostré používanie: zálohy s overenou obnovou, archív dokladov, nemožnosť mazať doklady, hardening a splnený výkonnostný cieľ na cieľovom VPS.

@@ -150,6 +150,11 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-02: thresholds via array_to_string/string_to_array; fallback year nearest lower else higher; is_seed + invoices_turnover_idx in schema; LimitMath::compareRatio keeps bcmath allow-list unchanged
 - [Phase 11]: XLSX text always StringCell, float cast allowed only in XlsxNumber.php
 - [Phase 11]: 11-10: bundle selects issued docs by turnover_date like ReportCalculator, externals excluded; PDFs only via DocumentStore::read; reject before ZIP on missing PDF/64MB
+- [Phase 11]: work statement rep-2 (title + direct portal link in one column); rep-1 kept for already issued documents
+
+### Roadmap Evolution
+
+- Phase 11.1 inserted after Phase 11: Pregenerovanie dokladov z kópie údajov — nová verzia výkazu (kedykoľvek) a PDF faktúry (do nastaviteľných 72 h) zo snapshotu, append-only (URGENT)
 
 ### Pending Todos
 
