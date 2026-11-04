@@ -111,7 +111,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 ### Prehľady, exporty a limity (E10)
 
 - [x] **DSH-01**: Dashboard (mobil, variant B): aktuálny fakturačný mesiac a klient; dlaždice *Na fakturáciu tento mesiac* a *V práci*; úlohy zoskupené podľa stavu; ukazovateľ priebehu pri čiastočnej fakturácii; tlačidlo „+“; spodná lišta Prehľad / Úlohy / Faktúry / Viac.
-- [ ] **RPT-01**: Mesačný a ročný prehľad: vyfakturované a uhradené, podľa klienta, v mene subjektu.
+- [x] **RPT-01**: Mesačný a ročný prehľad: vyfakturované a uhradené, podľa klienta, v mene subjektu.
 - [ ] **RPT-02**: Export prehľadov a zoznamu faktúr do CSV a XLSX (s ochranou pred vložením vzorcov).
 - [ ] **RPT-03** [nové, M11]: Export balíka pre účtovníčku za obdobie (ZIP: PDF dokladov a CSV zoznam).
 - [x] **LIM-01**: Tabuľka limitov je upraviteľná v nastaveniach (nie v kóde): krajina, rok platnosti, názov, suma, mena, spôsob výpočtu, prahy upozornenia. Počiatočné hodnoty: SK 50 000 € a okamžite pri 62 500 €; PL 240 000 zł, v prvom roku pomerne.
@@ -271,7 +271,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIM-04 | Phase 10 | Complete |
 | LIM-05 | Phase 10 | Complete |
 | CUR-04 | Phase 10 | Complete |
-| RPT-01 | Phase 11 | Pending |
+| RPT-01 | Phase 11 | Complete |
 | RPT-02 | Phase 11 | Pending |
 | RPT-03 | Phase 11 | Pending |
 | AUD-02 | Phase 11 | Pending |

@@ -548,7 +548,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 11-01-PLAN.md — Mesačný prehľad: ReportCalculator (vyfakturované podľa dátumu dodania, invoiced/counted), obrazovka /reports/month, menu Viac (vlna 1)
+- [x] 11-01-PLAN.md — Mesačný prehľad: ReportCalculator (vyfakturované podľa dátumu dodania, invoiced/counted), obrazovka /reports/month, menu Viac (vlna 1)
 - [ ] 11-02-PLAN.md — PC tabuľka faktúr s filtrami a triedením v jednom fragmente, CSS fázy, layout wide (vlna 1)
 - [ ] 11-03-PLAN.md — PC tabuľka úloh s triedením v jednom fragmente (vlna 1)
 
@@ -574,6 +574,7 @@ Plans:
 **Wave 6** *(blocked on Wave 5 completion)*
 
 - [ ] 11-11-PLAN.md — Export zoznamu faktúr do CSV a XLSX s aktuálnymi filtrami (vlna 6)
+
 **UI hint**: yes
 **Poznámky**: Štandardné vzory (OpenSpout na XLSX). Test zhody súčtov (NFR-04) rozšíriť o prehľady a exporty. Plné UI pre rolu `accountant` je v2.
 
@@ -610,5 +611,5 @@ Plans:
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
-| 11. Prehľady, exporty a audit | 0/11 | Planned | - |
+| 11. Prehľady, exporty a audit | 1/11 | In Progress|  |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |
