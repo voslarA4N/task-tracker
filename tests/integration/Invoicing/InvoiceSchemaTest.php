@@ -199,8 +199,8 @@ final class InvoiceSchemaTest extends PgTestCase
     {
         $this->assertPermissionDenied(fn () => $this->rw()->query('UPDATE invoice_regen_windows SET hours = 1'));
         $this->assertPermissionDenied(fn () => $this->rw()->query('DELETE FROM invoice_regen_windows'));
-        $this->assertDbError('/check constraint/i', fn () => $this->owner()->query("INSERT INTO invoice_regen_windows (invoice_id, hours, regen_until, created_at) VALUES (1, 8761, now(), now())"));
-        $this->assertDbError('/foreign key/i', fn () => $this->owner()->query("INSERT INTO invoice_regen_windows (invoice_id, hours, regen_until, created_at) VALUES (999999, 1, now(), now())"));
+        $this->assertDbError('/check constraint/i', fn () => $this->owner()->query('INSERT INTO invoice_regen_windows (invoice_id, hours, regen_until, created_at) VALUES (1, 8761, now(), now())'));
+        $this->assertDbError('/foreign key/i', fn () => $this->owner()->query('INSERT INTO invoice_regen_windows (invoice_id, hours, regen_until, created_at) VALUES (999999, 1, now(), now())'));
     }
 
     public function testDocumentSettingsDefaultsAndGuards(): void

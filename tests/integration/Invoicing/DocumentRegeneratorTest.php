@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Invoicing;
 
+use App\Libraries\Invoicing\DocumentRegenerator;
 use App\Libraries\Invoicing\DocumentStore;
 use App\Libraries\Invoicing\RegenerateRejected;
 use App\Libraries\Platform\FrozenClock;
@@ -42,6 +43,28 @@ final class DocumentRegeneratorTest extends PgTestCase
         $this->resetMasterTables();
         Services::reset();
         parent::tearDown();
+    }
+
+    public function testLockKeyIsBigintSafeAndExclusive(): void
+    {
+        $big = 5_000_000_000;
+        $a   = $this->owner();
+        $b   = $this->rw();
+
+        $a->query('BEGIN');
+        $b->query('BEGIN');
+
+        try {
+            $a->query('SELECT pg_advisory_xact_lock(' . DocumentRegenerator::LOCK_KEY_SQL . ')', ['id' => $big]);
+
+            $held = static fn ($db, int $id): bool => in_array((string) $db->query('SELECT pg_try_advisory_xact_lock(' . DocumentRegenerator::LOCK_KEY_SQL . ') AS l', ['id' => $id])->getRow()->l, ['t', '1', 'true'], true);
+
+            $this->assertFalse($held($b, $big));
+            $this->assertTrue($held($b, $big + 1));
+        } finally {
+            $a->query('ROLLBACK');
+            $b->query('ROLLBACK');
+        }
     }
 
     /**

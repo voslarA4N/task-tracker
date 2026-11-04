@@ -17,6 +17,11 @@ use Throwable;
 final class DocumentRegenerator
 {
     /**
+     * Jediny bigint kluc advisory zamku na faktúru (IN-04): hash namespace + id, bez orezania bigint id na int4.
+     */
+    public const LOCK_KEY_SQL = "hashtextextended('invoice_documents:' || CAST(:id: AS text), 0)";
+
+    /**
      * @var BaseConnection<mixed, mixed>
      */
     private readonly BaseConnection $db;
@@ -89,7 +94,7 @@ final class DocumentRegenerator
         }
 
         return Transaction::run($this->db, function () use ($invoiceId, $kind, $expectedVersion, $row, $pdf): RegeneratedDocument {
-            $this->db->query("SELECT pg_advisory_xact_lock(hashtext('invoice_documents'), :id:)", ['id' => $invoiceId]);
+            $this->db->query('SELECT pg_advisory_xact_lock(' . self::LOCK_KEY_SQL . ')', ['id' => $invoiceId]);
 
             $current = $this->store->meta($invoiceId, $kind);
 
