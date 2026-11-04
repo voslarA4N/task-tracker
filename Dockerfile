@@ -14,7 +14,7 @@ CMD ["php-fpm"]
 
 FROM base AS dev
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
-RUN apk add --no-cache git unzip poppler-utils fcgi postgresql18-client \
+RUN apk add --no-cache git unzip poppler-utils fcgi postgresql18-client restic \
     && cp "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 COPY docker/php/conf.d/opcache-dev.ini $PHP_INI_DIR/conf.d/zz-opcache.ini
 
