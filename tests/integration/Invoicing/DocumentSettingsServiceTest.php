@@ -35,7 +35,7 @@ final class DocumentSettingsServiceTest extends PgTestCase
 
     private function reset(): void
     {
-        $this->owner()->query("UPDATE document_settings SET regen_invoice_hours = 72, revision = 1 WHERE id = 1");
+        $this->owner()->query('UPDATE document_settings SET regen_invoice_hours = 72, revision = 1 WHERE id = 1');
         $this->owner()->query("DELETE FROM audit_log WHERE entity_type = 'document_settings'");
     }
 
@@ -78,17 +78,7 @@ final class DocumentSettingsServiceTest extends PgTestCase
         $this->assertSame(8760, $this->service()->invoiceWindowHours());
     }
 
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function invalidProvider(): iterable
-    {
-        foreach (['8761', '-1', '1.5', 'abc', '', ' 12', '12345'] as $v) {
-            yield 'v:' . $v => [$v];
-        }
-    }
-
-    #[DataProvider('invalidProvider')]
+    #[DataProvider('provideInvalidRejected')]
     public function testInvalidRejected(string $value): void
     {
         try {
@@ -100,6 +90,16 @@ final class DocumentSettingsServiceTest extends PgTestCase
         }
 
         $this->assertSame(72, $this->service()->invoiceWindowHours());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideInvalidRejected(): iterable
+    {
+        foreach (['8761', '-1', '1.5', 'abc', '', ' 12', '12345'] as $v) {
+            yield 'v:' . $v => [$v];
+        }
     }
 
     public function testStaleRevisionRejected(): void

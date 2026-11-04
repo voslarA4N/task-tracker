@@ -25,6 +25,8 @@ $routes->post('settings/email-templates/(:num)/preview', 'Settings\EmailTemplate
 $routes->post('settings/email-templates/(:num)', 'Settings\EmailTemplates::update/$1');
 $routes->get('settings/fx', 'Settings\FxSettings::index');
 $routes->post('settings/fx', 'Settings\FxSettings::update');
+$routes->get('settings/documents', 'Settings\DocumentSettings::index');
+$routes->post('settings/documents', 'Settings\DocumentSettings::update');
 $routes->get('settings/limits', 'Settings\Limits::index');
 $routes->get('settings/limits/new', 'Settings\Limits::newForm');
 $routes->post('settings/limits', 'Settings\Limits::create');
