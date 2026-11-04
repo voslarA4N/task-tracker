@@ -257,17 +257,22 @@ Zoznam tabuliek generovať dotazom z `pg_trigger`/`information_schema` a **porov
 | A6 | healthchecks.io free plán stačí (20 checkov, e-mail integrácia) | Summary | vlastník musí zmeniť plán |
 | A7 | Zoznam chránených tabuliek: invoices, invoice_lines, invoice_documents, invoice_counters, invoice_sends (+voids), payments tabuľky, invoice_regen_windows. Presné mená platieb a sends z migrácií neoverené | Code Examples | test vynechá tabuľku |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Kto a ako stiahne repozitár (práva)?**
    - Čo vieme: repozitár root-only (D-07), pull ide cez SSH z WSL ako `deploy`.
    - Nejasné: `deploy` nemá čítanie root súborov.
    - Odporúčanie: skupina `backup` + `chmod g+rX`, `deploy` v skupine, alebo `sudo rsync` pravidlo. Rozhodnúť v pláne B; preferovať skupinové čítanie (šifrovaný obsah).
+   - RESOLVED: samostatný systémový používateľ `backuppull` s kľúčom obmedzeným `command="sudo -n /usr/bin/rrsync -ro /var/backups/restic/work-tracker",restrict` a úzkym sudoers pravidlom (iba rrsync -ro nad repozitárom); repozitár ostáva root-only, `deploy` sa nemení (plány 12-11 `pull-backups.sh` a 12-13 `install-backup.sh`).
 2. **Beží záloha aj pre staging?**
    - Odporúčanie: nie (DB sa reseeduje), skript prijme `STACK_DIR` a v stagingu sa necrontabuje; test skriptu a restore sa overí na stagingu raz ručne bez pingu (`HC_URL` prázdny = bez pingu).
+   - RESOLVED: staging nemá cron záloh; `backup-restic.sh` je parametrizovaný (`BACKUP_ENV_FILE`, `STACK_DIR`, `BACKUP_ENV_NAME`, prázdne `HC_URL` = bez pingu) (plán 12-04), staging sa raz ručne otestuje so samostatným env súborom a repozitárom, ktoré sa potom zmažú (12-13 §21, 12-14 Task 2 krok 4).
 3. **E-mail z hostiteľa:** bez MTA na hostiteli. Odporúčanie: `curl --url smtp://...` na Stalwart s údajmi z root env súboru, alebo `docker compose exec php php spark mail:test`-podobný príkaz. Najjednoduchšie: healthchecks.io e-mailová integrácia pri `/fail` (nulový kód) + vlastný e-mail cez curl SMTP ako D-09 predpisuje. Rozhodnúť v pláne B.
+   - RESOLVED: oboje; ping `HC_URL` a `HC_URL/fail` na healthchecks.io (vynechaná záloha) a vlastný e-mail `curl --ssl-reqd --url $ALERT_SMTP_URL` na Stalwart (noreply@, heslo z `ALERT_SMTP_PASS_FILE` cez dočasný netrc 0600) v zdieľanej `scripts/lib-backup-notify.sh` (plán 12-04; používajú ju aj 12-10 a 12-11).
 4. **Výpočet p95 na prod vs staging** (pitfall 9): schváliť s vlastníkom, že prod sa meria iba čítacími GET.
+   - RESOLVED: meranie p95 beží na stagingu; na produkcii iba po výslovnom checkpointe vlastníka a iba čítacie GET (N=50, concurrency 1); nástroj a postup v 12-05 (skript merania, smoke statiky), meranie a zápis v 12-15.
 5. **Zdroj `issue_date` pre „vystavené v danom roku“** a zahrnutie stornovaných/externých faktúr (`invoices.type`): overiť stĺpce pri plánovaní (nie je overené v tomto behu).
+   - RESOLVED: „vystavené v roku“ = `invoices.origin = 'issued'` a `issue_date` v `[rok-01-01, rok-12-31]`, vrátane dobropisov (`type = 'credit_note'`) a stornovaných (dokument existuje), všetky verzie dokumentov; externé faktúry (`origin = 'external'`) sa nearchivujú (plán 12-10).
 
 ## Environment Availability
 
