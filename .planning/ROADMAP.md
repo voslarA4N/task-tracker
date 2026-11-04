@@ -599,7 +599,7 @@ Plans:
 4. Každé pregenerovanie sa zapíše do denníka zmien (kto, kedy, ktorý dokument, stará a nová verzia šablóny, sha256).
 5. Lehota pre faktúru sa nastavuje v nastaveniach; testy pokrývajú lehotu, nemennosť pôvodného záznamu a zhodu údajov.
 
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 
@@ -607,7 +607,7 @@ Plans:
 - [x] 11.1-02-PLAN.md — DocumentTemplates ako jediný zdroj aktuálnej šablóny, RegeneratePolicy (lehota od created_at) a RegenerateRejected (vlna 1)
 - [x] 11.1-03-PLAN.md — Nastavenie lehoty /settings/documents (služba, obrazovka, audit, preklady) (vlna 2)
 - [x] 11.1-04-PLAN.md — DocumentRegenerator: render zo snapshotu, advisory lock, nová verzia, audit; testy lehoty, zhody údajov a súbehu (vlna 3)
-- [ ] 11.1-05-PLAN.md — Akcie pregenerovania a história verzií na detaile faktúry, stiahnutie verzie, rollout 202611001 (vlna 4)
+- [x] 11.1-05-PLAN.md — Akcie pregenerovania a história verzií na detaile faktúry, stiahnutie verzie, rollout 202611001 (vlna 4)
 
 ### Phase 12: Lokalizácia a produkcia
 

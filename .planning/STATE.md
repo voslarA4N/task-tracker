@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 11.1-04-PLAN.md
-last_updated: "2026-11-04T15:26:01.874Z"
+status: verifying
+stopped_at: Completed 11.1-05-PLAN.md (human-check pending)
+last_updated: "2026-11-04T15:42:54.671Z"
 last_activity: 2026-11-04
 progress:
   total_phases: 13
-  completed_phases: 11
+  completed_phases: 12
   total_plans: 130
-  completed_plans: 129
-  percent: 85
+  completed_plans: 130
+  percent: 92
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 
 Phase: 11.1 (pregenerovanie-dokladov-z-k-pie-dajov) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-11-04
 
 Progress: [░░░░░░░░░░] 0%
@@ -110,6 +110,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 11 P10 | 40min | 2 tasks | 16 files |
 | Phase 11.1 P01 | 25min | 3 tasks | 9 files |
 | Phase 11.1 P04 | 30min | 3 tasks | 10 files |
+| Phase 11.1 P05 | 40min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -155,6 +156,7 @@ Recent decisions affecting current work:
 - [Phase 11]: work statement rep-2 (title + direct portal link in one column); rep-1 kept for already issued documents
 - [Phase 11.1]: Document version gapless guard is a BEFORE INSERT trigger (no SEQUENCE); migration down() refuses rollback when versions > 1 exist
 - [Phase 11.1]: Regenerate: render outside transaction, advisory lock + expected_version under lock; template only from DocumentTemplates
+- [Phase 11.1]: Regenerate POST reads only expected_version; kind from explicit routes; button flags from RegeneratePolicy shared with server
 
 ### Roadmap Evolution
 
@@ -195,6 +197,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-04T15:26:01.869Z
-Stopped at: Completed 11.1-04-PLAN.md
+Last session: 2026-11-04T15:42:54.664Z
+Stopped at: Completed 11.1-05-PLAN.md (human-check pending)
 Resume file: None
