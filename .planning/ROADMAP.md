@@ -646,7 +646,7 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 12-12-PLAN.md — Úplná parita 4 jazykov, kontrola nepreložených kópií, render obrazoviek v PL/CS, mobilná kontrola (vlna 3)
-- [ ] 12-13-PLAN.md — Inštalátor záloh na server (restic overený SHA256SUMS, root-owned skripty, backuppull) a server.md §21, reset 2FA (vlna 3)
+- [x] 12-13-PLAN.md — Inštalátor záloh na server (restic overený SHA256SUMS, root-owned skripty, backuppull) a server.md §21, reset 2FA (vlna 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -676,4 +676,4 @@ Plans:
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
 | 11. Prehľady, exporty a audit | 11/11 | Complete   | 2026-11-04 |
-| 12. Lokalizácia a produkcia | 12/15 | In Progress|  |
+| 12. Lokalizácia a produkcia | 13/15 | In Progress|  |
