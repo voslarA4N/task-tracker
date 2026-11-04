@@ -188,6 +188,7 @@ final class CreditNoteIssuer
 
         // 11. dobropis
         $creditNoteId = $this->insertCreditNote($cmd, $orig, $snapshot, $series, $created);
+        (new InvoiceRegenWindows($this->db))->freeze($creditNoteId, $created);
 
         // 12. riadky
         foreach ($snapshot['lines'] as $line) {

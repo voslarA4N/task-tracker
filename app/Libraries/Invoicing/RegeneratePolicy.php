@@ -10,7 +10,7 @@ use InvalidArgumentException;
 
 /**
  * Kto, čo a kedy sa smie pregenerovať. Jedna čistá funkcia pre server aj UI.
- * Lehota sa meria od invoices.created_at, hodiny dodáva volajúci.
+ * Lehota PDF faktúry je zmrazená pri vystavení (invoice_regen_windows), volajúci ju dodá v kľúči regen_until.
  */
 final class RegeneratePolicy
 {
@@ -19,7 +19,7 @@ final class RegeneratePolicy
     /**
      * @param array<string, mixed> $invoice
      */
-    public static function check(array $invoice, string $kind, int $windowHours, DateTimeImmutable $now): ?string
+    public static function check(array $invoice, string $kind, DateTimeImmutable $now): ?string
     {
         if (! in_array($kind, self::KINDS, true)) {
             return 'not_regenerable';
@@ -40,7 +40,7 @@ final class RegeneratePolicy
             return 'not_regenerable';
         }
 
-        $deadline = self::deadline($invoice, $windowHours);
+        $deadline = self::deadline($invoice);
 
         if ($deadline === null || $now > $deadline) {
             return 'window_expired';
@@ -52,17 +52,17 @@ final class RegeneratePolicy
     /**
      * @param array<string, mixed> $invoice
      */
-    public static function canRegenerate(array $invoice, string $kind, int $windowHours, DateTimeImmutable $now): bool
+    public static function canRegenerate(array $invoice, string $kind, DateTimeImmutable $now): bool
     {
-        return self::check($invoice, $kind, $windowHours, $now) === null;
+        return self::check($invoice, $kind, $now) === null;
     }
 
     /**
      * @param array<string, mixed> $invoice
      */
-    public static function assertAllowed(array $invoice, string $kind, int $windowHours, DateTimeImmutable $now): void
+    public static function assertAllowed(array $invoice, string $kind, DateTimeImmutable $now): void
     {
-        $reason = self::check($invoice, $kind, $windowHours, $now);
+        $reason = self::check($invoice, $kind, $now);
 
         if ($reason !== null) {
             throw new RegenerateRejected($reason, ['kind' => $kind]);
@@ -70,22 +70,24 @@ final class RegeneratePolicy
     }
 
     /**
+     * Koniec lehoty zmrazeny pri vystaveni (kluc regen_until, doplna ho InvoiceRegenWindows::attach).
+     * Null = lehota je uzavreta: chyba regen_until alebo created_at, neplatny cas, alebo lehota 0 (regen_until nie je po created_at).
+     *
      * @param array<string, mixed> $invoice
      */
-    public static function deadline(array $invoice, int $windowHours): ?DateTimeImmutable
+    public static function deadline(array $invoice): ?DateTimeImmutable
     {
-        if ($windowHours <= 0) {
-            return null;
-        }
+        $until   = $invoice['regen_until'] ?? null;
+        $created = $invoice['created_at'] ?? null;
 
-        $createdAt = $invoice['created_at'] ?? null;
-
-        if (! is_string($createdAt) || $createdAt === '') {
+        if (! is_string($until) || $until === '' || ! is_string($created) || $created === '') {
             return null;
         }
 
         try {
-            return Clock::parseInstant($createdAt)->modify('+' . $windowHours . ' hours');
+            $deadline = Clock::parseInstant($until);
+
+            return $deadline > Clock::parseInstant($created) ? $deadline : null;
         } catch (InvalidArgumentException) {
             return null;
         }

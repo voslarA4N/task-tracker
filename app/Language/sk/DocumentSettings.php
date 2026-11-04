@@ -7,7 +7,7 @@ return [
     'title'        => 'Pregenerovanie dokladov',
     'intro'        => 'Výkaz práce sa dá pregenerovať kedykoľvek. PDF faktúry len do lehoty od vystavenia.',
     'fieldLabel'   => 'Lehota pre PDF faktúry',
-    'fieldHint'    => 'Celé číslo 0 až 8760. 0 znamená, že PDF faktúry sa pregenerovať nedá.',
+    'fieldHint'    => 'Celé číslo 0 až 8760. 0 znamená, že PDF faktúry sa pregenerovať nedá. Zmena platí len pre faktúry vystavené po nej; už vystavené si ponechajú svoju lehotu.',
     'fieldUnit'    => 'hodín',
     'save'         => 'Uložiť',
     'saved'        => 'Nastavenia boli uložené.',

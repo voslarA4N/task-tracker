@@ -24,7 +24,7 @@ final class DocumentRegenerator
     private readonly AuditLogger $audit;
     private readonly RendererRegistry $renderers;
     private readonly DocumentStore $store;
-    private readonly DocumentSettingsService $settings;
+    private readonly InvoiceRegenWindows $windows;
 
     /**
      * @param BaseConnection<mixed, mixed>|null $db
@@ -34,13 +34,13 @@ final class DocumentRegenerator
         ?AuditLogger $audit = null,
         ?RendererRegistry $renderers = null,
         ?DocumentStore $store = null,
-        ?DocumentSettingsService $settings = null,
+        ?InvoiceRegenWindows $windows = null,
     ) {
         $this->db        = $db ?? Database::connect();
         $this->audit     = $audit ?? new AuditLogger($this->db);
         $this->renderers = $renderers ?? new RendererRegistry();
         $this->store     = $store ?? new DocumentStore($this->db);
-        $this->settings  = $settings ?? new DocumentSettingsService($this->db);
+        $this->windows   = $windows ?? new InvoiceRegenWindows($this->db);
     }
 
     /**
@@ -57,7 +57,9 @@ final class DocumentRegenerator
             throw new RegenerateRejected('not_found');
         }
 
-        RegeneratePolicy::assertAllowed($row, $kind, $this->settings->invoiceWindowHours(), service('clock')->now());
+        $row = $this->windows->attach($row);
+
+        RegeneratePolicy::assertAllowed($row, $kind, service('clock')->now());
 
         $before = $this->store->meta($invoiceId, $kind);
 
@@ -95,7 +97,7 @@ final class DocumentRegenerator
                 throw new RegenerateRejected('stale', ['kind' => $kind]);
             }
 
-            RegeneratePolicy::assertAllowed($row, $kind, $this->settings->invoiceWindowHours(), service('clock')->now());
+            RegeneratePolicy::assertAllowed($row, $kind, service('clock')->now());
 
             $version = $this->store->store($invoiceId, $kind, $pdf);
 

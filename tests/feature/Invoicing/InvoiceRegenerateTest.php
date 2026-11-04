@@ -286,8 +286,8 @@ final class InvoiceRegenerateTest extends AuthTestCase
 
     public function testInvoiceFormHiddenAfterWindowReportFormStays(): void
     {
-        $id = $this->issued();
         $this->owner()->query('UPDATE document_settings SET regen_invoice_hours = 1 WHERE id = 1');
+        $id = $this->issued();
         $this->at('2026-11-01T12:00:00+01:00');
         $html = $this->detail($id);
 
@@ -297,12 +297,23 @@ final class InvoiceRegenerateTest extends AuthTestCase
 
     public function testInvoiceFormHiddenWhenWindowIsZero(): void
     {
-        $id = $this->issued();
         $this->owner()->query('UPDATE document_settings SET regen_invoice_hours = 0 WHERE id = 1');
+        $id   = $this->issued();
         $html = $this->detail($id);
 
         $this->assertStringNotContainsString('/regenerate/invoice"', $html);
         $this->assertStringContainsString('/regenerate/report"', $html);
+    }
+
+    public function testRaisingSettingDoesNotReopenClosedInvoice(): void
+    {
+        $id = $this->issued();
+        $this->owner()->query('UPDATE document_settings SET regen_invoice_hours = 8760 WHERE id = 1');
+        $this->at('2026-11-04T10:00:01+01:00');
+        $this->postRegen('/invoices/' . $id . '/regenerate/invoice')->assertStatus(302);
+
+        $this->assertSame(lang('Invoices.regenErrorWindow'), $this->notice()['message']);
+        $this->assertSame(1, $this->versions($id, 'invoice'));
     }
 
     public function testExternalAndSchema1HaveNoForms(): void

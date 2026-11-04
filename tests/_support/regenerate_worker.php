@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Invoicing\DocumentRegenerator;
-use App\Libraries\Invoicing\DocumentSettingsService;
+use App\Libraries\Invoicing\InvoiceRegenWindows;
 use App\Libraries\Invoicing\DocumentStore;
 use App\Libraries\Invoicing\RegenerateRejected;
 use App\Libraries\Invoicing\RendererRegistry;
@@ -48,7 +48,7 @@ if ($mode === '--command') {
         new AuditLogger($db),
         new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2'), 'rep-2' => new FakePdfRenderer('rep-2')]),
         new DocumentStore($db),
-        new DocumentSettingsService($db),
+        new InvoiceRegenWindows($db),
     );
 
     try {

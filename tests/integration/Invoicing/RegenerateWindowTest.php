@@ -6,7 +6,9 @@ namespace Tests\Integration\Invoicing;
 
 use App\Libraries\Invoicing\DocumentSettingsService;
 use App\Libraries\Invoicing\RegenerateRejected;
+use App\Libraries\Platform\Clock;
 use App\Libraries\Platform\FrozenClock;
+use DateTimeZone;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\CreditNoteFixtures;
@@ -15,6 +17,7 @@ use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
 use Tests\Support\PgTestCase;
 use Tests\Support\RegenerateFixtures;
+use Tests\Support\SnapshotSample;
 
 /**
  * Lehota pregenerovania PDF faktury (D-06, A2, A3).
@@ -98,8 +101,8 @@ final class RegenerateWindowTest extends PgTestCase
 
     public function testZeroWindowBlocksInvoiceButNotReport(): void
     {
-        $id = $this->issued();
         $this->setWindow(0);
+        $id = $this->issued();
 
         $this->assertExpired($id);
         $this->assertSame(2, $this->regenerator()->regenerate($id, 'report', 1)->version);
@@ -107,8 +110,8 @@ final class RegenerateWindowTest extends PgTestCase
 
     public function testOneHourWindow(): void
     {
-        $id = $this->issued();
         $this->setWindow(1);
+        $id = $this->issued();
 
         $this->at('2026-11-01T10:59:00+01:00');
         $this->assertSame(2, $this->regenerator()->regenerate($id, 'invoice', 1)->version);
@@ -116,6 +119,78 @@ final class RegenerateWindowTest extends PgTestCase
         $this->at('2026-11-01T11:01:00+01:00');
         $this->assertExpired($id);
         $this->assertSame(2, $this->versions($id, 'invoice'));
+    }
+
+    public function testIssueFreezesCurrentSettingValue(): void
+    {
+        $this->setWindow(5);
+        $id = $this->issued();
+
+        $row = $this->owner()->query('SELECT hours, regen_until, created_at FROM invoice_regen_windows WHERE invoice_id = :i:', ['i' => $id])->getRowArray();
+        $this->assertNotNull($row);
+        $this->assertSame(5, (int) $row['hours']);
+        $this->assertSame('2026-11-01T15:00:00+01:00', Clock::parseInstant((string) $row['regen_until'])->setTimezone(new DateTimeZone('+01:00'))->format('c'));
+        $this->assertSame((string) $row['created_at'], (string) $this->owner()->query('SELECT created_at FROM invoices WHERE id = :i:', ['i' => $id])->getRow()->created_at);
+    }
+
+    public function testCreditNoteFreezesItsOwnWindow(): void
+    {
+        $this->setWindow(10);
+        $id = $this->issued();
+        $cn = $this->issueCreditNote($id, ['issueDate' => '2026-11-01']);
+
+        $this->setWindow(1);
+        $this->at('2026-11-01T19:00:00+01:00');
+        $this->assertSame(2, $this->regenerator()->regenerate($cn->id, 'invoice', 1)->version);
+
+        $this->at('2026-11-01T20:01:00+01:00');
+        $this->assertExpired($cn->id);
+    }
+
+    public function testRaisingSettingDoesNotReopenClosedInvoice(): void
+    {
+        $id = $this->issued();
+
+        $this->setWindow(8760);
+        $this->at('2026-11-04T10:00:01+01:00');
+        $this->assertExpired($id);
+        $this->assertSame(1, $this->versions($id, 'invoice'));
+    }
+
+    public function testLoweringSettingDoesNotCloseOpenInvoice(): void
+    {
+        $id = $this->issued();
+
+        $this->setWindow(1);
+        $this->at('2026-11-04T10:00:00+01:00');
+        $this->assertSame(2, $this->regenerator()->regenerate($id, 'invoice', 1)->version);
+    }
+
+    public function testInvoiceIssuedAfterRaiseGetsNewWindow(): void
+    {
+        $this->setWindow(8760);
+        $id = $this->issued();
+
+        $this->at('2027-10-30T10:00:00+01:00');
+        $this->assertSame(2, $this->regenerator()->regenerate($id, 'invoice', 1)->version);
+    }
+
+    public function testInvoiceWithoutFrozenRowFallsBackToLegacy72h(): void
+    {
+        $s  = $this->issueSetup();
+        $id = $this->insertIssuedInvoiceRaw($s['client'], $s['entity'], '2026-10', $s['parts'], '%PDF-1.4 test', [
+            'snapshot_schema' => 2,
+            'with_report'     => true,
+            'snapshot'        => json_encode(SnapshotSample::issuedV2(), JSON_THROW_ON_ERROR),
+        ]);
+        $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM invoice_regen_windows WHERE invoice_id = :i:', ['i' => $id])->getRow()->c);
+
+        $this->setWindow(8760);
+        $this->at('2026-11-04T10:00:01+01:00');
+        $this->assertExpired($id);
+
+        $this->at('2026-11-04T10:00:00+01:00');
+        $this->assertSame(2, $this->regenerator()->regenerate($id, 'invoice', 1)->version);
     }
 
     public function testReportHasNoWindow(): void

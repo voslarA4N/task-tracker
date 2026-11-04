@@ -195,15 +195,15 @@ final class InvoiceQueries
         $invoice['invoice_is_current']     = false;
 
         if ($invoice['origin'] === 'issued') {
-            $window = (new DocumentSettingsService($this->db))->invoiceWindowHours();
-            $now    = service('clock')->now();
+            $invoice = (new InvoiceRegenWindows($this->db))->attach($invoice);
+            $now     = service('clock')->now();
 
             $invoice['document_versions']      = $store->versions($id);
-            $invoice['can_regenerate_report']  = RegeneratePolicy::canRegenerate($invoice, 'report', $window, $now) && $invoice['report_document'] !== null;
-            $invoice['can_regenerate_invoice'] = RegeneratePolicy::canRegenerate($invoice, 'invoice', $window, $now) && $invoice['document'] !== null;
+            $invoice['can_regenerate_report']  = RegeneratePolicy::canRegenerate($invoice, 'report', $now) && $invoice['report_document'] !== null;
+            $invoice['can_regenerate_invoice'] = RegeneratePolicy::canRegenerate($invoice, 'invoice', $now) && $invoice['document'] !== null;
 
             if ($invoice['can_regenerate_invoice']) {
-                $invoice['regen_invoice_deadline'] = RegeneratePolicy::deadline($invoice, $window)?->format(DATE_ATOM);
+                $invoice['regen_invoice_deadline'] = RegeneratePolicy::deadline($invoice)?->format(DATE_ATOM);
             }
 
             $type                          = (string) $invoice['type'];

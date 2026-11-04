@@ -7,7 +7,7 @@ return [
     'title'        => 'Document regeneration',
     'intro'        => 'A work report can be regenerated at any time. Invoice PDFs only within a window after issuing.',
     'fieldLabel'   => 'Invoice PDF window',
-    'fieldHint'    => 'Whole number 0 to 8760. 0 means invoice PDFs cannot be regenerated.',
+    'fieldHint'    => 'Whole number 0 to 8760. 0 means invoice PDFs cannot be regenerated. A change applies only to invoices issued after it; already issued invoices keep their own window.',
     'fieldUnit'    => 'hours',
     'save'         => 'Save',
     'saved'        => 'Settings saved.',
