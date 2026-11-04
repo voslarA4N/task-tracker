@@ -28,10 +28,16 @@ final class DateFormatTest extends CIUnitTestCase
         return (string) preg_replace('/[\s\x{00A0}\x{202F}]+/u', ' ', $s);
     }
 
+    #[DataProvider('provideDate')]
+    public function testDate(string $locale, string $expected): void
+    {
+        $this->assertSame($expected, self::normalize(DateFormat::date('2026-11-04', $locale)));
+    }
+
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function provider(): iterable
+    public static function provideDate(): iterable
     {
         yield 'sk' => ['sk', '4. 11. 2026'];
 
@@ -40,12 +46,6 @@ final class DateFormatTest extends CIUnitTestCase
         yield 'pl' => ['pl', '4 lis 2026'];
 
         yield 'en' => ['en', 'Nov 4, 2026'];
-    }
-
-    #[DataProvider('provider')]
-    public function testDate(string $locale, string $expected): void
-    {
-        $this->assertSame($expected, self::normalize(DateFormat::date('2026-11-04', $locale)));
     }
 
     public function testPolishEndOfMonth(): void

@@ -595,13 +595,13 @@ final class Security extends BaseController
         $deviceId = session('device_id');
 
         return [
-            'title'           => lang('Account.securityTitle'),
-            'totpActive'      => $this->hasTotp($userId),
-            'remainingCodes'  => (new BackupCodeService())->remaining($userId),
-            'devices'         => $devices,
-            'currentDeviceId' => is_int($deviceId) ? $deviceId : null,
-            'events'          => $events,
-            'currentLocale'   => $this->userLocale($userId),
+            'title'            => lang('Account.securityTitle'),
+            'totpActive'       => $this->hasTotp($userId),
+            'remainingCodes'   => (new BackupCodeService())->remaining($userId),
+            'devices'          => $devices,
+            'currentDeviceId'  => is_int($deviceId) ? $deviceId : null,
+            'events'           => $events,
+            'currentLocale'    => $this->userLocale($userId),
             'supportedLocales' => config('App')->supportedLocales,
         ];
     }

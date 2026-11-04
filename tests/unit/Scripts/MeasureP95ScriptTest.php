@@ -56,7 +56,7 @@ final class MeasureP95ScriptTest extends CIUnitTestCase
     }
 
     /**
-     * @param list<string> $values riadky "kod cas"
+     * @param list<string>          $values riadky "kod cas"
      * @param array<string, string> $env
      *
      * @return array{0: int, 1: string, 2: string}

@@ -39,7 +39,6 @@ final class ResticBackupScriptTest extends CIUnitTestCase
         esac
         exit 0
         SH;
-
     private const FAKE_RESTIC = <<<'SH'
         #!/bin/sh
         printf '%s\n' "$*" >> "$FAKE_RESTIC_LOG"
@@ -58,7 +57,6 @@ final class ResticBackupScriptTest extends CIUnitTestCase
         esac
         exit 0
         SH;
-
     private const FAKE_CURL = <<<'SH'
         #!/bin/sh
         printf '%s\n' "$*" >> "$FAKE_CURL_LOG"
@@ -288,14 +286,14 @@ final class ResticBackupScriptTest extends CIUnitTestCase
         }
 
         $env = [
-            'PATH'             => $this->dir . '/bin:/usr/local/bin:/usr/bin:/bin',
-            'TZ'               => 'UTC',
-            'BACKUP_ENV_FILE'  => $envPath,
-            'FAKE_LOG'         => $this->dir . '/docker.log',
-            'FAKE_RESTIC_LOG'  => $this->dir . '/restic.log',
-            'FAKE_CURL_LOG'    => $this->dir . '/curl.log',
-            'FAKE_MAIL'        => $this->dir . '/mail.eml',
-            'FAKE_SNAP'        => $this->dir . '/snap',
+            'PATH'            => $this->dir . '/bin:/usr/local/bin:/usr/bin:/bin',
+            'TZ'              => 'UTC',
+            'BACKUP_ENV_FILE' => $envPath,
+            'FAKE_LOG'        => $this->dir . '/docker.log',
+            'FAKE_RESTIC_LOG' => $this->dir . '/restic.log',
+            'FAKE_CURL_LOG'   => $this->dir . '/curl.log',
+            'FAKE_MAIL'       => $this->dir . '/mail.eml',
+            'FAKE_SNAP'       => $this->dir . '/snap',
         ] + $extra;
 
         $proc = proc_open(['sh', $this->dir . '/scripts/backup-restic.sh'], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->dir, $env);

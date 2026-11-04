@@ -26,10 +26,16 @@ final class MoneyFormatLocaleTest extends CIUnitTestCase
         return (string) preg_replace('/[\s\x{00A0}\x{202F}]+/u', ' ', $s);
     }
 
+    #[DataProvider('provideMoney')]
+    public function testMoney(string $locale, string $currency, string $amount, string $expected): void
+    {
+        $this->assertSame($expected, self::normalize(MoneyFormat::format($amount, $currency, $locale)));
+    }
+
     /**
      * @return iterable<string, array{string, string, string, string}>
      */
-    public static function moneyProvider(): iterable
+    public static function provideMoney(): iterable
     {
         yield 'sk EUR' => ['sk', 'EUR', '1080.00', '1 080,00 €'];
 
@@ -44,12 +50,6 @@ final class MoneyFormatLocaleTest extends CIUnitTestCase
         yield 'cs CZK' => ['cs', 'CZK', '1080.00', '1 080,00 Kč'];
 
         yield 'pl zero' => ['pl', 'EUR', '0.00', '0,00 €'];
-    }
-
-    #[DataProvider('moneyProvider')]
-    public function testMoney(string $locale, string $currency, string $amount, string $expected): void
-    {
-        $this->assertSame($expected, self::normalize(MoneyFormat::format($amount, $currency, $locale)));
     }
 
     public function testSlovakPlnUsesIcuSymbolAfterNumber(): void
@@ -75,7 +75,7 @@ final class MoneyFormatLocaleTest extends CIUnitTestCase
         $this->assertStringEndsWith('1 080,50 €', self::normalize($out));
     }
 
-    #[DataProvider('suffixLocales')]
+    #[DataProvider('provideNonBreakingSpaceBeforeSymbol')]
     public function testNonBreakingSpaceBeforeSymbol(string $locale): void
     {
         $this->assertStringContainsString("\u{00A0}", MoneyFormat::format('1080.00', 'EUR', $locale));
@@ -84,7 +84,7 @@ final class MoneyFormatLocaleTest extends CIUnitTestCase
     /**
      * @return iterable<string, array{string}>
      */
-    public static function suffixLocales(): iterable
+    public static function provideNonBreakingSpaceBeforeSymbol(): iterable
     {
         yield 'sk' => ['sk'];
 
@@ -100,10 +100,18 @@ final class MoneyFormatLocaleTest extends CIUnitTestCase
         $this->assertStringContainsString('Kč', (string) $formatted, 'Chybaju ICU data pre cs v obraze (ICU ' . INTL_ICU_VERSION . ').');
     }
 
+    #[DataProvider('providePercentAndHours')]
+    public function testPercentAndHours(string $locale, string $sep): void
+    {
+        $this->assertSame('85' . $sep . '5', LimitMath::formatPercent('85.5', $locale));
+        $this->assertSame('7' . $sep . '5', Hours::format('7.50', $locale));
+        $this->assertSame('+1' . $sep . '25', Hours::formatSigned('1.25', $locale));
+    }
+
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function decimalLocales(): iterable
+    public static function providePercentAndHours(): iterable
     {
         yield 'sk' => ['sk', ','];
 
@@ -114,18 +122,16 @@ final class MoneyFormatLocaleTest extends CIUnitTestCase
         yield 'en' => ['en', '.'];
     }
 
-    #[DataProvider('decimalLocales')]
-    public function testPercentAndHours(string $locale, string $sep): void
+    #[DataProvider('provideMonthLabel')]
+    public function testMonthLabel(string $month, string $locale, string $expected): void
     {
-        $this->assertSame('85' . $sep . '5', LimitMath::formatPercent('85.5', $locale));
-        $this->assertSame('7' . $sep . '5', Hours::format('7.50', $locale));
-        $this->assertSame('+1' . $sep . '25', Hours::formatSigned('1.25', $locale));
+        $this->assertSame($expected, self::normalize(BillingMonth::label($month, $locale)));
     }
 
     /**
      * @return iterable<string, array{string, string, string}>
      */
-    public static function monthProvider(): iterable
+    public static function provideMonthLabel(): iterable
     {
         yield 'sk' => ['2026-11', 'sk', 'November 2026'];
 
@@ -136,11 +142,5 @@ final class MoneyFormatLocaleTest extends CIUnitTestCase
         yield 'en' => ['2026-11', 'en', 'November 2026'];
 
         yield 'pl nominative' => ['2026-10', 'pl', 'Październik 2026'];
-    }
-
-    #[DataProvider('monthProvider')]
-    public function testMonthLabel(string $month, string $locale, string $expected): void
-    {
-        $this->assertSame($expected, self::normalize(BillingMonth::label($month, $locale)));
     }
 }

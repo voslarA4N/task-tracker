@@ -67,7 +67,7 @@ final class ImmutableDocumentsTest extends PgTestCase
         $this->voidPayment($payment);
 
         if ((int) $o->query('SELECT count(*) AS c FROM invoice_regen_windows')->getRow()->c === 0) {
-            $o->query("INSERT INTO invoice_regen_windows (invoice_id, hours, regen_until, created_at) VALUES (:i:, 72, now(), now())", ['i' => $a]);
+            $o->query('INSERT INTO invoice_regen_windows (invoice_id, hours, regen_until, created_at) VALUES (:i:, 72, now(), now())', ['i' => $a]);
         }
 
         if ((int) $o->query('SELECT count(*) AS c FROM invoice_counters')->getRow()->c === 0) {
@@ -80,16 +80,6 @@ final class ImmutableDocumentsTest extends PgTestCase
         $this->resetMasterTables();
         Services::reset();
         parent::tearDown();
-    }
-
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function tables(): iterable
-    {
-        foreach (self::PROTECTED_TABLES as $t) {
-            yield $t => [$t];
-        }
     }
 
     private function rowCount(string $t): int
@@ -205,6 +195,16 @@ final class ImmutableDocumentsTest extends PgTestCase
         foreach (['DELETE', 'TRUNCATE'] as $priv) {
             $granted = $this->owner()->query('SELECT has_table_privilege(\'app_rw\', :t:, :p:) AS g', ['t' => $t, 'p' => $priv])->getRow()->g;
             $this->assertContains($granted, [false, 'f'], "{$t}: app_rw ma {$priv}");
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function tables(): iterable
+    {
+        foreach (self::PROTECTED_TABLES as $t) {
+            yield $t => [$t];
         }
     }
 }

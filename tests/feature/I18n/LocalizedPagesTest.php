@@ -18,8 +18,7 @@ use Tests\Support\AuthTestCase;
 #[Group('feature')]
 final class LocalizedPagesTest extends AuthTestCase
 {
-    private const PAGES = ['/', '/tasks', '/invoices/new', '/invoices', '/reports/month', '/settings/limits', '/settings/security', '/more'];
-
+    private const PAGES     = ['/', '/tasks', '/invoices/new', '/invoices', '/reports/month', '/settings/limits', '/settings/security', '/more'];
     private const EN_PROBES = ['App.navOverview', 'App.navTasks', 'App.navInvoices', 'App.navMore', 'Account.securityTitle'];
 
     protected function setUp(): void
@@ -36,19 +35,7 @@ final class LocalizedPagesTest extends AuthTestCase
         parent::tearDown();
     }
 
-    /**
-     * @return iterable<string, array{string, string}>
-     */
-    public static function localePages(): iterable
-    {
-        foreach (['pl', 'cs'] as $locale) {
-            foreach (self::PAGES as $url) {
-                yield $locale . ' ' . $url => [$locale, $url];
-            }
-        }
-    }
-
-    #[DataProvider('localePages')]
+    #[DataProvider('providePageIsFullyTranslated')]
     public function testPageIsFullyTranslated(string $locale, string $url): void
     {
         $admin = $this->createUser('owner@example.test', 'admin');
@@ -61,7 +48,19 @@ final class LocalizedPagesTest extends AuthTestCase
         $this->assertTranslated((string) $result->response()->getBody(), $locale);
     }
 
-    #[DataProvider('anonymousLocales')]
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function providePageIsFullyTranslated(): iterable
+    {
+        foreach (['pl', 'cs'] as $locale) {
+            foreach (self::PAGES as $url) {
+                yield $locale . ' ' . $url => [$locale, $url];
+            }
+        }
+    }
+
+    #[DataProvider('provideLoginIsTranslatedFromAcceptLanguage')]
     public function testLoginIsTranslatedFromAcceptLanguage(string $locale): void
     {
         $result = $this->withHeaders(['Accept-Language' => $locale])->get('/login');
@@ -72,7 +71,7 @@ final class LocalizedPagesTest extends AuthTestCase
     /**
      * @return array<string, array{string}>
      */
-    public static function anonymousLocales(): array
+    public static function provideLoginIsTranslatedFromAcceptLanguage(): iterable
     {
         return ['pl' => ['pl'], 'cs' => ['cs']];
     }

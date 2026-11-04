@@ -48,19 +48,7 @@ final class LocaleIndependentDocumentTest extends PgTestCase
         service('request')->setLocale($locale);
     }
 
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function locales(): iterable
-    {
-        yield 'pl' => ['pl'];
-
-        yield 'cs' => ['cs'];
-
-        yield 'en' => ['en'];
-    }
-
-    #[DataProvider('locales')]
+    #[DataProvider('provideIssuedDocumentIsIndependentOfInterfaceLocale')]
     public function testIssuedDocumentIsIndependentOfInterfaceLocale(string $locale): void
     {
         $s  = $this->issueSetup();
@@ -83,6 +71,18 @@ final class LocaleIndependentDocumentTest extends PgTestCase
         $this->assertSame($htmlSk, $htmlOther);
         $this->assertSame($before->bytes, $after->bytes);
         $this->assertSame($before->sha256, $after->sha256);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideIssuedDocumentIsIndependentOfInterfaceLocale(): iterable
+    {
+        yield 'pl' => ['pl'];
+
+        yield 'cs' => ['cs'];
+
+        yield 'en' => ['en'];
     }
 
     public function testPolishInterfaceLocaleSetsLocale(): void

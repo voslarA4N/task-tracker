@@ -430,14 +430,6 @@ final class LangKeysTest extends CIUnitTestCase
         $this->assertStringContainsString('X', $sk);
     }
 
-    /**
-     * @return array<string, array{string}>
-     */
-    public static function locales(): array
-    {
-        return ['pl' => ['pl'], 'cs' => ['cs'], 'en' => ['en']];
-    }
-
     #[DataProvider('locales')]
     public function testLocaleFilesHaveSameKeysAsSk(string $locale): void
     {
@@ -510,9 +502,9 @@ final class LangKeysTest extends CIUnitTestCase
     /**
      * @return array<string, array{string}>
      */
-    public static function plCs(): array
+    public static function locales(): iterable
     {
-        return ['pl' => ['pl'], 'cs' => ['cs']];
+        return ['pl' => ['pl'], 'cs' => ['cs'], 'en' => ['en']];
     }
 
     #[DataProvider('plCs')]
@@ -583,6 +575,14 @@ final class LangKeysTest extends CIUnitTestCase
         }
 
         $this->addToAssertionCount(1);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function plCs(): iterable
+    {
+        return ['pl' => ['pl'], 'cs' => ['cs']];
     }
 
     /**

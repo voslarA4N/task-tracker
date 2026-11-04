@@ -22,7 +22,6 @@ final class PullBackupsScriptTest extends CIUnitTestCase
         [ -z "${FAKE_RSYNC_FAIL-}" ] || { echo "rsync: simulated failure" >&2; exit 23; }
         exit 0
         SH;
-
     private const FAKE_RESTIC = <<<'SH'
         #!/bin/sh
         printf '%s\n' "$*" >> "$FAKE_RESTIC_LOG"

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries\Export;
 
 use App\Libraries\Invoicing\DocumentFilename;
+use App\Libraries\Invoicing\DocumentIntegrityError;
 use App\Libraries\Invoicing\DocumentStore;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
@@ -33,7 +34,7 @@ final class YearArchive
     }
 
     /**
-     * @throws \App\Libraries\Invoicing\DocumentIntegrityError
+     * @throws DocumentIntegrityError
      */
     public function build(int $year): YearArchiveResult
     {
@@ -155,9 +156,9 @@ final class YearArchive
         try {
             chmod($partial, 0600);
 
-            $final  = $dir . '/work-tracker-archiv-' . $year . '.zip';
-            $sha    = hash_file('sha256', $partial);
-            $bytes  = filesize($partial);
+            $final = $dir . '/work-tracker-archiv-' . $year . '.zip';
+            $sha   = hash_file('sha256', $partial);
+            $bytes = filesize($partial);
 
             if ($sha === false || $bytes === false) {
                 throw new RuntimeException('Cannot read archive file.');

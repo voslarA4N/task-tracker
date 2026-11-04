@@ -44,7 +44,6 @@ final class ArchiveYearlyScriptTest extends CIUnitTestCase
         esac
         exit 0
         SH;
-
     private const FAKE_RESTIC = <<<'SH'
         #!/bin/sh
         printf '%s\n' "$*" >> "$FAKE_RESTIC_LOG"
@@ -57,7 +56,6 @@ final class ArchiveYearlyScriptTest extends CIUnitTestCase
         esac
         exit 0
         SH;
-
     private const FAKE_CURL = <<<'SH'
         #!/bin/sh
         printf '%s\n' "$*" >> "$FAKE_CURL_LOG"

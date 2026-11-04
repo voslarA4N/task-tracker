@@ -22,7 +22,7 @@ final class InstallBackupScriptTest extends CIUnitTestCase
      */
     private function runScript(string $env): array
     {
-        $out = [];
+        $out  = [];
         $code = 0;
         exec($env . ' sh ' . escapeshellarg(self::SCRIPT) . ' 2>&1', $out, $code);
 
@@ -71,7 +71,7 @@ final class InstallBackupScriptTest extends CIUnitTestCase
     public function testNeverTouchesAppEnvNorEditsInPlace(): void
     {
         [$out] = $this->runScript('DRY_RUN=1 RESTIC_ARCH=amd64');
-        $code = '';
+        $code  = '';
 
         foreach (explode("\n", (string) file_get_contents(self::SCRIPT)) as $line) {
             if (! str_starts_with(ltrim($line), '#')) {

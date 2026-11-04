@@ -183,7 +183,7 @@ final class YearArchiveTest extends PgTestCase
             $opened['zip']->close();
         }
 
-        $this->assertSame($result->sha256 . '  work-tracker-archiv-2026.zip' . "\n", (string) file_get_contents($result->path . '.sha256'));
+        $this->assertSame($result->sha256 . "  work-tracker-archiv-2026.zip\n", (string) file_get_contents($result->path . '.sha256'));
     }
 
     public function testCsvFormatAndExclusions(): void

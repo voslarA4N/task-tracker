@@ -117,15 +117,7 @@ final class LocaleTest extends AuthTestCase
         $this->assertStringContainsString('Jazyk rozhraní byl změněn.', (string) $notice['message']);
     }
 
-    /**
-     * @return array<string, array{string}>
-     */
-    public static function invalidLocales(): array
-    {
-        return ['de' => ['de'], 'cz' => ['cz'], 'empty' => [''], 'upper' => ['SK']];
-    }
-
-    #[DataProvider('invalidLocales')]
+    #[DataProvider('provideInvalidLocaleIsRejectedWithoutWrite')]
     public function testInvalidLocaleIsRejectedWithoutWrite(string $value): void
     {
         $user = $this->createUser();
@@ -137,6 +129,14 @@ final class LocaleTest extends AuthTestCase
         $this->assertStringContainsString('Zvolený jazyk nie je podporovaný.', $this->body($result));
         $this->assertSame('sk', $this->storedLocale($user));
         $this->assertSame(0, $this->localeEvents());
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function provideInvalidLocaleIsRejectedWithoutWrite(): iterable
+    {
+        return ['de' => ['de'], 'cz' => ['cz'], 'empty' => [''], 'upper' => ['SK']];
     }
 
     public function testSameLocaleDoesNotAudit(): void
