@@ -217,7 +217,7 @@ final class HistoryPlannerTest extends CIUnitTestCase
      */
     public static function provideInvariants(): iterable
     {
-        foreach (['2026-01-01', '2026-01-10', '2026-03-20', '2026-10-28', '2026-11-01', '2026-12-31'] as $d) {
+        foreach (['2026-01-01', '2026-01-10', '2026-02-04', '2026-03-20', '2026-08-04', '2026-10-28', '2026-11-01', '2026-11-04', '2026-12-31'] as $d) {
             yield $d => [$d];
         }
     }

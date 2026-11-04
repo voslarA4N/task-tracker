@@ -466,35 +466,42 @@ final class HistoryPlanner
         $out = [];
 
         foreach ($wanted as $kind => $spec) {
-            // PL cielom je najnovsia vhodna faktura v cudzej mene (deliveries sa pre nu doplni bez uhrad), SK prva bez uhrad
-            foreach ($kind === 'pl' ? array_reverse($invoices) : $invoices as $inv) {
-                if ($kind === 'sk' && isset($blocked[(string) $inv['key']])) {
-                    continue;
+            // PL cielom je najnovsia vhodna faktura v cudzej mene (deliveries sa pre nu doplni bez uhrad), SK prva bez uhrad.
+            // Druhy prechod: zaciatkom mesiaca maju starsie faktury uz uhrady a nove nemaju 3 dni, dobropis dostane dnesny datum.
+            foreach ([false, true] as $clampToToday) {
+                foreach ($kind === 'pl' ? array_reverse($invoices) : $invoices as $inv) {
+                    if ($kind === 'sk' && isset($blocked[(string) $inv['key']])) {
+                        continue;
+                    }
+
+                    [$cc, $entityCcy] = $country[$inv['entity']];
+                    $invoiceCcy       = $currency[$inv['client']];
+                    $date             = $this->addDays((string) $inv['issue_date'], 3);
+
+                    if ($clampToToday && $date > $this->today && (string) $inv['issue_date'] < $this->today) {
+                        $date = $this->today;
+                    }
+
+                    $matches = $kind === 'sk'
+                        ? ($cc === 'SK' && $invoiceCcy === $entityCcy)
+                        : ($cc === 'PL' && $invoiceCcy === 'EUR' && $entityCcy !== 'EUR');
+
+                    if (! $matches || $date > $this->today) {
+                        continue;
+                    }
+
+                    $out[] = [
+                        'key'         => 'C' . sprintf('%02d', count($out) + 1),
+                        'invoice'     => $inv['key'],
+                        'at'          => $date . 'T11:00:00',
+                        'issue_date'  => $date,
+                        'reason'      => $spec['reason'],
+                        'type'        => $spec['type'],
+                        'request_key' => $this->uuid(),
+                    ];
+
+                    continue 3;
                 }
-
-                [$cc, $entityCcy] = $country[$inv['entity']];
-                $invoiceCcy       = $currency[$inv['client']];
-                $date             = $this->addDays((string) $inv['issue_date'], 3);
-
-                $matches = $kind === 'sk'
-                    ? ($cc === 'SK' && $invoiceCcy === $entityCcy)
-                    : ($cc === 'PL' && $invoiceCcy === 'EUR' && $entityCcy !== 'EUR');
-
-                if (! $matches || $date > $this->today) {
-                    continue;
-                }
-
-                $out[] = [
-                    'key'         => 'C' . sprintf('%02d', count($out) + 1),
-                    'invoice'     => $inv['key'],
-                    'at'          => $date . 'T11:00:00',
-                    'issue_date'  => $date,
-                    'reason'      => $spec['reason'],
-                    'type'        => $spec['type'],
-                    'request_key' => $this->uuid(),
-                ];
-
-                continue 2;
             }
 
             throw new LogicException('Plan has no invoice eligible for a ' . $kind . ' credit note.');
