@@ -116,4 +116,26 @@ final class InvoiceImmutabilityTest extends PgTestCase
         $this->rw()->query("INSERT INTO invoice_counters (series_id, period_key, last_value) VALUES ({$other}, '202610', 7)");
         $this->assertSame(7, (int) $this->owner()->query("SELECT last_value FROM invoice_counters WHERE series_id = {$other}")->getRow()->last_value);
     }
+
+    public function testNewDocumentVersionLeavesOriginalUntouched(): void
+    {
+        $invoice = (int) $this->owner()->query('SELECT id FROM invoices LIMIT 1')->getRow()->id;
+        $before  = $this->owner()->query("SELECT encode(content, 'hex') AS c, sha256, template_version, created_at FROM invoice_documents WHERE invoice_id = {$invoice} AND kind = 'invoice' AND version = 1")->getRowArray();
+
+        $bytes = '%PDF-1.4 regenerated';
+        $this->rw()->query(
+            "INSERT INTO invoice_documents (invoice_id, kind, version, content, byte_size, sha256, template_version, renderer, created_at)
+             VALUES (:i:, 'invoice', 2, decode(:hex:, 'hex'), :size:, :sha:, 'test-2', 'test', now())",
+            ['i' => $invoice, 'hex' => bin2hex($bytes), 'size' => strlen($bytes), 'sha' => hash('sha256', $bytes)],
+        );
+
+        $after = $this->owner()->query("SELECT encode(content, 'hex') AS c, sha256, template_version, created_at FROM invoice_documents WHERE invoice_id = {$invoice} AND kind = 'invoice' AND version = 1")->getRowArray();
+        $this->assertSame($before, $after);
+
+        $this->assertPermissionDenied(fn () => $this->rw()->query("UPDATE invoice_documents SET renderer = 'x' WHERE version = 1"));
+        $this->assertPermissionDenied(fn () => $this->rw()->query("UPDATE invoice_documents SET renderer = 'x' WHERE version = 2"));
+        $this->assertPermissionDenied(fn () => $this->rw()->query('DELETE FROM invoice_documents WHERE version = 2'));
+        $this->assertDbError('/is immutable/', fn () => $this->owner()->query('UPDATE invoice_documents SET renderer = \'x\' WHERE version = 1'));
+        $this->assertDbError('/is immutable/', fn () => $this->owner()->query('DELETE FROM invoice_documents WHERE version = 2'));
+    }
 }

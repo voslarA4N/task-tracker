@@ -70,7 +70,7 @@ final class InvoiceSchemaTest extends PgTestCase
                 'vat_regime', 'billing_mode', 'exemption_code', 'entity_vat_id', 'client_identifier_type', 'client_identifier_value', 'client_vat_id',
                 'bank_iban', 'bank_swift', 'payment_method', 'payment_note', 'snapshot', 'snapshot_schema', 'template_version', 'created_at', 'created_by'],
             'invoice_lines'     => ['invoice_id', 'position', 'source_allocation_id', 'source_task_id', 'title', 'task_ref', 'portal_url', 'estimated_hours', 'hours', 'rate', 'amount', 'vat_code'],
-            'invoice_documents' => ['invoice_id', 'kind', 'content', 'byte_size', 'sha256', 'template_version', 'renderer', 'created_at'],
+            'invoice_documents' => ['invoice_id', 'kind', 'version', 'content', 'byte_size', 'sha256', 'template_version', 'renderer', 'created_at'],
             'invoice_counters'  => ['series_id', 'period_key', 'last_value'],
         ];
 
@@ -154,5 +154,58 @@ final class InvoiceSchemaTest extends PgTestCase
                 $this->owner()->transException(false);
             }
         });
+    }
+
+    private function insertDocVersion(\CodeIgniter\Database\BaseConnection $conn, int $invoiceId, int $version, string $kind = 'invoice'): void
+    {
+        $bytes = "%PDF-1.4 v{$version}";
+        $conn->query(
+            "INSERT INTO invoice_documents (invoice_id, kind, version, content, byte_size, sha256, template_version, renderer, created_at)
+             VALUES (:i:, :k:, :v:, decode(:hex:, 'hex'), :size:, :sha:, 'test-1', 'test', now())",
+            ['i' => $invoiceId, 'k' => $kind, 'v' => $version, 'hex' => bin2hex($bytes), 'size' => strlen($bytes), 'sha' => hash('sha256', $bytes)],
+        );
+    }
+
+    public function testDocumentVersionColumnAndConstraints(): void
+    {
+        $col = $this->owner()->query("SELECT data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name = 'invoice_documents' AND column_name = 'version'")->getRow();
+        $this->assertSame('integer', $col->data_type);
+        $this->assertSame('NO', $col->is_nullable);
+        $this->assertSame('1', $col->column_default);
+
+        $names = array_column($this->owner()->query("SELECT conname FROM pg_constraint WHERE conrelid = 'invoice_documents'::regclass")->getResultArray(), 'conname');
+        $this->assertContains('invoice_documents_invoice_kind_version_key', $names);
+        $this->assertNotContains('invoice_documents_invoice_id_kind_key', $names);
+    }
+
+    public function testDocumentVersionsAreGaplessAndUnique(): void
+    {
+        [$entity, $client, $alloc] = $this->setUpPart();
+        $id                        = $this->insertIssuedInvoiceRaw($client, $entity, '2026-10', [$alloc], '%PDF-1.4 test');
+
+        $this->assertSame(1, (int) $this->owner()->query("SELECT version FROM invoice_documents WHERE invoice_id = {$id} AND kind = 'invoice'")->getRow()->version);
+
+        $this->insertDocVersion($this->owner(), $id, 2);
+        $this->assertDbError('/version must be max \+ 1|duplicate key/', fn () => $this->insertDocVersion($this->owner(), $id, 2));
+        $this->assertDbError('/version must be max \+ 1/', fn () => $this->insertDocVersion($this->owner(), $id, 4));
+        $this->assertSame(2, (int) $this->owner()->query("SELECT max(version) AS m FROM invoice_documents WHERE invoice_id = {$id} AND kind = 'invoice'")->getRow()->m);
+    }
+
+    public function testDocumentSettingsDefaultsAndGuards(): void
+    {
+        $rows = $this->owner()->query('SELECT id, regen_invoice_hours, revision FROM document_settings')->getResultArray();
+        $this->assertCount(1, $rows);
+        $this->assertSame([1, 72, 1], [(int) $rows[0]['id'], (int) $rows[0]['regen_invoice_hours'], (int) $rows[0]['revision']]);
+
+        $this->assertDbError('/check constraint/i', fn () => $this->owner()->query('INSERT INTO document_settings (id, updated_at) VALUES (2, now())'));
+        $this->assertDbError('/check constraint/i', fn () => $this->owner()->query('UPDATE document_settings SET regen_invoice_hours = 8761'));
+        $this->assertDbError('/check constraint/i', fn () => $this->owner()->query('UPDATE document_settings SET regen_invoice_hours = -1'));
+
+        $this->assertPermissionDenied(fn () => $this->rw()->query('INSERT INTO document_settings (id, updated_at) VALUES (1, now())'));
+        $this->assertPermissionDenied(fn () => $this->rw()->query('DELETE FROM document_settings'));
+
+        $this->rw()->query('UPDATE document_settings SET regen_invoice_hours = 100');
+        $this->assertSame(100, (int) $this->owner()->query('SELECT regen_invoice_hours FROM document_settings')->getRow()->regen_invoice_hours);
+        $this->rw()->query('UPDATE document_settings SET regen_invoice_hours = 72');
     }
 }
