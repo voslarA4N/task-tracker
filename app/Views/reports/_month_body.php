@@ -11,6 +11,9 @@ use App\Libraries\Reporting\ReportResult;
  * @var ?int                                                                                        $entityId
  * @var ?ReportResult                                                                               $result
  * @var string                                                                                      $period
+ * @var string                                                                                      $view
+ * @var string                                                                                      $monthKey
+ * @var string                                                                                      $yearKey
  * @var string                                                                                      $periodLabel
  * @var ?string                                                                                     $prevUrl
  * @var ?string                                                                                     $nextUrl
@@ -18,7 +21,7 @@ use App\Libraries\Reporting\ReportResult;
  */
 ?>
 <div id="report-body">
-    <?= view('reports/_header', ['entities' => $entities, 'entity' => $entity, 'entityId' => $entityId, 'period' => $period]) ?>
+    <?= view('reports/_header', ['entities' => $entities, 'entity' => $entity, 'entityId' => $entityId, 'view' => $view, 'monthKey' => $monthKey, 'yearKey' => $yearKey]) ?>
     <?php if ($result === null) : ?>
         <div class="alert alert-secondary" role="status">
             <?= esc(lang('Reports.noEntity')) ?>
@@ -35,6 +38,8 @@ use App\Libraries\Reporting\ReportResult;
                 <span class="btn btn-outline-secondary btn-touch disabled" aria-disabled="true"><?= esc(lang('Reports.next')) ?></span>
             <?php endif ?>
         </div>
+
+        <p class="small mb-2"><a href="<?= esc('/reports/year?' . http_build_query(['entity' => $entityId, 'year' => $yearKey])) ?>"><?= esc(lang('Reports.showYear', [$yearKey])) ?></a></p>
 
         <div aria-live="polite">
             <section class="app-card mb-3">
