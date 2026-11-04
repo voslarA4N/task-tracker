@@ -22,8 +22,8 @@ final class DateFormat
             return $iso;
         }
 
-        $formatter = new IntlDateFormatter($locale ?? service('request')->getLocale(), IntlDateFormatter::MEDIUM, IntlDateFormatter::NONE, 'UTC');
-        $out       = $formatter->format(gmmktime(0, 0, 0, (int) $d->format('n'), (int) $d->format('j'), (int) $d->format('Y')));
+        $formatter = new IntlDateFormatter($locale ?? service('request')->getLocale(), IntlDateFormatter::MEDIUM, IntlDateFormatter::NONE, $d->getTimezone());
+        $out       = $formatter->format($d);
 
         return $out === false ? $iso : $out;
     }
