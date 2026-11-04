@@ -257,6 +257,113 @@ final class InvoiceRegenerateTest extends AuthTestCase
         }
     }
 
+    private function detail(int $id): string
+    {
+        $r = $this->get('/invoices/' . $id);
+        $r->assertStatus(200);
+
+        return (string) $r->response()->getBody();
+    }
+
+    public function testDetailShowsBothFormsInWindow(): void
+    {
+        $id   = $this->issued();
+        $html = $this->detail($id);
+
+        foreach (['report', 'invoice'] as $kind) {
+            $this->assertMatchesRegularExpression(
+                '#<form method="post" action="/invoices/' . $id . '/regenerate/' . $kind . '" data-submit-once[^>]*>\s*<input type="hidden" name="[^"]+" value="[^"]+"[^>]*>\s*<input type="hidden" name="expected_version" value="1">#',
+                $html,
+            );
+        }
+
+        $this->assertStringContainsString(lang('Invoices.regenReport'), $html);
+        $this->assertStringContainsString('4. 11. 2026', $html);
+        $this->assertStringContainsString('class="d-inline"', $html);
+        $this->assertStringNotContainsString('style=', $html);
+        $this->assertStringNotContainsString('onclick', $html);
+    }
+
+    public function testInvoiceFormHiddenAfterWindowReportFormStays(): void
+    {
+        $id = $this->issued();
+        $this->owner()->query('UPDATE document_settings SET regen_invoice_hours = 1 WHERE id = 1');
+        $this->at('2026-11-01T12:00:00+01:00');
+        $html = $this->detail($id);
+
+        $this->assertStringContainsString('/regenerate/report"', $html);
+        $this->assertStringNotContainsString('/regenerate/invoice"', $html);
+    }
+
+    public function testInvoiceFormHiddenWhenWindowIsZero(): void
+    {
+        $id = $this->issued();
+        $this->owner()->query('UPDATE document_settings SET regen_invoice_hours = 0 WHERE id = 1');
+        $html = $this->detail($id);
+
+        $this->assertStringNotContainsString('/regenerate/invoice"', $html);
+        $this->assertStringContainsString('/regenerate/report"', $html);
+    }
+
+    public function testExternalAndSchema1HaveNoForms(): void
+    {
+        $s    = $this->issueSetup();
+        $ext  = $this->insertExternalInvoice($s['client'], '2026-10', $s['parts']);
+        $html = $this->detail($ext);
+        $this->assertStringNotContainsString('/regenerate/', $html);
+
+        $s2   = $this->issueSetup(['parts' => [['5.00', '2026-10']]]);
+        $old  = $this->insertIssuedInvoiceRaw($s2['client'], $s2['entity'], '2026-10', $s2['parts']);
+        $html = $this->detail($old);
+        $this->assertStringNotContainsString('/regenerate/report', $html);
+        $this->assertStringNotContainsString('/regenerate/invoice', $html);
+    }
+
+    public function testCreditNoteHasInvoiceFormOnly(): void
+    {
+        $id   = $this->issued();
+        $cn   = $this->issueCreditNote($id);
+        $html = $this->detail($cn->id);
+
+        $this->assertStringContainsString('/invoices/' . $cn->id . '/regenerate/invoice"', $html);
+        $this->assertStringNotContainsString('/regenerate/report"', $html);
+    }
+
+    public function testVersionHistoryAfterRegeneration(): void
+    {
+        $id = $this->issued();
+        $this->postRegen('/invoices/' . $id . '/regenerate/report')->assertStatus(302);
+
+        $shas = $this->owner()->query("SELECT version, sha256 FROM invoice_documents WHERE invoice_id = :i: AND kind = 'report' ORDER BY version", ['i' => $id])->getResultArray();
+        $html = $this->detail($id);
+
+        $this->assertStringContainsString(lang('Invoices.versionsTitle'), $html);
+        $this->assertStringContainsString('/invoices/' . $id . '/report/v/2"', $html);
+        $this->assertStringContainsString('/invoices/' . $id . '/report/v/1"', $html);
+        $this->assertStringContainsString('/invoices/' . $id . '/pdf/v/1"', $html);
+
+        foreach ($shas as $row) {
+            $this->assertStringContainsString(substr(trim((string) $row['sha256']), 0, 12), $html);
+        }
+
+        $this->assertStringContainsString('<code>rep-2</code>', $html);
+        $this->assertSame(2, substr_count($html, lang('Invoices.versionsLatest')));
+        $this->assertStringContainsString('name="expected_version" value="2"', $html);
+        $this->assertStringNotContainsString('<table', substr($html, (int) strpos($html, 'inv-versions-title')));
+    }
+
+    public function testSameTemplateNoticeOnlyWhenCurrent(): void
+    {
+        $s    = $this->issueSetup();
+        $leg  = $this->insertLegacyRep1Invoice($s['client'], $s['entity'], '2026-10', $s['parts']);
+        $html = $this->detail($leg);
+        $this->assertStringContainsString('/regenerate/report"', $html);
+        $this->assertStringNotContainsString(lang('Invoices.regenSameTemplate'), $html);
+
+        $id = $this->issued();
+        $this->assertStringContainsString(lang('Invoices.regenSameTemplate'), $this->detail($id));
+    }
+
     private function numberOf(int $id): string
     {
         return (string) $this->owner()->query('SELECT number FROM invoices WHERE id = :i:', ['i' => $id])->getRow()->number;
