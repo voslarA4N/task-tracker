@@ -23,7 +23,7 @@ $active = $filter->activeCount();
 <?= $this->section('subtitle') ?><?= esc(lang('Tasks.listTitle')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<div class="work-wide">
+<div class="work-wide work-table">
     <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
         <h1 class="h4 mb-0"><?= esc(lang('Tasks.listTitle')) ?></h1>
         <a class="btn btn-primary btn-touch d-none d-md-inline-flex align-items-center" href="/tasks/new"><?= esc(lang('Tasks.new')) ?></a>
@@ -32,11 +32,11 @@ $active = $filter->activeCount();
     <button class="btn btn-outline-secondary btn-touch w-100 mb-2 d-sm-none" type="button" data-bs-toggle="collapse" data-bs-target="#task-filters" aria-expanded="false" aria-controls="task-filters"><?= esc(lang('Tasks.filtersCount', [$active])) ?></button>
 
     <div class="collapse d-sm-block" id="task-filters">
-        <form class="app-card mb-3" method="get" action="/tasks"
+        <form id="task-filter" class="app-card mb-3" method="get" action="/tasks"
               hx-get="/tasks" hx-target="#task-list" hx-swap="outerHTML" hx-push-url="true"
               hx-trigger="change, keyup changed delay:300ms from:#f-q" hx-indicator="#task-filter-indicator">
-            <div class="row g-3">
-                <div class="col-md-6">
+            <div class="row g-3 g-lg-0 dt-filters">
+                <div class="col-md-6 col-lg-12">
                     <label class="form-label" for="f-client"><?= esc(lang('Tasks.filterClient')) ?></label>
                     <select class="form-select" id="f-client" name="client">
                         <option value=""><?= esc(lang('Tasks.filterClientAll')) ?></option>
@@ -45,7 +45,7 @@ $active = $filter->activeCount();
                         <?php endforeach ?>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 col-lg-12">
                     <label class="form-label" for="f-state"><?= esc(lang('Tasks.filterState')) ?></label>
                     <select class="form-select" id="f-state" name="state">
                         <?php foreach ($states as $value => $key) : ?>
@@ -53,11 +53,11 @@ $active = $filter->activeCount();
                         <?php endforeach ?>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 col-lg-12">
                     <label class="form-label" for="f-month"><?= esc(lang('Tasks.filterMonth')) ?></label>
                     <input class="form-control" type="month" id="f-month" name="month" value="<?= esc((string) $filter->month, 'attr') ?>">
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 col-lg-12">
                     <label class="form-label" for="f-q"><?= esc(lang('Tasks.filterSearch')) ?></label>
                     <input class="form-control" type="search" id="f-q" name="q" value="<?= esc((string) $filter->q, 'attr') ?>" placeholder="<?= esc(lang('Tasks.filterSearchPlaceholder'), 'attr') ?>" autocomplete="off">
                 </div>

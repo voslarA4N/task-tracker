@@ -111,9 +111,9 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 ### Prehľady, exporty a limity (E10)
 
 - [x] **DSH-01**: Dashboard (mobil, variant B): aktuálny fakturačný mesiac a klient; dlaždice *Na fakturáciu tento mesiac* a *V práci*; úlohy zoskupené podľa stavu; ukazovateľ priebehu pri čiastočnej fakturácii; tlačidlo „+“; spodná lišta Prehľad / Úlohy / Faktúry / Viac.
-- [ ] **RPT-01**: Mesačný a ročný prehľad: vyfakturované a uhradené, podľa klienta, v mene subjektu.
-- [ ] **RPT-02**: Export prehľadov a zoznamu faktúr do CSV a XLSX (s ochranou pred vložením vzorcov).
-- [ ] **RPT-03** [nové, M11]: Export balíka pre účtovníčku za obdobie (ZIP: PDF dokladov a CSV zoznam).
+- [x] **RPT-01**: Mesačný a ročný prehľad: vyfakturované a uhradené, podľa klienta, v mene subjektu.
+- [x] **RPT-02**: Export prehľadov a zoznamu faktúr do CSV a XLSX (s ochranou pred vložením vzorcov).
+- [x] **RPT-03** [nové, M11]: Export balíka pre účtovníčku za obdobie (ZIP: PDF dokladov a CSV zoznam).
 - [x] **LIM-01**: Tabuľka limitov je upraviteľná v nastaveniach (nie v kóde): krajina, rok platnosti, názov, suma, mena, spôsob výpočtu, prahy upozornenia. Počiatočné hodnoty: SK 50 000 € a okamžite pri 62 500 €; PL 240 000 zł, v prvom roku pomerne.
 - [x] **LIM-02**: Obrat sa počíta za subjekt a rok, predvolene z vystavených faktúr podľa dátumu dodania, mínus dobropisy, len klienti s príznakom „započítavať“. Pre každý subjekt a rok sa dá zadať počiatočný obrat.
 - [x] **LIM-03**: Dashboard upozorní pri 80 % a 100 % limitu a aj vtedy, keď pre aktuálny rok chýba riadok limitu (použije sa posledný známy).
@@ -123,13 +123,13 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 ### Audit (E11)
 
 - [x] **AUD-01**: Denník zmien zaznamenáva používateľa, čas, entitu, ID, akciu a hodnoty pred a po, pre úlohy, časti, faktúry, klientov, subjekty, nastavenia a limity.
-- [ ] **AUD-02**: Používateľ prehliada denník len na čítanie, s filtrami.
+- [x] **AUD-02**: Používateľ prehliada denník len na čítanie, s filtrami.
 
 ### Rozhranie, PWA a import (E12)
 
 - [x] **UI-01**: Responzívne rozhranie na Bootstrap 5.3 pre iPhone aj PC (dotykové ciele aspoň 44 px, bez horizontálneho posúvania).
 - [ ] **UI-02**: Jazyky rozhrania SK, PL, CZ a EN, voľba používateľa. Formát čísel, dátumov a mien podľa jazyka.
-- [ ] **UI-03**: Na PC sú tabuľkové zoznamy úloh a faktúr, obrazovka „Fakturácia mesiaca“ a nastavenia (subjekty, klienti, číslovanie, limity, šablóny, zákonné texty, používatelia, 2FA, zariadenia).
+- [x] **UI-03**: Na PC sú tabuľkové zoznamy úloh a faktúr, obrazovka „Fakturácia mesiaca“ a nastavenia (subjekty, klienti, číslovanie, limity, šablóny, zákonné texty, používatelia, 2FA, zariadenia).
 - [x] **PWA-01**: Manifest (ikony vrátane `apple-touch-icon`, `display: standalone`) a service worker s cache statických súborov a offline stránkou. Inštalácia na iPhone cez „Pridať na plochu“. Používateľ sa na dôveryhodnom zariadení neprihlasuje častejšie ako raz za 30 dní.
 - [x] **IMP-01**: Import úloh za 09 a 10/2026 z `docs/All4net-fakturovanie-prace.xlsx` pre klienta All4Net (27 €). „Zapracované = ÁNO“ sa importuje ako zapracovaná úloha s nezamknutou časťou v danom mesiaci. Import má suchý beh a je opakovateľný bez duplikátov.
 - [x] **SET-01**: Zákonné texty a poznámky sa dajú upraviť pre každú krajinu, DPH režim, režim fakturácie a jazyk.
@@ -271,11 +271,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIM-04 | Phase 10 | Complete |
 | LIM-05 | Phase 10 | Complete |
 | CUR-04 | Phase 10 | Complete |
-| RPT-01 | Phase 11 | Pending |
-| RPT-02 | Phase 11 | Pending |
-| RPT-03 | Phase 11 | Pending |
-| AUD-02 | Phase 11 | Pending |
-| UI-03 | Phase 11 | Pending |
+| RPT-01 | Phase 11 | Complete |
+| RPT-02 | Phase 11 | Complete |
+| RPT-03 | Phase 11 | Complete |
+| AUD-02 | Phase 11 | Complete |
+| UI-03 | Phase 11 | Complete |
 | UI-02 | Phase 12 | Pending |
 | NFR-01 | Phase 12 | Pending |
 | NFR-05 | Phase 12 | Pending |

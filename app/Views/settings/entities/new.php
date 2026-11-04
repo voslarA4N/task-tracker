@@ -8,6 +8,7 @@ $errors = $errors ?? [];
 <?= $this->section('subtitle') ?><?= esc(lang('Entities.newTitle')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <p class="mb-2"><a href="/more"><?= esc(lang('Entities.backToMore')) ?></a></p>
 
 <section class="app-card" aria-labelledby="entity-new-title">
@@ -72,11 +73,12 @@ $errors = $errors ?? [];
         </div>
 
         <div class="master-sticky-actions">
-            <button type="submit" class="btn btn-primary btn-touch w-100">
+            <button type="submit" class="btn btn-primary btn-touch w-100 w-lg-auto">
                 <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
                 <?= esc(lang('Entities.createSubmit')) ?>
             </button>
         </div>
     </form>
 </section>
+</div>
 <?= $this->endSection() ?>

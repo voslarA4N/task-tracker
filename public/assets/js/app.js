@@ -92,6 +92,14 @@
       var spinner = form.querySelector('button[type=submit] .spinner-border');
       if (button) { button.disabled = true; }
       if (spinner) { spinner.classList.remove('d-none'); }
+      /* Stiahnutie suboru nevyvola htmx udalost, preto sa tlacidlo po case vrati (data-submit-reset v ms). */
+      var resetMs = parseInt(form.getAttribute('data-submit-reset') || '0', 10);
+      if (button && resetMs > 0) {
+        setTimeout(function () {
+          button.disabled = false;
+          if (spinner) { spinner.classList.add('d-none'); }
+        }, resetMs);
+      }
     }, true);
   });
 

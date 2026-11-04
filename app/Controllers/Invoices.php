@@ -4,10 +4,19 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\Export\CsvWriter;
+use App\Libraries\Export\DocumentListExport;
+use App\Libraries\Export\ExportFilename;
+use App\Libraries\Export\ExportResponse;
+use App\Libraries\Export\ExportTable;
+use App\Libraries\Export\XlsxWriter;
 use App\Libraries\Invoicing\DocumentFilename;
 use App\Libraries\Invoicing\DocumentIntegrityError;
 use App\Libraries\Invoicing\DocumentStore;
+use App\Libraries\Invoicing\InvoiceFilter;
 use App\Libraries\Invoicing\InvoiceQueries;
+use App\Libraries\Master\ClientService;
+use App\Libraries\Master\EntityDirectory;
 use App\Libraries\Receivables\InvoiceStatusQueries;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -17,20 +26,80 @@ final class Invoices extends BaseController
 {
     public function index(): ResponseInterface
     {
-        $status = (string) $this->request->getGet('status');
-        $status = in_array($status, ['', 'issued', 'sent', 'partially_paid', 'paid', 'overdue', 'cancelled', 'credit_note'], true) ? $status : '';
-        $result = (new InvoiceQueries())->list(100, $status === '' ? null : $status, service('clock')->today());
-        $fmt    = $this->dateFormatter();
+        $filter  = InvoiceFilter::fromQuery($this->request->getGet());
+        $today   = service('clock')->today();
+        $result  = (new InvoiceQueries())->list(100, $filter->status, $today, $filter);
+        $client  = new ClientService();
+        $clients = array_merge(
+            array_map(static fn (array $c): array => $c + ['is_archived' => false], $client->listAll(false)),
+            array_map(static fn (array $c): array => $c + ['is_archived' => true], $client->listAll(true)),
+        );
+
+        usort($clients, static fn (array $a, array $b): int => strcmp((string) $a['name'], (string) $b['name']));
+
+        $fmt = $this->dateFormatter();
 
         $rows = array_map(static function (array $r) use ($fmt): array {
-            $r['issue_date_label'] = self::label($fmt, $r['issue_date'] ?? null);
+            $r['issue_date_label']    = self::label($fmt, $r['issue_date'] ?? null);
+            $r['turnover_date_label'] = self::label($fmt, $r['turnover_date'] ?? null);
+            $r['due_date_label']      = self::label($fmt, $r['due_date'] ?? null);
 
             return $r;
         }, $result['rows']);
 
-        $body = htmx_view('invoices/_list', ['rows' => $rows, 'truncated' => $result['truncated'], 'status' => $status], 'invoices/index');
+        $body = htmx_view('invoices/_list', [
+            'rows'      => $rows,
+            'truncated' => $result['truncated'],
+            'status'    => (string) $filter->status,
+            'filter'    => $filter,
+            'clients'   => $clients,
+            'entities'  => (new EntityDirectory())->forSelect($today),
+            'mainWide'  => true,
+        ], 'invoices/index');
 
         return $this->response->setHeader('Vary', 'HX-Request')->setBody($body);
+    }
+
+    /**
+     * D-08: export aktualne filtrovaneho a zotriedeneho zoznamu (bez limitu obrazovky).
+     */
+    public function exportCsv(): ResponseInterface
+    {
+        [$table, $name] = $this->exportTable('csv');
+
+        return ExportResponse::attachment($this->response, CsvWriter::render($table), 'text/csv; charset=UTF-8', $name);
+    }
+
+    public function exportXlsx(): ResponseInterface
+    {
+        [$table, $name] = $this->exportTable('xlsx');
+
+        return ExportResponse::attachment($this->response, XlsxWriter::render($table), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $name);
+    }
+
+    /**
+     * @return array{0: ExportTable, 1: string}
+     */
+    private function exportTable(string $ext): array
+    {
+        $filter = InvoiceFilter::fromQuery($this->request->getGet());
+        $today  = service('clock')->today();
+        $result = (new InvoiceQueries())->list(null, $filter->status, $today, $filter);
+        $entity = 'vsetky';
+
+        if ($filter->entityId !== null) {
+            foreach ((new EntityDirectory())->forSelect($today) as $e) {
+                if ($e['id'] === $filter->entityId) {
+                    $entity = $e['name_internal'];
+                    break;
+                }
+            }
+        }
+
+        return [
+            DocumentListExport::table($result['rows'], false),
+            ExportFilename::make(lang('Export.filePrefixInvoices'), [$entity, $today], $ext),
+        ];
     }
 
     public function show(int $id): string

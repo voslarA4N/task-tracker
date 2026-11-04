@@ -110,7 +110,7 @@ final class SnapshotBuilder
             'origin'                  => 'issued',
             'type'                    => 'invoice',
             'template_version'        => 'inv-2',
-            'report_template_version' => 'rep-1',
+            'report_template_version' => 'rep-2',
             'number'                  => $number,
             'variable_symbol'         => $number === null ? null : self::variableSymbol($number),
             'billing_month'           => $month,

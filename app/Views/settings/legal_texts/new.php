@@ -13,6 +13,7 @@ $langs = ['sk', 'cs', 'pl', 'en'];
 <?= $this->section('subtitle') ?><?= esc(lang('LegalTexts.addVariant')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <p class="mb-2"><a href="/settings/legal-texts"><?= esc(lang('LegalTexts.backToList')) ?></a></p>
 
 <section class="app-card" aria-labelledby="lt-new-title">
@@ -81,4 +82,5 @@ $langs = ['sk', 'cs', 'pl', 'en'];
         </div>
     </form>
 </section>
+</div>
 <?= $this->endSection() ?>

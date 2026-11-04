@@ -20,12 +20,13 @@ function classList(initial) {
   };
 }
 
-function makeForm(once) {
+function makeForm(once, resetMs) {
   const button = { disabled: false };
   const spinner = { classList: classList(['spinner-border', 'd-none']) };
   const form = {
     matches(sel) { return once && sel === 'form[data-submit-once]'; },
-    hasAttribute(n) { return once && n === 'data-submit-once'; },
+    hasAttribute(n) { return (once && n === 'data-submit-once') || (resetMs !== undefined && n === 'data-submit-reset'); },
+    getAttribute(n) { return n === 'data-submit-reset' && resetMs !== undefined ? String(resetMs) : null; },
     querySelector(sel) {
       if (sel === 'button[type=submit]') { return button; }
       if (sel === 'button[type=submit] .spinner-border' || sel === '.spinner-border') { return spinner; }
@@ -41,7 +42,7 @@ function makeForm(once) {
   return { form, button, spinner };
 }
 
-function boot() {
+function boot(timers) {
   const listeners = {};
   const document = {
     body: { addEventListener() {}, dataset: {} },
@@ -49,7 +50,8 @@ function boot() {
     addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); },
     dispatch(type, event) { (listeners[type] || []).forEach((fn) => fn(event)); },
   };
-  vm.runInNewContext(SOURCE, { document, window: {} });
+  const setTimeout = (fn, ms) => { (timers || []).push({ fn, ms }); };
+  vm.runInNewContext(SOURCE, { document, window: {}, setTimeout });
   document.dispatch('DOMContentLoaded', {});
   return document;
 }
@@ -68,4 +70,26 @@ test('form without data-submit-once is untouched', () => {
   document.dispatch('submit', { type: 'submit', target: form });
   assert.equal(button.disabled, false);
   assert.equal(spinner.classList.contains('d-none'), true);
+});
+
+test('data-submit-reset re-enables the button after the given delay', () => {
+  const timers = [];
+  const document = boot(timers);
+  const { form, button, spinner } = makeForm(true, 10000);
+  document.dispatch('submit', { type: 'submit', target: form });
+  assert.equal(button.disabled, true);
+  assert.equal(timers.length, 1);
+  assert.equal(timers[0].ms, 10000);
+  timers[0].fn();
+  assert.equal(button.disabled, false);
+  assert.equal(spinner.classList.contains('d-none'), true);
+});
+
+test('without data-submit-reset the button stays disabled', () => {
+  const timers = [];
+  const document = boot(timers);
+  const { form, button } = makeForm(true);
+  document.dispatch('submit', { type: 'submit', target: form });
+  assert.equal(button.disabled, true);
+  assert.equal(timers.length, 0);
 });

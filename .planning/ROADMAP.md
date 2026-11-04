@@ -18,7 +18,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 - [x] **Phase 8: Meny a kurzy** - NBP/ECB/ČNB kurzy s ručným prepisom a uložením do kópie údajov (completed 2026-10-30)
 - [x] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí (completed 2026-11-01)
 - [x] **Phase 10: Limity obratu** - Tabuľka limitov, výpočet obratu, upozornenia a predkontrola pri vystavení (completed 2026-11-02)
-- [ ] **Phase 11: Prehľady, exporty a audit** - Mesačné a ročné prehľady, CSV/XLSX, ZIP pre účtovníčku, prehliadač denníka, PC zoznamy
+- [x] **Phase 11: Prehľady, exporty a audit** - Mesačné a ročné prehľady, CSV/XLSX, ZIP pre účtovníčku, prehliadač denníka, PC zoznamy (completed 2026-11-04)
 - [ ] **Phase 12: Lokalizácia a produkcia** - Preklady PL/CZ/EN, zálohy s overenou obnovou, archív dokladov, hardening a meranie výkonu
 
 ## Phase Details
@@ -544,7 +544,37 @@ Plans:
   4. Používateľ prehliada denník zmien len na čítanie s filtrami (entita, používateľ, čas, akcia) a vidí hodnoty pred a po.
   5. Na PC sú dostupné tabuľkové zoznamy úloh a faktúr, obrazovka „Fakturácia mesiaca“ a nastavenia (subjekty, klienti, číslovanie, limity, šablóny, zákonné texty, používatelia, 2FA, zariadenia).
 
-**Plans**: TBD
+**Plans**: 11 plans (6 vĺn)
+Plans:
+**Wave 1**
+
+- [x] 11-01-PLAN.md — Mesačný prehľad: ReportCalculator (vyfakturované podľa dátumu dodania, invoiced/counted), obrazovka /reports/month, menu Viac (vlna 1)
+- [x] 11-02-PLAN.md — PC tabuľka faktúr s filtrami a triedením v jednom fragmente, CSS fázy, layout wide (vlna 1)
+- [x] 11-03-PLAN.md — PC tabuľka úloh s triedením v jednom fragmente (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 11-04-PLAN.md — Uhradené podľa dátumu úhrady v mene subjektu (ReportMath, kumulatívny podiel) (vlna 2)
+- [x] 11-05-PLAN.md — Denník zmien len na čítanie s filtrami, stránkovaním a detailom pred/po (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 11-06-PLAN.md — Ročný prehľad (mesiace 1 až 12, po klientoch), prepínač Mesiac / Rok (vlna 3)
+- [x] 11-07-PLAN.md — Nastavenia → Používatelia (read-only) a PC rozloženie nastavení (vlna 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 11-08-PLAN.md — CSV export prehľadov (BOM, ;, ochrana pred vzorcami) a test zhody súčtov D-05 (vlna 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 11-09-PLAN.md — XLSX export prehľadov cez OpenSpout (číselné bunky, bez vzorcov) (vlna 5)
+- [x] 11-10-PLAN.md — Balík pre účtovníčku: ZIP s uloženými PDF a CSV zoznamom dokladov (vlna 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [x] 11-11-PLAN.md — Export zoznamu faktúr do CSV a XLSX s aktuálnymi filtrami (vlna 6)
+
 **UI hint**: yes
 **Poznámky**: Štandardné vzory (OpenSpout na XLSX). Test zhody súčtov (NFR-04) rozšíriť o prehľady a exporty. Plné UI pre rolu `accountant` je v2.
 
@@ -581,5 +611,5 @@ Plans:
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
-| 11. Prehľady, exporty a audit | 0/0 | Not started | - |
+| 11. Prehľady, exporty a audit | 11/11 | Complete   | 2026-11-04 |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |

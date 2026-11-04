@@ -20,6 +20,19 @@ final class TaskQueries
     public const DASHBOARD_GROUPS = ['done_due', 'partial', 'in_progress'];
 
     private const GROUP_LIMIT = 10;
+
+    /**
+     * Whitelist triedenia zoznamu (T-11-09): kluc z TaskFilter::SORTS, hodnota pevny SQL vyraz.
+     */
+    private const SORT_SQL = [
+        'title'  => 't.title',
+        'client' => 'c.name',
+        'status' => 't.status',
+        'hours'  => 't.hours',
+        'amount' => 'round(t.hours * t.rate, 2)',
+        'done'   => 't.done_at',
+    ];
+
     private const ROW_COLUMNS = <<<'SQL'
         t.id, t.title, t.url, t.client_id, c.name AS client_name, c.currency,
         t.hours, t.rate, round(t.hours * t.rate, 2) AS quoted_amount,
@@ -83,13 +96,27 @@ final class TaskQueries
 
         $sql = 'SELECT ' . self::ROW_COLUMNS . ' ' . self::ROW_FROM
             . ' WHERE ' . implode(' AND ', $where)
-            . " ORDER BY (t.status = 'done' AND v.billing_state <> 'partial'), t.created_at DESC, t.id DESC LIMIT :limit:";
+            . ' ORDER BY ' . self::orderBy($f) . ' LIMIT :limit:';
 
         $rows = array_map($this->decorate(...), $this->db->query($sql, $params)->getResultArray());
 
         $truncated = count($rows) > $limit;
 
         return ['rows' => array_slice($rows, 0, $limit), 'truncated' => $truncated];
+    }
+
+    /**
+     * ORDER BY iba z whitelistu SORT_SQL, smer iba ASC/DESC; vstup sa nikdy neinterpoluje.
+     */
+    private static function orderBy(TaskFilter $f): string
+    {
+        $column = self::SORT_SQL[$f->sort] ?? null;
+
+        if ($column === null) {
+            return "(t.status = 'done' AND v.billing_state <> 'partial'), t.created_at DESC, t.id DESC";
+        }
+
+        return $column . ($f->dir === 'asc' ? ' ASC' : ' DESC') . ' NULLS LAST, t.id DESC';
     }
 
     /**

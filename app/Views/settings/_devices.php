@@ -34,7 +34,7 @@
                             <div class="modal-footer flex-column flex-sm-row">
                                 <form method="post" action="/settings/security/devices/<?= (int) $device['id'] ?>/revoke" class="w-100 w-sm-auto m-0">
                                     <?= csrf_field() ?>
-                                    <button type="submit" class="btn btn-danger w-100"><?= esc(lang('Account.revokeSubmit')) ?></button>
+                                    <button type="submit" class="btn btn-danger w-100 w-lg-auto"><?= esc(lang('Account.revokeSubmit')) ?></button>
                                 </form>
                                 <button type="button" class="btn btn-outline-secondary w-100 w-sm-auto" data-bs-dismiss="modal"><?= esc(lang('Account.cancel')) ?></button>
                             </div>

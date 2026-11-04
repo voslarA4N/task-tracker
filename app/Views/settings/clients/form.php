@@ -26,6 +26,7 @@ $title  = lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle');
 <?= $this->section('subtitle') ?><?= esc($title) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <p class="mb-2"><a href="/settings/clients"><?= esc(lang('Clients.listTitle')) ?></a></p>
 
 <section class="app-card" aria-labelledby="client-form-title">
@@ -188,11 +189,11 @@ $title  = lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle');
         </div>
 
         <div class="master-sticky-actions">
-            <button type="submit" class="btn btn-primary btn-touch w-100">
+            <button type="submit" class="btn btn-primary btn-touch w-100 w-lg-auto">
                 <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
                 <?= esc(lang($id === null ? 'Clients.addButton' : 'Clients.saveButton')) ?>
             </button>
-            <a class="btn btn-link w-100" href="/settings/clients"><?= esc(lang('Clients.cancel')) ?></a>
+            <a class="btn btn-link w-100 w-lg-auto" href="/settings/clients"><?= esc(lang('Clients.cancel')) ?></a>
         </div>
     </form>
 </section>
@@ -205,10 +206,10 @@ $title  = lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle');
         <?php if ($isArchived) : ?>
             <form method="post" action="/settings/clients/<?= (int) $id ?>/unarchive" data-submit-once>
                 <?= csrf_field() ?>
-                <button type="submit" class="btn btn-outline-secondary btn-touch w-100"><?= esc(lang('Clients.unarchiveButton')) ?></button>
+                <button type="submit" class="btn btn-outline-secondary btn-touch w-100 w-lg-auto"><?= esc(lang('Clients.unarchiveButton')) ?></button>
             </form>
         <?php else : ?>
-            <button type="button" class="btn btn-outline-danger btn-touch w-100" data-bs-toggle="modal" data-bs-target="#archive-client"><?= esc(lang('Clients.archiveButton')) ?></button>
+            <button type="button" class="btn btn-outline-danger btn-touch w-100 w-lg-auto" data-bs-toggle="modal" data-bs-target="#archive-client"><?= esc(lang('Clients.archiveButton')) ?></button>
 
             <div class="modal fade" id="archive-client" tabindex="-1" aria-labelledby="archive-client-title" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
@@ -222,7 +223,7 @@ $title  = lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle');
                         <div class="modal-footer flex-column flex-sm-row">
                             <form method="post" action="/settings/clients/<?= (int) $id ?>/archive" class="w-100 w-sm-auto m-0">
                                 <?= csrf_field() ?>
-                                <button type="submit" class="btn btn-danger w-100"><?= esc(lang('Clients.archiveButton')) ?></button>
+                                <button type="submit" class="btn btn-danger w-100 w-lg-auto"><?= esc(lang('Clients.archiveButton')) ?></button>
                             </form>
                             <button type="button" class="btn btn-outline-secondary w-100 w-sm-auto" data-bs-dismiss="modal"><?= esc(lang('Clients.cancel')) ?></button>
                         </div>
@@ -232,4 +233,5 @@ $title  = lang($id === null ? 'Clients.newTitle' : 'Clients.editTitle');
         <?php endif ?>
     </section>
 <?php endif ?>
+</div>
 <?= $this->endSection() ?>

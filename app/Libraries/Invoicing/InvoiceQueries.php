@@ -13,6 +13,17 @@ use Config\Database;
  */
 final class InvoiceQueries
 {
+    private const SORT_SQL = [
+        'number'           => 'i.number',
+        'client'           => 'c.name',
+        'issue_date'       => 'i.issue_date',
+        'turnover_date'    => 'f.turnover_date',
+        'due_date'         => 'i.due_date',
+        'currency'         => 'i.currency',
+        'total'            => 'i.total',
+        'total_entity_ccy' => 'f.total_entity_ccy',
+    ];
+
     /**
      * @var BaseConnection<mixed, mixed>
      */
@@ -27,41 +38,84 @@ final class InvoiceQueries
     }
 
     /**
+     * @param int|null $limit null = bez limitu (export), truncated je potom false
+     *
      * @return array{rows: list<array<string, mixed>>, truncated: bool}
      */
-    public function list(int $limit = 100, ?string $status = null, ?string $today = null): array
+    public function list(?int $limit = 100, ?string $status = null, ?string $today = null, ?InvoiceFilter $filter = null): array
     {
         $today ??= service('clock')->today();
+        $status ??= $filter?->status;
         $cond  = "(i.origin = 'issued' AND i.type = 'invoice' AND i.status <> 'cancelled' AND i.balance > 0 AND i.due_date < CAST(:today: AS date))";
-        $where = '';
+        $where = [];
+        $binds = ['today' => $today];
 
         if (in_array($status, ['issued', 'sent', 'partially_paid', 'paid', 'cancelled'], true)) {
-            $where = ' WHERE i.type = \'invoice\' AND i.status = :status:';
+            $where[]         = "i.type = 'invoice' AND i.status = :status:";
+            $binds['status'] = $status;
         } elseif ($status === 'credit_note') {
-            $where = " WHERE i.type = 'credit_note'";
+            $where[] = "i.type = 'credit_note'";
         } elseif ($status === 'overdue') {
-            $where = ' WHERE ' . $cond;
+            $where[] = $cond;
         }
 
-        $binds = ['today' => $today, 'n' => $limit + 1];
+        if ($filter !== null) {
+            if ($filter->entityId !== null) {
+                $where[]         = 'f.entity_id = :entity:';
+                $binds['entity'] = $filter->entityId;
+            }
 
-        if (str_contains($where, ':status:')) {
-            $binds['status'] = $status;
+            if ($filter->clientId !== null) {
+                $where[]         = 'i.client_id = :client:';
+                $binds['client'] = $filter->clientId;
+            }
+
+            if ($filter->q !== null) {
+                $where[]    = "(i.number ILIKE :q: ESCAPE '\\' OR i.external_ref ILIKE :q: ESCAPE '\\')";
+                $binds['q'] = '%' . self::escapeLike($filter->q) . '%';
+            }
+
+            if ($filter->from !== null) {
+                $where[]       = 'i.issue_date >= CAST(:from: AS date)';
+                $binds['from'] = $filter->from;
+            }
+
+            if ($filter->to !== null) {
+                $where[]     = 'i.issue_date <= CAST(:to: AS date)';
+                $binds['to'] = $filter->to;
+            }
+        }
+
+        $order = 'i.issue_date DESC NULLS LAST, i.number DESC NULLS LAST, i.id DESC';
+
+        if ($filter !== null && ! $filter->isDefaultSort()) {
+            $col   = self::SORT_SQL[$filter->sort] ?? self::SORT_SQL[InvoiceFilter::DEFAULT_SORT];
+            $dir   = $filter->dir === 'asc' ? 'ASC' : 'DESC';
+            $order = $col . ' ' . $dir . ' NULLS LAST, i.id DESC';
+        }
+
+        $limitSql = '';
+
+        if ($limit !== null) {
+            $limitSql   = ' LIMIT :n:';
+            $binds['n'] = $limit + 1;
         }
 
         $rows = $this->db->query(
             'SELECT i.id, i.origin, i.number, i.external_ref, i.issue_date, i.billing_month, i.currency, i.total, i.created_at, c.name AS client_name,
                     i.status, i.balance, i.paid_amount, i.due_date, i.type, i.credit_note_number, i.corrected_number, i.sent_at,
                     f.fx_rate, f.total_entity_ccy, f.snapshot->\'fx\'->>\'entity_currency\' AS entity_currency,
+                    f.entity_id, f.turnover_date, f.delivery_date,
+                    (SELECT MAX(p.paid_on) FROM payments p WHERE p.invoice_id = i.id AND NOT EXISTS (SELECT 1 FROM payment_voids pv WHERE pv.payment_id = p.id)) AS last_paid_on,
                     CASE WHEN ' . $cond . ' THEN 1 ELSE 0 END AS overdue,
                     CASE WHEN ' . $cond . ' THEN CAST(:today: AS date) - i.due_date ELSE 0 END AS days_overdue
-             FROM invoice_status_v i JOIN clients c ON c.id = i.client_id JOIN invoices f ON f.id = i.id' . $where . '
-             ORDER BY i.issue_date DESC NULLS LAST, i.number DESC NULLS LAST, i.id DESC
-             LIMIT :n:',
+             FROM invoice_status_v i JOIN clients c ON c.id = i.client_id JOIN invoices f ON f.id = i.id'
+            . ($where === [] ? '' : ' WHERE ' . implode(' AND ', $where))
+            . ' ORDER BY ' . $order . $limitSql,
             $binds,
         )->getResultArray();
 
-        $truncated = count($rows) > $limit;
+        $truncated = $limit !== null && count($rows) > $limit;
 
         return [
             'rows' => array_map(static fn (array $r): array => [
@@ -69,9 +123,14 @@ final class InvoiceQueries
                 'currency'     => trim((string) $r['currency']),
                 'overdue'      => (int) $r['overdue'] === 1,
                 'days_overdue' => (int) $r['days_overdue'],
-            ] + $r, array_slice($rows, 0, $limit)),
+            ] + $r, $limit === null ? $rows : array_slice($rows, 0, $limit)),
             'truncated' => $truncated,
         ];
+    }
+
+    private static function escapeLike(string $q): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q);
     }
 
     /**

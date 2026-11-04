@@ -22,7 +22,7 @@ use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 
 /**
- * Stroj stráži konvencie: čas len cez Clock, žiadny float, bcmath len v Money, Hours, Fx (FxConverter, FxQuote) a Reporting (LimitMath, PeriodResolver) (D-06, NFR-04).
+ * Stroj stráži konvencie: čas len cez Clock, žiadny float, bcmath len v Money, Hours, Fx (FxConverter, FxQuote) a Reporting (LimitMath, PeriodResolver, ReportMath) (D-06, NFR-04).
  *
  * @implements Rule<Expr>
  */
@@ -57,10 +57,12 @@ final class ForbiddenCallsRule implements Rule
         'app/Libraries/Platform/Clock.php',
         'app/Libraries/Platform/FrozenClock.php',
     ];
-    private const BC_ALLOWED_FILES = [
+    private const FLOAT_CAST_ALLOWED_FILES = ['app/Libraries/Export/XlsxNumber.php'];
+    private const BC_ALLOWED_FILES         = [
         'app/Libraries/Platform/Money.php', 'app/Libraries/Platform/Hours.php',
         'app/Libraries/Fx/FxConverter.php', 'app/Libraries/Fx/FxQuote.php',
         'app/Libraries/Reporting/LimitMath.php', 'app/Libraries/Reporting/PeriodResolver.php',
+        'app/Libraries/Reporting/ReportMath.php',
     ];
 
     public function getNodeType(): string
@@ -73,6 +75,10 @@ final class ForbiddenCallsRule implements Rule
         $file = str_replace('\\', '/', $scope->getFile());
 
         if ($node instanceof Double) {
+            if ($this->endsWithAny($file, self::FLOAT_CAST_ALLOWED_FILES)) {
+                return [];
+            }
+
             return [$this->float('Pretypovanie (float) je zakázané, použi string a Money.')];
         }
 
@@ -109,7 +115,7 @@ final class ForbiddenCallsRule implements Rule
             }
             if (in_array($name, self::BC_FUNCTIONS, true)) {
                 return $this->endsWithAny($file, self::BC_ALLOWED_FILES) ? [] : [
-                    RuleErrorBuilder::message($name . '() je povolené len v Money, Hours, Fx a Reporting (LimitMath, PeriodResolver).')
+                    RuleErrorBuilder::message($name . '() je povolené len v Money, Hours, Fx a Reporting (LimitMath, PeriodResolver, ReportMath).')
                         ->identifier('app.forbiddenBcmath')->build(),
                 ];
             }

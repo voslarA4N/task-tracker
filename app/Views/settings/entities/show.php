@@ -40,6 +40,7 @@ $rows[] = [lang('Entities.dueDays'), $show($version['due_days'])];
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-wide">
 <p class="mb-2"><a href="/more"><?= esc(lang('Entities.backToMore')) ?></a></p>
 
 <?php if (($endError ?? null) !== null) : ?>
@@ -93,4 +94,5 @@ $rows[] = [lang('Entities.dueDays'), $show($version['due_days'])];
 <?php if ($canEnd) : ?>
     <?= $this->include('settings/entities/_end_modal') ?>
 <?php endif ?>
+</div>
 <?= $this->endSection() ?>

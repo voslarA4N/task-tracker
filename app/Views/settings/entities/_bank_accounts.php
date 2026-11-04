@@ -47,7 +47,7 @@ $archivedRows = static function (array $rows): void {
                     <?php if (! $acc['is_default']) : ?>
                         <form method="post" action="<?= $base . '/' . $aid . '/default' ?>" data-submit-once>
                             <?= csrf_field() ?>
-                            <button type="submit" class="btn btn-outline-secondary btn-touch w-100"><?= esc(lang('Entities.bankSetDefault')) ?></button>
+                            <button type="submit" class="btn btn-outline-secondary btn-touch w-100 w-lg-auto"><?= esc(lang('Entities.bankSetDefault')) ?></button>
                         </form>
                     <?php endif ?>
                     <button type="button" class="btn btn-outline-danger btn-touch" data-bs-toggle="modal" data-bs-target="#archive-account-<?= $aid ?>"><?= esc(lang('Entities.bankArchive')) ?></button>
@@ -75,7 +75,7 @@ $archivedRows = static function (array $rows): void {
         <?php endforeach ?>
     <?php endif ?>
 
-    <a class="btn btn-outline-secondary btn-touch w-100 mt-3" href="<?= $base . '/new' ?>"><?= esc(lang('Entities.bankAdd')) ?></a>
+    <a class="btn btn-outline-secondary btn-touch w-100 w-lg-auto mt-3" href="<?= $base . '/new' ?>"><?= esc(lang('Entities.bankAdd')) ?></a>
 
     <?php if ($archivedList !== []) : ?>
         <p class="mt-3 mb-2">

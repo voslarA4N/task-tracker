@@ -294,7 +294,7 @@ final class InvoicingIssueTest extends AuthTestCase
                 throw new QrPaymentFailed('boom', QrPaymentFailed::COMPRESSION_FAILED);
             }
         };
-        $issuer = new InvoiceIssuer($this->rw(), null, new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2'), 'rep-1' => new FakePdfRenderer('rep-1')]), new SnapshotBuilder($this->rw(), null, null, null, new QrPaymentBuilder(new PayBySquare($lzma))));
+        $issuer = new InvoiceIssuer($this->rw(), null, new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2'), 'rep-2' => new FakePdfRenderer('rep-2')]), new SnapshotBuilder($this->rw(), null, null, null, new QrPaymentBuilder(new PayBySquare($lzma))));
         Services::injectMock('invoiceIssuer', $issuer);
 
         $form   = $this->previewForm($s['client']);

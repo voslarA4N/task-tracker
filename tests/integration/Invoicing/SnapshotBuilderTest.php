@@ -111,7 +111,7 @@ final class SnapshotBuilderTest extends PgTestCase
     {
         $snap = $this->build($this->issueSetup());
 
-        $this->assertSame('rep-1', $snap['report_template_version']);
+        $this->assertSame('rep-2', $snap['report_template_version']);
         $this->assertSame('október 2026', $snap['report']['period']);
         $this->assertCount(count($snap['lines']), $snap['report']['rows']);
         $this->assertSame('Výkaz práce', $snap['labels']['report']['title']);

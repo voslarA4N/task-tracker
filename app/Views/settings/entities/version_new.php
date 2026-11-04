@@ -15,6 +15,7 @@ $id     = (int) $entity['id'];
 <?= $this->section('subtitle') ?><?= esc(lang('Entities.versionNewTitle')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <p class="mb-2"><a href="/settings/entities/<?= $id ?>"><?= esc(lang('Entities.detailTitle')) ?></a></p>
 
 <section class="app-card" aria-labelledby="version-new-title">
@@ -59,12 +60,13 @@ $id     = (int) $entity['id'];
         <div class="form-text mb-3"><?= esc(lang('Entities.typoHint')) ?></div>
 
         <div class="master-sticky-actions">
-            <button type="submit" class="btn btn-primary btn-touch w-100">
+            <button type="submit" class="btn btn-primary btn-touch w-100 w-lg-auto">
                 <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
                 <?= esc(lang('Entities.saveVersion')) ?>
             </button>
-            <a class="btn btn-link w-100 mt-2" href="/settings/entities/<?= $id ?>"><?= esc(lang('Entities.cancel')) ?></a>
+            <a class="btn btn-link w-100 w-lg-auto mt-2" href="/settings/entities/<?= $id ?>"><?= esc(lang('Entities.cancel')) ?></a>
         </div>
     </form>
 </section>
+</div>
 <?= $this->endSection() ?>

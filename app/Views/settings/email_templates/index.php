@@ -10,6 +10,7 @@ $langKeys = ['sk' => 'EmailTemplates.lang_sk', 'pl' => 'EmailTemplates.lang_pl',
 <?= $this->section('subtitle') ?><?= esc(lang('EmailTemplates.title')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-wide">
 <p class="mb-2"><a href="/more"><?= esc(lang('EmailTemplates.backToMore')) ?></a></p>
 <h1 class="h4 mb-1"><?= esc(lang('EmailTemplates.title')) ?></h1>
 <p class="small text-body-secondary"><?= esc(lang('EmailTemplates.intro')) ?></p>
@@ -28,4 +29,5 @@ $langKeys = ['sk' => 'EmailTemplates.lang_sk', 'pl' => 'EmailTemplates.lang_pl',
         <?php endforeach ?>
     </section>
 <?php endforeach ?>
+</div>
 <?= $this->endSection() ?>

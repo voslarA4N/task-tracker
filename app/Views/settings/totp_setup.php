@@ -3,6 +3,7 @@
 <?= $this->section('subtitle') ?><?= esc(lang('Account.enableTitle')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <section class="app-card security-card" aria-labelledby="enable-2fa-title">
     <h2 class="h5" id="enable-2fa-title"><?= esc(lang('Account.enableTitle')) ?></h2>
     <p><?= esc(lang('TwoFactor.setupIntro')) ?></p>
@@ -35,7 +36,7 @@
                    inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" required
                    <?= ! empty($error) ? 'aria-describedby="totp-error"' : '' ?>>
         </div>
-        <button type="submit" class="btn btn-primary btn-lg w-100">
+        <button type="submit" class="btn btn-primary btn-lg w-100 w-lg-auto">
             <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
             <?= esc(lang('Account.enableSubmit')) ?>
         </button>
@@ -43,4 +44,5 @@
 
     <p class="mt-3 text-center"><a class="btn btn-link" href="/settings/security"><?= esc(lang('Account.cancel')) ?></a></p>
 </section>
+</div>
 <?= $this->endSection() ?>

@@ -6,7 +6,7 @@ namespace Tests\Integration\Invoicing;
 
 use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Invoicing\MpdfInvoiceInv2Renderer;
-use App\Libraries\Invoicing\MpdfReportRenderer;
+use App\Libraries\Invoicing\MpdfReportRep2Renderer;
 use App\Libraries\Invoicing\PdfRenderer;
 use App\Libraries\Invoicing\RenderedPdf;
 use App\Libraries\Invoicing\RendererRegistry;
@@ -88,7 +88,7 @@ final class IssueTimingTest extends PgTestCase
 
         $issuer = new InvoiceIssuer($this->rw(), null, new RendererRegistry([
             'inv-2' => $this->timed(new MpdfInvoiceInv2Renderer(), 'inv-2', $ms),
-            'rep-1' => $this->timed(new MpdfReportRenderer(), 'rep-1', $ms),
+            'rep-2' => $this->timed(new MpdfReportRep2Renderer(), 'rep-2', $ms),
         ]));
 
         $cmd   = $this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']);
@@ -99,12 +99,12 @@ final class IssueTimingTest extends PgTestCase
 
         /** @var array<string, int> $ms */
         $ms = $ms->getArrayCopy();
-        fwrite(STDERR, "\n[issue-timing] inv-2 {$ms['inv-2']} ms, rep-1 {$ms['rep-1']} ms, total issue {$totalMs} ms, peak " . intdiv($peak, 1_048_576) . " MB\n");
+        fwrite(STDERR, "\n[issue-timing] inv-2 {$ms['inv-2']} ms, rep-2 {$ms['rep-2']} ms, total issue {$totalMs} ms, peak " . intdiv($peak, 1_048_576) . " MB\n");
 
         $this->assertArrayHasKey('inv-2', $ms);
-        $this->assertArrayHasKey('rep-1', $ms);
+        $this->assertArrayHasKey('rep-2', $ms);
         $this->assertLessThan(self::LIMIT_MS, $ms['inv-2']);
-        $this->assertLessThan(self::LIMIT_MS, $ms['rep-1']);
+        $this->assertLessThan(self::LIMIT_MS, $ms['rep-2']);
         $this->assertLessThan(self::LIMIT_MEMORY, $peak);
     }
 }

@@ -9,6 +9,7 @@
 <?= $this->section('subtitle') ?><?= esc(lang('Clients.listTitle')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-wide">
 <p class="mb-2"><a href="/more"><?= esc(lang('Clients.backToMore')) ?></a></p>
 <h1 class="h4"><?= esc(lang('Clients.listTitle')) ?></h1>
 
@@ -32,6 +33,7 @@
 </section>
 
 <div class="mt-3">
-    <a class="btn btn-primary w-100" href="/settings/clients/new"><?= esc(lang('Clients.addButton')) ?></a>
+    <a class="btn btn-primary w-100 w-lg-auto" href="/settings/clients/new"><?= esc(lang('Clients.addButton')) ?></a>
+</div>
 </div>
 <?= $this->endSection() ?>

@@ -42,6 +42,7 @@ final class Tasks extends BaseController
             'rows'      => $result['rows'],
             'truncated' => $result['truncated'],
             'clients'   => $clients,
+            'mainWide'  => true,
         ], 'tasks/index');
 
         return $this->response->setHeader('Vary', 'HX-Request')->setBody($body);

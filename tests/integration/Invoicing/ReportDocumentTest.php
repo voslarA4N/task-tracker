@@ -51,7 +51,7 @@ final class ReportDocumentTest extends PgTestCase
 
         $rows = $this->owner()->query('SELECT kind, template_version, sha256, content FROM invoice_documents WHERE invoice_id = :i: ORDER BY kind', ['i' => $issued->id])->getResultArray();
         $this->assertSame(['invoice', 'report'], array_column($rows, 'kind'));
-        $this->assertSame(['inv-2', 'rep-1'], array_column($rows, 'template_version'));
+        $this->assertSame(['inv-2', 'rep-2'], array_column($rows, 'template_version'));
 
         foreach ($rows as $row) {
             $this->assertSame(hash('sha256', pg_unescape_bytea((string) $row['content'])), trim((string) $row['sha256']));

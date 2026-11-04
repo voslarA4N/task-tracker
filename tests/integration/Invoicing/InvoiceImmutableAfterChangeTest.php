@@ -8,7 +8,7 @@ use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Invoicing\DocumentStore;
 use App\Libraries\Invoicing\InvoiceParts;
 use App\Libraries\Invoicing\MpdfInvoiceInv2Renderer;
-use App\Libraries\Invoicing\MpdfReportRenderer;
+use App\Libraries\Invoicing\MpdfReportRep2Renderer;
 use App\Libraries\Invoicing\SnapshotBuilder;
 use App\Libraries\Master\ClientService;
 use App\Libraries\Master\EntityInput;
@@ -52,7 +52,7 @@ final class InvoiceImmutableAfterChangeTest extends PgTestCase
     {
         $s = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['5.50', '2026-10']]]);
 
-        $issued = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
+        $issued = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRep2Renderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
         $this->assertSame('418.50', $issued->total);
 
         $before = $this->state($issued->id);
@@ -121,7 +121,7 @@ final class InvoiceImmutableAfterChangeTest extends PgTestCase
     {
         $s      = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['4.00', '2026-10']]]);
         $first  = [$s['parts'][0]];
-        $issued = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $first));
+        $issued = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRep2Renderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $first));
         $docs   = new DocumentStore($this->rw());
         $before = ['invoice' => $docs->read($issued->id, 'invoice'), 'report' => $docs->read($issued->id, 'report')];
         $this->assertNotNull($before['invoice']);

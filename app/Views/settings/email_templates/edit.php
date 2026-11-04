@@ -22,6 +22,7 @@ $bodyErr    = $error !== null && $errorField === 'body';
 <?= $this->section('subtitle') ?><?= esc(lang('EmailTemplates.editTitle')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <p class="mb-2"><a href="/settings/email-templates"><?= esc(lang('EmailTemplates.backToList')) ?></a></p>
 
 <section class="app-card" aria-labelledby="et-title">
@@ -85,4 +86,5 @@ $bodyErr    = $error !== null && $errorField === 'body';
         </div>
     </form>
 </section>
+</div>
 <?= $this->endSection() ?>

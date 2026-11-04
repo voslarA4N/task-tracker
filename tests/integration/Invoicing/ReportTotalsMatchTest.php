@@ -6,7 +6,7 @@ namespace Tests\Integration\Invoicing;
 
 use App\Libraries\Invoicing\DocumentStore;
 use App\Libraries\Invoicing\MpdfInvoiceInv2Renderer;
-use App\Libraries\Invoicing\MpdfReportRenderer;
+use App\Libraries\Invoicing\MpdfReportRep2Renderer;
 use App\Libraries\Invoicing\PdfFormat;
 use App\Libraries\Platform\FrozenClock;
 use Config\Services;
@@ -45,7 +45,7 @@ final class ReportTotalsMatchTest extends PgTestCase
     {
         $s = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['5.50', '2026-10'], ['3.00', '2026-10', ['hours' => '3.00']]]]);
 
-        $issued = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())
+        $issued = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRep2Renderer())
             ->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
 
         $row      = $this->owner()->query('SELECT snapshot, total, doc_language, currency FROM invoices WHERE id = :i:', ['i' => $issued->id])->getRowArray();
