@@ -568,7 +568,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 11-09-PLAN.md — XLSX export prehľadov cez OpenSpout (číselné bunky, bez vzorcov) (vlna 5)
+- [x] 11-09-PLAN.md — XLSX export prehľadov cez OpenSpout (číselné bunky, bez vzorcov) (vlna 5)
 - [ ] 11-10-PLAN.md — Balík pre účtovníčku: ZIP s uloženými PDF a CSV zoznamom dokladov (vlna 5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
@@ -611,5 +611,5 @@ Plans:
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
-| 11. Prehľady, exporty a audit | 8/11 | In Progress|  |
+| 11. Prehľady, exporty a audit | 9/11 | In Progress|  |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |

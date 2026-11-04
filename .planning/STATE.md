@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 11-07-PLAN.md
-last_updated: "2026-11-04T09:19:15.793Z"
+stopped_at: Completed 11-09-PLAN.md
+last_updated: "2026-11-04T09:29:41.526Z"
 last_activity: 2026-11-04
 progress:
   total_phases: 12
   completed_phases: 10
   total_plans: 125
-  completed_plans: 122
+  completed_plans: 123
   percent: 83
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 11 (preh-ady-exporty-a-audit) — EXECUTING
-Plan: 9 of 11
+Plan: 10 of 11
 Status: Ready to execute
 Last activity: 2026-11-04
 
@@ -106,6 +106,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 11 P02 | 35 min | 2 tasks | 12 files |
 | Phase 11 P04 | ~25 min | 2 tasks | 10 files |
 | Phase 11 P07 | 30min | 2 tasks | 40 files |
+| Phase 11 P09 | 25min | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -146,6 +147,7 @@ Recent decisions affecting current work:
 - [Phase 09]: Credit note preview/confirm are POST (reason out of URLs); issue checks request_key replay before draft
 - [Phase ?]: [10-01] Pro-rata days capped at 365; thresholds decided by exact bccomp, percent half-up 1dp; rolling_12m openingYears = all window years
 - [Phase 10]: 10-02: thresholds via array_to_string/string_to_array; fallback year nearest lower else higher; is_seed + invoices_turnover_idx in schema; LimitMath::compareRatio keeps bcmath allow-list unchanged
+- [Phase 11]: XLSX text always StringCell, float cast allowed only in XlsxNumber.php
 
 ### Pending Todos
 
@@ -182,6 +184,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-04T09:19:15.786Z
-Stopped at: Completed 11-07-PLAN.md
+Last session: 2026-11-04T09:29:41.520Z
+Stopped at: Completed 11-09-PLAN.md
 Resume file: None
