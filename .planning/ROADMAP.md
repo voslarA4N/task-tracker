@@ -632,7 +632,7 @@ Plans:
 - [x] 12-02-PLAN.md — Formáty čísel, súm, percent, dátumov (DateFormat, EntityInput) a mesiacov v 4 jazykoch, doklad nezávislý od jazyka UI (vlna 1)
 - [x] 12-03-PLAN.md — Nemazateľnosť dokladov: matica DELETE/TRUNCATE/UPDATE pre app_rw aj app_owner, katalógová poistka (vlna 1)
 - [x] 12-04-PLAN.md — Šifrovaná restic záloha s manifestom, rotáciou 14/8/12, healthchecks a e-mailom pri chybe (vlna 1)
-- [ ] 12-05-PLAN.md — Meranie p95, smoke statiky (cache, kompresia), poistka konfigurácie výkonu, runbook merania (vlna 1)
+- [x] 12-05-PLAN.md — Meranie p95, smoke statiky (cache, kompresia), poistka konfigurácie výkonu, runbook merania (vlna 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -676,4 +676,4 @@ Plans:
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
 | 11. Prehľady, exporty a audit | 11/11 | Complete   | 2026-11-04 |
-| 12. Lokalizácia a produkcia | 4/15 | In Progress|  |
+| 12. Lokalizácia a produkcia | 5/15 | In Progress|  |
