@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 12 UI-SPEC approved
-last_updated: "2026-11-04T22:11:40.096Z"
-last_activity: 2026-11-04 -- Phase 12 planning complete
+last_updated: "2026-11-04T22:22:39.752Z"
+last_activity: 2026-11-04
 progress:
   total_phases: 13
   completed_phases: 12
   total_plans: 145
-  completed_plans: 130
+  completed_plans: 131
   percent: 90
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 11.1 — pregenerovanie-dokladov-z-k-pie-dajov
+**Current focus:** Phase 12 — lokaliz-cia-a-produkcia
 
 ## Current Position
 
-Phase: 12
-Plan: Not started
+Phase: 12 (lokaliz-cia-a-produkcia) — EXECUTING
+Plan: 2 of 15
 Status: Ready to execute
-Last activity: 2026-11-04 -- Phase 12 planning complete
+Last activity: 2026-11-04
 
 Progress: [░░░░░░░░░░] 0%
 

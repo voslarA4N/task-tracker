@@ -620,6 +620,7 @@ Plans:
   1. Používateľ prepne jazyk rozhrania medzi SK, PL, CZ a EN a čísla, dátumy a meny sa zobrazia podľa jazyka; test parity kľúčov potvrdzuje, že žiadny preklad nechýba.
   2. Denný šifrovaný `pg_dump` a PDF doklady idú mimo servera s rotáciou 14 denných / 8 týždenných / 12 mesačných, upozornenie pri vynechanej zálohe funguje a zdokumentovaná obnova na čistom prostredí bola úspešne vyskúšaná s reálnymi dátami.
      *Akceptovaný odklon (D-05, 12-CONTEXT):* bez plateného úložiska mimo servera; šifrovaný restic repozitár je na serveri a kópia mimo servera vzniká ručným pullom na PC vlastníka (`scripts/pull-backups.sh`).
+
   3. Doklady sa nedajú zmazať ani DB oprávneniami a raz ročne vznikne archív dokladov pokrývajúci zákonnú dobu uchovávania.
   4. Na cieľovom VPS je p95 odozvy bežných stránok pod 100 ms, PDF sa generuje pod 2 s, aplikácia sa drží cieľovo do 512 MB RAM v pokoji a beží HTTP/2 s kompresiou, OPcache a dlhou cache statických súborov.
 
@@ -627,7 +628,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 12-01-PLAN.md — Výber jazyka rozhrania: karta + POST setLocale, supportedLocales sk/pl/cs/en, audit, PL/CS Account a App, parita kľúčov (vlna 1)
+- [x] 12-01-PLAN.md — Výber jazyka rozhrania: karta + POST setLocale, supportedLocales sk/pl/cs/en, audit, PL/CS Account a App, parita kľúčov (vlna 1)
 - [ ] 12-02-PLAN.md — Formáty čísel, súm, percent, dátumov (DateFormat, EntityInput) a mesiacov v 4 jazykoch, doklad nezávislý od jazyka UI (vlna 1)
 - [ ] 12-03-PLAN.md — Nemazateľnosť dokladov: matica DELETE/TRUNCATE/UPDATE pre app_rw aj app_owner, katalógová poistka (vlna 1)
 - [ ] 12-04-PLAN.md — Šifrovaná restic záloha s manifestom, rotáciou 14/8/12, healthchecks a e-mailom pri chybe (vlna 1)
@@ -654,6 +655,7 @@ Plans:
 **Wave 5** *(blocked on Wave 4 completion)*
 
 - [ ] 12-15-PLAN.md — Meranie p95, PDF a pamäte na stagingu a produkcii, prípadné ladenie (vlna 5, checkpoint)
+
 **UI hint**: yes
 **Poznámky**: Štandardné vzory, overiť len podmienky Hetzner Storage Box (port, append-only). Prune zálohy spúšťať mimo produkčného servera alebo s oddeleným kľúčom; kópia hesla repozitára a `encryption.key` mimo servera. **Závislosť od účtovníčky:** doba uchovávania (SK 10 rokov, PL podľa účtovníčky). Súčasťou je CLI reset 2FA a meranie `docker stats` a p95.
 
@@ -674,4 +676,4 @@ Plans:
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
 | 11. Prehľady, exporty a audit | 11/11 | Complete   | 2026-11-04 |
-| 12. Lokalizácia a produkcia | 0/15 | Planned | - |
+| 12. Lokalizácia a produkcia | 1/15 | In Progress|  |
