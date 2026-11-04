@@ -69,4 +69,20 @@ abstract class PgTestCase extends CIUnitTestCase
 
         $this->fail('Expected DatabaseException (permission denied), none thrown.');
     }
+
+    /**
+     * Dotaz musi zlyhat chybou DB, ktorej sprava zodpoveda vzoru (guard trigger, FK, ...).
+     */
+    protected function assertDbError(callable $fn, string $pattern = '/immutable|not allowed|cannot|may not|may only/i'): void
+    {
+        try {
+            $fn();
+        } catch (DatabaseException $e) {
+            $this->assertMatchesRegularExpression($pattern, $e->getMessage());
+
+            return;
+        }
+
+        $this->fail('Expected DatabaseException, none thrown.');
+    }
 }
