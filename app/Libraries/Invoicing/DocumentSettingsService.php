@@ -14,8 +14,7 @@ use Config\Database;
  */
 final class DocumentSettingsService
 {
-    public const MAX_HOURS     = 8760;
-    public const DEFAULT_HOURS = 72;
+    public const MAX_HOURS = 8760;
 
     /**
      * @var BaseConnection<mixed, mixed>
@@ -33,11 +32,20 @@ final class DocumentSettingsService
         $this->audit = $audit ?? new AuditLogger($this->db);
     }
 
+    /**
+     * Chybajuci riadok je poskodena schema: rovnako ako current() zlyha nahlas, nikdy nevymysla lehotu.
+     *
+     * @throws DocumentSettingsRejected
+     */
     public function invoiceWindowHours(): int
     {
         $row = $this->db->query('SELECT regen_invoice_hours FROM document_settings WHERE id = 1')->getRowArray();
 
-        return $row === null ? self::DEFAULT_HOURS : (int) $row['regen_invoice_hours'];
+        if ($row === null) {
+            throw new DocumentSettingsRejected('not_found');
+        }
+
+        return (int) $row['regen_invoice_hours'];
     }
 
     /**

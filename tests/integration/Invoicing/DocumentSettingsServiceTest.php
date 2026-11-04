@@ -50,6 +50,24 @@ final class DocumentSettingsServiceTest extends PgTestCase
         $this->assertSame(1, $this->service()->current()['revision']);
     }
 
+    public function testMissingRowFailsLoudlyInBothReaders(): void
+    {
+        $this->owner()->query('DELETE FROM document_settings WHERE id = 1');
+
+        try {
+            foreach (['invoiceWindowHours', 'current'] as $method) {
+                try {
+                    $this->service()->{$method}();
+                    $this->fail($method . ' should throw');
+                } catch (DocumentSettingsRejected $e) {
+                    $this->assertSame('not_found', $e->reason);
+                }
+            }
+        } finally {
+            $this->owner()->query("INSERT INTO document_settings (id, regen_invoice_hours, revision, updated_at) VALUES (1, 72, 1, now())");
+        }
+    }
+
     public function testUpdateChangesAuditsAndBumpsRevision(): void
     {
         $this->assertTrue($this->service()->update('48', 1));
