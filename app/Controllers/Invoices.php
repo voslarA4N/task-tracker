@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\Export\CsvWriter;
+use App\Libraries\Export\DocumentListExport;
+use App\Libraries\Export\ExportFilename;
+use App\Libraries\Export\ExportResponse;
+use App\Libraries\Export\ExportTable;
+use App\Libraries\Export\XlsxWriter;
 use App\Libraries\Invoicing\DocumentFilename;
 use App\Libraries\Invoicing\DocumentIntegrityError;
 use App\Libraries\Invoicing\DocumentStore;
@@ -52,6 +58,48 @@ final class Invoices extends BaseController
         ], 'invoices/index');
 
         return $this->response->setHeader('Vary', 'HX-Request')->setBody($body);
+    }
+
+    /**
+     * D-08: export aktualne filtrovaneho a zotriedeneho zoznamu (bez limitu obrazovky).
+     */
+    public function exportCsv(): ResponseInterface
+    {
+        [$table, $name] = $this->exportTable('csv');
+
+        return ExportResponse::attachment($this->response, CsvWriter::render($table), 'text/csv; charset=UTF-8', $name);
+    }
+
+    public function exportXlsx(): ResponseInterface
+    {
+        [$table, $name] = $this->exportTable('xlsx');
+
+        return ExportResponse::attachment($this->response, XlsxWriter::render($table), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $name);
+    }
+
+    /**
+     * @return array{0: ExportTable, 1: string}
+     */
+    private function exportTable(string $ext): array
+    {
+        $filter = InvoiceFilter::fromQuery($this->request->getGet());
+        $today  = service('clock')->today();
+        $result = (new InvoiceQueries())->list(null, $filter->status, $today, $filter);
+        $entity = 'vsetky';
+
+        if ($filter->entityId !== null) {
+            foreach ((new EntityDirectory())->forSelect($today) as $e) {
+                if ($e['id'] === $filter->entityId) {
+                    $entity = $e['name_internal'];
+                    break;
+                }
+            }
+        }
+
+        return [
+            DocumentListExport::table($result['rows'], false),
+            ExportFilename::make(lang('Export.filePrefixInvoices'), [$entity, $today], $ext),
+        ];
     }
 
     public function show(int $id): string
