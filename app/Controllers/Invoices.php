@@ -15,11 +15,15 @@ use App\Libraries\Invoicing\DocumentIntegrityError;
 use App\Libraries\Invoicing\DocumentStore;
 use App\Libraries\Invoicing\InvoiceFilter;
 use App\Libraries\Invoicing\InvoiceQueries;
+use App\Libraries\Invoicing\RegenerateRejected;
 use App\Libraries\Master\ClientService;
 use App\Libraries\Master\EntityDirectory;
+use App\Libraries\Platform\Clock;
 use App\Libraries\Receivables\InvoiceStatusQueries;
 use CodeIgniter\Exceptions\PageNotFoundException;
+use CodeIgniter\HTTP\RedirectResponse;
 use CodeIgniter\HTTP\ResponseInterface;
+use DateTimeZone;
 use IntlDateFormatter;
 
 final class Invoices extends BaseController
@@ -126,6 +130,21 @@ final class Invoices extends BaseController
             $payments = $queries->payments($id);
         }
 
+        $tz  = new DateTimeZone('Europe/Bratislava');
+        $dtf = new IntlDateFormatter(service('request')->getLocale(), IntlDateFormatter::MEDIUM, IntlDateFormatter::SHORT, 'Europe/Bratislava');
+
+        $dates['regen_invoice_deadline'] = '';
+
+        if (is_string($invoice['regen_invoice_deadline'] ?? null)) {
+            $dates['regen_invoice_deadline'] = (string) $dtf->format(Clock::parseInstant($invoice['regen_invoice_deadline'])->setTimezone($tz));
+        }
+
+        $dates['versions'] = [];
+
+        foreach ($invoice['document_versions'] as $v) {
+            $dates['versions'][$v['kind'] . '-' . $v['version']] = (string) $dtf->format(Clock::parseInstant((string) $v['created_at'])->setTimezone($tz));
+        }
+
         return view('invoices/show', ['invoice' => $invoice, 'dates' => $dates, 'payState' => $payState, 'payments' => $payments]);
     }
 
@@ -145,7 +164,59 @@ final class Invoices extends BaseController
         return $this->serve($id, 'report');
     }
 
-    private function serve(int $id, string $kind): ResponseInterface
+    public function pdfVersion(int $id, int $version): ResponseInterface
+    {
+        return $this->serve($id, 'invoice', $version);
+    }
+
+    public function reportVersion(int $id, int $version): ResponseInterface
+    {
+        return $this->serve($id, 'report', $version);
+    }
+
+    public function regenerateReport(int $id): RedirectResponse
+    {
+        return $this->regenerate($id, 'report');
+    }
+
+    public function regenerateInvoice(int $id): RedirectResponse
+    {
+        return $this->regenerate($id, 'invoice');
+    }
+
+    private function regenerate(int $id, string $kind): RedirectResponse
+    {
+        $expected = $this->request->getPost('expected_version');
+
+        if (! is_string($expected) || ! ctype_digit($expected) || strlen($expected) > 9) {
+            return $this->regenNotice($id, 'danger', lang('Invoices.regenErrorInput'));
+        }
+
+        try {
+            $r = service('documentRegenerator')->regenerate($id, $kind, (int) $expected);
+        } catch (RegenerateRejected $e) {
+            return match ($e->reason) {
+                'not_found'      => throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound')),
+                'stale'          => $this->regenNotice($id, 'warning', lang('Invoices.regenErrorStale')),
+                'window_expired' => $this->regenNotice($id, 'danger', lang('Invoices.regenErrorWindow')),
+                'render_failed'  => $this->regenNotice($id, 'danger', lang('Invoices.regenErrorRender')),
+                default          => $this->regenNotice($id, 'danger', lang('Invoices.regenErrorNotRegenerable')),
+            };
+        }
+
+        $label = lang($kind === 'report' ? 'Invoices.versionsKindReport' : 'Invoices.versionsKindInvoice');
+
+        return $this->regenNotice($id, 'success', lang('Invoices.regenDone', [$label, $r->version, $r->templateVersion]));
+    }
+
+    private function regenNotice(int $id, string $type, string $message): RedirectResponse
+    {
+        session()->setFlashdata('app_notice', ['type' => $type, 'message' => $message]);
+
+        return redirect()->to('/invoices/' . $id);
+    }
+
+    private function serve(int $id, string $kind, ?int $version = null): ResponseInterface
     {
         $row = db_connect()->query('SELECT origin, type, number, doc_language, snapshot_schema FROM invoices WHERE id = :id:', ['id' => $id])->getRowArray();
 
@@ -163,11 +234,16 @@ final class Invoices extends BaseController
         $errorKey = $kind === 'report' ? 'Invoices.errorReport' : 'Invoices.errorPdf';
 
         try {
-            $doc = (new DocumentStore())->read($id, $kind);
+            $store = new DocumentStore();
+            $doc   = $version === null ? $store->read($id, $kind) : $store->readVersion($id, $kind, $version);
         } catch (DocumentIntegrityError $e) {
             log_message('critical', 'Invoice {id} {kind} PDF failed integrity check: {message}', ['id' => $id, 'kind' => $kind, 'message' => $e->getMessage()]);
 
             return $this->response->setStatusCode(500)->setBody(lang($errorKey));
+        }
+
+        if ($doc === null && $version !== null) {
+            throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound'));
         }
 
         if ($doc === null) {
@@ -180,7 +256,12 @@ final class Invoices extends BaseController
             return $this->response->setStatusCode(500)->setBody(lang($errorKey));
         }
 
-        $filename    = DocumentFilename::for($isCreditNote && $kind === 'invoice' ? 'credit_note' : $kind, trim((string) $row['doc_language']), (string) $row['number']);
+        $filename = DocumentFilename::for($isCreditNote && $kind === 'invoice' ? 'credit_note' : $kind, trim((string) $row['doc_language']), (string) $row['number']);
+
+        if ($version !== null) {
+            $filename = (string) preg_replace('/\.pdf$/', '-v' . $version . '.pdf', $filename);
+        }
+
         $disposition = $this->request->getGet('download') === '1' ? 'attachment' : 'inline';
 
         return $this->response

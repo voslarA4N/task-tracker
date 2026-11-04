@@ -187,6 +187,30 @@ final class InvoiceQueries
         $invoice['document']        = $store->meta($id);
         $invoice['report_document'] = $invoice['type'] === 'credit_note' ? null : $store->meta($id, 'report');
 
+        $invoice['document_versions']      = [];
+        $invoice['can_regenerate_report']  = false;
+        $invoice['can_regenerate_invoice'] = false;
+        $invoice['regen_invoice_deadline'] = null;
+        $invoice['report_is_current']      = false;
+        $invoice['invoice_is_current']     = false;
+
+        if ($invoice['origin'] === 'issued') {
+            $window = (new DocumentSettingsService($this->db))->invoiceWindowHours();
+            $now    = service('clock')->now();
+
+            $invoice['document_versions']      = $store->versions($id);
+            $invoice['can_regenerate_report']  = RegeneratePolicy::canRegenerate($invoice, 'report', $window, $now) && $invoice['report_document'] !== null;
+            $invoice['can_regenerate_invoice'] = RegeneratePolicy::canRegenerate($invoice, 'invoice', $window, $now) && $invoice['document'] !== null;
+
+            if ($invoice['can_regenerate_invoice']) {
+                $invoice['regen_invoice_deadline'] = RegeneratePolicy::deadline($invoice, $window)?->format(DATE_ATOM);
+            }
+
+            $type                          = (string) $invoice['type'];
+            $invoice['report_is_current']  = $invoice['report_document'] !== null && $invoice['report_document']['template_version'] === DocumentTemplates::current('report', $type);
+            $invoice['invoice_is_current'] = $invoice['document'] !== null && $invoice['document']['template_version'] === DocumentTemplates::current('invoice', $type);
+        }
+
         return $invoice;
     }
 }
