@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\Export\CsvWriter;
+use App\Libraries\Export\ExportFilename;
+use App\Libraries\Export\ExportResponse;
+use App\Libraries\Export\ReportTable;
 use App\Libraries\Master\EntityDirectory;
 use App\Libraries\Reporting\ReportCalculator;
 use App\Libraries\Reporting\ReportPeriod;
 use App\Libraries\Work\BillingMonth;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\ResponseInterface;
 
 /**
@@ -135,6 +140,51 @@ final class Reports extends BaseController
             'prevUrl'   => $year > 2000 ? $url($year - 1) : null,
             'nextUrl'   => $year >= $currentYear ? null : $url($year + 1),
         ] + $base, 'reports/_year_body', 'reports/year');
+    }
+
+    /**
+     * CSV mesacneho prehladu (D-06 az D-08), rovnake cisla ako obrazovka.
+     */
+    public function monthCsv(): ResponseInterface
+    {
+        $ctx    = $this->context();
+        $entity = $ctx['entity'];
+        $period = BillingMonth::parse((string) $this->request->getGet('period'));
+
+        if ($entity === null || $period === null) {
+            throw PageNotFoundException::forPageNotFound();
+        }
+
+        $report = ReportPeriod::month($period);
+        $result = (new ReportCalculator())->forPeriod($entity['id'], $report);
+
+        return $this->csv(CsvWriter::render(ReportTable::month($result, $this->request->getLocale())), $report->key, $entity['name_internal']);
+    }
+
+    /**
+     * CSV rocneho prehladu.
+     */
+    public function yearCsv(): ResponseInterface
+    {
+        $ctx    = $this->context();
+        $entity = $ctx['entity'];
+        $raw    = (string) $this->request->getGet('year');
+
+        if ($entity === null || preg_match('/^\d{4}$/D', $raw) !== 1 || (int) $raw < 2000 || (int) $raw > 2100) {
+            throw PageNotFoundException::forPageNotFound();
+        }
+
+        $report = ReportPeriod::year((int) $raw);
+        $result = (new ReportCalculator())->forPeriod($entity['id'], $report);
+
+        return $this->csv(CsvWriter::render(ReportTable::year($result, $this->request->getLocale())), $report->key, $entity['name_internal']);
+    }
+
+    private function csv(string $bytes, string $periodKey, string $entityName): ResponseInterface
+    {
+        $filename = ExportFilename::make(lang('Export.filePrefixReport'), [$periodKey, $entityName], 'csv');
+
+        return ExportResponse::attachment($this->response, $bytes, 'text/csv; charset=UTF-8', $filename);
     }
 
     /**
