@@ -57,7 +57,7 @@ class InvoiceMailer
     /**
      * Navrh e-mailu (adresati, predmet, text zo sablony v jazyku dokladu, prilohy) bez odoslania.
      *
-     * @return array{invoice: array<string, mixed>, language: string, to: list<string>, cc: list<string>, subject: string, body: string, sender: array{from_email: string, from_name: string, reply_to: ?string, bcc: list<string>}, attachments: list<array{kind: string, name: string, size: int, sha256: string}>, client_emails: list<string>, fallback: bool}
+     * @return array{invoice: array<string, mixed>, language: string, to: list<string>, cc: list<string>, subject: string, body: string, sender: array{from_email: string, from_name: string, reply_to: ?string, bcc: list<string>}, attachments: list<array{kind: string, name: string, size: int, sha256: string, version: int}>, client_emails: list<string>, fallback: bool}
      *
      * @throws SendRejected
      */
@@ -80,10 +80,11 @@ class InvoiceMailer
 
             if ($meta !== null) {
                 $attachments[] = [
-                    'kind'   => $docKind,
-                    'name'   => DocumentFilename::for($invoice['type'] === 'credit_note' ? 'credit_note' : $docKind, $lang, (string) $invoice['number']),
-                    'size'   => $meta['byte_size'],
-                    'sha256' => $meta['sha256'],
+                    'kind'    => $docKind,
+                    'name'    => DocumentFilename::for($invoice['type'] === 'credit_note' ? 'credit_note' : $docKind, $lang, (string) $invoice['number']),
+                    'size'    => $meta['byte_size'],
+                    'sha256'  => $meta['sha256'],
+                    'version' => $meta['version'],
                 ];
             }
         }
@@ -410,14 +411,27 @@ class InvoiceMailer
 
         try {
             foreach (self::docKinds($invoice['type'] === 'credit_note', $cmd->kind) as $kind) {
-                $doc = $this->store->read($cmd->invoiceId, $kind);
+                $latest = $this->store->meta($cmd->invoiceId, $kind);
 
-                if ($doc === null) {
+                if ($latest === null) {
                     if ($kind === 'report' && (int) $invoice['snapshot_schema'] < 2) {
                         continue;
                     }
 
                     throw new DocumentIntegrityError('Missing stored document: ' . $kind);
+                }
+
+                // WR-02: posiela sa presne verzia, ktoru vlastnik potvrdil; novsia verzia (pregenerovanie) znamena nove potvrdenie
+                $confirmed = $cmd->confirmedVersions[$kind] ?? null;
+
+                if ($confirmed === null || $confirmed !== $latest['version']) {
+                    throw new SendRejected('attachments_changed');
+                }
+
+                $doc = $this->store->readVersion($cmd->invoiceId, $kind, $confirmed);
+
+                if ($doc === null) {
+                    throw new DocumentIntegrityError('Missing stored document: ' . $kind . ' v' . $confirmed);
                 }
 
                 $out[] = ['kind' => $kind, 'name' => DocumentFilename::for($invoice['type'] === 'credit_note' ? 'credit_note' : $kind, $lang, (string) $invoice['number']), 'bytes' => $doc->bytes, 'sha256' => $doc->sha256];

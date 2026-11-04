@@ -26,6 +26,7 @@ return [
     'sentLogged'            => 'Email was recorded (test environment, nothing was sent).',
     'errorSmtp'             => 'The email could not be sent. The invoice and PDF are unchanged. Try again.',
     'errorAttachments'      => 'The attachments could not be loaded. The email was not sent. Try again; if the problem persists, contact the administrator.',
+    'errorAttachChanged'    => 'The document was regenerated in the meantime. The email was not sent. Review the current attachments below and send again.',
     'errorRecord'           => 'The email was sent, but the record could not be saved. Do not send it again; a copy is in the archive.',
     'errorSender'           => 'The sender address is not allowed. Check the sending settings of the entity.',
     'errorAddress'          => 'Enter a valid email address.',

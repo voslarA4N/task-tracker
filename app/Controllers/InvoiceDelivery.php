@@ -278,6 +278,7 @@ final class InvoiceDelivery extends BaseController
             body: str_replace("\r\n", "\n", $values['body']),
             requestKey: $values['request_key'],
             userId: auth()->id() === null ? null : (int) auth()->id(),
+            confirmedVersions: $this->confirmedVersions(),
         );
 
         try {
@@ -315,6 +316,31 @@ final class InvoiceDelivery extends BaseController
             'request_key' => Uuid::v4(),
             'return_to'   => '/invoices/' . (int) $draft['invoice']['id'],
         ], [], lang('Deliveries.errorNoBalance'), $kind);
+    }
+
+    /**
+     * Verzie priloh potvrdene vo formulari (WR-02); chybajuce alebo neplatne polozky odoslanie odmietne.
+     *
+     * @return array<string, int>
+     */
+    private function confirmedVersions(): array
+    {
+        $raw = $this->request->getPost('attachment_versions');
+        $out = [];
+
+        if (! is_array($raw)) {
+            return $out;
+        }
+
+        foreach (['invoice', 'report'] as $kind) {
+            $v = $raw[$kind] ?? null;
+
+            if (is_string($v) && preg_match('/^[1-9]\d{0,8}$/D', $v) === 1) {
+                $out[$kind] = (int) $v;
+            }
+        }
+
+        return $out;
     }
 
     private function returnTo(mixed $raw, int $id): string
@@ -366,6 +392,13 @@ final class InvoiceDelivery extends BaseController
             case 'attachments_failed':
                 $status = 502;
                 $alert  = lang('Deliveries.errorAttachments');
+                break;
+
+            case 'attachments_changed':
+                // pregenerovanie dokladu po otvoreni formulara: nacitat aktualne prilohy a vyziadat nove potvrdenie
+                $status = 409;
+                $alert  = lang('Deliveries.errorAttachChanged');
+                $draft  = (new InvoiceMailer())->draft((int) $draft['invoice']['id'], $kind);
                 break;
 
             case 'record_failed':

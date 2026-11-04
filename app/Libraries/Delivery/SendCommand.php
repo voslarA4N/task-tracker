@@ -10,8 +10,9 @@ namespace App\Libraries\Delivery;
 final readonly class SendCommand
 {
     /**
-     * @param list<string> $to
-     * @param list<string> $cc
+     * @param list<string>       $to
+     * @param list<string>       $cc
+     * @param array<string, int> $confirmedVersions verzia kazdeho dokumentu (kind => version), ktoru vlastnik potvrdil vo formulari
      */
     public function __construct(
         public int $invoiceId,
@@ -22,6 +23,7 @@ final readonly class SendCommand
         public string $body,
         public string $requestKey,
         public ?int $userId,
+        public array $confirmedVersions,
     ) {
     }
 }

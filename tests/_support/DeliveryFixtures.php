@@ -91,7 +91,22 @@ trait DeliveryFixtures
             (string) ($o['body'] ?? "Dobry den,\n\nv prilohe faktura."),
             (string) ($o['requestKey'] ?? $this->uuid4()),
             $o['userId'] ?? null,
+            $o['confirmed'] ?? $this->latestVersions($invoiceId),
         );
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    protected function latestVersions(int $invoiceId): array
+    {
+        $out = [];
+
+        foreach ($this->owner()->query('SELECT kind, max(version) AS v FROM invoice_documents WHERE invoice_id = :i: GROUP BY kind', ['i' => $invoiceId])->getResultArray() as $r) {
+            $out[(string) $r['kind']] = (int) $r['v'];
+        }
+
+        return $out;
     }
 
     protected function sendCount(): int
