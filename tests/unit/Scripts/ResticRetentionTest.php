@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Scripts;
 
+use App\Libraries\Platform\Clock;
 use CodeIgniter\Test\CIUnitTestCase;
 use PHPUnit\Framework\Attributes\Group;
 use RuntimeException;
@@ -50,10 +51,10 @@ final class ResticRetentionTest extends CIUnitTestCase
         $repo = $this->dir . '/repo';
         $this->restic($repo, ['init']);
 
-        $day = strtotime('2026-09-01 12:00:00 UTC');
+        $day = Clock::parseInstant('2026-09-01 12:00:00Z');
 
         for ($i = 0; $i < 40; $i++) {
-            $this->restic($repo, ['backup', '--no-scan', '--tag', 'db', '--host', 'work-tracker', '--time', gmdate('Y-m-d H:i:s', $day + $i * 86400), $this->dir . '/a']);
+            $this->restic($repo, ['backup', '--no-scan', '--tag', 'db', '--host', 'work-tracker', '--time', $day->modify('+' . $i . ' days')->format('Y-m-d H:i:s'), $this->dir . '/a']);
         }
         $this->restic($repo, ['backup', '--tag', 'archive', '--host', 'work-tracker', '--time', '2024-01-05 04:00:00', $this->dir . '/archive']);
 
@@ -70,7 +71,7 @@ final class ResticRetentionTest extends CIUnitTestCase
         $dates = array_map(static fn (array $s): string => substr((string) $s['time'], 0, 10), $db);
 
         for ($i = 26; $i < 40; $i++) { // 2026-09-27 az 2026-10-10
-            $this->assertContains(gmdate('Y-m-d', $day + $i * 86400), $dates);
+            $this->assertContains($day->modify('+' . $i . ' days')->format('Y-m-d'), $dates);
         }
     }
 

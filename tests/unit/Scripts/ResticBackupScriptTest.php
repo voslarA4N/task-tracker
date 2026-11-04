@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Scripts;
 
 use CodeIgniter\Test\CIUnitTestCase;
+use DateTimeZone;
 use PHPUnit\Framework\Attributes\Group;
 use RuntimeException;
 
@@ -141,7 +142,7 @@ final class ResticBackupScriptTest extends CIUnitTestCase
         $this->assertStringContainsString('smtps://mail.example:465', $curl);
 
         $mail = (string) file_get_contents($this->dir . '/mail.eml');
-        $this->assertStringContainsString('Subject: [work-tracker] Záloha zlyhala: test ' . gmdate('Y-m-d'), $mail);
+        $this->assertStringContainsString('Subject: [work-tracker] Záloha zlyhala: test ' . service('clock')->now()->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d'), $mail);
         $this->assertStringContainsString('Záloha databázy sa nepodarila.', $mail);
         $this->assertStringContainsString('dump', $mail);
         $this->assertStringContainsString('Postup obnovy a kontroly: docs/ops/backup.md', $mail);
