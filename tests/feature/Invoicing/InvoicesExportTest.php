@@ -186,6 +186,34 @@ final class InvoicesExportTest extends AuthTestCase
         $this->assertContains('=1+1', $texts);
     }
 
+    public function testButtonsCarryFilters(): void
+    {
+        $this->seed();
+        $this->login();
+        $html = $this->body($this->get('/invoices?client=' . $this->clientB));
+
+        $this->assertStringContainsString('href="/invoices.csv?client=' . $this->clientB, $html);
+        $this->assertStringContainsString('href="/invoices.xlsx?', $html);
+        $this->assertStringNotContainsString(lang('Export.hintAllRows'), $html);
+    }
+
+    public function testTruncatedListShowsExportHint(): void
+    {
+        for ($i = 1; $i <= 101; $i++) {
+            $this->invoice($this->clientB, '2026' . str_pad((string) $i, 5, '0', STR_PAD_LEFT), '10.00', '2026-10-01');
+        }
+        $this->login();
+
+        $this->assertStringContainsString(lang('Export.hintAllRows'), $this->body($this->get('/invoices')));
+    }
+
+    public function testNoButtonsOnEmptyUnfilteredList(): void
+    {
+        $this->login();
+
+        $this->assertStringNotContainsString('/invoices.csv', $this->body($this->get('/invoices')));
+    }
+
     public function testAccountantIsForbidden(): void
     {
         $this->seed();

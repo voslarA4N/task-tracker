@@ -27,6 +27,17 @@ $cols     = [
     <input type="hidden" name="sort" value="<?= esc($filter->sort, 'attr') ?>" form="inv-filter">
     <input type="hidden" name="dir" value="<?= esc($filter->dir, 'attr') ?>" form="inv-filter">
     <p class="small text-body-secondary mb-2"><?= esc(lang('Invoices.countHint', [count($rows)])) ?></p>
+    <?php if ($rows !== [] || $filtered) : ?>
+        <?php $exportQuery = http_build_query($filter->toQuery()); ?>
+        <div class="rpt-export d-flex align-items-center flex-wrap gap-2 mb-3">
+            <span class="small text-body-secondary"><?= esc(lang('Export.label')) ?></span>
+            <a class="btn btn-outline-secondary btn-touch" href="<?= esc('/invoices.csv' . ($exportQuery !== '' ? '?' . $exportQuery : '')) ?>" download><?= esc(lang('Export.csv')) ?></a>
+            <a class="btn btn-outline-secondary btn-touch" href="<?= esc('/invoices.xlsx' . ($exportQuery !== '' ? '?' . $exportQuery : '')) ?>" download><?= esc(lang('Export.xlsx')) ?></a>
+            <?php if ($truncated) : ?>
+                <span class="small text-body-secondary"><?= esc(lang('Export.hintAllRows')) ?></span>
+            <?php endif ?>
+        </div>
+    <?php endif ?>
     <?php if ($rows === [] && $filtered) : ?>
         <section class="app-card">
             <p class="text-muted mb-0"><?= esc(lang('Invoices.emptyFiltered')) ?></p>
