@@ -5,6 +5,7 @@ namespace Config;
 use App\Libraries\Fx\CurlRateHttpClient;
 use App\Libraries\Fx\RateHttpClient;
 use App\Libraries\Invoicing\CreditNoteIssuer;
+use App\Libraries\Invoicing\DocumentRegenerator;
 use App\Libraries\Invoicing\InvoiceIssuer;
 use App\Libraries\Platform\AfterResponse;
 use App\Libraries\Platform\Clock;
@@ -69,6 +70,15 @@ class Services extends BaseService
         }
 
         return new CreditNoteIssuer();
+    }
+
+    public static function documentRegenerator(bool $getShared = true): DocumentRegenerator
+    {
+        if ($getShared) {
+            return static::getSharedInstance('documentRegenerator');
+        }
+
+        return new DocumentRegenerator();
     }
 
     public static function afterResponse(bool $getShared = true): AfterResponse
