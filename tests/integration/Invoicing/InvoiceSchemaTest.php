@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Invoicing;
 
 use App\Libraries\Platform\FrozenClock;
+use CodeIgniter\Database\BaseConnection;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
@@ -156,7 +157,10 @@ final class InvoiceSchemaTest extends PgTestCase
         });
     }
 
-    private function insertDocVersion(\CodeIgniter\Database\BaseConnection $conn, int $invoiceId, int $version, string $kind = 'invoice'): void
+    /**
+     * @param BaseConnection<mixed, mixed> $conn
+     */
+    private function insertDocVersion(BaseConnection $conn, int $invoiceId, int $version, string $kind = 'invoice'): void
     {
         $bytes = "%PDF-1.4 v{$version}";
         $conn->query(

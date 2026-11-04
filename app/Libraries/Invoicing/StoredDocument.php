@@ -12,6 +12,7 @@ final readonly class StoredDocument
         public int $byteSize,
         public string $templateVersion,
         public string $renderer,
+        public int $version,
     ) {
     }
 }
