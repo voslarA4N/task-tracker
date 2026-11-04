@@ -1,7 +1,8 @@
 ---
 phase: 12
 slug: lokalizacia-a-produkcia
-status: draft
+status: approved
+reviewed_at: 2026-11-04
 shadcn_initialized: false
 preset: none
 created: 2026-11-04
@@ -65,7 +66,7 @@ Rovnaké 4 veľkosti a 2 hrúbky ako Phase 5 až 11, žiadne nové:
 | Body (voľby jazyka, tlačidlá, texty) | 16px | 400 | 1.5 |
 | Label / meta (hint pod voľbou, `form-text`, tab bar existujúcich 11px výnimka) | 12px | 400 | 1.5 |
 | Heading (`h2.h5` karty „Jazyk rozhrania“ ostáva existujúca veľkosť sekcie, `h1`) | 20px | 600 | 1.2 |
-| Display | nepoužité | 600 | 1.2 |
+| Display | n/a (nepoužité) | 600 | 1.2 |
 
 Pravidlá pre dlhšie PL/CS texty **[odvodené]**: veľkosti sa nikdy nezmenšujú kvôli dĺžke prekladu (žiadne 14px/13px ako náhrada); riešením je zalomenie (sekcia D). Tab bar ostáva na existujúcich 11px (už prijatá výnimka z Phase 2), preklady jeho štyroch štítkov musia byť jedno slovo.
 
@@ -94,6 +95,8 @@ Zvolený jazyk sa nikdy nesignalizuje iba farbou: radio je zaškrtnuté a aktuá
 ## A. Výber jazyka (UI-02, D-01)
 
 **Umiestnenie:** `/settings/security`, nová karta `section.app-card.security-card` vložená **ako prvá** (pred heslo): jazyk je najčastejšia a najlacnejšia zmena a zmena sa hneď prejaví. Partial `app/Views/settings/_language.php`, include v `settings/security.php`. Prístup: každý prihlásený používateľ (admin aj accountant). Menu „Viac“ sa nemení (vstup ostáva „Zabezpečenie“).
+
+**Vizuálne ťažisko:** karta „Jazyk rozhrania“ s primárnym tlačidlom „Uložiť jazyk“ je hlavný kotviaci bod stránky `/settings/security` (jediné primárne CTA nad zlomom).
 
 **Štruktúra (zhora nadol):**
 
@@ -195,7 +198,7 @@ Jediný text viditeľný človekom sú **správy skriptov**, ktoré sa riadia t�
 
 | Element | Kontrakt |
 |---------|----------|
-| Jazyk | **slovenčina** (vlastník je prevádzkovateľ), nie `lang()`; texty v skriptoch sú ops texty, nie UI, preto ich netestuje `ViewsHardcodedTextTest`. Výnimka: výstup `spark` príkazu archívu a CLI resetu 2FA je v slovenčine bez diakritiky-nezávislého formátovania (UTF-8) |
+| Jazyk | **slovenčina** (vlastník je prevádzkovateľ), nie `lang()`; texty v skriptoch sú ops texty, nie UI, preto ich netestuje `ViewsHardcodedTextTest`. Výnimka: výstup `spark` príkazu archívu a CLI resetu 2FA je výstup v UTF-8 so slovenskou diakritikou |
 | E-mail pri zlyhanej zálohe (D-09) | Predmet: `[work-tracker] Záloha zlyhala: {prostredie} {YYYY-MM-DD}`. Telo (čistý text, bez HTML, max ~15 riadkov): 1. riadok „Záloha databázy sa nepodarila.“ · krok, ktorý zlyhal (dump / overenie / restic / forget) · čas a prostredie · posledných 20 riadkov chybového výstupu · riadok „Postup obnovy a kontroly: docs/ops/backup.md“. **Nikdy** heslo repozitára, URL healthchecks.io ani obsah `.env` v tele alebo predmete |
 | Ping healthchecks.io | bez tela alebo iba „OK {prostredie}“; URL je tajomstvo v `.env` servera |
 | Výstup `spark archive:year` (D-10) | riadky: „Archív roka {rok}: {n} dokladov, {n} PDF, {veľkosť}“ · „Uložené do restic s tagom archive“ · pri chybe „Archív sa nevytvoril: {dôvod}“ a nenulový exit kód. Obsah ZIP: `doklady/{DocumentFilename}.pdf`, `zoznam-dokladov.csv` (stĺpce D-10: číslo, typ, dátum, subjekt, klient, suma, mena, sha256) |
@@ -266,11 +269,11 @@ Preklady zvyšku aplikácie (32 súborov) sa riadia kontraktom v sekcii B; texty
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS (FLAG vyriešený: doplnené vizuálne ťažisko)
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-11-04 (gsd-ui-checker). PL a CS preklady pripravuje Claude, vlastník ich prezrie v UAT.
