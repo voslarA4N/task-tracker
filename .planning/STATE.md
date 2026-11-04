@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 11-11-PLAN.md
-last_updated: "2026-11-04T09:50:59.388Z"
+status: executing
+stopped_at: Completed 11.1-01-PLAN.md
+last_updated: "2026-11-04T14:37:11.815Z"
 last_activity: 2026-11-04
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 11
-  total_plans: 125
-  completed_plans: 125
-  percent: 92
+  total_plans: 130
+  completed_plans: 126
+  percent: 85
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 11 — preh-ady-exporty-a-audit
+**Current focus:** Phase 11.1 — pregenerovanie-dokladov-z-k-pie-dajov
 
 ## Current Position
 
-Phase: 11 (preh-ady-exporty-a-audit) — EXECUTING
-Plan: 11 of 11
-Status: Phase complete — ready for verification
+Phase: 11.1 (pregenerovanie-dokladov-z-k-pie-dajov) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
 Last activity: 2026-11-04
 
 Progress: [░░░░░░░░░░] 0%
@@ -108,6 +108,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 11 P07 | 30min | 2 tasks | 40 files |
 | Phase 11 P09 | 25min | 3 tasks | 15 files |
 | Phase 11 P10 | 40min | 2 tasks | 16 files |
+| Phase 11.1 P01 | 25min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -151,6 +152,7 @@ Recent decisions affecting current work:
 - [Phase 11]: XLSX text always StringCell, float cast allowed only in XlsxNumber.php
 - [Phase 11]: 11-10: bundle selects issued docs by turnover_date like ReportCalculator, externals excluded; PDFs only via DocumentStore::read; reject before ZIP on missing PDF/64MB
 - [Phase 11]: work statement rep-2 (title + direct portal link in one column); rep-1 kept for already issued documents
+- [Phase 11.1]: Document version gapless guard is a BEFORE INSERT trigger (no SEQUENCE); migration down() refuses rollback when versions > 1 exist
 
 ### Roadmap Evolution
 
@@ -191,6 +193,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-04T09:50:59.383Z
-Stopped at: Completed 11-11-PLAN.md
+Last session: 2026-11-04T14:37:11.809Z
+Stopped at: Completed 11.1-01-PLAN.md
 Resume file: None
