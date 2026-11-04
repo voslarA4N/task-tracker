@@ -19,6 +19,7 @@ final class BackupScriptTest extends CIUnitTestCase
     private const FAKE_DOCKER = <<<'SH'
         #!/bin/sh
         printf '%s\n' "$*" >> "$FAKE_LOG"
+        printf 'PWD=%s\n' "$(pwd)" >> "$FAKE_LOG"
         case "$*" in
           *pg_dump*)
             [ -z "${FAKE_DUMP_FAIL-}" ] || exit 1
@@ -138,6 +139,19 @@ final class BackupScriptTest extends CIUnitTestCase
 
         $this->assertSame(0, $code, $stderr);
         $this->assertStringContainsString('pg_dump -U y --format=custom --no-owner x', (string) file_get_contents($this->dir . '/docker.log'));
+    }
+
+    public function testStableNameAndComposeDir(): void
+    {
+        mkdir($this->dir . '/stack', 0o700);
+        [$code, $stderr] = $this->run2(['BACKUP_NAME' => 'task_tracker.dump', 'BACKUP_COMPOSE_DIR' => $this->dir . '/stack']);
+
+        $this->assertSame(0, $code, $stderr);
+        $this->assertFileExists($this->dir . '/out/task_tracker.dump');
+        $this->assertFileExists($this->dir . '/out/task_tracker.dump.sha256');
+        $this->assertSame([], glob($this->dir . '/out/task_tracker-*'));
+        $this->assertStringContainsString('PWD=' . realpath($this->dir . '/stack'), (string) file_get_contents($this->dir . '/docker.log'));
+        rmdir($this->dir . '/stack');
     }
 
     /**
