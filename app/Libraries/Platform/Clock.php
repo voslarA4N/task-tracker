@@ -25,6 +25,14 @@ class Clock
         return new DateTimeImmutable('now', $this->timezone());
     }
 
+    /**
+     * Parsuje okamih s casovou zonou (napr. timestamptz z PG '2026-11-01 10:00:00+01') bez citania hodin.
+     */
+    public static function parseInstant(string $value): DateTimeImmutable
+    {
+        return new DateTimeImmutable($value);
+    }
+
     public function today(): string
     {
         return $this->now()->format('Y-m-d');
