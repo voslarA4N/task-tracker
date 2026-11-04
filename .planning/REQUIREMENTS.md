@@ -123,7 +123,7 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 ### Audit (E11)
 
 - [x] **AUD-01**: Denník zmien zaznamenáva používateľa, čas, entitu, ID, akciu a hodnoty pred a po, pre úlohy, časti, faktúry, klientov, subjekty, nastavenia a limity.
-- [ ] **AUD-02**: Používateľ prehliada denník len na čítanie, s filtrami.
+- [x] **AUD-02**: Používateľ prehliada denník len na čítanie, s filtrami.
 
 ### Rozhranie, PWA a import (E12)
 
@@ -274,7 +274,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RPT-01 | Phase 11 | Complete |
 | RPT-02 | Phase 11 | Pending |
 | RPT-03 | Phase 11 | Pending |
-| AUD-02 | Phase 11 | Pending |
+| AUD-02 | Phase 11 | Complete |
 | UI-03 | Phase 11 | Complete |
 | UI-02 | Phase 12 | Pending |
 | NFR-01 | Phase 12 | Pending |
