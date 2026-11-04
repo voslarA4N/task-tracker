@@ -18,10 +18,10 @@ use App\Libraries\Master\LegalTextMissing;
 use App\Libraries\Master\SeriesService;
 use App\Libraries\Master\VatRegime;
 use App\Libraries\Master\VersionNotFound;
+use App\Libraries\Platform\DateFormat;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\ResponseInterface;
-use IntlDateFormatter;
 
 final class Entities extends BaseController
 {
@@ -403,22 +403,6 @@ final class Entities extends BaseController
 
     private function formatDate(string $iso): string
     {
-        $date = service('clock')->parseDate($iso);
-
-        if ($date === null) {
-            return $iso;
-        }
-
-        $formatter = new IntlDateFormatter(
-            service('request')->getLocale(),
-            IntlDateFormatter::NONE,
-            IntlDateFormatter::NONE,
-            'UTC',
-            IntlDateFormatter::GREGORIAN,
-            'd. M. yyyy',
-        );
-        $out = $formatter->format($date->getTimestamp());
-
-        return $out === false ? $iso : $out;
+        return DateFormat::date($iso);
     }
 }
