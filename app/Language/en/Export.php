@@ -24,6 +24,7 @@ return [
     'colTurnoverDate'    => 'Delivery date',
     'colDueDate'         => 'Due date',
     'colAmount'          => 'Amount',
+    'colDocAmount'       => 'Amount in document currency',
     'colRate'            => 'Rate',
     'colEntityAmount'    => 'Amount in entity currency',
     'colPaymentStatus'   => 'Payment status',

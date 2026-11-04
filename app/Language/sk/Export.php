@@ -24,6 +24,7 @@ return [
     'colTurnoverDate'    => 'Dátum dodania',
     'colDueDate'         => 'Dátum splatnosti',
     'colAmount'          => 'Suma',
+    'colDocAmount'       => 'Suma v mene dokladu',
     'colRate'            => 'Kurz',
     'colEntityAmount'    => 'Suma v mene subjektu',
     'colPaymentStatus'   => 'Stav úhrady',
