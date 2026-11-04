@@ -640,7 +640,7 @@ Plans:
 - [x] 12-07-PLAN.md — PL preklady, časť 2 (17 súborov) (vlna 2)
 - [x] 12-08-PLAN.md — CS preklady, časť 1 (11 súborov) (vlna 2)
 - [x] 12-09-PLAN.md — CS preklady, časť 2 (17 súborov) (vlna 2)
-- [ ] 12-10-PLAN.md — Ročný archív: spark archive:year (ZIP + CSV so sha256, všetky verzie) a archive-yearly.sh do restic s tagom archive (vlna 2)
+- [x] 12-10-PLAN.md — Ročný archív: spark archive:year (ZIP + CSV so sha256, všetky verzie) a archive-yearly.sh do restic s tagom archive (vlna 2)
 - [ ] 12-11-PLAN.md — Test obnovy proti manifestu, pull repozitára na PC, runbook docs/ops/backup.md (vlna 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -676,4 +676,4 @@ Plans:
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
 | 11. Prehľady, exporty a audit | 11/11 | Complete   | 2026-11-04 |
-| 12. Lokalizácia a produkcia | 9/15 | In Progress|  |
+| 12. Lokalizácia a produkcia | 10/15 | In Progress|  |
