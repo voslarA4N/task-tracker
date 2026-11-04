@@ -32,6 +32,7 @@ final class TaskQueries
         'amount' => 'round(t.hours * t.rate, 2)',
         'done'   => 't.done_at',
     ];
+
     private const ROW_COLUMNS = <<<'SQL'
         t.id, t.title, t.url, t.client_id, c.name AS client_name, c.currency,
         t.hours, t.rate, round(t.hours * t.rate, 2) AS quoted_amount,

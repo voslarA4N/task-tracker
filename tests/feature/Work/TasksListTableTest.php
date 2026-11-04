@@ -79,7 +79,7 @@ final class TasksListTableTest extends AuthTestCase
     {
         $html = $this->body($this->get('/tasks?client=' . $this->client));
 
-        $this->assertStringContainsString('client=' . $this->client, $html);
+        $this->assertStringContainsString('client&#x3D;' . $this->client, $html);
     }
 
     public function testHtmxReturnsFragment(): void
