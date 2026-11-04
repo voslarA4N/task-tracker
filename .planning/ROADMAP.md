@@ -559,7 +559,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 11-06-PLAN.md — Ročný prehľad (mesiace 1 až 12, po klientoch), prepínač Mesiac / Rok (vlna 3)
+- [x] 11-06-PLAN.md — Ročný prehľad (mesiace 1 až 12, po klientoch), prepínač Mesiac / Rok (vlna 3)
 - [ ] 11-07-PLAN.md — Nastavenia → Používatelia (read-only) a PC rozloženie nastavení (vlna 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
@@ -611,5 +611,5 @@ Plans:
 | 8. Meny a kurzy | 10/10 | Complete    | 2026-10-30 |
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
-| 11. Prehľady, exporty a audit | 5/11 | In Progress|  |
+| 11. Prehľady, exporty a audit | 6/11 | In Progress|  |
 | 12. Lokalizácia a produkcia | 0/0 | Not started | - |
