@@ -64,7 +64,7 @@ final class DocumentSettingsServiceTest extends PgTestCase
                 }
             }
         } finally {
-            $this->owner()->query("INSERT INTO document_settings (id, regen_invoice_hours, revision, updated_at) VALUES (1, 72, 1, now())");
+            $this->owner()->query('INSERT INTO document_settings (id, regen_invoice_hours, revision, updated_at) VALUES (1, 72, 1, now())');
         }
     }
 
