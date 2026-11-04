@@ -7,6 +7,8 @@ namespace App\Libraries\Platform;
 use Config\App;
 use DateTimeImmutable;
 use DateTimeZone;
+use Exception;
+use InvalidArgumentException;
 
 /**
  * The only source of current time in the application (service('clock')).
@@ -26,11 +28,22 @@ class Clock
     }
 
     /**
-     * Parsuje okamih s casovou zonou (napr. timestamptz z PG '2026-11-01 10:00:00+01') bez citania hodin.
+     * Prisne parsuje absolutny okamih s casovou zonou (napr. timestamptz z PG '2026-11-01 10:00:00+01') bez citania hodin.
+     * Prazdny, relativny ('now', 'today') alebo bezzonovy retazec vyhodi vynimku, nikdy nevrati "teraz".
+     *
+     * @throws InvalidArgumentException
      */
     public static function parseInstant(string $value): DateTimeImmutable
     {
-        return new DateTimeImmutable($value);
+        if (preg_match('/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}(:?\d{2})?|Z)$/', $value) !== 1) {
+            throw new InvalidArgumentException('Not an absolute timestamptz: ' . $value);
+        }
+
+        try {
+            return new DateTimeImmutable($value);
+        } catch (Exception $e) {
+            throw new InvalidArgumentException('Not an absolute timestamptz: ' . $value, 0, $e);
+        }
     }
 
     public function today(): string

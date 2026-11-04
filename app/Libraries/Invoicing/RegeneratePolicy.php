@@ -6,6 +6,7 @@ namespace App\Libraries\Invoicing;
 
 use App\Libraries\Platform\Clock;
 use DateTimeImmutable;
+use InvalidArgumentException;
 
 /**
  * Kto, čo a kedy sa smie pregenerovať. Jedna čistá funkcia pre server aj UI.
@@ -77,6 +78,16 @@ final class RegeneratePolicy
             return null;
         }
 
-        return Clock::parseInstant((string) $invoice['created_at'])->modify('+' . $windowHours . ' hours');
+        $createdAt = $invoice['created_at'] ?? null;
+
+        if (! is_string($createdAt) || $createdAt === '') {
+            return null;
+        }
+
+        try {
+            return Clock::parseInstant($createdAt)->modify('+' . $windowHours . ' hours');
+        } catch (InvalidArgumentException) {
+            return null;
+        }
     }
 }

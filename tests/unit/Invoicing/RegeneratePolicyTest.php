@@ -105,6 +105,21 @@ final class RegeneratePolicyTest extends CIUnitTestCase
         $this->assertNull(RegeneratePolicy::deadline($this->inv(), 0));
     }
 
+    public function testMissingOrInvalidCreatedAtFailsClosed(): void
+    {
+        $now = $this->at('2026-11-02 10:00:00+01');
+
+        foreach ([null, '', 'now', 'tomorrow', '2026-11-01 10:00:00', 'garbage'] as $bad) {
+            $inv = $this->inv(['created_at' => $bad]);
+            $this->assertNull(RegeneratePolicy::deadline($inv, 72), var_export($bad, true));
+            $this->assertSame('window_expired', RegeneratePolicy::check($inv, 'invoice', 72, $now), var_export($bad, true));
+        }
+
+        $noKey = $this->inv();
+        unset($noKey['created_at']);
+        $this->assertSame('window_expired', RegeneratePolicy::check($noKey, 'invoice', 72, $now));
+    }
+
     public function testUnknownReasonThrows(): void
     {
         $this->expectException(InvalidArgumentException::class);
