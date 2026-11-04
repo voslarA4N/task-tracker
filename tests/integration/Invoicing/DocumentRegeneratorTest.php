@@ -44,6 +44,24 @@ final class DocumentRegeneratorTest extends PgTestCase
         parent::tearDown();
     }
 
+    /**
+     * @param array<string, mixed> $a
+     *
+     * @return array<string, mixed>
+     */
+    private static function canon(array $a): array
+    {
+        ksort($a);
+
+        foreach ($a as $k => $v) {
+            if (is_array($v)) {
+                $a[$k] = self::canon($v);
+            }
+        }
+
+        return $a;
+    }
+
     private function issued(): int
     {
         $s = $this->issueSetup();
@@ -203,7 +221,7 @@ final class DocumentRegeneratorTest extends PgTestCase
         $b = json_decode((string) $row['before_data'], true, 512, JSON_THROW_ON_ERROR);
         $a = json_decode((string) $row['after_data'], true, 512, JSON_THROW_ON_ERROR);
 
-        $this->assertSame(['kind' => 'report', 'version' => 1, 'template_version' => $old['template_version'], 'sha256' => $old['sha256']], $b);
-        $this->assertSame(['kind' => 'report', 'version' => 2, 'template_version' => 'rep-2', 'sha256' => $res->sha256], $a);
+        $this->assertSame(self::canon(['kind' => 'report', 'version' => 1, 'template_version' => $old['template_version'], 'sha256' => $old['sha256']]), self::canon($b));
+        $this->assertSame(self::canon(['kind' => 'report', 'version' => 2, 'template_version' => 'rep-2', 'sha256' => $res->sha256]), self::canon($a));
     }
 }

@@ -42,6 +42,24 @@ final class RegenerateDataParityTest extends PgTestCase
     }
 
     /**
+     * @param array<string, mixed> $a
+     *
+     * @return array<string, mixed>
+     */
+    private static function canon(array $a): array
+    {
+        ksort($a);
+
+        foreach ($a as $k => $v) {
+            if (is_array($v)) {
+                $a[$k] = self::canon($v);
+            }
+        }
+
+        return $a;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function row(int $id): array
@@ -74,10 +92,10 @@ final class RegenerateDataParityTest extends PgTestCase
 
         $snapshot = json_decode((string) $before['snapshot'], true, 512, JSON_THROW_ON_ERROR);
 
-        $this->assertSame($snapshot, $inv->lastSnapshot);
-        $this->assertSame($snapshot, $rep->lastSnapshot);
-        $this->assertSame($issuedInv, $inv->lastSnapshot);
-        $this->assertSame($issuedRep, $rep->lastSnapshot);
+        $this->assertSame(self::canon($snapshot), self::canon((array) $inv->lastSnapshot));
+        $this->assertSame(self::canon($snapshot), self::canon((array) $rep->lastSnapshot));
+        $this->assertSame(self::canon((array) $issuedInv), self::canon((array) $inv->lastSnapshot));
+        $this->assertSame(self::canon((array) $issuedRep), self::canon((array) $rep->lastSnapshot));
         $this->assertNotSame('Iny Klient', $inv->lastSnapshot['client']['name']);
         $this->assertNotSame('Zmenena Firma s.r.o.', $inv->lastSnapshot['entity']['trade_name']);
 
