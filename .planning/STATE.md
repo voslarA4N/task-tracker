@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 11.1-02-PLAN.md
-last_updated: "2026-11-04T14:56:24.623Z"
+stopped_at: Completed 11.1-04-PLAN.md
+last_updated: "2026-11-04T15:26:01.874Z"
 last_activity: 2026-11-04
 progress:
   total_phases: 13
   completed_phases: 11
   total_plans: 130
-  completed_plans: 128
+  completed_plans: 129
   percent: 85
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 ## Current Position
 
 Phase: 11.1 (pregenerovanie-dokladov-z-k-pie-dajov) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-11-04
 
@@ -109,6 +109,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 11 P09 | 25min | 3 tasks | 15 files |
 | Phase 11 P10 | 40min | 2 tasks | 16 files |
 | Phase 11.1 P01 | 25min | 3 tasks | 9 files |
+| Phase 11.1 P04 | 30min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -153,6 +154,7 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-10: bundle selects issued docs by turnover_date like ReportCalculator, externals excluded; PDFs only via DocumentStore::read; reject before ZIP on missing PDF/64MB
 - [Phase 11]: work statement rep-2 (title + direct portal link in one column); rep-1 kept for already issued documents
 - [Phase 11.1]: Document version gapless guard is a BEFORE INSERT trigger (no SEQUENCE); migration down() refuses rollback when versions > 1 exist
+- [Phase 11.1]: Regenerate: render outside transaction, advisory lock + expected_version under lock; template only from DocumentTemplates
 
 ### Roadmap Evolution
 
@@ -193,6 +195,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-04T14:41:41.809Z
-Stopped at: Completed 11.1-02-PLAN.md
+Last session: 2026-11-04T15:26:01.869Z
+Stopped at: Completed 11.1-04-PLAN.md
 Resume file: None
