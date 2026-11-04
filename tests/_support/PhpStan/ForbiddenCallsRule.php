@@ -57,6 +57,7 @@ final class ForbiddenCallsRule implements Rule
         'app/Libraries/Platform/Clock.php',
         'app/Libraries/Platform/FrozenClock.php',
     ];
+    private const FLOAT_CAST_ALLOWED_FILES = ['app/Libraries/Export/XlsxNumber.php'];
     private const BC_ALLOWED_FILES = [
         'app/Libraries/Platform/Money.php', 'app/Libraries/Platform/Hours.php',
         'app/Libraries/Fx/FxConverter.php', 'app/Libraries/Fx/FxQuote.php',
@@ -74,6 +75,10 @@ final class ForbiddenCallsRule implements Rule
         $file = str_replace('\\', '/', $scope->getFile());
 
         if ($node instanceof Double) {
+            if ($this->endsWithAny($file, self::FLOAT_CAST_ALLOWED_FILES)) {
+                return [];
+            }
+
             return [$this->float('Pretypovanie (float) je zakázané, použi string a Money.')];
         }
 
