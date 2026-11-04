@@ -108,7 +108,7 @@ if ($filter->group !== null) {
                             <td class="dt-num"><?= esc(lang('Tasks.hoursValue', [$fmtH((string) $row['hours'])])) ?></td>
                             <td class="dt-num"><?= esc(MoneyFormat::format((string) $row['quoted_amount'], (string) $row['currency'])) ?></td>
                             <td><?= $hasParts ? esc(lang('Tasks.rowAllocMeta', [$fmtH((string) $row['billed_hours']), $fmtH((string) $row['planned_hours']), $fmtH((string) $row['remaining'])])) : '—' ?></td>
-                            <td><?= $doneAt !== null && $doneAt !== '' ? esc((string) $dateFmt->format(new DateTimeImmutable((string) $doneAt))) : '—' ?></td>
+                            <td><?php $doneDay = $doneAt !== null && $doneAt !== '' ? service('clock')->parseDate(substr((string) $doneAt, 0, 10)) : null ?><?= $doneDay !== null ? esc((string) $dateFmt->format($doneDay)) : '—' ?></td>
                         </tr>
                     <?php endforeach ?>
                 </tbody>
