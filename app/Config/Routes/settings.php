@@ -36,3 +36,4 @@ $routes->get('settings/limits/(:num)/delete', 'Settings\Limits::deleteForm/$1');
 $routes->post('settings/limits/(:num)/delete', 'Settings\Limits::delete/$1');
 $routes->get('settings/audit', 'Settings\Audit::index');
 $routes->get('settings/audit/(:num)', 'Settings\Audit::show/$1');
+$routes->get('settings/users', 'Settings\Users::index');

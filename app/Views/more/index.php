@@ -9,6 +9,7 @@
     <a class="list-group-item list-group-item-action more-item" href="/settings/fx"><?= esc(lang('FxSettings.navTitle')) ?></a>
     <a class="list-group-item list-group-item-action more-item" href="/settings/limits"><?= esc(lang('Limits.navTitle')) ?></a>
     <a class="list-group-item list-group-item-action more-item" href="/settings/audit"><?= esc(lang('AuditLog.navTitle')) ?><span class="d-block small text-body-secondary"><?= esc(lang('AuditLog.navHint')) ?></span></a>
+    <a class="list-group-item list-group-item-action more-item" href="/settings/users"><?= esc(lang('Users.navTitle')) ?><span class="d-block small text-body-secondary"><?= esc(lang('Users.navHint')) ?></span></a>
     <a class="list-group-item list-group-item-action more-item" href="/settings/email-templates"><?= esc(lang('EmailTemplates.navTitle')) ?><span class="d-block small text-body-secondary"><?= esc(lang('EmailTemplates.navHint')) ?></span></a>
     <a class="list-group-item list-group-item-action more-item" href="/settings/security"><?= esc(lang('Account.securityTitle')) ?></a>
     <form method="post" action="/logout" class="m-0">
