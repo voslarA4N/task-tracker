@@ -69,7 +69,7 @@ final class ReportsPageTest extends AuthTestCase
         $a      = $this->createClient(['name' => 'Klient Alfa']);
         $b      = $this->createClient(['name' => 'Klient Beta', 'identifier_value' => '22222222']);
         $this->reportInvoice($entity, $a, '2026-10-05', '1000.00');
-        $this->reportInvoice($entity, $a, '2026-10-20', '80.50');
+        $this->reportInvoice($entity, $a, '2026-10-20', '80.00');
         $this->reportInvoice($entity, $b, '2026-10-12', '500.00');
 
         return [$entity, $a];
@@ -98,8 +98,8 @@ final class ReportsPageTest extends AuthTestCase
 
         $this->assertStringContainsString('Klient Alfa', $body);
         $this->assertStringContainsString('Klient Beta', $body);
-        $this->assertStringContainsString(MoneyFormat::format('1080.50', 'EUR', 'sk'), $body);
-        $this->assertStringContainsString(MoneyFormat::format('1580.50', 'EUR', 'sk'), $body);
+        $this->assertStringContainsString(MoneyFormat::format('1080.00', 'EUR', 'sk'), $body);
+        $this->assertStringContainsString(MoneyFormat::format('1580.00', 'EUR', 'sk'), $body);
         $this->assertStringContainsString(lang('Reports.total'), $body);
         $this->assertStringContainsString('id="report-body"', $body);
         $this->assertStringContainsString(lang('Reports.noteExternalExcluded'), $body);

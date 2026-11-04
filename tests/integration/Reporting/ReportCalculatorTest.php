@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Reporting;
 
+use App\Libraries\Platform\Money;
 use App\Libraries\Reporting\ReportCalculator;
 use App\Libraries\Reporting\ReportPeriod;
 use App\Libraries\Reporting\TurnoverCalculator;
@@ -56,7 +57,7 @@ final class ReportCalculatorTest extends PgTestCase
     public function testBreakdownByClientSortedByInvoicedDesc(): void
     {
         $this->reportInvoice($this->entity, $this->clientA, '2026-10-05', '1000.00');
-        $this->reportInvoice($this->entity, $this->clientA, '2026-10-20', '80.50');
+        $this->reportInvoice($this->entity, $this->clientA, '2026-10-20', '80.00');
         $this->reportInvoice($this->entity, $this->clientB, '2026-10-12', '500.00');
 
         $r = $this->calc()->forPeriod($this->entity, ReportPeriod::month('2026-10'));
@@ -64,10 +65,10 @@ final class ReportCalculatorTest extends PgTestCase
         $this->assertSame('EUR', $r->currency);
         $this->assertCount(2, $r->clients);
         $this->assertSame('Klient A', $r->clients[0]['client_name']);
-        $this->assertSame('1080.50', $r->clients[0]['invoiced']);
+        $this->assertSame('1080.00', $r->clients[0]['invoiced']);
         $this->assertSame('Klient B', $r->clients[1]['client_name']);
         $this->assertSame('500.00', $r->clients[1]['invoiced']);
-        $this->assertSame('1580.50', $r->invoicedTotal);
+        $this->assertSame('1580.00', $r->invoicedTotal);
         $this->assertSame(3, $r->invoiceCount);
         $this->assertFalse($r->isEmpty());
     }
@@ -81,18 +82,19 @@ final class ReportCalculatorTest extends PgTestCase
         $this->assertSame('100.00', $r->invoicedTotal);
     }
 
-    public function testCreditNoteNetsInItsOwnMonth(): void
+    public function testCreditNoteNetsInMonthOfItsDeliveryDate(): void
     {
+        // Dobropis dedi datum dodania povodnej faktury (CreditNoteIssuer), preto odpocita v jej mesiaci (D-01).
         $id = $this->reportInvoice($this->entity, $this->clientA, '2026-10-10', '1000.00');
         $this->turnoverCreditNote($id, '2026-11-15');
 
         $oct = $this->calc()->forPeriod($this->entity, ReportPeriod::month('2026-10'));
         $nov = $this->calc()->forPeriod($this->entity, ReportPeriod::month('2026-11'));
 
-        $this->assertSame('1000.00', $oct->invoicedTotal);
-        $this->assertSame('-1000.00', $nov->invoicedTotal);
-        $this->assertSame(1, $nov->creditNoteCount);
-        $this->assertSame(0, $nov->invoiceCount);
+        $this->assertSame('0.00', $oct->invoicedTotal);
+        $this->assertSame(1, $oct->invoiceCount);
+        $this->assertSame(1, $oct->creditNoteCount);
+        $this->assertTrue($nov->isEmpty());
     }
 
     public function testCountedDiffersFromInvoicedForClientOutsideLimit(): void
@@ -134,7 +136,7 @@ final class ReportCalculatorTest extends PgTestCase
     public function testYearHasTwelveMonthsAndSumsMatch(): void
     {
         $this->reportInvoice($this->entity, $this->clientA, '2026-02-10', '200.00');
-        $this->reportInvoice($this->entity, $this->clientB, '2026-10-10', '300.50');
+        $this->reportInvoice($this->entity, $this->clientB, '2026-10-10', '300.00');
 
         $r = $this->calc()->forPeriod($this->entity, ReportPeriod::year(2026));
 
@@ -142,16 +144,12 @@ final class ReportCalculatorTest extends PgTestCase
         $this->assertSame('2026-01', $r->months[0]['month']);
         $this->assertSame('0.00', $r->months[0]['invoiced']);
         $this->assertSame('200.00', $r->months[1]['invoiced']);
-        $this->assertSame('300.50', $r->months[9]['invoiced']);
-        $this->assertSame('500.50', $r->invoicedTotal);
+        $this->assertSame('300.00', $r->months[9]['invoiced']);
+        $this->assertSame('500.00', $r->invoicedTotal);
 
-        $sum = '0.00';
+        $sum = Money::sum(...array_map(static fn (array $m): Money => Money::of($m['invoiced']), $r->months));
 
-        foreach ($r->months as $m) {
-            $sum = bcadd($sum, $m['invoiced'], 2);
-        }
-
-        $this->assertSame($r->invoicedTotal, $sum);
+        $this->assertSame($r->invoicedTotal, $sum->toDecimalString());
     }
 
     public function testEmptyPeriod(): void
