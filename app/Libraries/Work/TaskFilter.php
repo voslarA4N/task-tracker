@@ -23,6 +23,14 @@ final readonly class TaskFilter
      */
     public const MONTH_GROUPS = ['due', 'done_due', 'partial'];
 
+    public const SORTS        = ['default', 'title', 'client', 'status', 'hours', 'amount', 'done'];
+    public const DEFAULT_SORT = 'default';
+
+    /**
+     * Textove stlpce sa pri prvom kliku radia vzostupne, ostatne zostupne.
+     */
+    private const TEXT_SORTS = ['title', 'client', 'status'];
+
     private const MAX_Q = 100;
 
     public function __construct(
@@ -31,6 +39,8 @@ final readonly class TaskFilter
         public ?string $month = null,
         public ?string $q = null,
         public ?string $group = null,
+        public string $sort = self::DEFAULT_SORT,
+        public string $dir = 'desc',
     ) {
     }
 
@@ -44,6 +54,8 @@ final readonly class TaskFilter
         $month  = $get['month'] ?? null;
         $q      = $get['q'] ?? null;
         $group  = $get['group'] ?? null;
+        $sort   = $get['sort'] ?? null;
+        $dir    = $get['dir'] ?? null;
 
         $clientId = is_string($client) && preg_match('/^\d{1,18}$/D', $client) === 1 ? (int) $client : null;
         $state    = is_string($state) && in_array($state, self::STATES, true) ? $state : self::DEFAULT_STATE;
@@ -61,13 +73,49 @@ final readonly class TaskFilter
             $group = null;
         }
 
-        return new self($clientId, $group === null ? $state : self::DEFAULT_STATE, $month, $text, $group);
+        $sort = is_string($sort) && in_array($sort, self::SORTS, true) ? $sort : self::DEFAULT_SORT;
+        $dir  = $dir === 'asc' ? 'asc' : 'desc';
+
+        return new self($clientId, $group === null ? $state : self::DEFAULT_STATE, $month, $text, $group, $sort, $dir);
     }
 
     /**
      * @return array<string, string>
      */
     public function toQuery(): array
+    {
+        $out = $this->filterQuery();
+
+        if ($this->sort !== self::DEFAULT_SORT) {
+            $out['sort'] = $this->sort;
+            $out['dir']  = $this->dir;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Odkaz na triedenie podla stlpca (zachova filtre, opakovany klik otoci smer).
+     *
+     * @return array<string, string>
+     */
+    public function withSort(string $col): array
+    {
+        $col = in_array($col, self::SORTS, true) ? $col : self::DEFAULT_SORT;
+
+        if ($col === $this->sort) {
+            $dir = $this->dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            $dir = in_array($col, self::TEXT_SORTS, true) ? 'asc' : 'desc';
+        }
+
+        return $this->filterQuery() + ['sort' => $col, 'dir' => $dir];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function filterQuery(): array
     {
         $out = [];
 
@@ -96,6 +144,6 @@ final readonly class TaskFilter
 
     public function activeCount(): int
     {
-        return count($this->toQuery());
+        return count($this->filterQuery());
     }
 }
