@@ -227,4 +227,35 @@ final class AccountantBundleTest extends PgTestCase
         $this->assertSame('', $row[9]->value);
         $this->assertSame('', $row[8]->value);
     }
+
+    private function addDocumentVersion(int $invoiceId, int $version, string $bytes): void
+    {
+        $this->owner()->query(
+            "INSERT INTO invoice_documents (invoice_id, kind, version, content, byte_size, sha256, template_version, renderer, created_at)
+             VALUES (:i:, 'invoice', :v:, decode(:hex:, 'hex'), :size:, :sha:, 'test-2', 'test', now())",
+            ['i' => $invoiceId, 'v' => $version, 'hex' => bin2hex($bytes), 'size' => strlen($bytes), 'sha' => hash('sha256', $bytes)],
+        );
+    }
+
+    public function testRegeneratedVersionAppearsOnceWithLatestBytes(): void
+    {
+        $bytes = '%PDF-1.4 regenerated invoice A, clearly different size';
+        $this->addDocumentVersion($this->ids['a'], 2, $bytes);
+
+        $docs = (new BundleSelector($this->rw()))->documents($this->entity, $this->period());
+        $this->assertCount(3, $docs);
+        $this->assertSame([$this->ids['a'], $this->ids['cn'], $this->ids['b']], array_column($docs, 'id'));
+        $this->assertSame(strlen($bytes), $docs[0]['byte_size']);
+
+        $zipBytes                        = (new AccountantBundle($this->rw()))->build($this->entity, $this->period());
+        ['zip' => $zip, 'path' => $path] = $this->open($zipBytes);
+
+        try {
+            $this->assertSame(4, $zip->numFiles);
+            $this->assertSame($bytes, $zip->getFromName('doklady/' . DocumentListExport::pdfName($docs[0])));
+        } finally {
+            $zip->close();
+            unlink($path);
+        }
+    }
 }

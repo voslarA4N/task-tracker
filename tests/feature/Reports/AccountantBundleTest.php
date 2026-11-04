@@ -16,6 +16,7 @@ use Tests\Support\IssueFixtures;
 use Tests\Support\MasterFixtures;
 use Tests\Support\ReportFixtures;
 use Tests\Support\TurnoverFixtures;
+use ZipArchive;
 
 /**
  * Obrazovka Balik pre uctovnicku (RPT-03, D-09 az D-12).
@@ -170,5 +171,42 @@ final class AccountantBundleTest extends AuthTestCase
         $a = strpos($body, 'href="/reports/accountant"');
         $this->assertNotFalse($a);
         $this->assertLessThan((int) strpos($body, 'href="/settings/entities"'), $a);
+    }
+
+    public function testDownloadWithRegeneratedVersionHasOneRowAndOnePdf(): void
+    {
+        $this->seed();
+        $id    = (int) $this->owner()->query("SELECT id FROM invoices WHERE type = 'invoice' ORDER BY id LIMIT 1")->getRow()->id;
+        $bytes = '%PDF-1.4 regenerated';
+        $this->owner()->query(
+            "INSERT INTO invoice_documents (invoice_id, kind, version, content, byte_size, sha256, template_version, renderer, created_at)
+             VALUES (:i:, 'invoice', 2, decode(:hex:, 'hex'), :size:, :sha:, 'test-2', 'test', now())",
+            ['i' => $id, 'hex' => bin2hex($bytes), 'size' => strlen($bytes), 'sha' => hash('sha256', $bytes)],
+        );
+
+        $this->login();
+        $result = $this->get('/reports/accountant/download?entity=' . $this->entity . '&from=2026-10&to=2026-10');
+        $result->assertStatus(200);
+
+        $path = tempnam(sys_get_temp_dir(), 'bz');
+        file_put_contents($path, (string) $result->response()->getBody());
+        $zip = new ZipArchive();
+        $this->assertTrue($zip->open($path));
+
+        try {
+            $this->assertSame(4, $zip->numFiles);
+            $csv = (string) $zip->getFromName('zoznam-dokladov.csv');
+            $this->assertCount(4, array_values(array_filter(explode("\n", trim($csv)))));
+            $found = 0;
+
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $found += $zip->getFromIndex($i) === $bytes ? 1 : 0;
+            }
+
+            $this->assertSame(1, $found);
+        } finally {
+            $zip->close();
+            unlink($path);
+        }
     }
 }
