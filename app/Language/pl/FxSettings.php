@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'navTitle'           => 'Kursy walut',
+    'title'              => 'Kursy walut',
+    'intro'              => 'Określa, skąd pochodzi kurs i na który dzień przy fakturze w innej walucie niż waluta podmiotu. Zmiana dotyczy tylko faktur wystawionych po zapisaniu.',
+    'fieldSource'        => 'Źródło kursu',
+    'fieldDateBasis'     => 'Data, na którą kurs jest wyszukiwany',
+    'fieldDayRule'       => 'Reguła dnia',
+    'sourceNbp'          => 'Narodowy Bank Polski (NBP)',
+    'sourceEcb'          => 'Europejski Bank Centralny (ECB)',
+    'sourceCnb'          => 'Czeski Bank Narodowy (ČNB)',
+    'basisDelivery'      => 'Data wykonania usługi',
+    'basisIssue'         => 'Data wystawienia',
+    'rulePrevious'       => 'Ostatni kurs przed datą',
+    'ruleOnOrBefore'     => 'Kurs obowiązujący w danym dniu, w przeciwnym razie ostatni przed nim',
+    'hintSource'         => 'Źródło określa, dla których par walut kurs jest dostępny.',
+    'hintDateBasis'      => 'Data z faktury, według której wyszukiwany jest kurs.',
+    'hintDayRule'        => 'Zgodnie z API źródła; weekendy i święta są pomijane automatycznie.',
+    'pairs'              => 'NBP udostępnia kurs dla podmiotów prowadzonych w PLN (faktury w EUR, CZK). ČNB dla podmiotów w CZK (faktury w EUR, PLN). ECB dla podmiotów w EUR (faktury w PLN, CZK).',
+    'unsupportedWarning' => 'Dla kombinacji nieobsługiwanej przez źródło (np. ECB przy podmiocie prowadzonym w PLN) kurs zawsze trzeba będzie wpisać ręcznie.',
+    'defaults'           => 'Domyślnie: PL NBP, data wykonania usługi, ostatni kurs przed datą · SK ECB, data wykonania usługi, ostatni kurs przed datą · CZ ČNB, data wykonania usługi, kurs obowiązujący w danym dniu.',
+    'provisional'        => 'Reguły są wstępne. Zweryfikuj je z księgową.',
+    'saved'              => 'Ustawienia zostały zapisane.',
+    'errorInvalid'       => 'Wybierz prawidłową wartość.',
+    'errorStale'         => 'Ustawienie kursu zostało w międzyczasie zmienione. Wczytaj stronę ponownie i powtórz zmianę.',
+    'countrySK'          => 'Słowacja (SK)',
+    'countryPL'          => 'Polska (PL)',
+    'countryCZ'          => 'Czechy (CZ)',
+    'save'               => 'Zapisz',
+    'back'               => 'Wstecz',
+    'backToMore'         => 'Wróć do Więcej',
+];
