@@ -39,7 +39,7 @@ return [
     'bankName'             => 'Banka',
     'qrPayBySquare'        => 'PAY by square',
     'qrSpayd'              => 'QR Platba',
-    'qrZbp'                => 'Kod QR ZBP',
+    'qrZbp'                => 'Kód QR ZBP',
     'qrCaption'            => 'Platba QR kódem',
     'fxRate'               => 'Kurz',
     'fxFrom'               => 'ze dne',
