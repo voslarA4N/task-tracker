@@ -16,6 +16,8 @@ return [
     'next'                 => 'Ďalší ›',
     'summaryInvoiced'      => 'Vyfakturované',
     'summaryCounted'       => 'Z toho do obratu',
+    'summaryPaid'          => 'Uhradené',
+    'colPaid'              => 'Uhradené',
     'colClient'            => 'Klient',
     'colInvoiced'          => 'Vyfakturované',
     'total'                => 'Spolu',

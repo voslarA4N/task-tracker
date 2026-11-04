@@ -16,6 +16,8 @@ return [
     'next'                 => 'Next ›',
     'summaryInvoiced'      => 'Invoiced',
     'summaryCounted'       => 'Of which counted toward turnover',
+    'summaryPaid'          => 'Paid',
+    'colPaid'              => 'Paid',
     'colClient'            => 'Client',
     'colInvoiced'          => 'Invoiced',
     'total'                => 'Total',

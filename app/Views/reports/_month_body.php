@@ -45,6 +45,8 @@ use App\Libraries\Reporting\ReportResult;
                         <dt><?= esc(lang('Reports.summaryCounted')) ?></dt>
                         <dd><?= esc($money($result->countedTotal)) ?></dd>
                     <?php endif ?>
+                    <dt><?= esc(lang('Reports.summaryPaid')) ?></dt>
+                    <dd><?= esc($money($result->paidTotal)) ?></dd>
                 </dl>
             </section>
 
@@ -61,6 +63,7 @@ use App\Libraries\Reporting\ReportResult;
                             <tr>
                                 <th scope="col"><?= esc(lang('Reports.colClient')) ?></th>
                                 <th scope="col" class="dt-num text-end"><?= esc(lang('Reports.colInvoiced')) ?></th>
+                                <th scope="col" class="dt-num text-end"><?= esc(lang('Reports.colPaid')) ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -68,11 +71,13 @@ use App\Libraries\Reporting\ReportResult;
                                 <tr>
                                     <td><?= esc($row['client_name']) ?></td>
                                     <td class="dt-num text-end"><?= esc($money($row['invoiced'])) ?></td>
+                                    <td class="dt-num text-end"><?= esc($money($row['paid'])) ?></td>
                                 </tr>
                             <?php endforeach ?>
                             <tr class="rpt-tot">
                                 <th scope="row"><?= esc(lang('Reports.total')) ?></th>
                                 <td class="dt-num text-end"><?= esc($money($result->invoicedTotal)) ?></td>
+                                <td class="dt-num text-end"><?= esc($money($result->paidTotal)) ?></td>
                             </tr>
                         </tbody>
                     </table>
@@ -84,6 +89,8 @@ use App\Libraries\Reporting\ReportResult;
                             <dl class="master-kv mb-0">
                                 <dt><?= esc(lang('Reports.colInvoiced')) ?></dt>
                                 <dd><?= esc($money($row['invoiced'])) ?></dd>
+                                <dt><?= esc(lang('Reports.colPaid')) ?></dt>
+                                <dd><?= esc($money($row['paid'])) ?></dd>
                             </dl>
                         </div>
                     <?php endforeach ?>
@@ -91,6 +98,8 @@ use App\Libraries\Reporting\ReportResult;
                         <dl class="master-kv mb-0">
                             <dt><?= esc(lang('Reports.total')) ?></dt>
                             <dd><?= esc($money($result->invoicedTotal)) ?></dd>
+                            <dt><?= esc(lang('Reports.colPaid')) ?></dt>
+                            <dd><?= esc($money($result->paidTotal)) ?></dd>
                         </dl>
                     </div>
                 </div>

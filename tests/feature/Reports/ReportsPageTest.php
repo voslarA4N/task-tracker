@@ -105,6 +105,21 @@ final class ReportsPageTest extends AuthTestCase
         $this->assertStringContainsString(lang('Reports.noteExternalExcluded'), $body);
     }
 
+    public function testShowsPaidColumnAndPaymentOnlyMonthIsNotEmpty(): void
+    {
+        [$entity, $a] = $this->seed();
+        $inv          = $this->reportInvoice($entity, $a, '2026-09-05', '300.00');
+        $this->reportPayment($inv, '2026-10-02', '300.00');
+        $this->login();
+
+        $oct = $this->body($this->get('/reports/month?period=2026-10'));
+        $this->assertStringContainsString(lang('Reports.colPaid'), $oct);
+        $this->assertStringContainsString(MoneyFormat::format('300.00', 'EUR', 'sk'), $oct);
+
+        $sep = $this->body($this->get('/reports/month?period=2026-09'));
+        $this->assertStringNotContainsString(lang('Reports.emptyTitle'), $sep);
+    }
+
     public function testHtmxReturnsFragment(): void
     {
         $this->seed();
