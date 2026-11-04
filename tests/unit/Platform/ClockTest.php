@@ -111,5 +111,9 @@ final class ClockTest extends CIUnitTestCase
         yield 'garbage' => ['garbage'];
 
         yield 'impossible date' => ['2026-13-45 10:00:00+01'];
+
+        yield 'calendar overflow' => ['2026-02-31 10:00:00+01'];
+
+        yield 'trailing newline' => ["2026-11-01 10:00:00+01\n"];
     }
 }
