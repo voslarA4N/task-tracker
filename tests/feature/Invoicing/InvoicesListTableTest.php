@@ -54,9 +54,9 @@ final class InvoicesListTableTest extends AuthTestCase
 
     private function invoice(int $client, string $number, string $total, string $issue, ?int $entity = null): int
     {
-        $alloc = $this->createAllocation($this->createTask($client), '8.00', '2026-10', ['rate' => '135.00', 'amount' => '1080.00']);
+        $alloc = $this->createAllocation($this->createTask($client), '1.00', '2026-10', ['rate' => $total, 'amount' => $total]);
 
-        return $this->insertIssuedInvoiceRaw($client, $entity ?? $this->entity, '2026-10', [$alloc], '%PDF-1.4 test', ['number' => $number, 'total' => $total, 'issue_date' => $issue]);
+        return $this->insertIssuedInvoiceRaw($client, $entity ?? $this->entity, '2026-10', [$alloc], '%PDF-1.4 test', ['number' => $number, 'issue_date' => $issue]);
     }
 
     /**
