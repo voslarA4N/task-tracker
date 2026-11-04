@@ -7,7 +7,7 @@ namespace Tests\Feature\Invoicing;
 use App\Libraries\Invoicing\DocumentStore;
 use App\Libraries\Invoicing\MpdfInvoiceInv2Renderer;
 use App\Libraries\Invoicing\MpdfInvoiceRenderer;
-use App\Libraries\Invoicing\MpdfReportRenderer;
+use App\Libraries\Invoicing\MpdfReportRep2Renderer;
 use App\Libraries\Platform\FrozenClock;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use Config\Services;
@@ -183,7 +183,7 @@ final class InvoicePdfEndpointTest extends AuthTestCase
     public function testRedownloadAfterTranslationChangeReturnsIdenticalBytes(): void
     {
         $s      = $this->issueSetup();
-        $issued = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
+        $issued = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRep2Renderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));
         $before = [];
 
         foreach (['pdf', 'report'] as $path) {

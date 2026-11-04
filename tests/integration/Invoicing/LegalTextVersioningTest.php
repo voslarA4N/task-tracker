@@ -7,7 +7,7 @@ namespace Tests\Integration\Invoicing;
 use App\Libraries\Audit\AuditLogger;
 use App\Libraries\Invoicing\DocumentStore;
 use App\Libraries\Invoicing\MpdfInvoiceInv2Renderer;
-use App\Libraries\Invoicing\MpdfReportRenderer;
+use App\Libraries\Invoicing\MpdfReportRep2Renderer;
 use App\Libraries\Master\LegalTextService;
 use App\Libraries\Platform\FrozenClock;
 use Config\Services;
@@ -49,7 +49,7 @@ final class LegalTextVersioningTest extends PgTestCase
     {
         $s = $this->issueSetup(['parts' => [['10.00', '2026-10'], ['4.00', '2026-10']]]);
 
-        $a = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][0]]));
+        $a = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRep2Renderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][0]]));
 
         $docs    = new DocumentStore($this->rw());
         $invoice = $docs->read($a->id, 'invoice');
@@ -60,7 +60,7 @@ final class LegalTextVersioningTest extends PgTestCase
         $rev = (new LegalTextService($this->rw(), new AuditLogger($this->rw())))->update($this->textId, 'Dodavatel nie je platitel DPH - nove znenie.', false, 1);
         $this->assertSame(2, $rev);
 
-        $b = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][1]], ['requestKey' => $this->uuid4()]));
+        $b = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRep2Renderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][1]], ['requestKey' => $this->uuid4()]));
 
         $snapA = $this->snapshot($a->id);
         $snapB = $this->snapshot($b->id);
@@ -94,7 +94,7 @@ final class LegalTextVersioningTest extends PgTestCase
     {
         $s = $this->issueSetup(['country' => 'PL', 'client' => ['country' => 'GB', 'billing_mode' => 'non_eu']]);
 
-        $a = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][0]]));
+        $a = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRep2Renderer())->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], [$s['parts'][0]]));
         $this->assertStringContainsString('art. 113', $this->snapshot($a->id)['legal']['texts']['vat_note']['body']);
 
         $service = new LegalTextService($this->rw(), new AuditLogger($this->rw()));
@@ -102,7 +102,7 @@ final class LegalTextVersioningTest extends PgTestCase
         try {
             $service->create('PL', 'pl_exempt_113_1', 'non_eu', 'pl', 'vat_note', 'Miejsce świadczenia poza terytorium kraju.', true);
             $s2 = $this->issueSetup(['country' => 'PL', 'client' => ['country' => 'GB', 'billing_mode' => 'non_eu']]);
-            $b  = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRenderer())->issue($this->issueCommand($s2['client'], '2026-10', $s2['entity'], [$s2['parts'][0]], ['requestKey' => $this->uuid4()]));
+            $b  = $this->issuer(new MpdfInvoiceInv2Renderer(), new MpdfReportRep2Renderer())->issue($this->issueCommand($s2['client'], '2026-10', $s2['entity'], [$s2['parts'][0]], ['requestKey' => $this->uuid4()]));
             $this->assertSame('Miejsce świadczenia poza terytorium kraju.', $this->snapshot($b->id)['legal']['texts']['vat_note']['body']);
             $this->assertSame('non_eu', $this->snapshot($b->id)['legal']['texts']['vat_note']['billing_mode']);
             $this->assertStringContainsString('art. 113', $this->snapshot($a->id)['legal']['texts']['vat_note']['body']);

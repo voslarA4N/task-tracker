@@ -24,6 +24,7 @@ final class RendererRegistry
             'inv-1' => new MpdfInvoiceRenderer(),
             'inv-2' => new MpdfInvoiceInv2Renderer(),
             'rep-1' => new MpdfReportRenderer(),
+            'rep-2' => new MpdfReportRep2Renderer(),
             'cn-1'  => new MpdfCreditNoteCn1Renderer(),
             default => throw new InvalidArgumentException('Unknown template version: ' . $templateVersion),
         };

@@ -103,7 +103,7 @@ trait IssueFixtures
     {
         return new InvoiceIssuer($this->rw(), null, new RendererRegistry([
             'inv-2' => $invoiceRenderer ?? new FakePdfRenderer('inv-2'),
-            'rep-1' => $reportRenderer ?? new FakePdfRenderer('rep-1'),
+            'rep-2' => $reportRenderer ?? new FakePdfRenderer('rep-2'),
         ]));
     }
 

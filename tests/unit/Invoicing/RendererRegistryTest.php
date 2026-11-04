@@ -8,6 +8,7 @@ use App\Libraries\Invoicing\MpdfCreditNoteCn1Renderer;
 use App\Libraries\Invoicing\MpdfInvoiceInv2Renderer;
 use App\Libraries\Invoicing\MpdfInvoiceRenderer;
 use App\Libraries\Invoicing\MpdfReportRenderer;
+use App\Libraries\Invoicing\MpdfReportRep2Renderer;
 use App\Libraries\Invoicing\RendererRegistry;
 use CodeIgniter\Test\CIUnitTestCase;
 use InvalidArgumentException;
@@ -27,6 +28,7 @@ final class RendererRegistryTest extends CIUnitTestCase
         $this->assertInstanceOf(MpdfInvoiceRenderer::class, $r->for('inv-1'));
         $this->assertInstanceOf(MpdfInvoiceInv2Renderer::class, $r->for('inv-2'));
         $this->assertInstanceOf(MpdfReportRenderer::class, $r->for('rep-1'));
+        $this->assertInstanceOf(MpdfReportRep2Renderer::class, $r->for('rep-2'));
         $this->assertInstanceOf(MpdfCreditNoteCn1Renderer::class, $r->for('cn-1'));
     }
 

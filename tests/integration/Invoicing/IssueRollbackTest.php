@@ -127,7 +127,7 @@ final class IssueRollbackTest extends PgTestCase
     {
         $s       = $this->issueSetup();
         $builder = $this->failingQrBuilder();
-        $issuer  = new InvoiceIssuer($this->rw(), null, new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2'), 'rep-1' => new FakePdfRenderer('rep-1')]), $builder);
+        $issuer  = new InvoiceIssuer($this->rw(), null, new RendererRegistry(['inv-2' => new FakePdfRenderer('inv-2'), 'rep-2' => new FakePdfRenderer('rep-2')]), $builder);
 
         try {
             $issuer->issue($this->issueCommand($s['client'], '2026-10', $s['entity'], $s['parts']));

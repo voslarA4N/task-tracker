@@ -67,7 +67,7 @@ final class SampleSnapshots
             'origin'                  => 'issued',
             'type'                    => 'invoice',
             'template_version'        => 'inv-2',
-            'report_template_version' => 'rep-1',
+            'report_template_version' => 'rep-2',
             'number'                  => '202610001',
             'variable_symbol'         => '202610001',
             'billing_month'           => '2026-10',
