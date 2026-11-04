@@ -175,6 +175,35 @@ final class DeliverySendTest extends AuthTestCase
         $this->assertSame(1, $this->sendCount());
     }
 
+    public function testStaleVersionsWithBadAddressNeverSilentlyReconfirm(): void
+    {
+        $this->login();
+        $inv = $this->issuedInvoice();
+        $this->regenerator()->regenerate($inv['id'], 'report', 1);
+
+        // WR-01: stale confirmation + typo: no 422 re-render that would adopt v2 without the alert
+        $result = $this->submit($inv['id'], $this->valid('77777777-7777-4777-8777-777777777777', 'not-an-address'));
+        $result->assertStatus(409);
+        $this->assertStringContainsString('pregenerovaný', $this->body($result));
+
+        // the stale form is posted again with a valid address: still rejected, nothing sent
+        $this->submit($inv['id'], $this->valid('77777777-7777-4777-8777-777777777777'))->assertStatus(409);
+        $this->assertSame(0, $this->sendCount());
+    }
+
+    public function testValidationErrorKeepsConfirmedVersionsThenSends(): void
+    {
+        $this->login();
+        $inv = $this->issuedInvoice();
+
+        $result = $this->submit($inv['id'], $this->valid('88888888-8888-4888-8888-888888888888', 'not-an-address'));
+        $result->assertStatus(422);
+        $this->assertStringContainsString('name="attachment_versions[report]" value="1"', $this->body($result));
+
+        $this->submit($inv['id'], $this->valid('88888888-8888-4888-8888-888888888888'))->assertStatus(200);
+        $this->assertSame(1, $this->sendCount());
+    }
+
     public function testPostWithoutConfirmedVersionsIsRejected(): void
     {
         $this->login();

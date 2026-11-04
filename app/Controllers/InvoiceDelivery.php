@@ -269,6 +269,22 @@ final class InvoiceDelivery extends BaseController
             return $this->panel('invoices/_delivery_form', 422, $draft, array_merge($values, ['request_key' => Uuid::v4()]), [], lang('Deliveries.errorRequest'), $kind);
         }
 
+        // WR-01: potvrdene verzie priloh sa porovnaju s aktualnymi PRED validaciou aj odoslanim; inak by 422/502 prekreslenie
+        // potichu potvrdilo novsie verzie, ktore vlastnik nevidel
+        $confirmed = $this->confirmedVersions();
+        $latest    = [];
+
+        foreach ((array) $draft['attachments'] as $a) {
+            $latest[(string) $a['kind']] = (int) $a['version'];
+        }
+
+        ksort($latest);
+        ksort($confirmed);
+
+        if ($confirmed !== $latest) {
+            return $this->panel('invoices/_delivery_form', 409, $draft, $values, [], lang('Deliveries.errorAttachChanged'), $kind);
+        }
+
         $command = new SendCommand(
             invoiceId: $id,
             kind: $kind,
