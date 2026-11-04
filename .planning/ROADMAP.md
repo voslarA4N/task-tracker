@@ -598,11 +598,15 @@ Plans:
 3. Detail, stiahnutie PDF, e-mail s prílohami a balík pre účtovníčku používajú najnovšiu verziu dokumentu; suma a údaje v novej verzii sa zhodujú s pôvodnou.
 4. Každé pregenerovanie sa zapíše do denníka zmien (kto, kedy, ktorý dokument, stará a nová verzia šablóny, sha256).
 5. Lehota pre faktúru sa nastavuje v nastaveniach; testy pokrývajú lehotu, nemennosť pôvodného záznamu a zhodu údajov.
-**Plans:** 0 plans
+**Plans:** 5 plans (4 vlny)
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 11.1 to break down)
+- [ ] 11.1-01-PLAN.md — Migrácia verzií dokumentov a document_settings, DocumentStore s verziami, BundleSelector na najnovšiu verziu (vlna 1)
+- [ ] 11.1-02-PLAN.md — DocumentTemplates ako jediný zdroj aktuálnej šablóny, RegeneratePolicy (lehota od created_at) a RegenerateRejected (vlna 1)
+- [ ] 11.1-03-PLAN.md — Nastavenie lehoty /settings/documents (služba, obrazovka, audit, preklady) (vlna 2)
+- [ ] 11.1-04-PLAN.md — DocumentRegenerator: render zo snapshotu, advisory lock, nová verzia, audit; testy lehoty, zhody údajov a súbehu (vlna 3)
+- [ ] 11.1-05-PLAN.md — Akcie pregenerovania a história verzií na detaile faktúry, stiahnutie verzie, rollout 202611001 (vlna 4)
 
 ### Phase 12: Lokalizácia a produkcia
 
