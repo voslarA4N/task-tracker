@@ -13,6 +13,17 @@ use Config\Database;
  */
 final class InvoiceQueries
 {
+    private const SORT_SQL = [
+        'number'           => 'i.number',
+        'client'           => 'c.name',
+        'issue_date'       => 'i.issue_date',
+        'turnover_date'    => 'f.turnover_date',
+        'due_date'         => 'i.due_date',
+        'currency'         => 'i.currency',
+        'total'            => 'i.total',
+        'total_entity_ccy' => 'f.total_entity_ccy',
+    ];
+
     /**
      * @var BaseConnection<mixed, mixed>
      */
@@ -26,17 +37,6 @@ final class InvoiceQueries
         $this->db = $db ?? Database::connect();
     }
 
-    private const SORT_SQL = [
-        'number'           => 'i.number',
-        'client'           => 'c.name',
-        'issue_date'       => 'i.issue_date',
-        'turnover_date'    => 'f.turnover_date',
-        'due_date'         => 'i.due_date',
-        'currency'         => 'i.currency',
-        'total'            => 'i.total',
-        'total_entity_ccy' => 'f.total_entity_ccy',
-    ];
-
     /**
      * @param int|null $limit null = bez limitu (export), truncated je potom false
      *
@@ -44,11 +44,11 @@ final class InvoiceQueries
      */
     public function list(?int $limit = 100, ?string $status = null, ?string $today = null, ?InvoiceFilter $filter = null): array
     {
-        $today  ??= service('clock')->today();
+        $today ??= service('clock')->today();
         $status ??= $filter?->status;
-        $cond    = "(i.origin = 'issued' AND i.type = 'invoice' AND i.status <> 'cancelled' AND i.balance > 0 AND i.due_date < CAST(:today: AS date))";
-        $where   = [];
-        $binds   = ['today' => $today];
+        $cond  = "(i.origin = 'issued' AND i.type = 'invoice' AND i.status <> 'cancelled' AND i.balance > 0 AND i.due_date < CAST(:today: AS date))";
+        $where = [];
+        $binds = ['today' => $today];
 
         if (in_array($status, ['issued', 'sent', 'partially_paid', 'paid', 'cancelled'], true)) {
             $where[]         = "i.type = 'invoice' AND i.status = :status:";
@@ -61,27 +61,27 @@ final class InvoiceQueries
 
         if ($filter !== null) {
             if ($filter->entityId !== null) {
-                $where[]          = 'f.entity_id = :entity:';
+                $where[]         = 'f.entity_id = :entity:';
                 $binds['entity'] = $filter->entityId;
             }
 
             if ($filter->clientId !== null) {
-                $where[]          = 'i.client_id = :client:';
+                $where[]         = 'i.client_id = :client:';
                 $binds['client'] = $filter->clientId;
             }
 
             if ($filter->q !== null) {
-                $where[]      = "(i.number ILIKE :q: ESCAPE '\\' OR i.external_ref ILIKE :q: ESCAPE '\\')";
+                $where[]    = "(i.number ILIKE :q: ESCAPE '\\' OR i.external_ref ILIKE :q: ESCAPE '\\')";
                 $binds['q'] = '%' . self::escapeLike($filter->q) . '%';
             }
 
             if ($filter->from !== null) {
-                $where[]         = 'i.issue_date >= CAST(:from: AS date)';
+                $where[]       = 'i.issue_date >= CAST(:from: AS date)';
                 $binds['from'] = $filter->from;
             }
 
             if ($filter->to !== null) {
-                $where[]       = 'i.issue_date <= CAST(:to: AS date)';
+                $where[]     = 'i.issue_date <= CAST(:to: AS date)';
                 $binds['to'] = $filter->to;
             }
         }
@@ -97,7 +97,7 @@ final class InvoiceQueries
         $limitSql = '';
 
         if ($limit !== null) {
-            $limitSql    = ' LIMIT :n:';
+            $limitSql   = ' LIMIT :n:';
             $binds['n'] = $limit + 1;
         }
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Libraries\Invoicing\InvoiceFilter;
 use App\Libraries\Platform\MoneyFormat;
 
 /**
@@ -8,11 +9,25 @@ use App\Libraries\Platform\MoneyFormat;
  * @var list<array<string, mixed>> $rows
  * @var bool                       $truncated
  * @var string                     $status
+ * @var InvoiceFilter              $filter
  */
+$filtered = $filter->activeCount() > 0;
+$cols     = [
+    'number'           => ['Invoices.colNumber', false],
+    'client'           => ['Invoices.colClient', false],
+    'issue_date'       => ['Invoices.colIssued', false],
+    'turnover_date'    => ['Invoices.colTurnover', false],
+    'due_date'         => ['Invoices.colDue', false],
+    'currency'         => ['Invoices.colCurrency', false],
+    'total'            => ['Invoices.colTotal', true],
+    'total_entity_ccy' => ['Invoices.colEntityTotal', true],
+];
 ?>
 <div id="invoice-list">
+    <input type="hidden" name="sort" value="<?= esc($filter->sort, 'attr') ?>" form="inv-filter">
+    <input type="hidden" name="dir" value="<?= esc($filter->dir, 'attr') ?>" form="inv-filter">
     <p class="small text-body-secondary mb-2"><?= esc(lang('Invoices.countHint', [count($rows)])) ?></p>
-    <?php if ($rows === [] && ($status ?? '') !== '') : ?>
+    <?php if ($rows === [] && $filtered) : ?>
         <section class="app-card">
             <p class="text-muted mb-0"><?= esc(lang('Invoices.emptyFiltered')) ?></p>
         </section>
@@ -23,6 +38,7 @@ use App\Libraries\Platform\MoneyFormat;
             <a class="btn btn-primary btn-touch d-inline-flex align-items-center" href="/invoices/new"><?= esc(lang('Invoices.newCta')) ?></a>
         </section>
     <?php else : ?>
+        <div class="dt-only-sm">
         <section class="app-card p-0 overflow-hidden" aria-label="<?= esc(lang('Invoices.title'), 'attr') ?>">
             <?php foreach ($rows as $row) : ?>
                 <?php
@@ -32,29 +48,11 @@ use App\Libraries\Platform\MoneyFormat;
                 $meta     = $row['issue_date_label'] !== '' ? lang('Invoices.rowMeta', [(string) $row['client_name'], (string) $row['issue_date_label']]) : (string) $row['client_name'];
                 $st       = (string) ($row['status'] ?? 'issued');
                 $isCn     = ($row['type'] ?? 'invoice') === 'credit_note';
-                [$stKey, $stClass] = match (true) {
-                    $isCn                    => ['Invoices.badgeCreditNote', 'text-bg-info'],
-                    $st === 'cancelled'      => ['Invoices.statusCancelled', 'text-bg-dark'],
-                    $st === 'sent'           => ['Invoices.statusSent', 'text-bg-light border'],
-                    $st === 'partially_paid' => ['Invoices.statusPartiallyPaid', 'text-bg-warning'],
-                    $st === 'paid'           => ['Invoices.statusPaid', 'text-bg-success'],
-                    default                  => ['Invoices.statusIssued', 'text-bg-secondary'],
-                };
                 ?>
                 <a class="inv-row" href="/invoices/<?= (int) $row['id'] ?>">
                     <span class="inv-row-title"><?= esc($title) ?></span>
                     <span class="st-badges">
-                        <?php if ($external) : ?>
-                            <span class="st-badge badge text-bg-secondary"><?= esc(lang('Invoices.badgeExternal')) ?></span>
-                        <?php else : ?>
-                            <span class="st-badge badge <?= esc($stClass, 'attr') ?>"><?= esc(lang($stKey)) ?></span>
-                            <?php if ($isCn) : ?>
-                                <span class="st-badge badge text-bg-secondary"><?= esc(lang(! empty($row['sent_at']) ? 'Invoices.statusCnSent' : 'Invoices.statusCnIssued')) ?></span>
-                            <?php endif ?>
-                            <?php if (! empty($row['overdue']) && ! $isCn && $st !== 'cancelled') : ?>
-                                <span class="st-badge badge text-bg-danger"><?= esc(lang('Invoices.statusOverdue', [(int) $row['days_overdue']])) ?></span>
-                            <?php endif ?>
-                        <?php endif ?>
+                        <?= view('invoices/_status_badges', ['row' => $row]) ?>
                     </span>
                     <span class="inv-row-meta w-100"><?= esc($meta) ?></span>
                     <?php if ($isCn && (string) ($row['corrected_number'] ?? '') !== '') : ?>
@@ -72,6 +70,48 @@ use App\Libraries\Platform\MoneyFormat;
                 </a>
             <?php endforeach ?>
         </section>
+        </div>
+        <div class="dt-only-lg">
+            <table class="table table-hover dt-table">
+                <caption class="visually-hidden"><?= esc(lang('Invoices.tableCaption')) ?></caption>
+                <thead>
+                    <tr>
+                        <?php foreach ($cols as $col => [$key, $num]) : ?>
+                            <?php
+                            $active = $filter->sort === $col;
+                            $aria   = $active ? ($filter->dir === 'asc' ? 'ascending' : 'descending') : 'none';
+                            $href   = '/invoices?' . http_build_query($filter->withSort($col));
+                            ?>
+                            <th scope="col" aria-sort="<?= esc($aria, 'attr') ?>"<?= $num ? ' class="dt-num"' : '' ?>>
+                                <a class="dt-sort" href="<?= esc($href, 'attr') ?>" hx-get="<?= esc($href, 'attr') ?>" hx-target="#invoice-list" hx-swap="outerHTML" hx-push-url="true"><?= esc(lang($key)) ?><span aria-hidden="true"><?= $active ? ($filter->dir === 'asc' ? '▲' : '▼') : '' ?></span></a>
+                            </th>
+                        <?php endforeach ?>
+                        <th scope="col"><?= esc(lang('Invoices.colStatus')) ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($rows as $row) : ?>
+                        <?php
+                        $external = $row['origin'] === 'external';
+                        $number   = (string) ($row['number'] ?? '');
+                        $title    = $external ? ($number !== '' ? $number : lang('Invoices.externalTitle')) : $number;
+                        $entCcy   = trim((string) ($row['entity_currency'] ?? ''));
+                        ?>
+                        <tr>
+                            <td><a href="/invoices/<?= (int) $row['id'] ?>"><?= esc($title) ?></a></td>
+                            <td><?= esc((string) $row['client_name']) ?></td>
+                            <td><?= esc((string) $row['issue_date_label']) ?></td>
+                            <td><?= esc((string) $row['turnover_date_label']) ?></td>
+                            <td><?= esc((string) $row['due_date_label']) ?></td>
+                            <td><?= esc((string) $row['currency']) ?></td>
+                            <td class="dt-num"><?= esc(MoneyFormat::format((string) $row['total'], (string) $row['currency'])) ?></td>
+                            <td class="dt-num"><?= ($row['total_entity_ccy'] ?? null) !== null && $entCcy !== '' ? esc(MoneyFormat::format((string) $row['total_entity_ccy'], $entCcy)) : '—' ?></td>
+                            <td><?= view('invoices/_status_badges', ['row' => $row]) ?></td>
+                        </tr>
+                    <?php endforeach ?>
+                </tbody>
+            </table>
+        </div>
         <?php if ($truncated) : ?>
             <p class="small text-body-secondary mt-2"><?= esc(lang('Invoices.limitHint')) ?></p>
         <?php endif ?>

@@ -57,7 +57,7 @@ $htmxConfig = [
         </nav>
     </header>
 
-    <main id="content" class="app-main container-fluid">
+    <main id="content" class="app-main container-fluid<?= ! empty($mainWide) ? ' app-main--wide' : '' ?>">
         <?= $this->include('layouts/_install_hint') ?>
         <?php $notice = session()->getFlashdata('app_notice'); ?>
         <?php if (is_array($notice) && isset($notice['message'])) : ?>

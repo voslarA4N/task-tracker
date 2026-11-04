@@ -563,3 +563,27 @@ img, table { max-width: 100%; }
     .lim-row { grid-template-columns: 1fr auto; }
     .lim-cards { grid-template-columns: 1fr 1fr; }
 }
+
+/* Phase 11: prehľady, exporty, audit, PC tabuľky */
+.work-table { max-width: 1200px; margin-left: auto; margin-right: auto; }
+.dt-table { font-size: 16px; font-variant-numeric: tabular-nums; }
+.dt-table td, .dt-table th { padding: 8px 16px; vertical-align: middle; overflow-wrap: anywhere; }
+.dt-table td { height: 44px; }
+.dt-table th { font-size: 12px; font-weight: 400; color: var(--bs-secondary-color); }
+.dt-num { text-align: right; white-space: nowrap; }
+.dt-sort { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; color: inherit; text-decoration: none; }
+.rpt-switch { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rpt-period { font-size: 20px; font-weight: 600; }
+.rpt-tot { font-weight: 600; border-top: 2px solid var(--app-border); }
+.rpt-card { padding: 16px; overflow-wrap: anywhere; }
+.aud-diff { font-size: 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; background: #f5f6f8; padding: 8px 12px; border-radius: 4px; }
+.aud-changed { background: var(--bs-warning-bg-subtle); }
+@media (min-width: 992px) {
+    .app-main.app-main--wide { max-width: 1200px; }
+    .dt-only-sm { display: none !important; }
+    .dt-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .w-lg-auto { width: auto !important; }
+}
+@media (max-width: 991.98px) {
+    .dt-only-lg { display: none !important; }
+}

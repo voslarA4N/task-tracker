@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Libraries\Invoicing;
 
-use DateTimeImmutable;
-
 /**
  * Filter a triedenie zoznamu faktur zo URL. Vsetko prechadza whitelistom, neplatne hodnoty sa ticho nahradia predvolenymi.
  */
@@ -151,8 +149,8 @@ final readonly class InvoiceFilter
             return null;
         }
 
-        $d = DateTimeImmutable::createFromFormat('!Y-m-d', $v);
+        $d = service('clock')->parseDate($v);
 
-        return $d !== false && $d->format('Y-m-d') === $v ? $v : null;
+        return $d !== null && $d->format('Y-m-d') === $v ? $v : null;
     }
 }

@@ -7,7 +7,10 @@ namespace App\Controllers;
 use App\Libraries\Invoicing\DocumentFilename;
 use App\Libraries\Invoicing\DocumentIntegrityError;
 use App\Libraries\Invoicing\DocumentStore;
+use App\Libraries\Invoicing\InvoiceFilter;
 use App\Libraries\Invoicing\InvoiceQueries;
+use App\Libraries\Master\ClientService;
+use App\Libraries\Master\EntityDirectory;
 use App\Libraries\Receivables\InvoiceStatusQueries;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -17,18 +20,36 @@ final class Invoices extends BaseController
 {
     public function index(): ResponseInterface
     {
-        $status = (string) $this->request->getGet('status');
-        $status = in_array($status, ['', 'issued', 'sent', 'partially_paid', 'paid', 'overdue', 'cancelled', 'credit_note'], true) ? $status : '';
-        $result = (new InvoiceQueries())->list(100, $status === '' ? null : $status, service('clock')->today());
-        $fmt    = $this->dateFormatter();
+        $filter  = InvoiceFilter::fromQuery($this->request->getGet());
+        $today   = service('clock')->today();
+        $result  = (new InvoiceQueries())->list(100, $filter->status, $today, $filter);
+        $client  = new ClientService();
+        $clients = array_merge(
+            array_map(static fn (array $c): array => $c + ['is_archived' => false], $client->listAll(false)),
+            array_map(static fn (array $c): array => $c + ['is_archived' => true], $client->listAll(true)),
+        );
+
+        usort($clients, static fn (array $a, array $b): int => strcmp((string) $a['name'], (string) $b['name']));
+
+        $fmt = $this->dateFormatter();
 
         $rows = array_map(static function (array $r) use ($fmt): array {
-            $r['issue_date_label'] = self::label($fmt, $r['issue_date'] ?? null);
+            $r['issue_date_label']    = self::label($fmt, $r['issue_date'] ?? null);
+            $r['turnover_date_label'] = self::label($fmt, $r['turnover_date'] ?? null);
+            $r['due_date_label']      = self::label($fmt, $r['due_date'] ?? null);
 
             return $r;
         }, $result['rows']);
 
-        $body = htmx_view('invoices/_list', ['rows' => $rows, 'truncated' => $result['truncated'], 'status' => $status], 'invoices/index');
+        $body = htmx_view('invoices/_list', [
+            'rows'      => $rows,
+            'truncated' => $result['truncated'],
+            'status'    => (string) $filter->status,
+            'filter'    => $filter,
+            'clients'   => $clients,
+            'entities'  => (new EntityDirectory())->forSelect($today),
+            'mainWide'  => true,
+        ], 'invoices/index');
 
         return $this->response->setHeader('Vary', 'HX-Request')->setBody($body);
     }
