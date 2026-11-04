@@ -26,7 +26,7 @@ final class CreateInvoiceRegenWindows extends Migration
         $this->db->query('CREATE TRIGGER invoice_regen_windows_immutable BEFORE UPDATE OR DELETE ON invoice_regen_windows FOR EACH ROW EXECUTE FUNCTION immutable_guard()');
         $this->db->query('CREATE TRIGGER invoice_regen_windows_no_truncate BEFORE TRUNCATE ON invoice_regen_windows FOR EACH STATEMENT EXECUTE FUNCTION truncate_guard()');
         $this->db->query('GRANT SELECT, INSERT ON TABLE invoice_regen_windows TO app_rw');
-        $this->db->query("COMMENT ON TABLE invoice_regen_windows IS 'Zmrazena lehota pregenerovania PDF faktury (WR-03), insert-only v transakcii vystavenia; bez riadku plati created_at + 72 h'");
+        $this->db->query("COMMENT ON TABLE invoice_regen_windows IS 'Zmrazena lehota pregenerovania PDF faktury (WR-03), insert-only v transakcii vystavenia; bez riadku je lehota uzavreta'");
     }
 
     public function down(): void

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Invoicing;
 
+use App\Database\Migrations\BackfillInvoiceRegenWindows;
 use App\Libraries\Invoicing\DocumentSettingsService;
 use App\Libraries\Invoicing\RegenerateRejected;
 use App\Libraries\Platform\Clock;
@@ -175,7 +176,7 @@ final class RegenerateWindowTest extends PgTestCase
         $this->assertSame(2, $this->regenerator()->regenerate($id, 'invoice', 1)->version);
     }
 
-    public function testInvoiceWithoutFrozenRowFallsBackToLegacy72h(): void
+    private function rowlessInvoice(): int
     {
         $s  = $this->issueSetup();
         $id = $this->insertIssuedInvoiceRaw($s['client'], $s['entity'], '2026-10', $s['parts'], '%PDF-1.4 test', [
@@ -185,11 +186,39 @@ final class RegenerateWindowTest extends PgTestCase
         ]);
         $this->assertSame(0, (int) $this->owner()->query('SELECT count(*) AS c FROM invoice_regen_windows WHERE invoice_id = :i:', ['i' => $id])->getRow()->c);
 
+        return $id;
+    }
+
+    public function testInvoiceWithoutFrozenRowFailsClosed(): void
+    {
+        $id = $this->rowlessInvoice();
+
         $this->setWindow(8760);
-        $this->at('2026-11-04T10:00:01+01:00');
+        $this->at('2026-11-04T10:00:00+01:00');
+        $this->assertExpired($id);
+    }
+
+    public function testBackfillMigrationFreezes72hForRowlessIssuedInvoices(): void
+    {
+        $id = $this->rowlessInvoice();
+        $this->setWindow(8760);
+
+        require_once APPPATH . 'Database/Migrations/2026-11-04-000003_BackfillInvoiceRegenWindows.php';
+
+        $migration = new BackfillInvoiceRegenWindows();
+        $migration->up();
+        $migration->up(); // idempotent: NOT EXISTS
+
+        $row = $this->owner()->query("SELECT hours, regen_until = created_at + interval '72 hours' AS ok FROM invoice_regen_windows WHERE invoice_id = :i:", ['i' => $id])->getRowArray();
+        $this->assertNotNull($row);
+        $this->assertSame(72, (int) $row['hours']);
+        $this->assertContains($row['ok'], [true, 't', '1', 1]);
+
+        $created = Clock::parseInstant((string) $this->owner()->query('SELECT created_at FROM invoices WHERE id = :i:', ['i' => $id])->getRow()->created_at);
+        $this->at($created->modify('+72 hours +1 second')->format('c'));
         $this->assertExpired($id);
 
-        $this->at('2026-11-04T10:00:00+01:00');
+        $this->at($created->modify('+72 hours')->format('c'));
         $this->assertSame(2, $this->regenerator()->regenerate($id, 'invoice', 1)->version);
     }
 

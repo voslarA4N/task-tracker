@@ -7,18 +7,12 @@ namespace App\Libraries\Invoicing;
 use App\Libraries\Platform\Clock;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
-use InvalidArgumentException;
 
 /**
  * Lehota pregenerovania PDF faktury zmrazena pri vystaveni (WR-03). Neskorsia zmena nastavenia sa tyka len novych faktur.
  */
 final class InvoiceRegenWindows
 {
-    /**
-     * Lehota, ktora platila pred zmrazovanim (faktury bez riadku).
-     */
-    public const LEGACY_HOURS = 72;
-
     /**
      * @var BaseConnection<mixed, mixed>
      */
@@ -50,10 +44,10 @@ final class InvoiceRegenWindows
     }
 
     /**
-     * Doplni do riadku faktury kluc regen_until (zmrazeny alebo zdedeny created_at + 72 h).
-     * Pri neplatnom created_at ostane null, co politika berie ako uzavretu lehotu.
+     * Doplni do riadku faktury kluc regen_until zo zmrazeneho riadku. Bez riadku ostane null,
+     * co politika berie ako uzavretu lehotu (window_expired).
      *
-     * @param array<string, mixed> $invoice musi obsahovat id a created_at
+     * @param array<string, mixed> $invoice musi obsahovat id
      *
      * @return array<string, mixed>
      */
@@ -69,15 +63,7 @@ final class InvoiceRegenWindows
             return $invoice;
         }
 
-        $createdAt = $invoice['created_at'] ?? null;
-
-        if (is_string($createdAt)) {
-            try {
-                $invoice['regen_until'] = Clock::parseInstant($createdAt)->modify('+' . self::LEGACY_HOURS . ' hours')->format('Y-m-d H:i:sP');
-            } catch (InvalidArgumentException) {
-                // fail closed: regen_until zostane null
-            }
-        }
+        // fail closed: bez zmrazeneho riadku (nemalo by nastat, migracia 000003 doplnila stare doklady) je lehota uzavreta
 
         return $invoice;
     }
