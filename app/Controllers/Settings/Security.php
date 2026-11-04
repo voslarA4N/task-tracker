@@ -105,6 +105,30 @@ final class Security extends BaseController
         return redirect()->to('/settings/security')->setCookie($devices->expiredCookie());
     }
 
+    public function setLocale(): ResponseInterface
+    {
+        $user   = $this->currentUser();
+        $userId = (int) $user->id;
+        $locale = $this->postString('locale');
+
+        if (! in_array($locale, config('App')->supportedLocales, true)) {
+            return $this->errorPage($user, 'languageError', lang('Account.languageInvalid'), 422);
+        }
+
+        if ($locale !== $this->userLocale($userId)) {
+            db_connect()->query(
+                'UPDATE user_security SET locale = :l:, updated_at = :now: WHERE user_id = :u:',
+                ['l' => $locale, 'now' => service('clock')->now()->format('Y-m-d H:i:sP'), 'u' => $userId],
+            );
+            (new AuditLog())->record(AuthEvent::LocaleChanged, true, $userId, null, $locale);
+        }
+
+        service('language')->setLocale($locale);
+        session()->setFlashdata('app_notice', ['type' => 'success', 'message' => lang('Account.languageSaved', [], $locale)]);
+
+        return redirect()->to('/settings/security');
+    }
+
     public function regenerateCodes(): ResponseInterface
     {
         $user = $this->currentUser();
@@ -577,6 +601,8 @@ final class Security extends BaseController
             'devices'         => $devices,
             'currentDeviceId' => is_int($deviceId) ? $deviceId : null,
             'events'          => $events,
+            'currentLocale'   => $this->userLocale($userId),
+            'supportedLocales' => config('App')->supportedLocales,
         ];
     }
 

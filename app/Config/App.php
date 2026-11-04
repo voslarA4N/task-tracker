@@ -122,7 +122,7 @@ class App extends BaseConfig
      */
     // pl a cs pribudnu spolu s prekladmi vo Phase 12 (E12). Nepodporovany jazyk
     // (napr. pl) padne na prvy z tohto zoznamu (sk) bez chyby (D-23).
-    public array $supportedLocales = ['sk', 'en'];
+    public array $supportedLocales = ['sk', 'pl', 'cs', 'en'];
 
     /**
      * --------------------------------------------------------------------------

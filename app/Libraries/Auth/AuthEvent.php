@@ -29,4 +29,5 @@ enum AuthEvent: string
     case TotpDeclined           = 'totp_declined';
     case TotpDisabled           = 'totp_disabled';
     case LoginNoTotp            = 'login_no_totp';
+    case LocaleChanged          = 'locale_changed';
 }
