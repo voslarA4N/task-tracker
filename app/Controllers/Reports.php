@@ -17,7 +17,8 @@ final class Reports extends BaseController
 {
     public function month(): ResponseInterface
     {
-        $today   = service('clock')->today();
+        $ctx     = $this->context();
+        $today   = $ctx['today'];
         $current = substr($today, 0, 7);
         $raw     = $this->request->getGet('period');
 
@@ -31,11 +32,9 @@ final class Reports extends BaseController
             }
         }
 
-        $directory = new EntityDirectory();
-        $entities  = $directory->forSelect($today);
-        $locale    = $this->request->getLocale();
-        $base      = [
-            'entities'    => $entities,
+        $locale = $this->request->getLocale();
+        $base   = [
+            'entities'    => $ctx['entities'],
             'entityId'    => null,
             'entity'      => null,
             'result'      => null,
@@ -45,13 +44,17 @@ final class Reports extends BaseController
             'nextUrl'     => null,
             'locale'      => $locale,
             'mainWide'    => true,
+            'view'        => 'month',
+            'monthKey'    => $period,
+            'yearKey'     => substr($period, 0, 4),
         ];
 
-        if ($entities === []) {
-            return $this->render($base);
+        $entity = $ctx['entity'];
+
+        if ($entity === null) {
+            return $this->render($base, 'reports/_month_body', 'reports/month');
         }
 
-        $entity = $this->pickEntity($entities, $directory->activeAt($today), (string) $this->request->getGet('entity'));
         $report = ReportPeriod::month($period);
         $result = (new ReportCalculator())->forPeriod($entity['id'], $report);
 
@@ -64,7 +67,89 @@ final class Reports extends BaseController
             'result'   => $result,
             'prevUrl'  => $url($report->previous()),
             'nextUrl'  => $next->isAfterMonth($current) ? null : $url($next),
-        ] + $base);
+        ] + $base, 'reports/_month_body', 'reports/month');
+    }
+
+    /**
+     * Rocny pohlad (D-04): mesiace 1 az 12 a rozpad po klientoch.
+     */
+    public function year(): ResponseInterface
+    {
+        $ctx         = $this->context();
+        $today       = $ctx['today'];
+        $currentYear = (int) substr($today, 0, 4);
+        $raw         = $this->request->getGet('year');
+
+        if ($raw === null || $raw === '') {
+            $year = $currentYear;
+        } elseif (preg_match('/^\d{4}$/D', (string) $raw) === 1 && (int) $raw >= 2000 && (int) $raw <= 2100) {
+            $year = (int) $raw;
+        } else {
+            return redirect()->to('/reports/year?' . http_build_query(['year' => $currentYear]));
+        }
+
+        $locale   = $this->request->getLocale();
+        $yearKey  = sprintf('%04d', $year);
+        $monthKey = $year === $currentYear ? substr($today, 0, 7) : $yearKey . '-01';
+        $base     = [
+            'entities'  => $ctx['entities'],
+            'entityId'  => null,
+            'entity'    => null,
+            'result'    => null,
+            'year'      => $year,
+            'monthRows' => [],
+            'prevUrl'   => null,
+            'nextUrl'   => null,
+            'locale'    => $locale,
+            'mainWide'  => true,
+            'view'      => 'year',
+            'monthKey'  => $monthKey,
+            'yearKey'   => $yearKey,
+        ];
+
+        $entity = $ctx['entity'];
+
+        if ($entity === null) {
+            return $this->render($base, 'reports/_year_body', 'reports/year');
+        }
+
+        $report = ReportPeriod::year($year);
+        $result = (new ReportCalculator())->forPeriod($entity['id'], $report);
+
+        $monthRows = [];
+
+        foreach ($result->months as $row) {
+            $monthRows[] = $row + [
+                'label' => BillingMonth::label($row['month'], $locale),
+                'href'  => '/reports/month?' . http_build_query(['entity' => $entity['id'], 'period' => $row['month']]),
+            ];
+        }
+
+        $url = static fn (int $y): string => '/reports/year?' . http_build_query(['entity' => $entity['id'], 'year' => $y]);
+
+        return $this->render([
+            'entityId'  => $entity['id'],
+            'entity'    => $entity,
+            'result'    => $result,
+            'monthRows' => $monthRows,
+            'prevUrl'   => $year > 2000 ? $url($year - 1) : null,
+            'nextUrl'   => $year >= $currentYear ? null : $url($year + 1),
+        ] + $base, 'reports/_year_body', 'reports/year');
+    }
+
+    /**
+     * Spolocny vyber subjektu pre mesacny aj rocny pohlad.
+     *
+     * @return array{today: string, entities: list<array{id: int, name_internal: string, country: string, currency: string, ended: bool}>, entity: ?array{id: int, name_internal: string, country: string, currency: string, ended: bool}}
+     */
+    private function context(): array
+    {
+        $today     = service('clock')->today();
+        $directory = new EntityDirectory();
+        $entities  = $directory->forSelect($today);
+        $entity    = $entities === [] ? null : $this->pickEntity($entities, $directory->activeAt($today), (string) $this->request->getGet('entity'));
+
+        return ['today' => $today, 'entities' => $entities, 'entity' => $entity];
     }
 
     /**
@@ -95,9 +180,9 @@ final class Reports extends BaseController
     /**
      * @param array<string, mixed> $data
      */
-    private function render(array $data): ResponseInterface
+    private function render(array $data, string $fragment, string $page): ResponseInterface
     {
-        $body = htmx_view('reports/_month_body', $data, 'reports/month');
+        $body = htmx_view($fragment, $data, $page);
 
         return $this->response->setHeader('Vary', 'HX-Request')->setBody($body);
     }
