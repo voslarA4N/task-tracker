@@ -58,7 +58,7 @@ final class ForbiddenCallsRule implements Rule
         'app/Libraries/Platform/FrozenClock.php',
     ];
     private const FLOAT_CAST_ALLOWED_FILES = ['app/Libraries/Export/XlsxNumber.php'];
-    private const BC_ALLOWED_FILES = [
+    private const BC_ALLOWED_FILES         = [
         'app/Libraries/Platform/Money.php', 'app/Libraries/Platform/Hours.php',
         'app/Libraries/Fx/FxConverter.php', 'app/Libraries/Fx/FxQuote.php',
         'app/Libraries/Reporting/LimitMath.php', 'app/Libraries/Reporting/PeriodResolver.php',
