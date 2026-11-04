@@ -19,6 +19,7 @@ $field   = static fn (string $k): string => esc((string) ($values[$k] ?? ''), 'a
 <?= $this->section('subtitle') ?><?= esc($title) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <p class="mb-2"><a href="/settings/entities/<?= $eid ?>"><?= esc(lang('Entities.backToDetail')) ?></a></p>
 
 <section class="app-card" aria-labelledby="bank-form-title">
@@ -79,4 +80,5 @@ $field   = static fn (string $k): string => esc((string) ($values[$k] ?? ''), 'a
         </div>
     </form>
 </section>
+</div>
 <?= $this->endSection() ?>

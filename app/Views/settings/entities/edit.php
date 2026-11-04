@@ -14,6 +14,7 @@ $id = (int) $entity['id'];
 <?= $this->section('subtitle') ?><?= esc(lang('Entities.editTitle')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <p class="mb-2"><a href="/settings/entities/<?= $id ?>"><?= esc(lang('Entities.backToDetail')) ?></a></p>
 
 <section class="app-card" aria-labelledby="entity-edit-title">
@@ -75,4 +76,5 @@ $id = (int) $entity['id'];
         </div>
     </form>
 </section>
+</div>
 <?= $this->endSection() ?>

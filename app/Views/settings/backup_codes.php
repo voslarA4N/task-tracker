@@ -3,6 +3,7 @@
 <?= $this->section('subtitle') ?><?= esc(lang('Account.codesTitle')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <section class="app-card security-card" aria-labelledby="codes-title">
     <h2 class="h5" id="codes-title"><?= esc(lang('Account.codesTitle')) ?></h2>
     <div class="alert alert-warning" role="alert"><?= esc(lang('TwoFactor.codesWarning')) ?></div>
@@ -22,4 +23,5 @@
         <button type="submit" class="btn btn-primary btn-touch" disabled :disabled="!acked"><?= esc(lang('TwoFactor.continue')) ?></button>
     </form>
 </section>
+</div>
 <?= $this->endSection() ?>

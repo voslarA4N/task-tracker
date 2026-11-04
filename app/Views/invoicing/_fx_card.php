@@ -101,10 +101,10 @@ $notYet     = (bool) ($fx['future_bound'] ?? false);
     </div>
 <?php endif ?>
 <?php if ($state === 'unavailable' && ! $notYet) : ?>
-    <button type="button" class="btn btn-outline-secondary btn-touch w-100 mb-2" <?= $getAttrs ?> hx-vals='{"fx_retry":"1"}' hx-include="<?= esc($include, 'attr') ?>"><span class="spinner-border spinner-border-sm htmx-indicator" aria-hidden="true"></span> <?= esc(lang('Currency.retry')) ?></button>
+    <button type="button" class="btn btn-outline-secondary btn-touch w-100 w-lg-auto mb-2" <?= $getAttrs ?> hx-vals='{"fx_retry":"1"}' hx-include="<?= esc($include, 'attr') ?>"><span class="spinner-border spinner-border-sm htmx-indicator" aria-hidden="true"></span> <?= esc(lang('Currency.retry')) ?></button>
 <?php endif ?>
     <details class="fx-manual"<?= $manualOpen ? ' open' : '' ?>>
-        <summary class="btn btn-outline-secondary btn-touch w-100"><?= esc(lang('Currency.manualSummary')) ?></summary>
+        <summary class="btn btn-outline-secondary btn-touch w-100 w-lg-auto"><?= esc(lang('Currency.manualSummary')) ?></summary>
         <div class="mt-3">
             <label class="form-label" for="fx-manual-rate"><?= esc(lang('Currency.manualLabel', [$parts['amount'], $parts['base']])) ?></label>
             <div class="input-group mb-1">

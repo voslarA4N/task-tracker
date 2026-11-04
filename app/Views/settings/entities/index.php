@@ -13,6 +13,7 @@ $badge = [
 <?= $this->section('subtitle') ?><?= esc(lang('Entities.listTitle')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-wide">
 <p class="mb-2"><a href="/more"><?= esc(lang('Entities.backToMore')) ?></a></p>
 <h1 class="h4"><?= esc(lang('Entities.listTitle')) ?></h1>
 
@@ -37,5 +38,6 @@ $badge = [
 
 <div class="master-actions mt-3">
     <a class="btn btn-primary" href="/settings/entities/new"><?= esc(lang('Entities.addButton')) ?></a>
+</div>
 </div>
 <?= $this->endSection() ?>

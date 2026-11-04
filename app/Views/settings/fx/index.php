@@ -20,6 +20,7 @@ $fields  = [
 <?= $this->section('subtitle') ?><?= esc(lang('FxSettings.title')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <p class="mb-2"><a href="/more"><?= esc(lang('FxSettings.backToMore')) ?></a></p>
 <h1 class="h4 mb-1"><?= esc(lang('FxSettings.title')) ?></h1>
 <p class="small text-body-secondary"><?= esc(lang('FxSettings.intro')) ?></p>
@@ -68,4 +69,5 @@ $fields  = [
         <button type="submit" class="btn btn-primary btn-touch" id="fx-save"><?= esc(lang('FxSettings.save')) ?></button>
     </div>
 </form>
+</div>
 <?= $this->endSection() ?>

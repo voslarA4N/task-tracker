@@ -25,6 +25,7 @@ $examples = [['RRRRMM###', '202610001'], ['DB-RRRRMM###', 'DB-202610001']];
 <?= $this->section('subtitle') ?><?= esc($title) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <p class="mb-2"><a href="/settings/entities/<?= $eid ?>"><?= esc(lang('Entities.backToDetail')) ?></a></p>
 
 <section class="app-card" aria-labelledby="series-form-title">
@@ -79,4 +80,5 @@ $examples = [['RRRRMM###', '202610001'], ['DB-RRRRMM###', 'DB-202610001']];
         </div>
     </form>
 </section>
+</div>
 <?= $this->endSection() ?>

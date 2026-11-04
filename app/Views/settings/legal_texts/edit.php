@@ -16,6 +16,7 @@ $noteKeys = ['vat_note' => 'LegalTexts.keyVatNote', 'invoice_note' => 'LegalText
 <?= $this->section('subtitle') ?><?= esc(lang('LegalTexts.editTitle')) ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="work-narrow">
 <p class="mb-2"><a href="/settings/legal-texts"><?= esc(lang('LegalTexts.backToList')) ?></a></p>
 
 <section class="app-card" aria-labelledby="lt-title">
@@ -67,4 +68,5 @@ $noteKeys = ['vat_note' => 'LegalTexts.keyVatNote', 'invoice_note' => 'LegalText
         </div>
     </form>
 </section>
+</div>
 <?= $this->endSection() ?>

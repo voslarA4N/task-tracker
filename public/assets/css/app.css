@@ -578,6 +578,9 @@ img, table { max-width: 100%; }
 .rpt-card { padding: 16px; overflow-wrap: anywhere; }
 .aud-diff { font-size: 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; background: #f5f6f8; padding: 8px 12px; border-radius: 4px; }
 .aud-changed { background: var(--bs-warning-bg-subtle); }
+@media (min-width: 576px) {
+    .w-sm-auto { width: auto !important; }
+}
 @media (min-width: 992px) {
     .app-main.app-main--wide { max-width: 1200px; }
     .dt-only-sm { display: none !important; }
