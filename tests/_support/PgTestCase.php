@@ -73,7 +73,7 @@ abstract class PgTestCase extends CIUnitTestCase
     /**
      * Dotaz musi zlyhat chybou DB, ktorej sprava zodpoveda vzoru (guard trigger, FK, ...).
      */
-    protected function assertDbError(callable $fn, string $pattern = '/immutable|not allowed|cannot|may not|may only/i'): void
+    protected function assertDbRejects(callable $fn, string $pattern = '/immutable|not allowed|cannot|may not|may only/i'): void
     {
         try {
             $fn();

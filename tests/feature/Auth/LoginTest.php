@@ -159,7 +159,7 @@ final class LoginTest extends AuthTestCase
 
     public function testUnsupportedAcceptLanguageFallsBackToSlovak(): void
     {
-        $result = $this->withHeaders(['Accept-Language' => 'pl-PL,pl;q=0.9'])->get('/login');
+        $result = $this->withHeaders(['Accept-Language' => 'de-DE,de;q=0.9'])->get('/login');
         $result->assertStatus(200);
         $body = $this->body($result);
 

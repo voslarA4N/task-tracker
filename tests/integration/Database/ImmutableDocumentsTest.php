@@ -140,7 +140,7 @@ final class ImmutableDocumentsTest extends PgTestCase
 
         if ($t === 'invoice_counters') {
             // UPDATE last_value je grantovany, ale counter_guard dovoli iba +1.
-            $this->assertDbError(fn () => $this->rw()->query($this->updateSql($t)));
+            $this->assertDbRejects(fn () => $this->rw()->query($this->updateSql($t)));
         } else {
             $this->assertPermissionDenied(fn () => $this->rw()->query($this->updateSql($t)));
         }
@@ -154,13 +154,13 @@ final class ImmutableDocumentsTest extends PgTestCase
         $before = $this->rowCount($t);
         $this->assertGreaterThan(0, $before, "{$t} musi byt naplnena");
 
-        $this->assertDbError(fn () => $this->inRolledBackTx(fn () => $this->owner()->query("DELETE FROM {$t} WHERE true")));
-        $this->assertDbError(fn () => $this->inRolledBackTx(fn () => $this->owner()->query("TRUNCATE {$t}")));
-        $this->assertDbError(fn () => $this->inRolledBackTx(fn () => $this->owner()->query("TRUNCATE {$t} CASCADE")));
-        $this->assertDbError(fn () => $this->inRolledBackTx(fn () => $this->owner()->query($this->updateSql($t))));
+        $this->assertDbRejects(fn () => $this->inRolledBackTx(fn () => $this->owner()->query("DELETE FROM {$t} WHERE true")));
+        $this->assertDbRejects(fn () => $this->inRolledBackTx(fn () => $this->owner()->query("TRUNCATE {$t}")));
+        $this->assertDbRejects(fn () => $this->inRolledBackTx(fn () => $this->owner()->query("TRUNCATE {$t} CASCADE")));
+        $this->assertDbRejects(fn () => $this->inRolledBackTx(fn () => $this->owner()->query($this->updateSql($t))));
 
         if ($t === 'invoice_counters') {
-            $this->assertDbError(fn () => $this->inRolledBackTx(fn () => $this->owner()->query('UPDATE invoice_counters SET last_value = last_value + 5')));
+            $this->assertDbRejects(fn () => $this->inRolledBackTx(fn () => $this->owner()->query('UPDATE invoice_counters SET last_value = last_value + 5')));
         }
 
         $this->assertSame($before, $this->rowCount($t));
@@ -170,7 +170,7 @@ final class ImmutableDocumentsTest extends PgTestCase
     {
         $this->assertGreaterThan(0, (int) $this->owner()->query("SELECT count(*) AS c FROM invoices WHERE type = 'credit_note'")->getRow()->c);
         $this->assertPermissionDenied(fn () => $this->rw()->query("DELETE FROM invoices WHERE type = 'credit_note'"));
-        $this->assertDbError(fn () => $this->inRolledBackTx(fn () => $this->owner()->query("DELETE FROM invoices WHERE type = 'credit_note'")));
+        $this->assertDbRejects(fn () => $this->inRolledBackTx(fn () => $this->owner()->query("DELETE FROM invoices WHERE type = 'credit_note'")));
     }
 
     public function testEveryTableReferencingDocumentsIsProtectedOrExempt(): void
