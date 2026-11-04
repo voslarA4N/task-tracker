@@ -411,10 +411,10 @@ final class InvoiceDelivery extends BaseController
                 break;
 
             case 'attachments_changed':
-                // pregenerovanie dokladu po otvoreni formulara: nacitat aktualne prilohy a vyziadat nove potvrdenie
+                // pregenerovanie dokladu medzi nacitanim konceptu a odoslanim; koncept z POST sa znovu nenacitava (IN-01),
+                // pripadny novy rozdiel zachyti dalsie odoslanie
                 $status = 409;
                 $alert  = lang('Deliveries.errorAttachChanged');
-                $draft  = (new InvoiceMailer())->draft((int) $draft['invoice']['id'], $kind);
                 break;
 
             case 'record_failed':
