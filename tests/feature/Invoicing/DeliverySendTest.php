@@ -211,7 +211,11 @@ final class DeliverySendTest extends AuthTestCase
         $data = $this->valid('66666666-6666-4666-8666-666666666666');
         unset($data['attachment_versions']);
 
-        $this->submit($inv['id'], $data)->assertStatus(409);
+        $result = $this->submit($inv['id'], $data);
+        $result->assertStatus(409);
+        $html = $this->body($result);
+        $this->assertStringContainsString('zastaraný', $html);
+        $this->assertStringNotContainsString('pregenerovaný', $html);
         $this->assertSame(0, $this->sendCount());
     }
 

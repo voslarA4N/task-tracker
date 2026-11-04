@@ -282,7 +282,10 @@ final class InvoiceDelivery extends BaseController
         ksort($confirmed);
 
         if ($confirmed !== $latest) {
-            return $this->panel('invoices/_delivery_form', 409, $draft, $values, [], lang('Deliveries.errorAttachChanged'), $kind);
+            // IN-04: formular otvoreny pred nasadenim neposiela ziadne verzie, to nie je pregenerovanie
+            $message = $confirmed === [] ? lang('Deliveries.errorFormOutdated') : lang('Deliveries.errorAttachChanged');
+
+            return $this->panel('invoices/_delivery_form', 409, $draft, $values, [], $message, $kind);
         }
 
         $command = new SendCommand(
