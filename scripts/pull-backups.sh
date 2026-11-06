@@ -13,7 +13,7 @@ PULL_DEST=${PULL_DEST:-$HOME/backups/work-tracker-restic}
 install -d -m 0700 "$PULL_DEST"
 
 if ! rsync -a --partial --exclude '/locks/' \
-  -e "ssh -i $PULL_SSH_KEY -o IdentitiesOnly=yes -o BatchMode=yes" \
+  -e "ssh -i '$PULL_SSH_KEY' -o IdentitiesOnly=yes -o BatchMode=yes" \
   "$PULL_SSH_TARGET:" "$PULL_DEST/"; then
   echo "CHYBA: pull zlyhal" >&2
   exit 1

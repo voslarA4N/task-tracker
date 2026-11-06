@@ -63,7 +63,7 @@ final class PullBackupsScriptTest extends CIUnitTestCase
         $this->assertStringContainsString('-a', $log);
         $this->assertStringContainsString('--partial', $log);
         $this->assertStringContainsString('--exclude /locks/', $log);
-        $this->assertStringContainsString('-e ssh -i ' . $this->dir . '/key -o IdentitiesOnly=yes -o BatchMode=yes', $log);
+        $this->assertStringContainsString("-e ssh -i '" . $this->dir . "/key' -o IdentitiesOnly=yes -o BatchMode=yes", $log);
         $this->assertStringContainsString('backuppull@host.example: ' . $this->dir . '/dest/', $log);
         $this->assertStringNotContainsString('--delete', $log);
         $this->assertStringContainsString('OK: pull', $out);
