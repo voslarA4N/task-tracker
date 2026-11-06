@@ -67,6 +67,9 @@ final class ResticBackupScriptTest extends CIUnitTestCase
     private const FAKE_CURL = <<<'SH'
         #!/bin/sh
         printf '%s\n' "$*" >> "$FAKE_CURL_LOG"
+        for a in "$@"; do
+          [ "$a" != -K ] || cat >> "$FAKE_CURL_LOG.cfg"
+        done
         prev=
         for a in "$@"; do
           [ "$prev" != --upload-file ] || cat "$a" >> "$FAKE_MAIL"
@@ -117,9 +120,10 @@ final class ResticBackupScriptTest extends CIUnitTestCase
         $this->assertStringContainsString('backup --tag db --host work-tracker ' . $this->dir . '/stage', $restic);
         $this->assertStringContainsString('forget --group-by host,tags --keep-daily 14 --keep-weekly 8 --keep-monthly 12 --keep-tag archive --prune', $restic);
 
-        $curl = (string) file_get_contents($this->dir . '/curl.log');
+        $curl = (string) file_get_contents($this->dir . '/curl.log.cfg');
         $this->assertStringContainsString('https://hc.example/ping/SECRET-UUID', $curl);
         $this->assertStringNotContainsString('/fail', $curl);
+        $this->assertStringNotContainsString('SECRET-UUID', (string) file_get_contents($this->dir . '/curl.log'));
         $this->assertFileDoesNotExist($this->dir . '/mail.eml');
 
         $this->assertSame([], glob($this->dir . '/stage/*.dump*'));
@@ -142,8 +146,10 @@ final class ResticBackupScriptTest extends CIUnitTestCase
         [$code, $out] = $this->runScript(['FAKE_DUMP_FAIL' => '1']);
 
         $this->assertNotSame(0, $code);
+        $cfg  = (string) file_get_contents($this->dir . '/curl.log.cfg');
         $curl = (string) file_get_contents($this->dir . '/curl.log');
-        $this->assertStringContainsString('https://hc.example/ping/SECRET-UUID/fail', $curl);
+        $this->assertStringContainsString('https://hc.example/ping/SECRET-UUID/fail', $cfg);
+        $this->assertStringNotContainsString('SECRET-UUID', $curl);
         $this->assertStringContainsString('smtps://mail.example:465', $curl);
 
         $mail = (string) file_get_contents($this->dir . '/mail.eml');
@@ -241,7 +247,7 @@ final class ResticBackupScriptTest extends CIUnitTestCase
 
         $this->assertNotSame(0, $code);
         $curl = (string) file_get_contents($this->dir . '/curl.log');
-        $this->assertStringContainsString('SECRET-UUID/fail', $curl);
+        $this->assertStringContainsString('SECRET-UUID/fail', (string) file_get_contents($this->dir . '/curl.log.cfg'));
         $this->assertStringNotContainsString('smtps://', $curl);
         $this->assertFileDoesNotExist($this->dir . '/mail.eml');
     }
@@ -315,7 +321,7 @@ final class ResticBackupScriptTest extends CIUnitTestCase
         file_put_contents($envPath, $body);
         chmod($envPath, $envMode);
 
-        foreach (['docker.log', 'docker.log.dumped', 'docker.log.chg', 'restic.log', 'curl.log', 'mail.eml'] as $f) {
+        foreach (['docker.log', 'docker.log.dumped', 'docker.log.chg', 'restic.log', 'curl.log', 'curl.log.cfg', 'mail.eml'] as $f) {
             @unlink($this->dir . '/' . $f);
         }
 

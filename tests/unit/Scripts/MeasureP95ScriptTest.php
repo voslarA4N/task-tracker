@@ -19,6 +19,9 @@ final class MeasureP95ScriptTest extends CIUnitTestCase
     private const FAKE_CURL = <<<'SH'
         #!/bin/sh
         printf '%s\n' "$*" >> "$FAKE_LOG"
+        for a in "$@"; do
+          case "$a" in @*) cat "${a#@}" >> "$FAKE_LOG.hdr" ;; esac
+        done
         n=$(cat "$FAKE_DIR/count" 2>/dev/null || echo 0)
         n=$((n + 1))
         echo "$n" > "$FAKE_DIR/count"
@@ -142,7 +145,8 @@ final class MeasureP95ScriptTest extends CIUnitTestCase
         [, $out, $err] = $this->runScript($this->steps(10, 50, 10));
 
         $this->assertStringNotContainsString('SECRETCOOKIE', $out . $err);
-        $this->assertStringContainsString('Cookie: SECRETCOOKIE', (string) file_get_contents($this->dir . '/curl.log'));
+        $this->assertStringContainsString('Cookie: SECRETCOOKIE', (string) file_get_contents($this->dir . '/curl.log.hdr'));
+        $this->assertStringNotContainsString('SECRETCOOKIE', (string) file_get_contents($this->dir . '/curl.log'));
     }
 
     public function testResolveIsForwarded(): void

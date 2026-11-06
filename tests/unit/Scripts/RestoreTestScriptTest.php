@@ -53,6 +53,9 @@ final class RestoreTestScriptTest extends CIUnitTestCase
     private const FAKE_CURL = <<<'SH'
         #!/bin/sh
         printf '%s\n' "$*" >> "$FAKE_CURL_LOG"
+        for a in "$@"; do
+          [ "$a" != -K ] || cat >> "$FAKE_CURL_LOG.cfg"
+        done
         prev=
         for a in "$@"; do
           [ "$prev" != --upload-file ] || cat "$a" >> "$FAKE_MAIL"
@@ -112,7 +115,7 @@ final class RestoreTestScriptTest extends CIUnitTestCase
         $this->assertMatchesRegularExpression('/dropdb -U postgres --if-exists ' . preg_quote($db, '/') . '/', $log);
         $this->assertStringContainsString('restore latest --tag db --host work-tracker --target', (string) file_get_contents($this->dir . '/restic.log'));
         $this->assertSame([], glob($this->dir . '/tmp/*'));
-        $this->assertStringNotContainsString('/fail', (string) @file_get_contents($this->dir . '/curl.log'));
+        $this->assertStringNotContainsString('/fail', (string) @file_get_contents($this->dir . '/curl.log.cfg'));
         $this->assertNoSecrets($out);
     }
 
@@ -127,7 +130,8 @@ final class RestoreTestScriptTest extends CIUnitTestCase
 
         $mail = (string) file_get_contents($this->dir . '/mail.eml');
         $this->assertMatchesRegularExpression('/Subject: \[work-tracker\] Test obnovy zlyhal: test \d{4}-\d{2}-\d{2}/', $mail);
-        $this->assertStringContainsString('hc.example/ping/SECRET-UUID/fail', (string) file_get_contents($this->dir . '/curl.log'));
+        $this->assertStringContainsString('hc.example/ping/SECRET-UUID/fail', (string) file_get_contents($this->dir . '/curl.log.cfg'));
+        $this->assertStringNotContainsString('SECRET-UUID', (string) file_get_contents($this->dir . '/curl.log'));
         $this->assertStringContainsString('dropdb', (string) file_get_contents($this->dir . '/docker.log'));
         $this->assertSame([], glob($this->dir . '/tmp/*'));
         $this->assertNoSecrets($out);
@@ -268,7 +272,7 @@ final class RestoreTestScriptTest extends CIUnitTestCase
             chmod($envPath, 0o600);
         }
 
-        foreach (['docker.log', 'restic.log', 'curl.log', 'mail.eml'] as $f) {
+        foreach (['docker.log', 'restic.log', 'curl.log', 'curl.log.cfg', 'mail.eml'] as $f) {
             @unlink($this->dir . '/' . $f);
         }
 

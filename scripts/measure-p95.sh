@@ -32,14 +32,20 @@ pct() {
   sed -n "${idx}p" "$1"
 }
 
+# Cookie ide do hlavickoveho suboru (curl -H @subor), aby nebola v argv/ps (WR-05).
+COOKIE_HDR="$TMP/cookie.hdr"
+if [ -n "${P95_COOKIE:-}" ]; then
+  printf 'Cookie: %s\n' "$P95_COOKIE" > "$COOKIE_HDR"
+fi
+
 one() {
   # $1 = url; vypise "<kod> <ms>"
   set -- "$1"
   if [ -n "${P95_COOKIE:-}" ]; then
     if [ -n "${P95_RESOLVE:-}" ]; then
-      r=$($CURL -sS -o /dev/null -H "Cookie: $P95_COOKIE" --resolve "$P95_RESOLVE" -w '%{http_code} %{time_starttransfer}\n' "$1" 2>/dev/null || echo "000 0")
+      r=$($CURL -sS -o /dev/null -H "@$COOKIE_HDR" --resolve "$P95_RESOLVE" -w '%{http_code} %{time_starttransfer}\n' "$1" 2>/dev/null || echo "000 0")
     else
-      r=$($CURL -sS -o /dev/null -H "Cookie: $P95_COOKIE" -w '%{http_code} %{time_starttransfer}\n' "$1" 2>/dev/null || echo "000 0")
+      r=$($CURL -sS -o /dev/null -H "@$COOKIE_HDR" -w '%{http_code} %{time_starttransfer}\n' "$1" 2>/dev/null || echo "000 0")
     fi
   else
     if [ -n "${P95_RESOLVE:-}" ]; then

@@ -25,7 +25,8 @@ check_env_file() {
 # Uspesny ping (dead man's switch). Prazdna URL = nic. Zlyhanie pingu sa len zapise bez URL.
 ping_ok() {
   [ -n "${1-}" ] || return 0
-  curl -fsS -m 10 --retry 3 -o /dev/null "$1" 2>/dev/null || echo "VAROVANIE: ping healthchecks zlyhal" >&2
+  # URL je tajomstvo (UUID): ide cez konfiguraciu na stdin, nie cez argv (WR-05).
+  printf 'url = "%s"\n' "$1" | curl -fsS -m 10 --retry 3 -o /dev/null -K - 2>/dev/null || echo "VAROVANIE: ping healthchecks zlyhal" >&2
   return 0
 }
 
@@ -36,7 +37,8 @@ notify_fail() {
   _errlog=$3
   _ping=${4-}
   if [ -n "$_ping" ]; then
-    curl -fsS -m 10 --retry 2 -o /dev/null --data-raw "FAIL ${BACKUP_ENV_NAME:-?} $_step" "$_ping/fail" 2>/dev/null \
+    printf 'url = "%s/fail"\n' "$_ping" \
+      | curl -fsS -m 10 --retry 2 -o /dev/null --data-raw "FAIL ${BACKUP_ENV_NAME:-?} $_step" -K - 2>/dev/null \
       || echo "VAROVANIE: ping /fail zlyhal" >&2
   fi
   [ -n "${ALERT_TO-}" ] || return 0

@@ -113,6 +113,8 @@ fi
 # 6. zmena session cookie po hesle (Pitfall 3)
 if [ -n "${SMOKE_EMAIL:-}" ] && [ -n "${SMOKE_PASSWORD:-}" ]; then
   JAR="$TMP/jar"
+  # heslo ide zo suboru (0600), nie cez argv (WR-05); $TMP sa maze v trap
+  (umask 077 && printf '%s' "$SMOKE_PASSWORD" > "$TMP/pw")
   PAGE=$(curl -sS -c "$JAR" "$BASE/login" 2>&1 || true)
   TOKEN=$(echo "$PAGE" | sed -n 's/.*name="csrf_test_name"[^>]*value="\([^"]*\)".*/\1/p' | head -n1)
   BEFORE=$(grep '__Host-ci_session' "$JAR" | awk '{print $7}' || true)
@@ -120,7 +122,7 @@ if [ -n "${SMOKE_EMAIL:-}" ] && [ -n "${SMOKE_PASSWORD:-}" ]; then
     PH=$(curl -sS -b "$JAR" -c "$JAR" -o /dev/null -D - -X POST "$BASE/login" \
       --data-urlencode "csrf_test_name=$TOKEN" \
       --data-urlencode "email=$SMOKE_EMAIL" \
-      --data-urlencode "password=$SMOKE_PASSWORD" 2>&1 | tr -d '\r' || true)
+      --data-urlencode "password@$TMP/pw" 2>&1 | tr -d '\r' || true)
     AFTER=$(grep '__Host-ci_session' "$JAR" | awk '{print $7}' || true)
     if echo "$PH" | head -n1 | grep -qE ' 30[23]' && echo "$PH" | grep -iq '^location:.*/2fa' && [ -n "$AFTER" ] && [ "$BEFORE" != "$AFTER" ]; then
       pass "po hesle 302/303 /2fa a nová session cookie"; else fail "po hesle 302/303 /2fa a nová session cookie"; fi

@@ -59,6 +59,9 @@ final class ArchiveYearlyScriptTest extends CIUnitTestCase
     private const FAKE_CURL = <<<'SH'
         #!/bin/sh
         printf '%s\n' "$*" >> "$FAKE_CURL_LOG"
+        for a in "$@"; do
+          [ "$a" != -K ] || cat >> "$FAKE_CURL_LOG.cfg"
+        done
         prev=
         for a in "$@"; do
           [ "$prev" != --upload-file ] || cat "$a" >> "$FAKE_MAIL"
@@ -119,9 +122,10 @@ final class ArchiveYearlyScriptTest extends CIUnitTestCase
         $this->assertStringContainsString('exec -T php php spark archive:year 2026', $docker);
         $this->assertStringContainsString('rm -f /var/www/html/writable/archive/2026/work-tracker-archiv-2026.zip', $docker);
 
-        $curl = (string) file_get_contents($this->dir . '/curl.log');
+        $curl = (string) file_get_contents($this->dir . '/curl.log.cfg');
         $this->assertStringContainsString('https://hc.example/archive/SECRET-UUID', $curl);
         $this->assertStringNotContainsString('/fail', $curl);
+        $this->assertStringNotContainsString('SECRET-UUID', (string) file_get_contents($this->dir . '/curl.log'));
         $this->assertNoSecrets($out);
     }
 
@@ -144,7 +148,7 @@ final class ArchiveYearlyScriptTest extends CIUnitTestCase
         $this->assertMatchesRegularExpression('/krok:?\s*verify/iu', $mail);
         $this->assertFileDoesNotExist($this->dir . '/restic.log');
         $this->assertSame([], glob($this->dir . '/stage/*'));
-        $this->assertStringContainsString('https://hc.example/archive/SECRET-UUID/fail', (string) file_get_contents($this->dir . '/curl.log'));
+        $this->assertStringContainsString('https://hc.example/archive/SECRET-UUID/fail', (string) file_get_contents($this->dir . '/curl.log.cfg'));
         $this->assertNoSecrets($mail);
         $this->assertNoSecrets($out);
     }
@@ -226,7 +230,7 @@ final class ArchiveYearlyScriptTest extends CIUnitTestCase
         file_put_contents($envPath, $body);
         chmod($envPath, 0o600);
 
-        foreach (['docker.log', 'restic.log', 'curl.log', 'mail.eml'] as $f) {
+        foreach (['docker.log', 'restic.log', 'curl.log', 'curl.log.cfg', 'mail.eml'] as $f) {
             @unlink($this->dir . '/' . $f);
         }
 
