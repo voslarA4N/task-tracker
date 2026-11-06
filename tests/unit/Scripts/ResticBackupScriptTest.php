@@ -34,7 +34,7 @@ final class ResticBackupScriptTest extends CIUnitTestCase
             [ -z "${FAKE_PSQL_FAIL-}" ] || { echo "psql: simulated failure" >&2; exit 1; }
             case "$*" in
               *"count(*) FROM invoices")
-                if [ -n "${FAKE_CHANGE_ALWAYS-}" ] && [ -f "$FAKE_LOG.dumped" ]; then date +%N; exit 0; fi
+                if [ -n "${FAKE_CHANGE_ALWAYS-}" ] && [ -f "$FAKE_LOG.dumped" ]; then echo x >> "$FAKE_LOG.cnt"; wc -l < "$FAKE_LOG.cnt" | tr -d ' '; exit 0; fi
                 if [ -n "${FAKE_CHANGE_ONCE-}" ] && [ -f "$FAKE_LOG.dumped" ] && [ ! -f "$FAKE_LOG.chg" ]; then : > "$FAKE_LOG.chg"; echo 6; exit 0; fi
                 echo 5 ;;
               *"number FROM invoices"*) echo "2026-0007" ;;
