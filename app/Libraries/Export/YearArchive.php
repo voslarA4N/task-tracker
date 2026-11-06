@@ -70,6 +70,7 @@ final class YearArchive
 
         $tmpFiles = [];
         $zipOpen  = false;
+        $built    = false;
         $zip      = new ZipArchive();
 
         try {
@@ -141,9 +142,16 @@ final class YearArchive
             if (! $zip->close()) {
                 throw new RuntimeException('Cannot finalize zip archive.');
             }
+
+            $built = true;
         } finally {
             if ($zipOpen) {
                 $zip->close();
+            }
+
+            // pri chybe pri stavani nesmie ostat polovicne ZIP s PDF (WR-01)
+            if (! $built && is_file($partial)) {
+                unlink($partial);
             }
 
             foreach ($tmpFiles as $f) {
