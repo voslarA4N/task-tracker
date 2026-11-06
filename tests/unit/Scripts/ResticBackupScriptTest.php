@@ -23,13 +23,20 @@ final class ResticBackupScriptTest extends CIUnitTestCase
         case "$*" in
           *pg_dump*)
             [ -z "${FAKE_DUMP_FAIL-}" ] || { echo "pg_dump: simulated failure" >&2; exit 1; }
+            : > "$FAKE_LOG.dumped"
             printf 'PGDMP-fake-dump'
             ;;
           *"pg_restore -f /dev/null"*)
             cat > /dev/null
             ;;
           *psql*)
+            cat > /dev/null
+            [ -z "${FAKE_PSQL_FAIL-}" ] || { echo "psql: simulated failure" >&2; exit 1; }
             case "$*" in
+              *"count(*) FROM invoices")
+                if [ -n "${FAKE_CHANGE_ALWAYS-}" ] && [ -f "$FAKE_LOG.dumped" ]; then date +%N; exit 0; fi
+                if [ -n "${FAKE_CHANGE_ONCE-}" ] && [ -f "$FAKE_LOG.dumped" ] && [ ! -f "$FAKE_LOG.chg" ]; then : > "$FAKE_LOG.chg"; echo 6; exit 0; fi
+                echo 5 ;;
               *"number FROM invoices"*) echo "2026-0007" ;;
               *"md5(string_agg"*) echo "digestabc" ;;
               *"encode(sha256(content)"*) echo "${FAKE_BAD_SHA-0}" ;;
@@ -190,6 +197,33 @@ final class ResticBackupScriptTest extends CIUnitTestCase
         $this->assertStringNotContainsString('backup --tag', (string) @file_get_contents($this->dir . '/restic.log'));
     }
 
+    public function testFailedManifestQueryAbortsBackup(): void
+    {
+        [$code] = $this->runScript(['FAKE_PSQL_FAIL' => '1']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertMatchesRegularExpression('/krok:?\s*manifest/iu', (string) file_get_contents($this->dir . '/mail.eml'));
+        $this->assertStringNotContainsString('backup --tag', (string) @file_get_contents($this->dir . '/restic.log'));
+    }
+
+    public function testDbChangeDuringDumpRepeatsDumpAndManifest(): void
+    {
+        [$code, $out] = $this->runScript(['FAKE_CHANGE_ONCE' => '1']);
+
+        $this->assertSame(0, $code, $out);
+        $this->assertSame(2, substr_count((string) file_get_contents($this->dir . '/docker.log'), 'pg_dump'));
+        $this->assertStringContainsString('rows.invoices=5', (string) file_get_contents($this->dir . '/snap/manifest.txt'));
+    }
+
+    public function testDbChangingOnEveryAttemptFailsWithoutSnapshot(): void
+    {
+        [$code] = $this->runScript(['FAKE_CHANGE_ALWAYS' => '1']);
+
+        $this->assertNotSame(0, $code);
+        $this->assertSame(3, substr_count((string) file_get_contents($this->dir . '/docker.log'), 'pg_dump'));
+        $this->assertStringNotContainsString('backup --tag', (string) @file_get_contents($this->dir . '/restic.log'));
+    }
+
     public function testEmptyHcUrlAndAlertToSendNothing(): void
     {
         [$code, $out] = $this->runScript([], ['HC_URL' => '', 'ALERT_TO' => '']);
@@ -281,7 +315,7 @@ final class ResticBackupScriptTest extends CIUnitTestCase
         file_put_contents($envPath, $body);
         chmod($envPath, $envMode);
 
-        foreach (['docker.log', 'restic.log', 'curl.log', 'mail.eml'] as $f) {
+        foreach (['docker.log', 'docker.log.dumped', 'docker.log.chg', 'restic.log', 'curl.log', 'mail.eml'] as $f) {
             @unlink($this->dir . '/' . $f);
         }
 
