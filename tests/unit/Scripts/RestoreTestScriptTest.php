@@ -19,18 +19,19 @@ final class RestoreTestScriptTest extends CIUnitTestCase
     private const FAKE_DOCKER = <<<'SH'
         #!/bin/sh
         printf '%s | pwd=%s\n' "$*" "$(pwd)" >> "$FAKE_LOG"
+        # ako skutocny `docker compose exec -T`: spotrebuje cely stdin
+        cat > /dev/null
         case "$*" in
           *psql*)
             case "$*" in
               *"FROM invoices")
                 if [ -n "${FAKE_ROWS_INVOICES-}" ]; then echo "$FAKE_ROWS_INVOICES"; else echo 5; fi ;;
-              *"number FROM invoices"*) echo "2026-0007" ;;
-              *"md5(string_agg"*) echo "digestabc" ;;
+              *"number FROM invoices"*) echo "${FAKE_LAST-2026-0007}" ;;
+              *"md5(string_agg"*) echo "${FAKE_DIGEST-digestabc}" ;;
               *"encode(sha256(content)"*) echo "0" ;;
               *) echo "5" ;;
             esac
             ;;
-          *pg_restore*) cat > /dev/null ;;
         esac
         exit 0
         SH;
@@ -131,6 +132,24 @@ final class RestoreTestScriptTest extends CIUnitTestCase
         $this->assertSame([], glob($this->dir . '/tmp/*'));
         $this->assertNoSecrets($out);
         $this->assertNoSecrets($mail);
+    }
+
+    public function testMismatchOnLaterManifestKeysIsDetected(): void
+    {
+        foreach (['FAKE_LAST' => 'last_invoice_number', 'FAKE_DIGEST' => 'documents_sha256_digest'] as $var => $key) {
+            [$code, $out] = $this->runScript([$var => 'ZMENENE']);
+
+            $this->assertNotSame(0, $code, $key);
+            $this->assertStringContainsString('nezhoda ' . $key, $out);
+        }
+
+        [$code, $out] = $this->runScript();
+        $this->assertSame(0, $code, $out);
+        $log = (string) file_get_contents($this->dir . '/docker.log');
+
+        foreach (['FROM invoice_lines', 'FROM clients', 'number FROM invoices', 'md5(string_agg', 'encode(sha256(content)'] as $needle) {
+            $this->assertStringContainsString($needle, $log);
+        }
     }
 
     public function testBadDumpChecksumStopsBeforeCreatedb(): void

@@ -101,9 +101,9 @@ STEP=checksum
 
 STEP=createdb
 if [ "$RESTORE_KEEP" = 1 ]; then
-  dc exec -T db dropdb -U postgres --if-exists "$TARGET_DB" >&2
+  dc exec -T db dropdb -U postgres --if-exists "$TARGET_DB" >&2 < /dev/null
 fi
-dc exec -T db createdb -U postgres -O app_owner "$TARGET_DB" >&2
+dc exec -T db createdb -U postgres -O app_owner "$TARGET_DB" >&2 < /dev/null
 CREATED=1
 
 STEP=pg_restore
@@ -111,7 +111,8 @@ dc exec -T db pg_restore -U "$RESTORE_DB_USER" --no-owner --exit-on-error -d "$T
 
 STEP=compare
 q() {
-  dc exec -T db psql -U "$RESTORE_DB_USER" -d "$TARGET_DB" -At -c "$1"
+  # < /dev/null: `docker compose exec -T` inak precita zvysok manifestu zo stdin cyklu (CR-01).
+  dc exec -T db psql -U "$RESTORE_DB_USER" -d "$TARGET_DB" -At -c "$1" < /dev/null
 }
 BAD=0
 while IFS= read -r line || [ -n "$line" ]; do
