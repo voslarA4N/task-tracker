@@ -75,6 +75,7 @@ return [
     'languageCurrent'                => 'Aktualny',
     'languageSaved'                  => 'Język interfejsu został zmieniony.',
     'languageInvalid'                => 'Wybrany język nie jest obsługiwany. Wybierz jedną z dostępnych opcji.',
+    'languageNotSaved'               => 'Nie udało się zapisać języka. Spróbuj ponownie.',
     'languageSk'                     => 'Slovenčina',
     'languagePl'                     => 'Polski',
     'languageCs'                     => 'Čeština',

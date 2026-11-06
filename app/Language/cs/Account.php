@@ -75,6 +75,7 @@ return [
     'languageCurrent'                => 'Aktuální',
     'languageSaved'                  => 'Jazyk rozhraní byl změněn.',
     'languageInvalid'                => 'Zvolený jazyk není podporován. Vyberte jednu z nabízených možností.',
+    'languageNotSaved'               => 'Jazyk se nepodařilo uložit. Zkuste to znovu.',
     'languageSk'                     => 'Slovenčina',
     'languagePl'                     => 'Polski',
     'languageCs'                     => 'Čeština',

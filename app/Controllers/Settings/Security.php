@@ -116,10 +116,16 @@ final class Security extends BaseController
         }
 
         if ($locale !== $this->userLocale($userId)) {
-            db_connect()->query(
+            $db = db_connect();
+            $db->query(
                 'UPDATE user_security SET locale = :l:, updated_at = :now: WHERE user_id = :u:',
                 ['l' => $locale, 'now' => service('clock')->now()->format('Y-m-d H:i:sP'), 'u' => $userId],
             );
+
+            // Bez riadku v user_security sa nic neulozilo: ziadny audit ani uspesna hlaska (IN-04).
+            if ($db->affectedRows() < 1) {
+                return $this->errorPage($user, 'languageError', lang('Account.languageNotSaved'), 500);
+            }
             (new AuditLog())->record(AuthEvent::LocaleChanged, true, $userId, null, $locale);
         }
 
