@@ -48,7 +48,6 @@ if [ "$RESTORE_LOCAL" != 1 ]; then
 else
   COMPOSE_DIR=.
 fi
-export RESTIC_REPOSITORY RESTIC_PASSWORD_FILE
 
 if [ -z "$TARGET_DB" ]; then
   TARGET_DB="restore_check_$(date -u +%Y%m%d_%H%M%S)"
@@ -84,6 +83,12 @@ on_exit() {
 exec 3>&2
 exec 2>>"$ERRLOG"
 trap 'on_exit $?' EXIT
+
+STEP=env
+# Od tejto chvili zlyhanie (aj chybajuca premenna v env subore) spusti upozornenie (WR-04).
+: "${RESTIC_REPOSITORY:?RESTIC_REPOSITORY nie je nastavena v env subore}"
+: "${RESTIC_PASSWORD_FILE:?RESTIC_PASSWORD_FILE nie je nastavena v env subore}"
+export RESTIC_REPOSITORY RESTIC_PASSWORD_FILE
 
 STEP=restore
 restic restore latest --tag db --host "$RESTIC_HOST" --target "$TMP" > "$TMP/restore.out"

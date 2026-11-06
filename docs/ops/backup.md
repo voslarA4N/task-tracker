@@ -28,6 +28,12 @@ Premenné v env súbore: `RESTIC_REPOSITORY`, `RESTIC_PASSWORD_FILE`, `HC_URL`, 
 `BACKUP_ENV_NAME`, `STACK_DIR`, `STAGE_DIR`. Skripty odmietnu env súbor, ktorý nepatrí používateľovi alebo nemá práva
 600 alebo 400. Tajomstvá sa nikdy nevypisujú na výstup ani do e-mailu.
 
+Čo upozorní a čo nie: zlyhanie po načítaní env súboru (chýbajúca `RESTIC_REPOSITORY` alebo `RESTIC_PASSWORD_FILE`, dump,
+manifest, restic) pošle ping `/fail` a e-mail. Zlyhanie pred načítaním env súboru (neexistuje, zlý vlastník alebo práva) nemá
+ešte prístupové údaje k e-mailu a pingu, skript skončí nenulovým kódom s hláškou na stderr, ktorú cron pošle rootovi
+(lokálnou poštou) a zapíše do logu. Ak `HC_URL` a `ALERT_TO` zostanú prázdne, neupozorní nič okrem tohto logu,
+preto ich nastav aspoň jedno. Dead-man ping z healthchecks.io je jediná ochrana pred tým, že cron vôbec nebeží.
+
 ## 3. Denná záloha
 
 `backup-restic.sh` urobí `pg_dump --format=custom` v kontajneri `db` (klient = server, PostgreSQL 18), overí archív

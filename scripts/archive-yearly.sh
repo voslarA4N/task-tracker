@@ -31,7 +31,6 @@ BACKUP_ENV_FILE=${BACKUP_ENV_FILE:-/root/.config/work-tracker-backup.env}
 check_env_file "$BACKUP_ENV_FILE"
 # shellcheck disable=SC1090
 . "$BACKUP_ENV_FILE"
-export RESTIC_REPOSITORY RESTIC_PASSWORD_FILE
 STACK_DIR=${STACK_DIR:-/opt/work-tracker}
 ARCHIVE_STAGE=${ARCHIVE_STAGE:-/var/backups/work-tracker/archive-stage}
 HC_ARCHIVE_URL=${HC_ARCHIVE_URL-}
@@ -65,6 +64,12 @@ dc() {
 exec 3>&2
 exec 2>>"$ERRLOG"
 trap 'on_exit $?' EXIT
+
+STEP=env
+# Od tejto chvili zlyhanie (aj chybajuca premenna v env subore) spusti upozornenie (WR-04).
+: "${RESTIC_REPOSITORY:?RESTIC_REPOSITORY nie je nastavena v env subore}"
+: "${RESTIC_PASSWORD_FILE:?RESTIC_PASSWORD_FILE nie je nastavena v env subore}"
+export RESTIC_REPOSITORY RESTIC_PASSWORD_FILE
 
 if [ -n "$BACKUP_COMPOSE_FILE" ]; then
   COMPOSE_FILE=$BACKUP_COMPOSE_FILE

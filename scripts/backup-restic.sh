@@ -13,7 +13,6 @@ BACKUP_ENV_FILE=${BACKUP_ENV_FILE:-/root/.config/work-tracker-backup.env}
 check_env_file "$BACKUP_ENV_FILE"
 # shellcheck disable=SC1090
 . "$BACKUP_ENV_FILE"
-export RESTIC_REPOSITORY RESTIC_PASSWORD_FILE
 BACKUP_DB_USER=${BACKUP_DB_USER:-app_owner}
 BACKUP_DB=${BACKUP_DB:-task_tracker}
 export BACKUP_DB_USER BACKUP_DB
@@ -46,6 +45,12 @@ on_exit() {
 exec 3>&2
 exec 2>>"$ERRLOG"
 trap 'on_exit $?' EXIT
+
+STEP=env
+# Od tejto chvili zlyhanie (aj chybajuca premenna v env subore) spusti upozornenie (WR-04).
+: "${RESTIC_REPOSITORY:?RESTIC_REPOSITORY nie je nastavena v env subore}"
+: "${RESTIC_PASSWORD_FILE:?RESTIC_PASSWORD_FILE nie je nastavena v env subore}"
+export RESTIC_REPOSITORY RESTIC_PASSWORD_FILE
 
 STEP=repo
 if ! restic cat config > /dev/null; then
