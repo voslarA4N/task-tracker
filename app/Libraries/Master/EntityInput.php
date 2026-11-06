@@ -6,6 +6,7 @@ namespace App\Libraries\Master;
 
 use App\Libraries\Delivery\SenderIdentity;
 use App\Libraries\Delivery\SenderRejected;
+use App\Libraries\Platform\DateFormat;
 use CodeIgniter\HTTP\IncomingRequest;
 
 /**
@@ -380,8 +381,6 @@ final class EntityInput
 
     private static function fmt(string $iso): string
     {
-        $d = service('clock')->parseDate($iso);
-
-        return $d === null ? $iso : $d->format('j. n. Y');
+        return DateFormat::date($iso);
     }
 }

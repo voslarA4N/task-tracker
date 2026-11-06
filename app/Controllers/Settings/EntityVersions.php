@@ -11,11 +11,11 @@ use App\Libraries\Master\EntityService;
 use App\Libraries\Master\EntityVersionResolver;
 use App\Libraries\Master\VersionNotFound;
 use App\Libraries\Master\VersionRejected;
+use App\Libraries\Platform\DateFormat;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RedirectResponse;
 use CodeIgniter\HTTP\ResponseInterface;
-use IntlDateFormatter;
 
 final class EntityVersions extends BaseController
 {
@@ -193,22 +193,6 @@ final class EntityVersions extends BaseController
 
     private function formatDate(string $iso): string
     {
-        $date = service('clock')->parseDate($iso);
-
-        if ($date === null) {
-            return $iso;
-        }
-
-        $formatter = new IntlDateFormatter(
-            service('request')->getLocale(),
-            IntlDateFormatter::NONE,
-            IntlDateFormatter::NONE,
-            'UTC',
-            IntlDateFormatter::GREGORIAN,
-            'd. M. yyyy',
-        );
-        $out = $formatter->format($date->getTimestamp());
-
-        return $out === false ? $iso : $out;
+        return DateFormat::date($iso);
     }
 }

@@ -4,6 +4,7 @@
 
 <?= $this->section('content') ?>
 <div class="work-wide">
+<?= $this->include('settings/_language') ?>
 <?= $this->include('settings/_password') ?>
 <?= $this->include('settings/_twofactor') ?>
 <?= $this->include('settings/_devices') ?>

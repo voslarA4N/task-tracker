@@ -619,10 +619,43 @@ Plans:
 
   1. Používateľ prepne jazyk rozhrania medzi SK, PL, CZ a EN a čísla, dátumy a meny sa zobrazia podľa jazyka; test parity kľúčov potvrdzuje, že žiadny preklad nechýba.
   2. Denný šifrovaný `pg_dump` a PDF doklady idú mimo servera s rotáciou 14 denných / 8 týždenných / 12 mesačných, upozornenie pri vynechanej zálohe funguje a zdokumentovaná obnova na čistom prostredí bola úspešne vyskúšaná s reálnymi dátami.
+     *Akceptovaný odklon (D-05, 12-CONTEXT):* bez plateného úložiska mimo servera; šifrovaný restic repozitár je na serveri a kópia mimo servera vzniká ručným pullom na PC vlastníka (`scripts/pull-backups.sh`).
+
   3. Doklady sa nedajú zmazať ani DB oprávneniami a raz ročne vznikne archív dokladov pokrývajúci zákonnú dobu uchovávania.
   4. Na cieľovom VPS je p95 odozvy bežných stránok pod 100 ms, PDF sa generuje pod 2 s, aplikácia sa drží cieľovo do 512 MB RAM v pokoji a beží HTTP/2 s kompresiou, OPcache a dlhou cache statických súborov.
 
-**Plans**: TBD
+**Plans**: 15 plans (5 vĺn)
+Plans:
+**Wave 1**
+
+- [x] 12-01-PLAN.md — Výber jazyka rozhrania: karta + POST setLocale, supportedLocales sk/pl/cs/en, audit, PL/CS Account a App, parita kľúčov (vlna 1)
+- [x] 12-02-PLAN.md — Formáty čísel, súm, percent, dátumov (DateFormat, EntityInput) a mesiacov v 4 jazykoch, doklad nezávislý od jazyka UI (vlna 1)
+- [x] 12-03-PLAN.md — Nemazateľnosť dokladov: matica DELETE/TRUNCATE/UPDATE pre app_rw aj app_owner, katalógová poistka (vlna 1)
+- [x] 12-04-PLAN.md — Šifrovaná restic záloha s manifestom, rotáciou 14/8/12, healthchecks a e-mailom pri chybe (vlna 1)
+- [x] 12-05-PLAN.md — Meranie p95, smoke statiky (cache, kompresia), poistka konfigurácie výkonu, runbook merania (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 12-06-PLAN.md — PL preklady, časť 1 (11 súborov) (vlna 2)
+- [x] 12-07-PLAN.md — PL preklady, časť 2 (17 súborov) (vlna 2)
+- [x] 12-08-PLAN.md — CS preklady, časť 1 (11 súborov) (vlna 2)
+- [x] 12-09-PLAN.md — CS preklady, časť 2 (17 súborov) (vlna 2)
+- [x] 12-10-PLAN.md — Ročný archív: spark archive:year (ZIP + CSV so sha256, všetky verzie) a archive-yearly.sh do restic s tagom archive (vlna 2)
+- [x] 12-11-PLAN.md — Test obnovy proti manifestu, pull repozitára na PC, runbook docs/ops/backup.md (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 12-12-PLAN.md — Úplná parita 4 jazykov, kontrola nepreložených kópií, render obrazoviek v PL/CS, mobilná kontrola (vlna 3)
+- [x] 12-13-PLAN.md — Inštalátor záloh na server (restic overený SHA256SUMS, root-owned skripty, backuppull) a server.md §21, reset 2FA (vlna 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 12-14-PLAN.md — Nasadenie, spustenie záloh na serveri, test upozornení a obnova reálnych dát na čistom prostredí vo WSL (vlna 4, checkpointy)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 12-15-PLAN.md — Meranie p95, PDF a pamäte na stagingu a produkcii, prípadné ladenie (vlna 5, checkpoint)
+
 **UI hint**: yes
 **Poznámky**: Štandardné vzory, overiť len podmienky Hetzner Storage Box (port, append-only). Prune zálohy spúšťať mimo produkčného servera alebo s oddeleným kľúčom; kópia hesla repozitára a `encryption.key` mimo servera. **Závislosť od účtovníčky:** doba uchovávania (SK 10 rokov, PL podľa účtovníčky). Súčasťou je CLI reset 2FA a meranie `docker stats` a p95.
 
@@ -643,4 +676,4 @@ Plans:
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
 | 11. Prehľady, exporty a audit | 11/11 | Complete   | 2026-11-04 |
-| 12. Lokalizácia a produkcia | 0/0 | Not started | - |
+| 12. Lokalizácia a produkcia | 13/15 | In Progress|  |

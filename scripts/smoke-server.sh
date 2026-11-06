@@ -90,9 +90,31 @@ else
   skip "manifest (nie je 200)"
 fi
 
+# 5b. statika: dlha cache a kompresia (D-13). Adresy v HTML mozu byt HTML-escapovane (&#x2F;).
+if [ "${LC:-000}" = 200 ]; then
+  PAGE_HTML=$(curl -sS "$BASE/login" 2>/dev/null | sed 's/&#x2F;/\//g; s/&#x3F;.*"/"/' || true)
+  for kind in css js; do
+    ASSET=$(echo "$PAGE_HTML" | grep -oE "(href|src)=\"/assets/vendor/[^\"]*\\.$kind\"" | head -n1 | cut -d'"' -f2 || true)
+    if [ -z "$ASSET" ]; then
+      fail "statika $kind: v /login sa nenašiel /assets/vendor/*.$kind"
+      continue
+    fi
+    curl -sS -o /dev/null -D "$TMP/asset.h" -H 'Accept-Encoding: gzip, br' "$BASE$ASSET" 2>/dev/null || true
+    ah=$(tr -d '\r' < "$TMP/asset.h" 2>/dev/null || true)
+    if echo "$ah" | grep -iE '^cache-control: *public, *max-age=31536000, *immutable' >/dev/null; then
+      pass "statika $ASSET cache immutable"; else fail "statika $ASSET cache public, max-age=31536000, immutable"; fi
+    if echo "$ah" | grep -iE '^content-encoding: *(gzip|br)' >/dev/null; then
+      pass "statika $ASSET kompresia"; else fail "statika $ASSET content-encoding gzip alebo br"; fi
+  done
+else
+  skip "statika (/login nie je 200)"
+fi
+
 # 6. zmena session cookie po hesle (Pitfall 3)
 if [ -n "${SMOKE_EMAIL:-}" ] && [ -n "${SMOKE_PASSWORD:-}" ]; then
   JAR="$TMP/jar"
+  # heslo ide zo suboru (0600), nie cez argv (WR-05); $TMP sa maze v trap
+  (umask 077 && printf '%s' "$SMOKE_PASSWORD" > "$TMP/pw")
   PAGE=$(curl -sS -c "$JAR" "$BASE/login" 2>&1 || true)
   TOKEN=$(echo "$PAGE" | sed -n 's/.*name="csrf_test_name"[^>]*value="\([^"]*\)".*/\1/p' | head -n1)
   BEFORE=$(grep '__Host-ci_session' "$JAR" | awk '{print $7}' || true)
@@ -100,7 +122,7 @@ if [ -n "${SMOKE_EMAIL:-}" ] && [ -n "${SMOKE_PASSWORD:-}" ]; then
     PH=$(curl -sS -b "$JAR" -c "$JAR" -o /dev/null -D - -X POST "$BASE/login" \
       --data-urlencode "csrf_test_name=$TOKEN" \
       --data-urlencode "email=$SMOKE_EMAIL" \
-      --data-urlencode "password=$SMOKE_PASSWORD" 2>&1 | tr -d '\r' || true)
+      --data-urlencode "password@$TMP/pw" 2>&1 | tr -d '\r' || true)
     AFTER=$(grep '__Host-ci_session' "$JAR" | awk '{print $7}' || true)
     if echo "$PH" | head -n1 | grep -qE ' 30[23]' && echo "$PH" | grep -iq '^location:.*/2fa' && [ -n "$AFTER" ] && [ "$BEFORE" != "$AFTER" ]; then
       pass "po hesle 302/303 /2fa a nová session cookie"; else fail "po hesle 302/303 /2fa a nová session cookie"; fi

@@ -7,6 +7,7 @@ $routes->get('more', 'More::index');
 $routes->get('settings/security', 'Settings\Security::index');
 $routes->post('settings/security/devices/(:num)/revoke', 'Settings\Security::revokeDevice/$1');
 $routes->post('settings/security/password', 'Settings\Security::changePassword');
+$routes->post('settings/security/locale', 'Settings\Security::setLocale');
 $routes->get('settings/security/2fa/setup', 'Settings\Security::setupTotp');
 $routes->post('settings/security/2fa/setup', 'Settings\Security::enableTotp');
 $routes->post('settings/security/2fa/disable', 'Settings\Security::disableTotp');

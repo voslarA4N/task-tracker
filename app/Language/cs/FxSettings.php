@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'navTitle'           => 'Kurzy měn',
+    'title'              => 'Kurzy měn',
+    'intro'              => 'Určuje, odkud se bere kurz a ke kterému dni u faktury v jiné měně, než je měna subjektu. Změna platí pouze pro faktury vystavené po uložení.',
+    'fieldSource'        => 'Zdroj kurzu',
+    'fieldDateBasis'     => 'Datum, ke kterému se kurz hledá',
+    'fieldDayRule'       => 'Pravidlo dne',
+    'sourceNbp'          => 'Polská národní banka (NBP)',
+    'sourceEcb'          => 'Evropská centrální banka (ECB)',
+    'sourceCnb'          => 'Česká národní banka (ČNB)',
+    'basisDelivery'      => 'Datum plnění',
+    'basisIssue'         => 'Datum vystavení',
+    'rulePrevious'       => 'Poslední kurz před datem',
+    'ruleOnOrBefore'     => 'Kurz platný v daný den, jinak poslední před ním',
+    'hintSource'         => 'Zdroj určuje, pro které dvojice měn je kurz k dispozici.',
+    'hintDateBasis'      => 'Datum z faktury, podle kterého se kurz vyhledá.',
+    'hintDayRule'        => 'Podle API zdroje; víkendy a svátky se přeskočí automaticky.',
+    'pairs'              => 'NBP poskytuje kurz pro subjekty vedené v PLN (faktury v EUR, CZK). ČNB pro subjekty v CZK (faktury v EUR, PLN). ECB pro subjekty v EUR (faktury v PLN, CZK).',
+    'unsupportedWarning' => 'Pro kombinaci, kterou zdroj nepodporuje (např. ECB u subjektu vedeného v PLN), bude kurz vždy nutné zadat ručně.',
+    'defaults'           => 'Výchozí: PL NBP, datum plnění, poslední kurz před datem · SK ECB, datum plnění, poslední kurz před datem · CZ ČNB, datum plnění, kurz platný v daný den.',
+    'provisional'        => 'Pravidla jsou předběžná. Ověřte je s účetní.',
+    'saved'              => 'Nastavení bylo uloženo.',
+    'errorInvalid'       => 'Vyberte platnou hodnotu.',
+    'errorStale'         => 'Nastavení kurzu mezitím někdo změnil. Načtěte stránku znovu a zopakujte úpravu.',
+    'countrySK'          => 'Slovensko (SK)',
+    'countryPL'          => 'Polsko (PL)',
+    'countryCZ'          => 'Česko (CZ)',
+    'save'               => 'Uložit',
+    'back'               => 'Zpět',
+    'backToMore'         => 'Zpět na Více',
+];

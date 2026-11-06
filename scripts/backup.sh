@@ -1,6 +1,8 @@
 #!/bin/sh
 # D-24: zaloha DB (pg_dump --format=custom) vratane PDF dokladov (bytea). Vystup: task_tracker-RRRRMMDDTHHMMSS.dump + .sha256.
 # Pouzitie: scripts/backup.sh [vystupny-adresar]   (BACKUP_DB, BACKUP_DB_USER prepisu predvolene hodnoty)
+# Volitelne: BACKUP_NAME (stabilny nazov suboru, predvolene s casovou peciatkou; pouziva backup-restic.sh),
+#            BACKUP_COMPOSE_DIR (adresar, v ktorom sa vola docker compose; predvolene koren repozitara).
 set -eu
 umask 077
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -12,11 +14,11 @@ if [ $# -ge 1 ] && [ -n "$1" ]; then
 else
   OUT="$ROOT/backups"
 fi
-cd "$ROOT"
+cd "${BACKUP_COMPOSE_DIR:-$ROOT}"
 
 DB=${BACKUP_DB:-task_tracker}
 DB_USER=${BACKUP_DB_USER:-app_owner}
-NAME="task_tracker-$(date -u +%Y%m%dT%H%M%S).dump"
+NAME=${BACKUP_NAME:-task_tracker-$(date -u +%Y%m%dT%H%M%S).dump}
 
 mkdir -p "$OUT"
 trap 'rm -f "$OUT/$NAME.partial"' EXIT

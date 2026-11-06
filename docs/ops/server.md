@@ -229,7 +229,7 @@ Stav k 2026-10-24 (overil Claude):
 
 ## 12. Správa používateľa
 
-Na serveri je `email.transport = log` (O-3), reset hesla e-mailom sa preto nedá dokončiť. Náhrada:
+Produkcia posiela e-maily cez vlastný Stalwart SMTP (§20), reset hesla e-mailom funguje. Príkazy zo servera slúžia, keď e-mail nie je k dispozícii (zabudnuté heslo bez prístupu k schránke, strata 2FA):
 
 ```
 ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.server.yaml exec php php spark user:password <e-mail>'
@@ -238,6 +238,7 @@ ssh -t deploy@2.31.74.48 'cd /opt/work-tracker && IMAGE_TAG=$(cat .last-good-tag
 
 - `user:password`: skrytý prompt, minimálne 12 znakov, heslo nesmie obsahovať časť e-mailu pred `@`. Odvolá všetky dôveryhodné zariadenia.
 - `user:reset-2fa`: zruší TOTP aj záložné kódy a príznak odmietnutia, pri ďalšom prihlásení sa zobrazí ponuka 2FA (2FA je od 2026-10-28 voliteľná) (`--yes` preskočí potvrdenie). Zmaže aj nepoužité tokeny obnovy hesla.
+- Reset 2FA je jediný spôsob obnovy prístupu bez záložných kódov. Príkaz beží iba zo servera cez SSH a zapisuje udalosť `totp_reset_cli` do auditu. TOTP tajomstvá sú šifrované kľúčom `encryption.key`, preto pri obnove zo zálohy bez pôvodného kľúča treba všetkým používateľom spustiť `user:reset-2fa` (staré tajomstvá sa nedajú dešifrovať).
 - Reset hesla e-mailom (`/password/forgot`) funguje pre každý aktívny účet, s 2FA aj bez nej (od 2026-10-28, rozhodnutie vlastníka; pôvodné obmedzenie WR-04 je zrušené). Obmedzenia počtu žiadostí a rovnaká odpoveď stránky ostávajú. Po resete sa účet s 2FA prihlasuje heslom aj kódom, účet bez 2FA iba heslom.
 - Limit obnovy hesla: najviac 3 e-maily za hodinu na účet a 5 na IP (WR-03), ďalšie žiadosti sa ticho zahodia (log `password_reset.throttled`).
 
@@ -525,3 +526,85 @@ Po zelených automatických testoch overí vlastník tieto veci ručne. Výsledk
 1. Vystav jednu skúšobnú faktúru a pošli ju iba na vlastnú adresu.
 2. V Gmail „Show original“ sú SPF, DKIM aj DMARC PASS.
 3. `sha256sum` prílohy sa rovná sha256 na detaile faktúry.
+
+## 21. Nasadenie fázy 12 (jazyky, zálohy, archív, výkon)
+
+Plány: 12-04 (zálohy), 12-10 (archív), 12-11 (test obnovy a pull). Podrobnosti o zálohách a obnove sú v `docs/ops/backup.md`, meranie výkonu v `docs/ops/performance.md`.
+
+### Poradie
+
+1. Najprv staging (push `develop`), overiť, až potom `main` (produkcia).
+2. Jazyky (SK, PL, CZ, EN): nič na serveri, stačí deploy (`supportedLocales` je v kóde).
+3. Zálohy sa nenasadzujú deployom. Skripty pre root cron sú v root-owned `/usr/local/lib/work-tracker-backup/scripts/`, nikdy nie v `/opt/work-tracker`, ktorý mení kľúč `deploy` (T-12-43).
+
+### Inštalácia záloh na server
+
+Lokálne (v koreni repozitára):
+
+```
+git archive --format=tar HEAD scripts/backup.sh scripts/backup-restic.sh scripts/lib-restic-policy.sh scripts/lib-backup-notify.sh scripts/archive-yearly.sh scripts/restore-test.sh scripts/install-backup.sh > /tmp/wt-backup.tar
+scp /tmp/wt-backup.tar <admin>@2.31.74.48:/tmp/
+```
+
+Na serveri:
+
+```
+mkdir /tmp/wt-backup && tar -xf /tmp/wt-backup.tar -C /tmp/wt-backup && cd /tmp/wt-backup/scripts
+DRY_RUN=1 sh install-backup.sh        # iba plán
+sudo sh install-backup.sh             # ostro, idempotentné
+```
+
+Inštalátor overí restic 0.19.1 voči `SHA256SUMS`, nainštaluje skripty, vytvorí adresáre 0700, šablónu `/root/.config/work-tracker-backup.env` (0600, existujúci súbor neprepíše), používateľa `backuppull` so sudoers pravidlom (`visudo -cf`) a vypíše cron riadky. Nikdy nemení `app.env` (musí ostať `deploy:82`) a v runbooku sa na ňom nikdy nepoužíva `sed -i`.
+
+Potom:
+
+1. Heslo repozitára do `/root/.config/work-tracker-restic.pass` (0600) a súčasne do správcu hesiel. Do správcu hesiel patrí aj `encryption.key` a ostatné tajomstvá zo §7. Bez nich sa obnova nedá použiť.
+2. `sudo sh -c 'set -a; . /root/.config/work-tracker-backup.env; restic init'`.
+3. Vyplniť `/root/.config/work-tracker-backup.env` editorom (nie `app.env`): `BACKUP_DB_USER` (predvolene `app_owner`; ak `pg_dump -U app_owner` v kontajneri `db` pýta heslo, zvoliť používateľa s lokálnym trust alebo peer prístupom, napr. `postgres`, a zdôvodniť to v poznámke), `BACKUP_DB` (predvolene `task_tracker`), `HC_*` a `ALERT_*`.
+4. healthchecks.io, tri checky: `work-tracker-backup` (perióda 1 deň, grace 2 h), `work-tracker-restore-test` (perióda 31 dní, grace 2 dni), `work-tracker-archive` (perióda 365 dní, grace 7 dní). Zapnúť e-mailovú integráciu. Ping URL patria iba do env súboru na serveri, nie do gitu ani do dokumentácie.
+5. Root cron (`sudo crontab`, editácia): tri riadky vypísané inštalátorom.
+
+```
+10 3 * * * /usr/local/lib/work-tracker-backup/scripts/backup-restic.sh >> /var/log/work-tracker-backup.log 2>&1
+30 4 1 * * /usr/local/lib/work-tracker-backup/scripts/restore-test.sh >> /var/log/work-tracker-restore-test.log 2>&1
+0 4 2 1 * /usr/local/lib/work-tracker-backup/scripts/archive-yearly.sh >> /var/log/work-tracker-archive.log 2>&1
+```
+
+Záloha beží denne, test obnovy mesačne, ročný archív 2. januára.
+
+### Skúška na stagingu (bez cronu)
+
+Staging nemá cron záloh (D-09). Samostatný env súbor `/root/.config/work-tracker-staging-backup.env`: `STACK_DIR=/opt/work-tracker-staging`, `BACKUP_ENV_NAME=staging`, `RESTIC_REPOSITORY=/var/backups/restic/work-tracker-staging`, prázdne `HC_*`, vlastný `RESTIC_PASSWORD_FILE`. Jednorazovo:
+
+```
+sudo BACKUP_ENV_FILE=/root/.config/work-tracker-staging-backup.env /usr/local/lib/work-tracker-backup/scripts/backup-restic.sh
+sudo BACKUP_ENV_FILE=/root/.config/work-tracker-staging-backup.env /usr/local/lib/work-tracker-backup/scripts/restore-test.sh
+sudo BACKUP_ENV_FILE=/root/.config/work-tracker-staging-backup.env /usr/local/lib/work-tracker-backup/scripts/archive-yearly.sh 2026
+```
+
+Potom repozitár stagingu a jeho env súbor zmazať.
+
+### Pull na PC vlastníka
+
+Vo WSL:
+
+```
+ssh-keygen -t ed25519 -f ~/.ssh/work-tracker-backup-pull
+```
+
+Verejný kľúč vložiť do `/home/backuppull/.ssh/authorized_keys` s prefixom `command="sudo -n /usr/bin/rrsync -ro /var/backups/restic/work-tracker",restrict ` (ako v `docs/ops/backup.md`). Ak chýba `rrsync`, hľadať `/usr/share/doc/rsync/scripts/rrsync*` a nainštalovať ako `/usr/bin/rrsync`. Test: `sh scripts/pull-backups.sh`.
+
+### Aktualizácia skriptov
+
+Po zmene skriptov v gite zopakovať postup s tarom a `install-backup.sh` (idempotentné, env súbor sa nemení).
+
+### Overenie
+
+- `sudo restic snapshots` (s načítaným env súborom),
+- `sudo crontab -l`,
+- healthchecks.io: všetky tri checky „up“ po prvom behu,
+- `tail /var/log/work-tracker-backup.log`.
+
+### Výkon
+
+Meranie a ladenie: `docs/ops/performance.md`.
