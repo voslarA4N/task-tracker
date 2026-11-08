@@ -56,6 +56,15 @@ elif [ "$DRY_RUN" = "1" ]; then
   echo "PLAN: bunzip2 $BZ"
   echo "PLAN: install -o root -g root -m 0755 restic_${V}_linux_${RESTIC_ARCH} /usr/local/bin/restic"
 else
+  if ! command -v bunzip2 > /dev/null 2>&1; then
+    if command -v apt-get > /dev/null 2>&1; then
+      echo "bunzip2 chyba, instalujem balik bzip2."
+      DEBIAN_FRONTEND=noninteractive apt-get install -y -q bzip2 > /dev/null
+    else
+      echo "CHYBA: chyba bunzip2 (balik bzip2), nainstaluj ho a spusti znova." >&2
+      exit 1
+    fi
+  fi
   TMP=$(mktemp -d)
   trap 'rm -rf "$TMP"' EXIT
   (
