@@ -49,4 +49,22 @@ Tabuľku vypĺňa plán 12-14 po meraní na VPS.
 
 | Dátum | Prostredie | Metrika | Hodnota | Cieľ | Stav |
 |-------|------------|---------|---------|------|------|
-|       |            |         |         |      |      |
+| 2026-11-09 | staging | p95 SK `/` | 249 ms (p50 209) | < 100 ms | FAIL |
+| 2026-11-09 | staging | p95 SK `/tasks` | 222 ms (p50 183) | < 100 ms | FAIL |
+| 2026-11-09 | staging | p95 SK `/invoices` | 242 ms (p50 202) | < 100 ms | FAIL |
+| 2026-11-09 | staging | p95 SK `/reports/month` | 209 ms (p50 153) | < 100 ms | FAIL |
+| 2026-11-09 | staging | p95 SK ALL (n=200) | 241 ms | < 100 ms | FAIL |
+| 2026-11-09 | staging | p95 PL ALL (n=200) | 228 ms (`/` 245, `/tasks` 223, `/invoices` 232, `/reports/month` 186) | < 100 ms | FAIL |
+| 2026-11-09 | staging | PDF faktúry `/invoices/50/pdf` (n=10) | p50 126 ms, p95 166 ms | < 2000 ms | OK |
+| 2026-11-09 | lokálne | `phpunit --group performance` | vystavenie 353 ms (inv 224, rep 71), peak 66 MB | PDF < 2 s | OK |
+| 2026-11-09 | staging | pamäť staging (nginx 5.0 + php 32.3 + db 69.6) | 106.9 MiB | informatívne | OK |
+| 2026-11-09 | staging | pamäť prod stack task-tracker (nginx 5.6 + php 31.0 + db 46.1), len `docker stats` | 82.7 MiB | < 512 MiB | OK |
+| 2026-11-09 | staging | pamäť edge / mail (stalwart 100.7, roundcube 30.2, unbound 9.4, web 3.9) | 2.6 / 144.3 MiB | mimo limitu | info |
+
+### Poznámky k meraniu na stagingu (2026-11-09)
+
+- Priamy prístup na origin (`P95_RESOLVE=...:127.0.0.1`) nejde: stack nginx vyžaduje PROXY protokol z rozsahu Cloudflare (`cf-peer.conf` vracia 444). Meranie preto prebehlo zo servera cez verejnú URL (cez Cloudflare), TTFB teda zahŕňa TCP+TLS (~30 ms) a hop Cloudflare -> origin.
+- Základná línia cez Cloudflare: `/login` a `/manifest.webmanifest` TTFB 56 až 96 ms.
+- Čisto aplikácia (FastCGI priamo na php-fpm, bez nginx a Cloudflare, 30 požiadaviek): `/` p50 124 / p95 150 ms, `/tasks` 90 / 109, `/invoices` 117 / 139, `/reports/month` 76 / 96. Aplikácia sama je teda na hranici cieľa 100 ms už bez siete.
+- Hypotéza: cieľ nevyšiel kvôli času PHP aplikácie na 2 vCPU Skylake (CI4 + Shield + session + dotazy + šablóny, seed ~150 úloh a 40 faktúr), nie kvôli studenému štartu FPM (pm=ondemand, merania po zahriatí). Pred Task 3 profilovať počet a čas dotazov na `/` a `/invoices` a zvážiť `pm = dynamic` (CLAUDE.md).
+- Testovací účet: staging seed admin (bez 2FA, cesta `/2fa/continue`); jazyk po meraní vrátený na `sk`.
