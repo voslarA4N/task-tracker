@@ -32,6 +32,10 @@ Vystavená faktúra a výkaz sú **správne a nemenné**: súčty sa vždy zhodu
 
 - [x] Limity obratu (E10, CUR-04): tabuľka limitov editovateľná v aplikácii (návrhy SK/PL označené ako návrh), obrat subjektu v jeho mene z uložených súm faktúr a dobropisov plus počiatočný obrat, spôsoby výpočtu kalendárny rok / kĺzavých 12 mesiacov / pomerný prvý rok so vzorcom na karte čerpania, upozornenia na dashboarde (prahy, chýbajúci rok) a neblokujúca predkontrola v náhľade faktúry. Validated in Phase 10: Limity obratu (UAT staging 2026-11-02; CR-01 a WR-01 až WR-06 z 10-REVIEW.md otvorené)
 
+- [x] Jazyky rozhrania SK, PL, CZ a EN s voľbou používateľa na Zabezpečení, formát čísel, súm, dátumov a mesiacov podľa jazyka, vystavený doklad sa jazykom UI nemení (UI-02). Validated in Phase 12: Lokalizácia a produkcia (2026-11-09; prezretie PL/CS prekladov vlastníkom a kontrola na iPhone v 12-HUMAN-UAT.md)
+
+- [x] Prevádzka (NFR-01, NFR-05, NFR-09): denná šifrovaná restic záloha DB vrátane PDF s rotáciou 14/8/12, upozornenia (healthchecks.io, e-mail), mesačný test obnovy, obnova reálnych dát na čistom prostredí overená s 2FA, kópia mimo servera ručným pullom na PC (D-05 akceptovaný odklon), ročný archív dokladov `archive:year` (cron 2. 1.), doklady nezmazateľné ani DB oprávneniami, odozva servera p95 51 ms, PDF 230 ms, prod stack 97 MiB. Validated in Phase 12: Lokalizácia a produkcia (2026-11-09)
+
 ### Active
 
 Úplný zoznam s ID je v `.planning/REQUIREMENTS.md` (prevzatý z `docs/PRD.md`, epiky E1–E12, priority P0 + P1 + P2).
@@ -123,4 +127,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-02 after Phase 10 (Limity obratu)*
+*Last updated: 2026-11-09 after Phase 12 (Lokalizácia a produkcia)*
