@@ -137,15 +137,15 @@ Zdroj: `docs/PRD.md` (ID požiadaviek prevzaté bez zmeny) a `docs/superpowers/s
 
 ### Prevádzka a nefunkčné požiadavky
 
-- [ ] **NFR-01**: Odozva servera p95 pod 100 ms na bežných stránkach, PDF pod 2 s. Žiadna SPA ani build pipeline, lokálne JS a CSS s dlhou cache, HTTP/2, kompresia, OPcache a preloading.
+- [x] **NFR-01**: Odozva servera p95 pod 100 ms na bežných stránkach, PDF pod 2 s. Žiadna SPA ani build pipeline, lokálne JS a CSS s dlhou cache, HTTP/2, kompresia, OPcache a preloading.
 - [x] **NFR-02**: Aplikácia beží na najmenšom VPS Hetzner Cloud (Docker Compose: nginx, php-fpm, PostgreSQL), cieľovo do 512 MB RAM v pokoji.
 - [x] **NFR-03**: HTTPS (Let's Encrypt), CSP, HSTS a ďalšie hlavičky, CSRF (aj pre htmx), secure a httpOnly cookies, tajomstvá v `.env` mimo gitu, šifrované TOTP tajomstvá.
 - [x] **NFR-04**: Peniaze `numeric(12,2)`, hodiny `numeric(7,2)`, žiadny float. Jedna trieda na výpočet súm. Súčty na obrazovkách, vo výkaze, na faktúre a v exportoch sa vždy zhodujú (automatické testy).
-- [ ] **NFR-05**: Denný šifrovaný `pg_dump` a PDF dokladov mimo servera, rotácia 14 denných / 8 týždenných / 12 mesačných, zdokumentovaná a otestovaná obnova.
+- [x] **NFR-05**: Denný šifrovaný `pg_dump` a PDF dokladov mimo servera, rotácia 14 denných / 8 týždenných / 12 mesačných, zdokumentovaná a otestovaná obnova.
 - [x] **NFR-06**: PHPUnit testy pre výpočty súm, číslovanie (vrátane súbehu), zamykanie častí, kópiu údajov, kurzy a limity.
 - [x] **NFR-07**: Rovnaké Docker obrazy pre vývoj (WSL2) aj produkciu, vo vývoji Mailpit.
 - [x] **NFR-08**: Staging na HTTPS je k dispozícii skoro (spolu s prihlásením), aby sa PWA a cookies dali otestovať na reálnom iPhone.
-- [ ] **NFR-09** [nové, M12]: Doklady sa nedajú zmazať (ani DB oprávneniami) a raz ročne vzniká archív dokladov, ktorý pokryje zákonnú dobu uchovávania (SK 10 rokov, PL podľa účtovníčky).
+- [x] **NFR-09** [nové, M12]: Doklady sa nedajú zmazať (ani DB oprávneniami) a raz ročne vzniká archív dokladov, ktorý pokryje zákonnú dobu uchovávania (SK 10 rokov, PL podľa účtovníčky).
 
 ## v2 Requirements
 
@@ -277,9 +277,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUD-02 | Phase 11 | Complete |
 | UI-03 | Phase 11 | Complete |
 | UI-02 | Phase 12 | Complete |
-| NFR-01 | Phase 12 | Pending |
-| NFR-05 | Phase 12 | Pending |
-| NFR-09 | Phase 12 | Pending |
+| NFR-01 | Phase 12 | Complete |
+| NFR-05 | Phase 12 | Complete |
+| NFR-09 | Phase 12 | Complete |
 | KSEF-01 | v2 (mimo roadmapy) | Deferred |
 | ACC-01 | v2 (mimo roadmapy) | Deferred |
 | VIES-01 | v2 (mimo roadmapy) | Deferred |

@@ -676,4 +676,4 @@ Plans:
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
 | 11. Prehľady, exporty a audit | 11/11 | Complete   | 2026-11-04 |
-| 12. Lokalizácia a produkcia | 15/15 | Complete   | 2026-11-09 |
+| 12. Lokalizácia a produkcia | 15/15 | Complete    | 2026-11-09 |
