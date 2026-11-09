@@ -83,18 +83,23 @@ final class AppCssScaleTest extends TestCase
         $this->assertSame([], $problems, "Velkost pisma mimo 12/16/20/28:\n" . implode("\n", $problems));
     }
 
-    public function testMoreItemStacksTitleAndHint(): void
+    public function testMoreTilesGrid(): void
     {
         $css = (string) file_get_contents(dirname(__DIR__, 3) . '/public/assets/css/app.css');
         $css = (string) preg_replace('#/\*.*?\*/#s', '', $css);
+        $css = (string) preg_replace('/\s+/', ' ', $css);
 
-        $this->assertSame(1, preg_match_all('/(?<![\w-])\.more-item\s*\{([^}]*)\}/', $css, $m), 'Pravidlo .more-item musi byt prave jedno.');
+        $this->assertSame(1, preg_match_all('/(?<![\w-])\.more-grid\s*\{([^}]*)\}/', (string) preg_replace('/@media[^{]*\{[^{}]*\{[^}]*\}\s*\}/', '', $css), $g), 'Pravidlo .more-grid musi byt prave jedno.');
+        $this->assertMatchesRegularExpression('/display\s*:\s*grid/', $g[1][0], 'Viac: .more-grid musi byt grid');
+        $this->assertStringContainsString('repeat(2,', $g[1][0], 'Viac: 2 stlpce na mobile');
+        $this->assertSame(1, preg_match('/@media \(min-width: 768px\) \{ \.more-grid \{[^}]*repeat\(3,/', $css), 'Viac: 3 stlpce od 768px');
+        $this->assertSame(1, preg_match('/@media \(min-width: 992px\) \{ \.more-grid \{[^}]*repeat\(4,/', $css), 'Viac: 4 stlpce od 992px');
 
-        $body = (string) preg_replace('/\s+/', ' ', $m[1][0]);
-
-        $this->assertMatchesRegularExpression('/flex-direction\s*:\s*column/', $body, 'Viac menu: nazov a popis musia byt pod sebou (flex-direction: column)');
-        $this->assertMatchesRegularExpression('/width\s*:\s*100%/', $body, 'Viac menu: polozka musi vyplnit cely riadok (width: 100%), aj tlacidlo odhlasenia');
-        $this->assertSame(1, preg_match('/min-height\s*:\s*(\d+)px/', $body, $h), 'Viac menu: chyba min-height v px (dotykovy cielik)');
-        $this->assertGreaterThanOrEqual(48, (int) $h[1], 'Viac menu: dotykovy cielik musi mat aspon 48px');
+        $this->assertSame(1, preg_match_all('/(?<![\w-])\.more-tile\s*\{([^}]*)\}/', $css, $t), 'Pravidlo .more-tile musi byt prave jedno.');
+        $this->assertMatchesRegularExpression('/flex-direction\s*:\s*column/', $t[1][0], 'Viac: dlazdica ma byt stlpec');
+        $this->assertSame(1, preg_match('/min-height\s*:\s*(\d+)px/', $t[1][0], $h), 'Viac: chyba min-height v px');
+        $this->assertGreaterThanOrEqual(48, (int) $h[1], 'Viac: dotykovy cielik aspon 48px');
+        $this->assertSame(1, preg_match('/\.more-tile:focus-visible\s*\{[^}]*outline/', $css), 'Viac: dlazdica musi mat viditelny focus');
+        $this->assertStringNotContainsString('.more-item', $css, 'Povodne pravidlo .more-item ma byt odstranene');
     }
 }
