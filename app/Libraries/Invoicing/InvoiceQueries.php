@@ -15,7 +15,8 @@ final class InvoiceQueries
 {
     private const SORT_SQL = [
         'number'           => 'i.number',
-        'client'           => 'c.name',
+        // musi sa zhodovat s ClientNameSql::snapshotName('f') (const nemoze volat metodu), pinuje to test radenia
+        'client'           => "COALESCE(NULLIF(f.snapshot->'client'->>'name', ''), c.name)",
         'issue_date'       => 'i.issue_date',
         'turnover_date'    => 'f.turnover_date',
         'due_date'         => 'i.due_date',
@@ -102,7 +103,7 @@ final class InvoiceQueries
         }
 
         $rows = $this->db->query(
-            'SELECT i.id, i.origin, i.number, i.external_ref, i.issue_date, i.billing_month, i.currency, i.total, i.created_at, c.name AS client_name,
+            'SELECT i.id, i.origin, i.number, i.external_ref, i.issue_date, i.billing_month, i.currency, i.total, i.created_at, ' . ClientNameSql::snapshotName('f') . ' AS client_name,
                     i.status, i.balance, i.paid_amount, i.due_date, i.type, i.credit_note_number, i.corrected_number, i.sent_at,
                     f.fx_rate, f.total_entity_ccy, f.snapshot->\'fx\'->>\'entity_currency\' AS entity_currency,
                     f.entity_id, f.turnover_date, f.delivery_date,
@@ -141,7 +142,7 @@ final class InvoiceQueries
         $invoice = $this->db->query(
             'SELECT i.id, i.origin, i.type, i.number, i.external_ref, i.client_id, i.billing_month, i.issue_date, i.delivery_date, i.due_date,
                     i.currency, i.total, i.line_count, i.doc_language, i.vat_regime, i.exemption_code, i.payment_method,
-                    i.template_version, i.snapshot_schema, i.snapshot, i.created_at, c.name AS client_name,
+                    i.template_version, i.snapshot_schema, i.snapshot, i.created_at, ' . ClientNameSql::snapshotName('i') . ' AS client_name,
                     i.total_entity_ccy, i.fx_rate, i.fx_source, i.fx_date, i.fx_table_no, i.fx_date_basis,
                     i.corrected_invoice_id, i.correction_reason, i.correction_type
              FROM invoices i JOIN clients c ON c.id = i.client_id

@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace App\Libraries\Reporting;
 
+use App\Libraries\Invoicing\ClientNameSql;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
 
 /**
  * Doklady balika pre uctovnicku (D-09, D-10). Rovnaka podmienka vyberu ako ReportCalculator (subjekt, vystavene,
  * datum dodania v obdobi), aby sucet sedel s prehladom. Nikdy nenacitava obsah PDF, iba jeho velkost.
+ *
+ * Balik (aj prehlady) vybera doklady podla turnover_date (datum dodania, danove pravidlo "podla datumu dodania,
+ * minus dobropisy"), kym rocny archiv (YearArchive) vybera podla issue_date (zakonna archivacia): januarovy
+ * dobropis k decembrovej fakture je teda v decembrovom baliku a v januarovom archive. Nazov klienta je zo snapshotu (D-01).
  */
 final class BundleSelector
 {
@@ -32,7 +37,7 @@ final class BundleSelector
     public function documents(int $entityId, ReportPeriod $p): array
     {
         $rows = $this->db->query(
-            "SELECT f.id, f.origin, f.type, f.number, f.external_ref, c.name AS client_name, f.issue_date, f.turnover_date, f.due_date,
+            'SELECT f.id, f.origin, f.type, f.number, f.external_ref, ' . ClientNameSql::snapshotName('f') . " AS client_name, f.issue_date, f.turnover_date, f.due_date,
                     f.currency, f.total, f.fx_rate, f.total_entity_ccy, i.status, i.last_paid_on, f.doc_language, d.byte_size
              FROM invoices f
              JOIN invoice_status_v i ON i.id = f.id
