@@ -122,6 +122,22 @@ final class ExportEndpointsTest extends AuthTestCase
         $this->get('/reports/month.csv?period=abc');
     }
 
+    public function testOutOfRangePeriodIs404(): void
+    {
+        $this->seed();
+        $this->login();
+        $this->expectException(PageNotFoundException::class);
+        $this->get('/reports/month.csv?period=9999-12');
+    }
+
+    public function testOutOfRangePeriodXlsxIs404(): void
+    {
+        $this->seed();
+        $this->login();
+        $this->expectException(PageNotFoundException::class);
+        $this->get('/reports/month.xlsx?period=9999-12');
+    }
+
     public function testAccountantIsForbidden(): void
     {
         $this->seed();

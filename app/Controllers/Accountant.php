@@ -104,7 +104,11 @@ final class Accountant extends BaseController
         try {
             $period = ReportPeriod::range($from, $to);
         } catch (InvalidArgumentException $e) {
-            $error = $e->getMessage() === 'too_long' ? 'Bundle.errorTooLong' : 'Bundle.errorOrder';
+            $error = match ($e->getMessage()) {
+                'too_long'     => 'Bundle.errorTooLong',
+                'out_of_range' => 'Bundle.errorRange',
+                default        => 'Bundle.errorOrder',
+            };
         }
 
         return ['entities' => $entities, 'entityId' => $entity['id'] ?? null, 'entity' => $entity, 'from' => $from, 'to' => $to, 'period' => $period, 'error' => $error];

@@ -30,7 +30,11 @@ use App\Libraries\Reporting\ReportResult;
     <?php else : ?>
         <?php $money = static fn (string $amount): string => MoneyFormat::format($amount, $result->currency, $locale) ?>
         <div class="rpt-switch d-flex align-items-center justify-content-between gap-2 mb-3">
-            <a class="btn btn-outline-secondary btn-touch" href="<?= esc((string) $prevUrl) ?>" hx-get="<?= esc((string) $prevUrl) ?>" hx-target="#report-body" hx-swap="outerHTML" hx-push-url="true"><?= esc(lang('Reports.prev')) ?></a>
+            <?php if ($prevUrl !== null) : ?>
+                <a class="btn btn-outline-secondary btn-touch" href="<?= esc($prevUrl) ?>" hx-get="<?= esc($prevUrl) ?>" hx-target="#report-body" hx-swap="outerHTML" hx-push-url="true"><?= esc(lang('Reports.prev')) ?></a>
+            <?php else : ?>
+                <span class="btn btn-outline-secondary btn-touch disabled" aria-disabled="true"><?= esc(lang('Reports.prev')) ?></span>
+            <?php endif ?>
             <span class="fs-5 fw-semibold" aria-current="page"><?= esc($periodLabel) ?></span>
             <?php if ($nextUrl !== null) : ?>
                 <a class="btn btn-outline-secondary btn-touch" href="<?= esc($nextUrl) ?>" hx-get="<?= esc($nextUrl) ?>" hx-target="#report-body" hx-swap="outerHTML" hx-push-url="true"><?= esc(lang('Reports.next')) ?></a>

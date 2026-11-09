@@ -21,6 +21,7 @@ return [
     'externalNote'     => 'Faktury zewnętrzne (wystawione poza aplikacją) nie są w paczce.',
     'errorOrder'       => 'Miesiąc „Od” nie może być późniejszy niż miesiąc „Do”.',
     'errorTooLong'     => 'Okres może mieć najwyżej 12 miesięcy.',
+    'errorRange'       => 'Okres musi mieścić się w przedziale od stycznia 2000 do grudnia 2100. Popraw miesiące i spróbuj ponownie.',
     'errorMissingPdf'  => 'Dla dokumentów ({0}) brakuje zapisanego PDF: {1}. Paczka nie została utworzona.',
     'errorTooLarge'    => 'Paczka jest zbyt duża. Wybierz krótszy okres.',
     'errorBuild'       => 'Nie udało się utworzyć paczki. Spróbuj krótszego okresu lub powtórz.',
