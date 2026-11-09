@@ -55,7 +55,7 @@ final class UsersListTest extends AuthTestCase
         $this->assertStringContainsString('Vypnuté', $body);
         $this->assertStringContainsString('3. 11. 2026 08:30', $body);
         $this->assertStringContainsString('nikdy', $body);
-        $this->assertStringNotContainsString('<form method="post"', $body);
+        $this->assertStringNotContainsString('<form method="post" action="/settings/users', $body); // header ma form odhlasenia
         $this->assertStringNotContainsString('/settings/users/new', $body);
     }
 
