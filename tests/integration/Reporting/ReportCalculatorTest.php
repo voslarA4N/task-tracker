@@ -160,4 +160,43 @@ final class ReportCalculatorTest extends PgTestCase
         $this->assertSame('0.00', $r->invoicedTotal);
         $this->assertSame('0.00', $r->countedTotal);
     }
+
+    private function snap(string $name): string
+    {
+        return json_encode(['schema' => 1, 'client' => ['name' => $name]], JSON_THROW_ON_ERROR);
+    }
+
+    private function renameClient(int $id, string $name): void
+    {
+        $this->rw()->query('UPDATE clients SET name = :n: WHERE id = :id:', ['n' => $name, 'id' => $id]);
+    }
+
+    public function testLabelIsLatestSnapshotNamePerClientMonthAndYear(): void
+    {
+        $this->reportInvoice($this->entity, $this->clientA, '2026-10-05', '1000.00', ['issue_date' => '2026-10-05', 'snapshot' => $this->snap('Old s.r.o.')]);
+        $this->reportInvoice($this->entity, $this->clientA, '2026-10-20', '80.00', ['issue_date' => '2026-10-20', 'snapshot' => $this->snap('New s.r.o.')]);
+        $this->renameClient($this->clientA, 'Live s.r.o.');
+
+        $m = $this->calc()->forPeriod($this->entity, ReportPeriod::month('2026-10'));
+        $this->assertCount(1, $m->clients);
+        $this->assertSame('New s.r.o.', $m->clients[0]['client_name']);
+        $this->assertSame('1080.00', $m->clients[0]['invoiced']);
+
+        $y = $this->calc()->forPeriod($this->entity, ReportPeriod::year(2026));
+        $this->assertCount(1, $y->clients);
+        $this->assertSame('New s.r.o.', $y->clients[0]['client_name']);
+        $this->assertSame($m->invoicedTotal, $y->invoicedTotal);
+    }
+
+    public function testPaymentOnlyClientUsesSnapshotName(): void
+    {
+        $inv = $this->reportInvoice($this->entity, $this->clientA, '2026-09-10', '100.00', ['snapshot' => $this->snap('Paid s.r.o.')]);
+        $this->reportPayment($inv, '2026-10-05', '100.00');
+        $this->renameClient($this->clientA, 'Live s.r.o.');
+
+        $r = $this->calc()->forPeriod($this->entity, ReportPeriod::month('2026-10'));
+        $this->assertCount(1, $r->clients);
+        $this->assertSame('Paid s.r.o.', $r->clients[0]['client_name']);
+        $this->assertSame('100.00', $r->paidTotal);
+    }
 }
