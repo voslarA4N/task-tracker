@@ -74,12 +74,16 @@ final class AccountantBundle
             throw new RuntimeException('Cannot create temporary bundle file.');
         }
 
-        try {
-            $zip = new ZipArchive();
+        $zip    = new ZipArchive();
+        $opened = false;
+        $closed = false;
 
+        try {
             if ($zip->open($tmp, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
                 throw new RuntimeException('Cannot open zip archive.');
             }
+
+            $opened = true;
 
             $store = new DocumentStore($this->db);
             $used  = [];
@@ -107,6 +111,8 @@ final class AccountantBundle
                 throw new RuntimeException('Cannot finalize zip archive.');
             }
 
+            $closed = true;
+
             $bytes = file_get_contents($tmp);
 
             if ($bytes === false) {
@@ -115,6 +121,12 @@ final class AccountantBundle
 
             return $bytes;
         } finally {
+            if ($opened && ! $closed) {
+                // Discard pending entries and close first, otherwise libzip re-creates $tmp on destruct after unlink.
+                $zip->unchangeAll();
+                @$zip->close();
+            }
+
             if (is_file($tmp)) {
                 unlink($tmp);
             }

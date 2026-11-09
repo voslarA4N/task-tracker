@@ -8,6 +8,7 @@ use App\Libraries\Export\AccountantBundle;
 use App\Libraries\Export\BundleRejected;
 use App\Libraries\Export\DocumentListExport;
 use App\Libraries\Invoicing\DocumentFilename;
+use App\Libraries\Invoicing\DocumentIntegrityError;
 use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Platform\Money;
 use App\Libraries\Reporting\BundleSelector;
@@ -198,6 +199,36 @@ final class AccountantBundleTest extends PgTestCase
         } catch (BundleRejected $e) {
             $this->assertSame('missing_pdf', $e->reason);
             $this->assertSame(['NOPDF1'], $e->numbers);
+        }
+
+        $this->assertSame($before, glob(WRITEPATH . 'exports/zip*') ?: []);
+    }
+
+    public function testIntegrityFailureLeavesNoFile(): void
+    {
+        // Corrupt the LAST document (a pending entry already sits in the archive when it fails).
+        // The DB CHECK normally makes a sha256 mismatch impossible, so lift it for the duration of the test.
+        $id    = $this->reportInvoice($this->entity, $this->client, '2026-10-28', '50.00', ['number' => 'BADSHA1']);
+        $owner = $this->owner();
+        $guard = "ALTER TABLE invoice_documents %s TRIGGER invoice_documents_immutable";
+        $owner->query(sprintf($guard, 'DISABLE'));
+        $owner->query('ALTER TABLE invoice_documents DROP CONSTRAINT invoice_documents_check1');
+        $good = (string) $owner->query("SELECT sha256 FROM invoice_documents WHERE invoice_id = :i: AND kind = 'invoice'", ['i' => $id])->getRow()->sha256;
+        $owner->query("UPDATE invoice_documents SET sha256 = :s: WHERE invoice_id = :i: AND kind = 'invoice'", ['s' => str_repeat('a', 64), 'i' => $id]);
+        $owner->query(sprintf($guard, 'ENABLE'));
+
+        $before = glob(WRITEPATH . 'exports/zip*') ?: [];
+
+        try {
+            (new AccountantBundle($this->rw()))->build($this->entity, $this->period());
+            $this->fail('Expected DocumentIntegrityError');
+        } catch (DocumentIntegrityError) {
+            $this->addToAssertionCount(1);
+        } finally {
+            $owner->query(sprintf($guard, 'DISABLE'));
+            $owner->query("UPDATE invoice_documents SET sha256 = :s: WHERE invoice_id = :i: AND kind = 'invoice'", ['s' => $good, 'i' => $id]);
+            $owner->query("ALTER TABLE invoice_documents ADD CONSTRAINT invoice_documents_check1 CHECK (sha256 = encode(sha256(content), 'hex'))");
+            $owner->query(sprintf($guard, 'ENABLE'));
         }
 
         $this->assertSame($before, glob(WRITEPATH . 'exports/zip*') ?: []);
