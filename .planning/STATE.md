@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 12-13-PLAN.md
-last_updated: "2026-11-09T16:30:01.630Z"
+status: planning
+stopped_at: Phase 12.1 context gathered
+last_updated: "2026-11-09T17:32:03.853Z"
 last_activity: 2026-11-09
 progress:
-  total_phases: 13
+  total_phases: 14
   completed_phases: 13
   total_plans: 145
   completed_plans: 145
-  percent: 100
+  percent: 93
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 
 ## Current Position
 
-Phase: 12
+Phase: 12.1
 Plan: Not started
-Status: Phase complete — ready for verification
+Status: Inserted after milestone audit — ready to plan (/gsd-plan-phase 12.1)
 Last activity: 2026-11-09
 
 Progress: [░░░░░░░░░░] 0%
@@ -164,6 +164,7 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 11.1 inserted after Phase 11: Pregenerovanie dokladov z kópie údajov — nová verzia výkazu (kedykoľvek) a PDF faktúry (do nastaviteľných 72 h) zo snapshotu, append-only (URGENT)
+- Phase 12.1 inserted after Phase 12: Uzavretie medzier z auditu v1.0 (RPT-02/RPT-03 meno klienta zo snapshotu, WR-01/WR-02/W4) a kontrola a oprava dizajnu (nalepené texty, chýbajúce okraje a odsadenia) (URGENT)
 
 ### Pending Todos
 
@@ -200,6 +201,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-04T23:27:24.351Z
-Stopped at: Completed 12-13-PLAN.md
-Resume file: None
+Last session: 2026-11-09T17:32:03.848Z
+Stopped at: Phase 12.1 context gathered
+Resume file: .planning/phases/12.1-close-gaps-and-ui-polish-snapshot-client-name-in-all-read-pa/12.1-CONTEXT.md

@@ -677,3 +677,21 @@ Plans:
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
 | 11. Prehľady, exporty a audit | 11/11 | Complete   | 2026-11-04 |
 | 12. Lokalizácia a produkcia | 15/15 | Complete    | 2026-11-09 |
+
+### Phase 12.1: Close gaps and UI polish: snapshot client name in all read paths (RPT-02/RPT-03), WR-01/WR-02/W4 fixes, design review and fix of overlapping texts, missing margins and paddings (INSERTED)
+
+**Goal:** Uzavrieť medzery z auditu v1.0 (`.planning/v1.0-MILESTONE-AUDIT.md`): vystavené doklady všade zobrazujú názov klienta z kópie údajov, prehľady a balík pre účtovníčku sú robustné. Zároveň skontrolovať a opraviť vizuálny dizajn aplikácie (texty nalepené na sebe, chýbajúce okraje a odsadenia) na PC aj iPhone.
+**Requirements**: RPT-02, RPT-03 (gap closure), RPT-01, UI-01, UI-03
+**Depends on:** Phase 12
+
+**Success Criteria** (what must be TRUE):
+1. Po premenovaní klienta sa zoznam faktúr, detail, export CSV/XLSX, CSV v balíku pre účtovníčku, mesačný/ročný prehľad, dashboard (po splatnosti) a hlavička úhrady zhodujú s menom na vystavenom PDF (snapshot; živé meno len pre externé faktúry). Pokryté testom.
+2. `/reports/month`, `/reports/year`, ich CSV/XLSX a `/reports/accountant` s obdobím mimo 2000-01..2100-12 nevrátia HTTP 500 (WR-02).
+3. Chyba pri skladaní ZIP balíka nenechá v `writable/exports` žiadny zvyšok (WR-01), pokryté testom.
+4. Je rozhodnutý a zdokumentovaný dátumový základ dobropisov v ročnom archíve vs prehľad/balík (W4) a kód mu zodpovedá.
+5. Dizajnová kontrola všetkých hlavných obrazoviek (dashboard, úlohy, faktúry, fakturácia mesiaca, úhrady, prehľady, účtovníčka, audit, nastavenia, prihlásenie/2FA) na šírke 375 px a desktop: žiadne texty nalepené na sebe ani prekrývajúce sa, konzistentné okraje a odsadenia (Bootstrap spacing), bez horizontálneho posúvania, dotykové ciele ≥ 44 px, v SK aj dlhších PL/CS textoch. Nálezy a opravy zapísané, vlastník potvrdí na stagingu.
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 12.1 to break down)
