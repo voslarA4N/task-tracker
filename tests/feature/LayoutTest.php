@@ -8,6 +8,7 @@ use CodeIgniter\Exceptions\PageNotFoundException;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\AuthTestCase;
 
@@ -120,6 +121,39 @@ final class LayoutTest extends AuthTestCase
 
             $this->assertStringContainsString('<html lang="en">', $html, $page);
             $this->assertMatchesRegularExpression('#href="/assets/css/app\.css\?v=\d+"#', html_entity_decode($html, ENT_QUOTES | ENT_HTML5), $page);
+        }
+    }
+
+    /**
+     * D-12 / R9: hlavne stranky v sk, pl a cs nemaju inline style ani inline script.
+     */
+    #[DataProvider('provideMainPages')]
+    public function testMainPagesHaveNoInlineStyleOrScript(string $locale, string $url): void
+    {
+        // Pouzivatel z setUp() je uz prihlaseny; zmenime mu len jazyk.
+        $this->owner()->query('UPDATE user_security SET locale = ?', [$locale]);
+
+        $result = $this->get($url);
+        $result->assertStatus(200);
+        $html = (string) $result->response()->getBody();
+
+        $this->assertStringContainsString('<html lang="' . $locale . '"', $html);
+        $this->assertSame(0, preg_match('/\sstyle\s*=/i', $html), "inline style na {$url} ({$locale})");
+        $this->assertSame(0, preg_match('/<script\b(?![^>]*\bsrc=)[^>]*>/i', $html), "inline script na {$url} ({$locale})");
+        $this->assertMatchesRegularExpression('#/assets/css/app\.css\?v=\d+#', html_entity_decode($html, ENT_QUOTES | ENT_HTML5));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideMainPages(): iterable
+    {
+        $urls = ['/', '/tasks', '/invoices', '/invoices/new', '/reports/month', '/reports/accountant', '/settings/security', '/more'];
+
+        foreach (['sk', 'pl', 'cs'] as $locale) {
+            foreach ($urls as $url) {
+                yield $locale . ' ' . $url => [$locale, $url];
+            }
         }
     }
 }
