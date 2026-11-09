@@ -82,4 +82,19 @@ final class AppCssScaleTest extends TestCase
 
         $this->assertSame([], $problems, "Velkost pisma mimo 12/16/20/28:\n" . implode("\n", $problems));
     }
+
+    public function testMoreItemStacksTitleAndHint(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 3) . '/public/assets/css/app.css');
+        $css = (string) preg_replace('#/\*.*?\*/#s', '', $css);
+
+        $this->assertSame(1, preg_match_all('/(?<![\w-])\.more-item\s*\{([^}]*)\}/', $css, $m), 'Pravidlo .more-item musi byt prave jedno.');
+
+        $body = (string) preg_replace('/\s+/', ' ', $m[1][0]);
+
+        $this->assertMatchesRegularExpression('/flex-direction\s*:\s*column/', $body, 'Viac menu: nazov a popis musia byt pod sebou (flex-direction: column)');
+        $this->assertMatchesRegularExpression('/width\s*:\s*100%/', $body, 'Viac menu: polozka musi vyplnit cely riadok (width: 100%), aj tlacidlo odhlasenia');
+        $this->assertSame(1, preg_match('/min-height\s*:\s*(\d+)px/', $body, $h), 'Viac menu: chyba min-height v px (dotykovy cielik)');
+        $this->assertGreaterThanOrEqual(48, (int) $h[1], 'Viac menu: dotykovy cielik musi mat aspon 48px');
+    }
 }
