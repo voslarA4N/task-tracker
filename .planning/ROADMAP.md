@@ -685,20 +685,28 @@ Plans:
 **Depends on:** Phase 12
 
 **Success Criteria** (what must be TRUE):
+
 1. Po premenovaní klienta sa zoznam faktúr, detail, export CSV/XLSX, CSV v balíku pre účtovníčku, mesačný/ročný prehľad, dashboard (po splatnosti) a hlavička úhrady zhodujú s menom na vystavenom PDF (snapshot; živé meno len pre externé faktúry). Pokryté testom.
 2. `/reports/month`, `/reports/year`, ich CSV/XLSX a `/reports/accountant` s obdobím mimo 2000-01..2100-12 nevrátia HTTP 500 (WR-02).
 3. Chyba pri skladaní ZIP balíka nenechá v `writable/exports` žiadny zvyšok (WR-01), pokryté testom.
 4. Je rozhodnutý a zdokumentovaný dátumový základ dobropisov v ročnom archíve vs prehľad/balík (W4) a kód mu zodpovedá.
 5. Dizajnová kontrola všetkých hlavných obrazoviek (dashboard, úlohy, faktúry, fakturácia mesiaca, úhrady, prehľady, účtovníčka, audit, nastavenia, prihlásenie/2FA) na šírke 375 px a desktop: žiadne texty nalepené na sebe ani prekrývajúce sa, konzistentné okraje a odsadenia (Bootstrap spacing), bez horizontálneho posúvania, dotykové ciele ≥ 44 px, v SK aj dlhších PL/CS textoch. Nálezy a opravy zapísané, vlastník potvrdí na stagingu.
-**Plans:** 8 plans
 
+**Plans:** 8 plans
 Plans:
+**Wave 1**
 
 - [ ] 12.1-01-PLAN.md — ClientNameSql helper, snapshot client name in invoice list/sort/detail/export and bundle CSV (vlna 1)
-- [ ] 12.1-02-PLAN.md — Prehľady: label klienta zo snapshotu posledného dokladu v období (D-03), súčty nezmenené (vlna 2)
-- [ ] 12.1-03-PLAN.md — Dashboard po splatnosti, hlavička úhrady a odoslania zo snapshotu + feature test (vlna 2)
 - [ ] 12.1-04-PLAN.md — Hranice obdobia 2000-01..2100-12 v ReportPeriod, redirect/404/422 namiesto 500, Bundle.errorRange v 4 jazykoch (vlna 1)
 - [ ] 12.1-05-PLAN.md — ZIP balík: unchangeAll + close pred unlink, regresný test bez zvyškov (vlna 1)
-- [ ] 12.1-06-PLAN.md — D-05 test premenovania klienta na všetkých cestách, D-08 test dátumového základu a dokumentácia (vlna 3)
 - [ ] 12.1-07-PLAN.md — Dizajnová kontrola: DESIGN-REVIEW, strážne testy CSS/CSP, globálne opravy app.css (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 12.1-02-PLAN.md — Prehľady: label klienta zo snapshotu posledného dokladu v období (D-03), súčty nezmenené (vlna 2)
+- [ ] 12.1-03-PLAN.md — Dashboard po splatnosti, hlavička úhrady a odoslania zo snapshotu + feature test (vlna 2)
 - [ ] 12.1-08-PLAN.md — Opravy v šablónach (tabuľky, 44 px, štítky, pills), strážny test šablón, HUMAN-UAT na stagingu (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 12.1-06-PLAN.md — D-05 test premenovania klienta na všetkých cestách, D-08 test dátumového základu a dokumentácia (vlna 3)
