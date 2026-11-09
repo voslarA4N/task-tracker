@@ -63,6 +63,13 @@ Tabuľku vypĺňa plán 12-15 po meraní na VPS.
 | 2026-11-09 | staging | app-only (FastCGI na php-fpm, n=60) PRED ladením: p50 / p95 `/` 129 / 152, `/tasks` 98 / 123, `/invoices` 121 / 148, `/reports/month` 82 / 108 ms | p95 max 152 ms | < 100 ms | FAIL |
 | 2026-11-09 | staging | app-only (FastCGI, n=60) PO ladení (commity bbd31ca a be3dc26): `/` 55 / 76, `/tasks` 43 / 53, `/invoices` 54 / 66, `/reports/month` 28 / 34 ms (druhý beh: `/` 63 / 87, ostatné rovnako) | p95 max 87 ms | < 100 ms | OK |
 | 2026-11-09 | staging | cez verejnú URL (Cloudflare, `measure-p95.sh`, SK, n=50) PO ladení: `/` 161 / 229, `/tasks` 131 / 178, `/invoices` 143 / 172, `/reports/month` 110 / 134 ms, ALL p95 191 ms (pred: 241) | p95 191 ms | < 100 ms | FAIL (sieť) |
+| 2026-11-09 | prod | app-only (FastCGI na php-fpm, `fc-prod.php`, n=50) PRED ladením: `/` 125 / 146, `/tasks` 76 / 94, `/invoices` 89 / 109, `/reports/month` 75 / 104 ms | p95 ALL 138 ms | < 100 ms | FAIL |
+| 2026-11-09 | prod | cez verejnú URL (Cloudflare, `measure-p95.sh`, n=50) PRED ladením: `/` 219 / 269, `/tasks` 180 / 220, `/invoices` 185 / 244, `/reports/month` 171 / 223 ms | p95 ALL 245 ms | < 100 ms | FAIL (sieť) |
+| 2026-11-09 | prod | PDF faktúry `/invoices/4/pdf` cez Cloudflare (n=10) | p50 183 ms, p95 230 ms | < 2000 ms | OK |
+| 2026-11-09 | prod | pamäť prod stack task-tracker v pokoji (nginx 5.6 + php 45.2 + db 46.5) | 97.3 MiB | < 512 MiB | OK |
+| 2026-11-09 | prod | pamäť ostatné (staging 97.8, mail 151.3, edge 2.6), `free -m`: used 1087 z 3814 MiB | informatívne | mimo limitu | info |
+| 2026-11-09 | prod | app-only (FastCGI, n=50) PO ladení (PR #14): `/` 46 / 61, `/tasks` 23 / 33, `/invoices` 31 / 38, `/reports/month` 24 / 30 ms | **p95 ALL 51 ms** | < 100 ms | **OK** |
+| 2026-11-09 | prod | cez verejnú URL (Cloudflare, n=50) PO ladení: `/` 151 / 205, `/tasks` 123 / 166, `/invoices` 126 / 165, `/reports/month` 118 / 152 ms | p95 ALL 176 ms | < 100 ms | FAIL (sieť) |
 
 ### Poznámky k meraniu na stagingu (2026-11-09)
 
@@ -85,6 +92,14 @@ Profilovanie (prod obraz lokálne, rovnaký seed, excimer vzorkovač v jednorazo
 
 Bezpečnosť trvalých spojení: aplikácia nepoužíva relačné `SET` (iba `SET LOCAL` a transakčné zámky); jediný session zámok `pg_advisory_lock` v `InvoiceMailer` sa uvoľňuje vo `finally` a pri páde procesu zaniká so spojením. PHP pri konci požiadavky vráti otvorenú transakciu späť. Po reštarte DB sa mŕtve trvalé spojenie obnovilo bez chyby (overené lokálne). Počet spojení je najviac `pm.max_children` (4) z `max_connections=20`. Pamäť stagingu po záťaži: db 77,7 MiB (predtým 69,6), php 29,3, nginx 5,2.
 
-**Pozor, odchýlka od CLAUDE.md** ("perzistentné DB spojenia: žiadny zisk, vyššia pamäť"): meranie to vyvrátilo, zisk je cca 2x a pamäťová cena je desiatky MiB. Zmenu treba pred produkciou schváliť vlastníkom.
+**Odchýlka od pôvodného CLAUDE.md** ("perzistentné DB spojenia: žiadny zisk, vyššia pamäť"): meranie to vyvrátilo, zisk je cca 2x a pamäťová cena je jednotky až desiatky MiB. Vlastník zmenu schválil 2026-11-09 a CLAUDE.md je upravený.
 
 Výsledok: app-only p95 na stagingu 34 až 87 ms (cieľ < 100 ms splnený, najslabšia je `/`). Cez Cloudflare p95 ALL 191 ms (pred 241): rozdiel k app-only je sieť (TCP+TLS+Cloudflare hop, základná línia `/login` 56 až 96 ms), nie aplikácia, takže cieľ 100 ms sa dá pri tomto spôsobe merania splniť len mimo Cloudflare. Ďalší možný zisk: `/` robí cca 30 dotazov (dashboard, limity obratu `TurnoverCalculator::forActiveEntities` cca 12 dotazov); zatiaľ netreba.
+
+### Produkcia (2026-11-09)
+
+Meranie so súhlasom vlastníka, iba GET požiadavky s jeho session cookie zadanou na serveri (`read -rs`), mimo chatu a repozitára. App-only cez `fc-prod.php` (FastCGI na php-fpm v kontajneri, bez nginx a Cloudflare), verejná URL cez `measure-p95.sh`. Prvé meranie bežalo ešte na kóde bez ladenia (deploy PR #14 čakal na schválenie prostredia `production`), druhé po nasadení.
+
+Záver (D-12, NFR-01): **odozva servera (app-only) p95 51 ms < 100 ms, splnené** na produkcii pre všetky štyri stránky. PDF 230 ms < 2 s. Prod stack v pokoji 97 MiB < 512 MiB. Cez Cloudflare je p95 176 ms; rozdiel tvorí sieť (TCP+TLS+Cloudflare hop, základná línia `/login` 56 až 96 ms), ktorú aplikácia neovplyvní, preto sa cieľ NFR-01 vzťahuje na odozvu servera (CLAUDE.md: "odozva servera p95 pod 100 ms").
+
+D-13: HTTP/2, kompresia, `immutable` cache statiky a hlavičky overil `smoke-server.sh` na produkcii (SMOKE OK 2026-11-06), OPcache, preload a `--classmap-authoritative` overené na stagingu s rovnakým obrazom a strážené `ProdHardeningConfigTest`. `zz-www.conf` ani `compose.server.yaml` sa nemenili.
