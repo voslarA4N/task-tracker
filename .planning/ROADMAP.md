@@ -19,7 +19,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 - [x] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí (completed 2026-11-01)
 - [x] **Phase 10: Limity obratu** - Tabuľka limitov, výpočet obratu, upozornenia a predkontrola pri vystavení (completed 2026-11-02)
 - [x] **Phase 11: Prehľady, exporty a audit** - Mesačné a ročné prehľady, CSV/XLSX, ZIP pre účtovníčku, prehliadač denníka, PC zoznamy (completed 2026-11-04)
-- [ ] **Phase 12: Lokalizácia a produkcia** - Preklady PL/CZ/EN, zálohy s overenou obnovou, archív dokladov, hardening a meranie výkonu
+- [x] **Phase 12: Lokalizácia a produkcia** - Preklady PL/CZ/EN, zálohy s overenou obnovou, archív dokladov, hardening a meranie výkonu (completed 2026-11-09)
 
 ## Phase Details
 
@@ -654,7 +654,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 12-15-PLAN.md — Meranie p95, PDF a pamäte na stagingu a produkcii, prípadné ladenie (vlna 5, checkpoint)
+- [x] 12-15-PLAN.md — Meranie p95, PDF a pamäte na stagingu a produkcii, prípadné ladenie (vlna 5, checkpoint)
 
 **UI hint**: yes
 **Poznámky**: Štandardné vzory, overiť len podmienky Hetzner Storage Box (port, append-only). Prune zálohy spúšťať mimo produkčného servera alebo s oddeleným kľúčom; kópia hesla repozitára a `encryption.key` mimo servera. **Závislosť od účtovníčky:** doba uchovávania (SK 10 rokov, PL podľa účtovníčky). Súčasťou je CLI reset 2FA a meranie `docker stats` a p95.
@@ -676,4 +676,4 @@ Plans:
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
 | 11. Prehľady, exporty a audit | 11/11 | Complete   | 2026-11-04 |
-| 12. Lokalizácia a produkcia | 14/15 | In Progress|  |
+| 12. Lokalizácia a produkcia | 15/15 | Complete   | 2026-11-09 |
