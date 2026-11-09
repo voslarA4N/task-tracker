@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Libraries\Invoicing\ClientNameSql;
 use App\Libraries\Platform\MoneyFormat;
 use App\Libraries\Platform\Uuid;
 use App\Libraries\Receivables\InvoiceStatusQueries;
@@ -125,7 +126,7 @@ final class Payments extends BaseController
     private function context(int $id): array
     {
         $invoice = db_connect()->query(
-            'SELECT i.id, i.number, i.origin, i.type, i.issue_date, c.name AS client_name FROM invoices i JOIN clients c ON c.id = i.client_id WHERE i.id = :id:',
+            'SELECT i.id, i.number, i.origin, i.type, i.issue_date, ' . ClientNameSql::snapshotName('i') . ' AS client_name FROM invoices i JOIN clients c ON c.id = i.client_id WHERE i.id = :id:',
             ['id' => $id],
         )->getRowArray();
         $status = (new InvoiceStatusQueries())->forInvoice($id, service('clock')->today());
