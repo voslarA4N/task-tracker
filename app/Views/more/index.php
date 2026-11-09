@@ -22,8 +22,4 @@ $items = [
     <a class="more-tile" href="<?= $href ?>"><?= view('layouts/_icon', ['name' => $icon, 'size' => 28, 'class' => 'more-tile-icon'], ['saveData' => false]) ?><span class="more-tile-title"><?= esc(lang($title)) ?></span><?php if ($hint !== null): ?><span class="more-tile-hint"><?= esc(lang($hint)) ?></span><?php endif; ?></a>
 <?php endforeach; ?>
 </div>
-<form method="post" action="/logout" class="more-logout">
-    <?= csrf_field() ?>
-    <button type="submit" class="btn btn-outline-secondary more-logout-btn"><?= esc(lang('Login.logout')) ?></button>
-</form>
 <?= $this->endSection() ?>

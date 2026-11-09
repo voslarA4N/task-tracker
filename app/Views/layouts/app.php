@@ -55,6 +55,10 @@ $htmxConfig = [
         <nav class="app-topnav d-none d-lg-flex" aria-label="<?= esc(lang('App.navLabel'), 'attr') ?>">
             <?= $this->include('layouts/_nav_items') ?>
         </nav>
+        <form method="post" action="/logout" class="app-logout-form">
+            <?= csrf_field() ?>
+            <button type="submit" class="app-logout"><?= view('layouts/_icon', ['name' => 'logout', 'size' => 20, 'class' => 'app-logout-icon'], ['saveData' => false]) ?><span><?= esc(lang('Login.logout')) ?></span></button>
+        </form>
     </header>
 
     <main id="content" class="app-main container-fluid<?= ! empty($mainWide) ? ' app-main--wide' : '' ?>">
