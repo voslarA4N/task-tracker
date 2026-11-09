@@ -71,6 +71,11 @@ body {
 }
 .app-topnav [aria-current="page"] { color: var(--app-primary); font-weight: 600; }
 
+.nav-icon { flex: none; }
+.app-tabbar a { flex-direction: column; gap: 4px; }
+.app-topnav a { gap: 8px; }
+.app-topnav .nav-icon { width: 20px; height: 20px; }
+
 .app-card {
   background: #fff;
   border-radius: 10px;

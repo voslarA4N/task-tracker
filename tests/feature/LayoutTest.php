@@ -42,6 +42,56 @@ final class LayoutTest extends AuthTestCase
         return new DOMXPath($dom);
     }
 
+    public function testNavLinksHaveIcons(): void
+    {
+        $xp = $this->xpath($this->homeHtml());
+        $hrefs = ['/', '/tasks', '/invoices', '/more'];
+        $labels = [lang('App.navOverview'), lang('App.navTasks'), lang('App.navInvoices'), lang('App.navMore')];
+
+        foreach (['app-topnav', 'app-tabbar'] as $cls) {
+            $links = $xp->query('//nav[contains(@class,"' . $cls . '")]/a');
+            $this->assertSame(4, $links->length, $cls);
+            $bodies = [];
+
+            foreach ($links as $i => $a) {
+                $this->assertInstanceOf(DOMElement::class, $a);
+                $this->assertSame($hrefs[$i], $a->getAttribute('href'));
+                $svgs = $xp->query('./svg', $a);
+                $this->assertSame(1, $svgs->length, $cls . ' ' . $hrefs[$i]);
+                $svg = $svgs->item(0);
+                $this->assertInstanceOf(DOMElement::class, $svg);
+                $this->assertSame('nav-icon', $svg->getAttribute('class'));
+                $this->assertSame('true', $svg->getAttribute('aria-hidden'));
+                $this->assertSame('false', $svg->getAttribute('focusable'));
+                $this->assertSame($labels[$i], trim($a->textContent));
+                $bodies[] = $svg->ownerDocument->saveHTML($svg);
+            }
+            $this->assertCount(4, array_unique($bodies));
+        }
+    }
+
+    #[DataProvider('provideNavCurrent')]
+    public function testNavAriaCurrentOnlyOnActive(string $url, string $href): void
+    {
+        $result = $this->get($url);
+        $result->assertStatus(200);
+        $xp = $this->xpath((string) $result->getBody());
+
+        foreach (['app-topnav', 'app-tabbar'] as $cls) {
+            $cur = $xp->query('//nav[contains(@class,"' . $cls . '")]/a[@aria-current="page"]');
+            $this->assertSame(1, $cur->length, $cls);
+            $this->assertSame($href, $cur->item(0)->getAttribute('href'));
+        }
+    }
+
+    public static function provideNavCurrent(): iterable
+    {
+        yield 'home' => ['/', '/'];
+        yield 'tasks' => ['/tasks', '/tasks'];
+        yield 'invoices' => ['/invoices', '/invoices'];
+        yield 'more' => ['/more', '/more'];
+    }
+
     public function testHomeRendersLayoutAssets(): void
     {
         $html = $this->homeHtml();

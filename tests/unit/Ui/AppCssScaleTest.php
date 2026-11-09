@@ -102,4 +102,20 @@ final class AppCssScaleTest extends TestCase
         $this->assertSame(1, preg_match('/\.more-tile:focus-visible\s*\{[^}]*outline/', $css), 'Viac: dlazdica musi mat viditelny focus');
         $this->assertStringNotContainsString('.more-item', $css, 'Povodne pravidlo .more-item ma byt odstranene');
     }
+
+    public function testNavIconLayout(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 3) . '/public/assets/css/app.css');
+        $css = (string) preg_replace('#/\*.*?\*/#s', '', $css);
+        $css = (string) preg_replace('/\s+/', ' ', $css);
+
+        $this->assertSame(1, preg_match_all('/(?:^|\} )\.app-tabbar a \{([^}]*)\}/', $css, $t), 'Tabbar: samostatne pravidlo .app-tabbar a');
+        $this->assertStringContainsString('flex-direction: column', $t[1][0]);
+        $this->assertStringContainsString('gap: 4px', $t[1][0]);
+        $this->assertSame(1, preg_match('/\.app-topnav a \{[^}]*gap: 8px/', $css), 'Topnav: gap 8px');
+        $this->assertSame(1, preg_match('/(?<![\w-])\.nav-icon \{[^}]*flex: none/', $css));
+        $this->assertSame(1, preg_match('/\.app-topnav \.nav-icon \{(?=[^}]*width: 20px)[^}]*height: 20px/', $css));
+        $this->assertSame(1, preg_match('/\.app-tabbar a, \.app-tabbar span \{[^}]*min-height: 44px/', $css));
+        $this->assertSame(1, preg_match('/\.app-tabbar \{(?=[^}]*bottom: 0)[^}]*padding-bottom: env\(safe-area-inset-bottom\)/', $css));
+    }
 }
