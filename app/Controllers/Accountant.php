@@ -18,6 +18,7 @@ use App\Libraries\Work\BillingMonth;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\ResponseInterface;
 use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * Balik pre uctovnicku (RPT-03): ZIP s ulozenymi PDF a CSV zoznamom. Vsetky akcie su iba GET a iba pre admina.
@@ -62,6 +63,10 @@ final class Accountant extends BaseController
             return $this->page($in, ['alertText' => $text] + $this->previewData($in), 'reports/accountant/index', 422);
         } catch (DocumentIntegrityError $e) {
             log_message('critical', 'Accountant bundle failed integrity check: {message}', ['message' => $e->getMessage()]);
+
+            return $this->page($in, ['alertText' => lang('Bundle.errorBuild')] + $this->previewData($in), 'reports/accountant/index', 500);
+        } catch (RuntimeException $e) {
+            log_message('error', 'Accountant bundle build failed: {message}', ['message' => $e->getMessage()]);
 
             return $this->page($in, ['alertText' => lang('Bundle.errorBuild')] + $this->previewData($in), 'reports/accountant/index', 500);
         }
