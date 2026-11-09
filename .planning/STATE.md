@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 12.1 UI-SPEC approved
-last_updated: "2026-11-09T18:31:25.997Z"
-last_activity: 2026-11-09 -- Phase 12.1 planning complete
+stopped_at: Completed 12.1-01-PLAN.md
+last_updated: "2026-11-09T19:23:07.542Z"
+last_activity: 2026-11-09
 progress:
   total_phases: 14
   completed_phases: 13
   total_plans: 153
-  completed_plans: 145
+  completed_plans: 146
   percent: 93
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 12 — lokaliz-cia-a-produkcia
+**Current focus:** Phase 12.1 — close-gaps-and-ui-polish
 
 ## Current Position
 
-Phase: 12.1
-Plan: Not started
+Phase: 12.1 (close-gaps-and-ui-polish) — EXECUTING
+Plan: 2 of 8
 Status: Ready to execute
-Last activity: 2026-11-09 -- Phase 12.1 planning complete
+Last activity: 2026-11-09
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -201,6 +201,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-09T17:39:05.970Z
-Stopped at: Phase 12.1 UI-SPEC approved
-Resume file: .planning/phases/12.1-close-gaps-and-ui-polish-snapshot-client-name-in-all-read-pa/12.1-UI-SPEC.md
+Last session: 2026-11-09T19:23:07.535Z
+Stopped at: Completed 12.1-01-PLAN.md
+Resume file: None

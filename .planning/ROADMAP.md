@@ -692,11 +692,11 @@ Plans:
 4. Je rozhodnutý a zdokumentovaný dátumový základ dobropisov v ročnom archíve vs prehľad/balík (W4) a kód mu zodpovedá.
 5. Dizajnová kontrola všetkých hlavných obrazoviek (dashboard, úlohy, faktúry, fakturácia mesiaca, úhrady, prehľady, účtovníčka, audit, nastavenia, prihlásenie/2FA) na šírke 375 px a desktop: žiadne texty nalepené na sebe ani prekrývajúce sa, konzistentné okraje a odsadenia (Bootstrap spacing), bez horizontálneho posúvania, dotykové ciele ≥ 44 px, v SK aj dlhších PL/CS textoch. Nálezy a opravy zapísané, vlastník potvrdí na stagingu.
 
-**Plans:** 8 plans
+**Plans:** 1/8 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 12.1-01-PLAN.md — ClientNameSql helper, snapshot client name in invoice list/sort/detail/export and bundle CSV (vlna 1)
+- [x] 12.1-01-PLAN.md — ClientNameSql helper, snapshot client name in invoice list/sort/detail/export and bundle CSV (vlna 1)
 - [ ] 12.1-04-PLAN.md — Hranice obdobia 2000-01..2100-12 v ReportPeriod, redirect/404/422 namiesto 500, Bundle.errorRange v 4 jazykoch (vlna 1)
 - [ ] 12.1-05-PLAN.md — ZIP balík: unchangeAll + close pred unlink, regresný test bez zvyškov (vlna 1)
 - [ ] 12.1-07-PLAN.md — Dizajnová kontrola: DESIGN-REVIEW, strážne testy CSS/CSP, globálne opravy app.css (vlna 1)
