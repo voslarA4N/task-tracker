@@ -18,13 +18,13 @@ $isCn     = ($row['type'] ?? 'invoice') === 'credit_note';
 };
 ?>
 <?php if ($external) : ?>
-    <span class="st-badge badge text-bg-secondary"><?= esc(lang('Invoices.badgeExternal')) ?></span>
+    <span class="st-badge badge text-wrap text-bg-secondary"><?= esc(lang('Invoices.badgeExternal')) ?></span>
 <?php else : ?>
-    <span class="st-badge badge <?= esc($stClass, 'attr') ?>"><?= esc(lang($stKey)) ?></span>
+    <span class="st-badge badge text-wrap <?= esc($stClass, 'attr') ?>"><?= esc(lang($stKey)) ?></span>
     <?php if ($isCn) : ?>
-        <span class="st-badge badge text-bg-secondary"><?= esc(lang(! empty($row['sent_at']) ? 'Invoices.statusCnSent' : 'Invoices.statusCnIssued')) ?></span>
+        <span class="st-badge badge text-wrap text-bg-secondary"><?= esc(lang(! empty($row['sent_at']) ? 'Invoices.statusCnSent' : 'Invoices.statusCnIssued')) ?></span>
     <?php endif ?>
     <?php if (! empty($row['overdue']) && ! $isCn && $st !== 'cancelled') : ?>
-        <span class="st-badge badge text-bg-danger"><?= esc(lang('Invoices.statusOverdue', [(int) $row['days_overdue']])) ?></span>
+        <span class="st-badge badge text-wrap text-bg-danger"><?= esc(lang('Invoices.statusOverdue', [(int) $row['days_overdue']])) ?></span>
     <?php endif ?>
 <?php endif ?>
