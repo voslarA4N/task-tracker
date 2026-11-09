@@ -118,4 +118,24 @@ final class AppCssScaleTest extends TestCase
         $this->assertSame(1, preg_match('/\.app-tabbar a, \.app-tabbar span \{[^}]*min-height: 44px/', $css));
         $this->assertSame(1, preg_match('/\.app-tabbar \{(?=[^}]*bottom: 0)[^}]*padding-bottom: env\(safe-area-inset-bottom\)/', $css));
     }
+
+    public function testHeaderLogoutStyle(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $css  = (string) file_get_contents($root . '/public/assets/css/app.css');
+        $css  = (string) preg_replace('#/\*.*?\*/#s', '', $css);
+        $css  = (string) preg_replace('/\s+/', ' ', $css);
+
+        $this->assertStringContainsString('--app-logout: #b23b30', $css);
+        $this->assertSame(1, preg_match_all('/(?<![\w-])\.app-logout \{([^}]*)\}/', $css, $m));
+        $this->assertStringContainsString('min-height: 44px', $m[1][0]);
+        $this->assertStringContainsString('color: var(--app-logout)', $m[1][0]);
+        $this->assertStringContainsString('white-space: nowrap', $m[1][0]);
+        $this->assertSame(1, preg_match('/\.app-logout:focus-visible \{[^}]*outline/', $css));
+        $this->assertStringNotContainsString('.more-logout', $css);
+
+        $layout = (string) file_get_contents($root . '/app/Views/layouts/app.php');
+        $this->assertStringNotContainsString('btn-danger', $layout);
+        $this->assertStringNotContainsString('text-danger', $layout);
+    }
 }

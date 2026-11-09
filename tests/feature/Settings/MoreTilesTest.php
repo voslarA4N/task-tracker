@@ -53,21 +53,20 @@ final class MoreTilesTest extends AuthTestCase
         $this->assertCount(12, array_unique($icons), 'Ikony musia byt navzajom odlisne.');
     }
 
-    public function testLogoutFormAfterGridWithCsrf(): void
+    public function testMorePageHasNoOwnLogout(): void
     {
         $this->loginAs($this->createUser());
         $body = $this->body($this->fetch('/more'));
 
-        $lastTile = strrpos($body, 'class="more-tile"');
-        $form     = strpos($body, 'action="/logout"');
-        $this->assertNotFalse($lastTile);
-        $this->assertNotFalse($form);
-        $this->assertGreaterThan(strpos($body, '</a>', $lastTile), $form);
+        $this->assertStringNotContainsString('more-logout', $body);
+        $this->assertSame(1, substr_count($body, 'action="/logout"'));
+        $this->assertLessThan(strpos($body, '<main'), strpos($body, 'action="/logout"'));
+    }
 
-        $this->assertSame(1, preg_match('#<form method="post" action="/logout"[^>]*>(.*?)</form>#s', $body, $f));
-        $this->assertStringContainsString('name="' . config('Security')->tokenName . '"', $f[1]);
-        $this->assertStringContainsString('type="submit"', $f[1]);
-        $this->assertStringNotContainsString('more-tile"', $f[0]);
+    public function testAuthLayoutHasNoHeaderLogout(): void
+    {
+        $result = $this->get('/login');
+        $this->assertStringNotContainsString('app-logout', $this->body($result));
     }
 
     public function testNoInlineStyleOrHandlers(): void

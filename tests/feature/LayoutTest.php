@@ -42,6 +42,43 @@ final class LayoutTest extends AuthTestCase
         return new DOMXPath($dom);
     }
 
+    public function testHeaderHasSingleLogoutForm(): void
+    {
+        $xp    = $this->xpath($this->homeHtml());
+        $forms = $xp->query('//form[@action="/logout"]');
+        $this->assertSame(1, $forms->length);
+        $form = $forms->item(0);
+        $this->assertInstanceOf(DOMElement::class, $form);
+        $this->assertSame(1, $xp->query('ancestor::header[contains(@class,"app-header")]', $form)->length);
+        $this->assertSame(0, $xp->query('ancestor::nav', $form)->length);
+        $this->assertSame('post', strtolower($form->getAttribute('method')));
+        $this->assertSame(1, $xp->query('.//input[@name="' . config('Security')->tokenName . '"]', $form)->length);
+
+        $buttons = $xp->query('.//button[@type="submit"][contains(@class,"app-logout")]', $form);
+        $this->assertSame(1, $buttons->length);
+        $btn = $buttons->item(0);
+        $this->assertInstanceOf(DOMElement::class, $btn);
+        $this->assertStringNotContainsString('btn-danger', $btn->getAttribute('class'));
+        $this->assertStringNotContainsString('text-danger', $btn->getAttribute('class'));
+
+        $svgs = $xp->query('./svg', $btn);
+        $this->assertSame(1, $svgs->length);
+        $svg = $svgs->item(0);
+        $this->assertInstanceOf(DOMElement::class, $svg);
+        $this->assertSame('true', $svg->getAttribute('aria-hidden'));
+        $this->assertSame('false', $svg->getAttribute('focusable'));
+        $this->assertSame('20', $svg->getAttribute('width'));
+        $this->assertSame(1, $xp->query('.//path[@d="M16 17l5-5-5-5"]', $svg)->length);
+        $this->assertSame(lang('Login.logout'), trim($btn->textContent));
+    }
+
+    public function testTabbarHasNoLogout(): void
+    {
+        $xp = $this->xpath($this->homeHtml());
+        $this->assertSame(0, $xp->query('//nav[contains(@class,"app-tabbar")]//form')->length);
+        $this->assertSame(0, $xp->query('//nav[contains(@class,"app-topnav")]//form')->length);
+    }
+
     public function testNavLinksHaveIcons(): void
     {
         $xp = $this->xpath($this->homeHtml());
