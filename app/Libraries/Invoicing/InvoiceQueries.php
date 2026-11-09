@@ -15,8 +15,6 @@ final class InvoiceQueries
 {
     private const SORT_SQL = [
         'number'           => 'i.number',
-        // musi sa zhodovat s ClientNameSql::snapshotName('f') (const nemoze volat metodu), pinuje to test radenia
-        'client'           => "COALESCE(NULLIF(f.snapshot->'client'->>'name', ''), c.name)",
         'issue_date'       => 'i.issue_date',
         'turnover_date'    => 'f.turnover_date',
         'due_date'         => 'i.due_date',
@@ -36,6 +34,18 @@ final class InvoiceQueries
     public function __construct(?BaseConnection $db = null)
     {
         $this->db = $db ?? Database::connect();
+    }
+
+    /**
+     * Stlpec radenia; 'client' sa sklada za behu z ClientNameSql (rovnaky vyraz ako zobrazeny nazov, D-01).
+     */
+    private static function sortColumn(string $sort): string
+    {
+        if ($sort === 'client') {
+            return ClientNameSql::snapshotName('f');
+        }
+
+        return self::SORT_SQL[$sort] ?? self::sortColumn(InvoiceFilter::DEFAULT_SORT);
     }
 
     /**
@@ -90,7 +100,7 @@ final class InvoiceQueries
         $order = 'i.issue_date DESC NULLS LAST, i.number DESC NULLS LAST, i.id DESC';
 
         if ($filter !== null && ! $filter->isDefaultSort()) {
-            $col   = self::SORT_SQL[$filter->sort] ?? self::SORT_SQL[InvoiceFilter::DEFAULT_SORT];
+            $col   = self::sortColumn($filter->sort);
             $dir   = $filter->dir === 'asc' ? 'ASC' : 'DESC';
             $order = $col . ' ' . $dir . ' NULLS LAST, i.id DESC';
         }
