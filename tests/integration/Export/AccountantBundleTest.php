@@ -14,6 +14,9 @@ use App\Libraries\Platform\Money;
 use App\Libraries\Reporting\BundleSelector;
 use App\Libraries\Reporting\ReportCalculator;
 use App\Libraries\Reporting\ReportPeriod;
+use Closure;
+use ErrorException;
+use RuntimeException;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\CreditNoteFixtures;
@@ -232,6 +235,63 @@ final class AccountantBundleTest extends PgTestCase
         }
 
         $this->assertSame($before, glob(WRITEPATH . 'exports/zip*') ?: []);
+    }
+
+    /**
+     * ZipArchive whose close() really closes (handle invalidated, file written) and then fails.
+     */
+    private function failingZip(string $mode): Closure
+    {
+        return static fn (): ZipArchive => new class ($mode) extends ZipArchive {
+            public function __construct(private readonly string $mode)
+            {
+            }
+
+            public function close(): bool
+            {
+                parent::close();
+
+                if ($this->mode === 'throw') {
+                    throw new ErrorException('zip close failed');
+                }
+
+                return false;
+            }
+        };
+    }
+
+    public function testCloseFailureLeavesNoFileAndKeepsOriginalError(): void
+    {
+        $before = glob(WRITEPATH . 'exports/*') ?: [];
+        $caught = null;
+
+        try {
+            (new AccountantBundle($this->rw(), $this->failingZip('false')))->build($this->entity, $this->period());
+        } catch (Throwable $e) {
+            $caught = $e;
+        }
+
+        $this->assertNotNull($caught, 'Expected an exception');
+        $this->assertSame(RuntimeException::class, $caught::class, $caught::class . ': ' . $caught->getMessage());
+        $this->assertSame('Cannot finalize zip archive.', $caught->getMessage());
+        $this->assertSame($before, glob(WRITEPATH . 'exports/*') ?: []);
+    }
+
+    public function testCloseThrowingLeavesNoFile(): void
+    {
+        $before = glob(WRITEPATH . 'exports/*') ?: [];
+        $caught = null;
+
+        try {
+            (new AccountantBundle($this->rw(), $this->failingZip('throw')))->build($this->entity, $this->period());
+        } catch (Throwable $e) {
+            $caught = $e;
+        }
+
+        $this->assertNotNull($caught, 'Expected an exception');
+        $this->assertSame(ErrorException::class, $caught::class, $caught::class . ': ' . $caught->getMessage());
+        $this->assertSame('zip close failed', $caught->getMessage());
+        $this->assertSame($before, glob(WRITEPATH . 'exports/*') ?: []);
     }
 
     public function testEmptyPeriodRejected(): void
