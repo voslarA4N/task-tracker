@@ -45,7 +45,7 @@ a mail server bežia vo vlastných stackoch, uvádzajú sa samostatne a do limit
 
 ## Výsledky
 
-Tabuľku vypĺňa plán 12-14 po meraní na VPS.
+Tabuľku vypĺňa plán 12-15 po meraní na VPS.
 
 | Dátum | Prostredie | Metrika | Hodnota | Cieľ | Stav |
 |-------|------------|---------|---------|------|------|
@@ -60,6 +60,9 @@ Tabuľku vypĺňa plán 12-14 po meraní na VPS.
 | 2026-11-09 | staging | pamäť staging (nginx 5.0 + php 32.3 + db 69.6) | 106.9 MiB | informatívne | OK |
 | 2026-11-09 | staging | pamäť prod stack task-tracker (nginx 5.6 + php 31.0 + db 46.1), len `docker stats` | 82.7 MiB | < 512 MiB | OK |
 | 2026-11-09 | staging | pamäť edge / mail (stalwart 100.7, roundcube 30.2, unbound 9.4, web 3.9) | 2.6 / 144.3 MiB | mimo limitu | info |
+| 2026-11-09 | staging | app-only (FastCGI na php-fpm, n=60) PRED ladením: p50 / p95 `/` 129 / 152, `/tasks` 98 / 123, `/invoices` 121 / 148, `/reports/month` 82 / 108 ms | p95 max 152 ms | < 100 ms | FAIL |
+| 2026-11-09 | staging | app-only (FastCGI, n=60) PO ladení (commity bbd31ca a be3dc26): `/` 55 / 76, `/tasks` 43 / 53, `/invoices` 54 / 66, `/reports/month` 28 / 34 ms (druhý beh: `/` 63 / 87, ostatné rovnako) | p95 max 87 ms | < 100 ms | OK |
+| 2026-11-09 | staging | cez verejnú URL (Cloudflare, `measure-p95.sh`, SK, n=50) PO ladení: `/` 161 / 229, `/tasks` 131 / 178, `/invoices` 143 / 172, `/reports/month` 110 / 134 ms, ALL p95 191 ms (pred: 241) | p95 191 ms | < 100 ms | FAIL (sieť) |
 
 ### Poznámky k meraniu na stagingu (2026-11-09)
 
@@ -68,3 +71,20 @@ Tabuľku vypĺňa plán 12-14 po meraní na VPS.
 - Čisto aplikácia (FastCGI priamo na php-fpm, bez nginx a Cloudflare, 30 požiadaviek): `/` p50 124 / p95 150 ms, `/tasks` 90 / 109, `/invoices` 117 / 139, `/reports/month` 76 / 96. Aplikácia sama je teda na hranici cieľa 100 ms už bez siete.
 - Hypotéza: cieľ nevyšiel kvôli času PHP aplikácie na 2 vCPU Skylake (CI4 + Shield + session + dotazy + šablóny, seed ~150 úloh a 40 faktúr), nie kvôli studenému štartu FPM (pm=ondemand, merania po zahriatí). Pred Task 3 profilovať počet a čas dotazov na `/` a `/invoices` a zvážiť `pm = dynamic` (CLAUDE.md).
 - Testovací účet: staging seed admin (bez 2FA, cesta `/2fa/continue`); jazyk po meraní vrátený na `sk`.
+
+### Ladenie (2026-11-09, plán 12-15)
+
+Meranie "app-only": FastCGI priamo na php-fpm v kontajneri `php` na stagingu (bez nginx a Cloudflare), prihlásená relácia, 3 nemerané + 60 meraných GET na stránku, čas do posledného bajtu odpovede. Pred ladením vyšli rovnaké čísla ako v meraní 12-14 (tabuľka vyššie).
+
+Čo sa overilo a vylúčilo (konfigurácia produkcie na stagingu je v poriadku): `CI_ENVIRONMENT=production`, OPcache `validate_timestamps=0`, hit rate 99,9 %, 18 z 64 MB použitých, žiadne restarty, interned strings 3,9 z 8 MB, preload aktívny, `--classmap-authoritative`, súborový session handler. Samotný štart CI4 + Shield s presmerovaním (`/login` pre prihláseného) stál na stagingu cca 49 ms, statická odpoveď `/offline` 7 ms, takže cena je v aplikácii a DB, nie v FPM ani v konfigurácii.
+
+Profilovanie (prod obraz lokálne, rovnaký seed, excimer vzorkovač v jednorazovom kontajneri, nič sa nekomitovalo):
+
+1. **Nové PostgreSQL spojenie na každú požiadavku (hlavná príčina).** 73 % času `/` bolo v `BaseConnection::query`: 22 % samotné pripojenie (fork backendu, SCRAM) a zvyšok dotazy bežiace v studenom backende (prázdne katalógové cache, plánovanie pohľadov). Rovnaký dotaz nad `invoice_status_v` trval v čerstvom spojení 5,8 až 8,2 ms, v zahriatom 1,4 ms. `/` robí cca 30 dotazov. Oprava: `pConnect` pre `PHP_SAPI === 'fpm-fcgi'` v `app/Config/Database.php` (CLI a testy ostávajú bez neho, `.env` to môže prebiť). Lokálne `/` 39 -> 19 ms, `/invoices` 39 -> 23, `/reports/month` 22 -> 9.
+2. **`MoneyFormat::format` vytváral dva `NumberFormatter` (ICU) na každú sumu**, vo výpisoch stovky krát na požiadavku (po bode 1 to bolo 12,7 % `/invoices`). Oprava: formátovače sa držia v pamäti požiadavky podľa lokality a meny. Lokálne `/invoices` 23 -> 17, `/tasks` 19 -> 15.
+
+Bezpečnosť trvalých spojení: aplikácia nepoužíva relačné `SET` (iba `SET LOCAL` a transakčné zámky); jediný session zámok `pg_advisory_lock` v `InvoiceMailer` sa uvoľňuje vo `finally` a pri páde procesu zaniká so spojením. PHP pri konci požiadavky vráti otvorenú transakciu späť. Po reštarte DB sa mŕtve trvalé spojenie obnovilo bez chyby (overené lokálne). Počet spojení je najviac `pm.max_children` (4) z `max_connections=20`. Pamäť stagingu po záťaži: db 77,7 MiB (predtým 69,6), php 29,3, nginx 5,2.
+
+**Pozor, odchýlka od CLAUDE.md** ("perzistentné DB spojenia: žiadny zisk, vyššia pamäť"): meranie to vyvrátilo, zisk je cca 2x a pamäťová cena je desiatky MiB. Zmenu treba pred produkciou schváliť vlastníkom.
+
+Výsledok: app-only p95 na stagingu 34 až 87 ms (cieľ < 100 ms splnený, najslabšia je `/`). Cez Cloudflare p95 ALL 191 ms (pred 241): rozdiel k app-only je sieť (TCP+TLS+Cloudflare hop, základná línia `/login` 56 až 96 ms), nie aplikácia, takže cieľ 100 ms sa dá pri tomto spôsobe merania splniť len mimo Cloudflare. Ďalší možný zisk: `/` robí cca 30 dotazov (dashboard, limity obratu `TurnoverCalculator::forActiveEntities` cca 12 dotazov); zatiaľ netreba.
