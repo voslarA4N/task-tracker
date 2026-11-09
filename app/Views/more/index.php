@@ -1,22 +1,29 @@
 <?= $this->extend('layouts/app') ?>
 
 <?= $this->section('content') ?>
-<div class="list-group more-list">
-    <a class="list-group-item list-group-item-action more-item" href="/reports/month"><?= esc(lang('Reports.navTitle')) ?><span class="d-block small text-body-secondary"><?= esc(lang('Reports.navHint')) ?></span></a>
-    <a class="list-group-item list-group-item-action more-item" href="/reports/accountant"><?= esc(lang('Bundle.navTitle')) ?><span class="d-block small text-body-secondary"><?= esc(lang('Bundle.navHint')) ?></span></a>
-    <a class="list-group-item list-group-item-action more-item" href="/settings/entities"><?= esc(lang('Entities.navTitle')) ?></a>
-    <a class="list-group-item list-group-item-action more-item" href="/settings/clients"><?= esc(lang('Clients.navTitle')) ?></a>
-    <a class="list-group-item list-group-item-action more-item" href="/settings/legal-texts"><?= esc(lang('LegalTexts.navTitle')) ?></a>
-    <a class="list-group-item list-group-item-action more-item" href="/settings/fx"><?= esc(lang('FxSettings.navTitle')) ?></a>
-    <a class="list-group-item list-group-item-action more-item" href="/settings/documents"><?= esc(lang('DocumentSettings.navTitle')) ?></a>
-    <a class="list-group-item list-group-item-action more-item" href="/settings/limits"><?= esc(lang('Limits.navTitle')) ?></a>
-    <a class="list-group-item list-group-item-action more-item" href="/settings/audit"><?= esc(lang('AuditLog.navTitle')) ?><span class="d-block small text-body-secondary"><?= esc(lang('AuditLog.navHint')) ?></span></a>
-    <a class="list-group-item list-group-item-action more-item" href="/settings/users"><?= esc(lang('Users.navTitle')) ?><span class="d-block small text-body-secondary"><?= esc(lang('Users.navHint')) ?></span></a>
-    <a class="list-group-item list-group-item-action more-item" href="/settings/email-templates"><?= esc(lang('EmailTemplates.navTitle')) ?><span class="d-block small text-body-secondary"><?= esc(lang('EmailTemplates.navHint')) ?></span></a>
-    <a class="list-group-item list-group-item-action more-item" href="/settings/security"><?= esc(lang('Account.securityTitle')) ?></a>
-    <form method="post" action="/logout" class="m-0">
-        <?= csrf_field() ?>
-        <button type="submit" class="list-group-item list-group-item-action more-item text-start"><?= esc(lang('Login.logout')) ?></button>
-    </form>
+<?php
+$items = [
+    ['/reports/month', 'Reports.navTitle', 'Reports.navHint', 'reports'],
+    ['/reports/accountant', 'Bundle.navTitle', 'Bundle.navHint', 'bundle'],
+    ['/settings/entities', 'Entities.navTitle', null, 'entities'],
+    ['/settings/clients', 'Clients.navTitle', null, 'clients'],
+    ['/settings/legal-texts', 'LegalTexts.navTitle', null, 'legal-texts'],
+    ['/settings/fx', 'FxSettings.navTitle', null, 'fx'],
+    ['/settings/documents', 'DocumentSettings.navTitle', null, 'documents'],
+    ['/settings/limits', 'Limits.navTitle', null, 'limits'],
+    ['/settings/audit', 'AuditLog.navTitle', 'AuditLog.navHint', 'audit'],
+    ['/settings/users', 'Users.navTitle', 'Users.navHint', 'users'],
+    ['/settings/email-templates', 'EmailTemplates.navTitle', 'EmailTemplates.navHint', 'email-templates'],
+    ['/settings/security', 'Account.securityTitle', null, 'security'],
+];
+?>
+<div class="more-grid">
+<?php foreach ($items as [$href, $title, $hint, $icon]): ?>
+    <a class="more-tile" href="<?= $href ?>"><?= view('more/_icon', ['name' => $icon]) ?><span class="more-tile-title"><?= esc(lang($title)) ?></span><?php if ($hint !== null): ?><span class="more-tile-hint"><?= esc(lang($hint)) ?></span><?php endif; ?></a>
+<?php endforeach; ?>
 </div>
+<form method="post" action="/logout" class="more-logout">
+    <?= csrf_field() ?>
+    <button type="submit" class="btn btn-outline-secondary more-logout-btn"><?= esc(lang('Login.logout')) ?></button>
+</form>
 <?= $this->endSection() ?>

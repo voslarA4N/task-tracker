@@ -184,7 +184,18 @@ img, table { max-width: 100%; }
 .event-row:last-child { border-bottom: 0; }
 .btn-touch { min-width: 44px; min-height: 44px; }
 .event-ip { font-family: ui-monospace, monospace; font-size: 12px; }
-.more-item { min-height: 48px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; width: 100%; }
+.more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 768px) { .more-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 992px) { .more-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } }
+.more-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 88px; padding: 16px; background: var(--bs-body-bg); color: var(--bs-body-color); border: 1px solid var(--app-border); border-radius: 8px; text-decoration: none; overflow-wrap: anywhere; transition: border-color .15s, background-color .15s; }
+.more-tile:hover { border-color: var(--app-primary); }
+.more-tile:active { background: var(--bs-tertiary-bg); }
+.more-tile:focus-visible { outline: 2px solid var(--app-primary); outline-offset: 2px; }
+.more-tile-icon { color: var(--app-primary); flex: none; }
+.more-tile-title { font-size: 16px; font-weight: 600; line-height: 1.25; }
+.more-tile-hint { font-size: 12px; line-height: 1.5; color: var(--app-muted); }
+.more-logout { margin: 24px 0 0; }
+.more-logout-btn { width: 100%; min-height: 48px; }
 
 /* Master data: subjekty a klienti (Phase 3) */
 .master-row {
