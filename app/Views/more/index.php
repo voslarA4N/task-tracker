@@ -19,7 +19,7 @@ $items = [
 ?>
 <div class="more-grid">
 <?php foreach ($items as [$href, $title, $hint, $icon]): ?>
-    <a class="more-tile" href="<?= $href ?>"><?= view('more/_icon', ['name' => $icon]) ?><span class="more-tile-title"><?= esc(lang($title)) ?></span><?php if ($hint !== null): ?><span class="more-tile-hint"><?= esc(lang($hint)) ?></span><?php endif; ?></a>
+    <a class="more-tile" href="<?= $href ?>"><?= view('layouts/_icon', ['name' => $icon, 'size' => 28, 'class' => 'more-tile-icon'], ['saveData' => false]) ?><span class="more-tile-title"><?= esc(lang($title)) ?></span><?php if ($hint !== null): ?><span class="more-tile-hint"><?= esc(lang($hint)) ?></span><?php endif; ?></a>
 <?php endforeach; ?>
 </div>
 <form method="post" action="/logout" class="more-logout">
