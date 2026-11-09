@@ -15,8 +15,9 @@ use Config\Database;
  * datumu dodania (D-01), externe faktury sa nezapocitavaju. Sucty vznikaju iba cez Money, nikdy druhym SQL.
  *
  * Vyber podla turnover_date (datum dodania, dobropisy v mesiaci svojho datumu dodania); rocny archiv
- * (YearArchive) vybera podla issue_date (D-09). Popis riadku klienta (D-03): jeden riadok na client_id,
- * nazov z snapshotu najnovsieho vystaveneho dokladu v obdobi (issue_date, potom najvyssie id).
+ * (YearArchive) vybera podla issue_date (D-08). Popis riadku klienta (D-03): jeden riadok na client_id,
+ * nazov z snapshotu najnovsieho vystaveneho dokladu v obdobi (issue_date, potom najvyssie id); klient iba
+ * s uhradami berie nazov z najnovsej uhradenej faktury (issue_date, potom najvyssie id).
  */
 final class ReportCalculator
 {
@@ -84,13 +85,7 @@ final class ReportCalculator
             $creditNoteCount += (int) $row['credit_note_count'];
         }
 
-        $paidTotal = $this->addPayments($entityId, $period, $clients, $months);
-
-        foreach ($labels as $id => $name) {
-            if (isset($clients[$id])) {
-                $clients[$id]['name'] = $name;
-            }
-        }
+        $paidTotal = $this->addPayments($entityId, $period, $labels, $clients, $months);
 
         uasort($clients, static function (array $a, array $b): int {
             $cmp = $b['invoiced']->compare($a['invoiced']);
@@ -153,13 +148,14 @@ final class ReportCalculator
      * ReportMath::paidShare z ulozenych total a total_entity_ccy faktury (nikdy aktualny kurz, CUR-04).
      * Nacitaju sa vsetky platby faktur, ktore maju aspon jednu platbu v obdobi, aby kumulacia bola presna.
      *
+     * @param array<int, string>                                                            $labels
      * @param array<int, array{name: string, invoiced: Money, counted: Money, paid: Money}> $clients
      * @param array<string, array{invoiced: Money, counted: Money, paid: Money}>            $months
      */
-    private function addPayments(int $entityId, ReportPeriod $period, array &$clients, array &$months): Money
+    private function addPayments(int $entityId, ReportPeriod $period, array $labels, array &$clients, array &$months): Money
     {
         $rows = $this->db->query(
-            'SELECT p.invoice_id, p.paid_on, p.amount, i.client_id, ' . ClientNameSql::snapshotName('i') . " AS client_name, i.total, i.total_entity_ccy,
+            'SELECT p.invoice_id, p.paid_on, p.amount, i.client_id, i.issue_date, ' . ClientNameSql::snapshotName('i') . " AS client_name, i.total, i.total_entity_ccy,
                     SUM(p.amount) OVER (PARTITION BY p.invoice_id ORDER BY p.paid_on, p.id) AS cum_amount
              FROM payments p
              JOIN invoices i ON i.id = p.invoice_id
@@ -174,6 +170,8 @@ final class ReportCalculator
         $total     = Money::zero();
         $prevShare = Money::zero();
         $prevInv   = null;
+        /** @var array<int, array{0: string, 1: int}> $best */
+        $best = [];
 
         foreach ($rows as $row) {
             $invoiceId = (int) $row['invoice_id'];
@@ -194,6 +192,16 @@ final class ReportCalculator
 
             $clientId = (int) $row['client_id'];
             $clients[$clientId] ??= ['name' => (string) $row['client_name'], 'invoiced' => Money::zero(), 'counted' => Money::zero(), 'paid' => Money::zero()];
+
+            if (! isset($labels[$clientId])) {
+                $issue = (string) $row['issue_date'];
+
+                if (! isset($best[$clientId]) || $issue > $best[$clientId][0] || ($issue === $best[$clientId][0] && $invoiceId > $best[$clientId][1])) {
+                    $best[$clientId]            = [$issue, $invoiceId];
+                    $clients[$clientId]['name'] = (string) $row['client_name'];
+                }
+            }
+
             $clients[$clientId]['paid'] = $clients[$clientId]['paid']->plus($part);
 
             $month = substr($paidOn, 0, 7);

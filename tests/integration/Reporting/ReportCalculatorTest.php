@@ -199,4 +199,44 @@ final class ReportCalculatorTest extends PgTestCase
         $this->assertSame('Paid s.r.o.', $r->clients[0]['client_name']);
         $this->assertSame('100.00', $r->paidTotal);
     }
+
+    public function testPaymentOnlyClientUsesNewestPaidSnapshotName(): void
+    {
+        $a = $this->reportInvoice($this->entity, $this->clientA, '2026-09-05', '100.00', ['issue_date' => '2026-09-05', 'snapshot' => $this->snap('Old s.r.o.')]);
+        $b = $this->reportInvoice($this->entity, $this->clientA, '2026-09-25', '50.00', ['issue_date' => '2026-09-25', 'snapshot' => $this->snap('New s.r.o.')]);
+        $this->reportPayment($a, '2026-10-05', '100.00');
+        $this->reportPayment($b, '2026-10-06', '50.00');
+        $this->renameClient($this->clientA, 'Live s.r.o.');
+
+        $r = $this->calc()->forPeriod($this->entity, ReportPeriod::month('2026-10'));
+        $this->assertCount(1, $r->clients);
+        $this->assertSame('New s.r.o.', $r->clients[0]['client_name']);
+        $this->assertSame('150.00', $r->clients[0]['paid']);
+        $this->assertSame('150.00', $r->paidTotal);
+        $this->assertSame('0.00', $r->invoicedTotal);
+    }
+
+    public function testPaymentOnlyLabelPrefersIssueDateOverId(): void
+    {
+        $b = $this->reportInvoice($this->entity, $this->clientA, '2026-09-25', '50.00', ['issue_date' => '2026-09-25', 'snapshot' => $this->snap('New s.r.o.')]);
+        $a = $this->reportInvoice($this->entity, $this->clientA, '2026-09-05', '100.00', ['issue_date' => '2026-09-05', 'snapshot' => $this->snap('Old s.r.o.')]);
+        $this->reportPayment($a, '2026-10-05', '100.00');
+        $this->reportPayment($b, '2026-10-06', '50.00');
+
+        $r = $this->calc()->forPeriod($this->entity, ReportPeriod::month('2026-10'));
+        $this->assertCount(1, $r->clients);
+        $this->assertSame('New s.r.o.', $r->clients[0]['client_name']);
+    }
+
+    public function testPaymentDoesNotOverrideInPeriodLabel(): void
+    {
+        $this->reportInvoice($this->entity, $this->clientA, '2026-10-03', '10.00', ['issue_date' => '2026-10-03', 'snapshot' => $this->snap('Period s.r.o.')]);
+        $p = $this->reportInvoice($this->entity, $this->clientA, '2026-09-28', '100.00', ['issue_date' => '2026-10-10', 'snapshot' => $this->snap('Paid s.r.o.')]);
+        $this->reportPayment($p, '2026-10-15', '100.00');
+
+        $r = $this->calc()->forPeriod($this->entity, ReportPeriod::month('2026-10'));
+        $this->assertCount(1, $r->clients);
+        $this->assertSame('Period s.r.o.', $r->clients[0]['client_name']);
+        $this->assertSame('100.00', $r->paidTotal);
+    }
 }
