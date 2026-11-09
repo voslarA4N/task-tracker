@@ -124,7 +124,7 @@ Webová aplikácia (PWA) pre jedného živnostníka-programátora, ktorá nahrá
 ### PostgreSQL 18 (`postgresql.conf` cez `command:` alebo mount)
 
 - PG 18 obraz mení štruktúru dát: mount volume na `/var/lib/postgresql` (nie `/var/lib/postgresql/data`). Overiť v README obrazu pri písaní compose.
-- Pripojenie z PHP bez perzistentných spojení (`pConnect=false`), pri 1 používateľovi netreba PgBouncer.
+- Pripojenie z PHP-FPM je perzistentné (`pConnect` iba pri `PHP_SAPI === 'fpm-fcgi'`, CLI a testy bez neho), pri 1 používateľovi netreba PgBouncer. Meranie 12-15: nové spojenie (fork, SCRAM, studené katalógové cache) bolo ~73 % času `/`, perzistentné spojenie zrýchlilo p95 aplikácie ~2x pri +~8 MiB v PG (`docs/ops/performance.md`).
 - Číslovanie faktúr: `SELECT ... FOR UPDATE` na riadok čítača (rad × obdobie) v tej istej transakcii ako vystavenie. Alternatíva `pg_advisory_xact_lock`. **Nepoužívať `SEQUENCE`**, tie vytvárajú medzery pri rollbacku (požiadavka bez medzier).
 - `numeric(12,2)` a `jsonb` sú v CI4 Query Builderi bez problémov, ale CI4 vracia `numeric` ako **string**. Ponechať ako string a počítať cez bcmath, nikdy `(float)`.
 - Backup konzistencia: `pg_dump --format=custom` je konzistentný snapshot bez zastavenia služby.
@@ -217,7 +217,7 @@ Webová aplikácia (PWA) pre jedného živnostníka-programátora, ktorá nahrá
 | PostgreSQL `SEQUENCE` pre čísla faktúr | medzery po rollbacku | riadkový zámok na tabuľke čítačov |
 | PhpSpreadsheet v produkčnom obraze | pamäť, veľkosť | OpenSpout |
 | CI4 WorkerMode / FrankenPHP | mimo rozhodnutého stacku, stav medzi requestami | php-fpm |
-| `opcache.jit` a perzistentné DB spojenia | žiadny zisk, vyššia pamäť | `jit=off`, `pConnect=false` |
+| `opcache.jit` | žiadny zisk, vyššia pamäť | `jit=off` |
 | Tajomstvá v `docker-compose.yml` / v obraze | únik cez git a registre | `.env` mimo gitu a Docker secrets |
 | PHPUnit 13 bez overenia | vyžaduje PHP >=8.4.1, nie je isté, že `CIUnitTestCase` ho podporuje | pin z appstarter-a (`^10.5.16`), prípadne overiť vyššiu líniu |
 | Generovanie PDF z živých nastavení | rozbije nemennosť | vždy z JSONB kópie |
