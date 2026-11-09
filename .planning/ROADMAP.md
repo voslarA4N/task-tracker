@@ -692,7 +692,7 @@ Plans:
 4. Je rozhodnutý a zdokumentovaný dátumový základ dobropisov v ročnom archíve vs prehľad/balík (W4) a kód mu zodpovedá.
 5. Dizajnová kontrola všetkých hlavných obrazoviek (dashboard, úlohy, faktúry, fakturácia mesiaca, úhrady, prehľady, účtovníčka, audit, nastavenia, prihlásenie/2FA) na šírke 375 px a desktop: žiadne texty nalepené na sebe ani prekrývajúce sa, konzistentné okraje a odsadenia (Bootstrap spacing), bez horizontálneho posúvania, dotykové ciele ≥ 44 px, v SK aj dlhších PL/CS textoch. Nálezy a opravy zapísané, vlastník potvrdí na stagingu.
 
-**Plans:** 6/8 plans executed
+**Plans:** 7/8 plans executed
 Plans:
 **Wave 1**
 
@@ -705,7 +705,7 @@ Plans:
 
 - [x] 12.1-02-PLAN.md — Prehľady: label klienta zo snapshotu posledného dokladu v období (D-03), súčty nezmenené (vlna 2)
 - [x] 12.1-03-PLAN.md — Dashboard po splatnosti, hlavička úhrady a odoslania zo snapshotu + feature test (vlna 2)
-- [ ] 12.1-08-PLAN.md — Opravy v šablónach (tabuľky, 44 px, štítky, pills), strážny test šablón, HUMAN-UAT na stagingu (vlna 2)
+- [x] 12.1-08-PLAN.md — Opravy v šablónach (tabuľky, 44 px, štítky, pills), strážny test šablón, HUMAN-UAT na stagingu (vlna 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
