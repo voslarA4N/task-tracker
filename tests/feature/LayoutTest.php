@@ -81,8 +81,8 @@ final class LayoutTest extends AuthTestCase
 
     public function testNavLinksHaveIcons(): void
     {
-        $xp = $this->xpath($this->homeHtml());
-        $hrefs = ['/', '/tasks', '/invoices', '/more'];
+        $xp     = $this->xpath($this->homeHtml());
+        $hrefs  = ['/', '/tasks', '/invoices', '/more'];
         $labels = [lang('App.navOverview'), lang('App.navTasks'), lang('App.navInvoices'), lang('App.navMore')];
 
         foreach (['app-topnav', 'app-tabbar'] as $cls) {
@@ -107,7 +107,7 @@ final class LayoutTest extends AuthTestCase
         }
     }
 
-    #[DataProvider('provideNavCurrent')]
+    #[DataProvider('provideNavAriaCurrentOnlyOnActive')]
     public function testNavAriaCurrentOnlyOnActive(string $url, string $href): void
     {
         $result = $this->get($url);
@@ -117,15 +117,23 @@ final class LayoutTest extends AuthTestCase
         foreach (['app-topnav', 'app-tabbar'] as $cls) {
             $cur = $xp->query('//nav[contains(@class,"' . $cls . '")]/a[@aria-current="page"]');
             $this->assertSame(1, $cur->length, $cls);
-            $this->assertSame($href, $cur->item(0)->getAttribute('href'));
+            $a = $cur->item(0);
+            $this->assertInstanceOf(DOMElement::class, $a);
+            $this->assertSame($href, $a->getAttribute('href'));
         }
     }
 
-    public static function provideNavCurrent(): iterable
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideNavAriaCurrentOnlyOnActive(): iterable
     {
         yield 'home' => ['/', '/'];
+
         yield 'tasks' => ['/tasks', '/tasks'];
+
         yield 'invoices' => ['/invoices', '/invoices'];
+
         yield 'more' => ['/more', '/more'];
     }
 
@@ -214,7 +222,7 @@ final class LayoutTest extends AuthTestCase
     /**
      * D-12 / R9: hlavne stranky v sk, pl a cs nemaju inline style ani inline script.
      */
-    #[DataProvider('provideMainPages')]
+    #[DataProvider('provideMainPagesHaveNoInlineStyleOrScript')]
     public function testMainPagesHaveNoInlineStyleOrScript(string $locale, string $url): void
     {
         // Pouzivatel z setUp() je uz prihlaseny; zmenime mu len jazyk.
@@ -233,7 +241,7 @@ final class LayoutTest extends AuthTestCase
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function provideMainPages(): iterable
+    public static function provideMainPagesHaveNoInlineStyleOrScript(): iterable
     {
         $urls = ['/', '/tasks', '/invoices', '/invoices/new', '/reports/month', '/reports/accountant', '/settings/security', '/more'];
 

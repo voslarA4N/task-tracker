@@ -15,10 +15,10 @@ use App\Libraries\Reporting\BundleSelector;
 use App\Libraries\Reporting\ReportCalculator;
 use App\Libraries\Reporting\ReportPeriod;
 use Closure;
-use ErrorException;
-use RuntimeException;
 use Config\Services;
+use ErrorException;
 use PHPUnit\Framework\Attributes\Group;
+use RuntimeException;
 use Tests\Support\CreditNoteFixtures;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
@@ -213,7 +213,7 @@ final class AccountantBundleTest extends PgTestCase
         // The DB CHECK normally makes a sha256 mismatch impossible, so lift it for the duration of the test.
         $id    = $this->reportInvoice($this->entity, $this->client, '2026-10-28', '50.00', ['number' => 'BADSHA1']);
         $owner = $this->owner();
-        $guard = "ALTER TABLE invoice_documents %s TRIGGER invoice_documents_immutable";
+        $guard = 'ALTER TABLE invoice_documents %s TRIGGER invoice_documents_immutable';
         $owner->query(sprintf($guard, 'DISABLE'));
         $owner->query('ALTER TABLE invoice_documents DROP CONSTRAINT invoice_documents_check1');
         $good = (string) $owner->query("SELECT sha256 FROM invoice_documents WHERE invoice_id = :i: AND kind = 'invoice'", ['i' => $id])->getRow()->sha256;

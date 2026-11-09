@@ -46,6 +46,7 @@ final class MoreTilesTest extends AuthTestCase
         $this->assertEqualsCanonicalizing(self::HREFS, $m[1]);
 
         $icons = [];
+
         foreach ($m[2] as $inner) {
             $this->assertSame(1, preg_match('#<svg [^>]*aria-hidden="true"[^>]*focusable="false"[^>]*>(.*?)</svg>#s', $inner, $s));
             $icons[] = $s[1];
