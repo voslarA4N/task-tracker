@@ -129,6 +129,11 @@ class Database extends Config
 
     public function __construct()
     {
+        // Trvale spojenie iba pre webove poziadavky (PHP-FPM, najviac pm.max_children spojeni). Nove PG spojenie stoji
+        // fork backendu, SCRAM a studene katalogove cache (planovanie pohladov), cize cca polovicu casu poziadavky
+        // (docs/ops/performance.md, Ladenie). CLI (spark, testy) ostava bez neho. `.env` to moze prebit.
+        $this->default['pConnect'] = PHP_SAPI === 'fpm-fcgi';
+
         parent::__construct();
 
         // Ensure that we always set the database group to 'tests' if
