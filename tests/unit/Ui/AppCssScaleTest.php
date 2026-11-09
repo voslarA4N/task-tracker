@@ -48,9 +48,10 @@ final class AppCssScaleTest extends TestCase
             if (preg_match('/^(padding|margin|gap|row-gap|column-gap)(-[a-z]+)*$/', $prop) !== 1) {
                 continue;
             }
-            if (preg_match_all('/(\d+(?:\.\d+)?)px/', $value, $px) > 0) {
+            // Len celé hodnoty v px (napr. 12px), desatinné ako 12.5px sa nezachytia.
+            if (preg_match_all('/(?<![\d.])(\d+)px/', $value, $px) > 0) {
                 foreach ($px[1] as $n) {
-                    if (in_array((int) $n, self::FORBIDDEN_SPACING, true) && (float) $n === (float) (int) $n) {
+                    if (in_array((int) $n, self::FORBIDDEN_SPACING, true)) {
                         $problems[] = "{$line}: {$prop}: {$value}";
                         break;
                     }
@@ -71,7 +72,7 @@ final class AppCssScaleTest extends TestCase
             }
             if (preg_match_all('/(\d+(?:\.\d+)?)px/', $value, $px) > 0) {
                 foreach ($px[1] as $n) {
-                    if (! in_array((int) $n, self::ALLOWED_FONTS, true) || (float) $n !== (float) (int) $n) {
+                    if (! in_array((int) $n, self::ALLOWED_FONTS, true) || ! ctype_digit($n)) {
                         $problems[] = "{$line}: {$prop}: {$value}";
                         break;
                     }

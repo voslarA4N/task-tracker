@@ -1,1 +1,1 @@
-- tests/unit/Ui/AppCssScaleTest.php:53 phpstan forbiddenFloat (float) cast (from 12.1-07) - found during 12.1-02, out of scope
+- tests/unit/Ui/AppCssScaleTest.php:53 phpstan forbiddenFloat (float) cast (from 12.1-07) - found during 12.1-02, out of scope — RESOLVED by orchestrator (ctype_digit, no float cast)
