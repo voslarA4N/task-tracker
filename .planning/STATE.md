@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 Phase: 12.1
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-11-09 - Completed quick task 261109-vy0: Menu Viac ako dlaždice s ikonkami
+Last activity: 2026-11-09 - Completed quick task 261109-w30: Ikonky v navigácii
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -193,6 +193,7 @@ Recent decisions affecting current work:
 | 261028-w8p | Vlastný mailový server: Stalwart 1.0.1 + Roundcube (webmail.vostack.dev), unbound pre DNSBL, schránky info@/noreply@ + aliasy, DKIM/SPF/DMARC p=none/MTA-STS testing, nočné zálohy; nasadené na 2.31.74.48 (/opt/mail) 2026-10-29 | 2026-10-29 | 3367b4e | Needs Review | [261028-w8p-vlastny-mailovy-server-stalwart-a-webmai](./quick/261028-w8p-vlastny-mailovy-server-stalwart-a-webmai/) |
 | 261109-vi6 | Menu Viac na desktope: názov a popis položky pod sebou (`.more-item` flex stĺpec, medzera 4 px) + guard test | 2026-11-09 | fbec00a | [261109-vi6-fix-viac-menu-desktop-layout-stack-title](./quick/261109-vi6-fix-viac-menu-desktop-layout-stack-title/) |
 | 261109-vy0 | Menu Viac ako dlaždice s ikonkami (12 SVG ikon v `more/_icon.php`, mriežka 2/3/4 stĺpce, odhlásenie samostatné tlačidlo) + testy | 2026-11-09 | 2bb8105 | [261109-vy0-menu-viac-ako-dlazdice-s-ikonkami](./quick/261109-vy0-menu-viac-ako-dlazdice-s-ikonkami/) |
+| 261109-w30 | Ikonky v hornej navigácii (vľavo od textu) a v spodnom tab bare (nad textom), spoločný `layouts/_icon.php` pre navigáciu aj menu Viac + testy | 2026-11-09 | 6c36da0 | [261109-w30-ikonky-v-hornej-navigacii-a-tab-bare](./quick/261109-w30-ikonky-v-hornej-navigacii-a-tab-bare/) |
 
 ## Deferred Items
 
