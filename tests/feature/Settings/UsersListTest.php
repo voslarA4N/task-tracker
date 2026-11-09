@@ -55,7 +55,9 @@ final class UsersListTest extends AuthTestCase
         $this->assertStringContainsString('Vypnuté', $body);
         $this->assertStringContainsString('3. 11. 2026 08:30', $body);
         $this->assertStringContainsString('nikdy', $body);
-        $this->assertStringNotContainsString('<form method="post"', $body);
+        // read-only zoznam: jediny formular na stranke je odhlasenie v hlavicke
+        $this->assertSame(1, substr_count($body, '<form method="post"'));
+        $this->assertStringContainsString('<form method="post" action="/logout"', $body);
         $this->assertStringNotContainsString('/settings/users/new', $body);
     }
 

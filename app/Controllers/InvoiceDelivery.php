@@ -8,6 +8,7 @@ use App\Libraries\Delivery\InvoiceMailer;
 use App\Libraries\Delivery\ManualSendService;
 use App\Libraries\Delivery\SendCommand;
 use App\Libraries\Delivery\SendRejected;
+use App\Libraries\Invoicing\ClientNameSql;
 use App\Libraries\Master\CcEmails;
 use App\Libraries\Platform\Money;
 use App\Libraries\Platform\Uuid;
@@ -442,7 +443,7 @@ final class InvoiceDelivery extends BaseController
     private function panel(string $fragment, int $status, array $draft, array $values, array $errors, ?string $alert, string $kind, ?bool $retry = null): ResponseInterface
     {
         $invoice = (array) $draft['invoice'];
-        $client  = db_connect()->query('SELECT name FROM clients WHERE id = :id:', ['id' => (int) $invoice['client_id']])->getRowArray();
+        $client  = db_connect()->query('SELECT ' . ClientNameSql::snapshotName('i') . ' AS name FROM invoices i JOIN clients c ON c.id = i.client_id WHERE i.id = :id:', ['id' => (int) $invoice['id']])->getRowArray();
         $body    = htmx_view($fragment, [
             'invoice'    => $invoice,
             'clientName' => (string) ($client['name'] ?? ''),

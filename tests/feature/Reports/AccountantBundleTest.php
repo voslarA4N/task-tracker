@@ -114,6 +114,19 @@ final class AccountantBundleTest extends AuthTestCase
         $this->assertStringContainsString('najviac 12 mesiacov', $this->body($long));
     }
 
+    public function testOutOfRangeIs422(): void
+    {
+        $this->seed();
+        $this->login();
+
+        $preview = $this->withHeaders(['HX-Request' => 'true'])->get('/reports/accountant/preview?entity=' . $this->entity . '&from=9999-12&to=9999-12');
+        $preview->assertStatus(422);
+        $this->assertStringContainsString('Obdobie musí byť v rozmedzí január 2000 až december 2100', $this->body($preview));
+
+        $download = $this->get('/reports/accountant/download?entity=' . $this->entity . '&from=9999-12&to=9999-12');
+        $download->assertStatus(422);
+    }
+
     public function testEmptyPeriodDisablesButton(): void
     {
         $this->seed();

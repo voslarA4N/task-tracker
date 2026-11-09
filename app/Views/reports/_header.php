@@ -15,9 +15,9 @@ $action   = $view === 'year' ? '/reports/year' : '/reports/month';
 ?>
 <h1 class="h4 mb-1"><?= esc(lang('Reports.title')) ?></h1>
 <p class="small text-body-secondary"><?= esc(lang('Reports.intro')) ?></p>
-<ul class="nav nav-pills mb-3" aria-label="<?= esc(lang('Reports.switchLabel'), 'attr') ?>">
-    <li class="nav-item"><a class="nav-link btn-touch<?= $view === 'month' ? ' active' : '' ?>" href="<?= esc($monthUrl) ?>"<?= $view === 'month' ? ' aria-current="page"' : '' ?>><?= esc(lang('Reports.tabMonth')) ?></a></li>
-    <li class="nav-item"><a class="nav-link btn-touch<?= $view === 'year' ? ' active' : '' ?>" href="<?= esc($yearUrl) ?>"<?= $view === 'year' ? ' aria-current="page"' : '' ?>><?= esc(lang('Reports.tabYear')) ?></a></li>
+<ul class="nav nav-pills flex-wrap gap-2 mb-3" aria-label="<?= esc(lang('Reports.switchLabel'), 'attr') ?>">
+    <li class="nav-item"><a class="nav-link text-center btn-touch<?= $view === 'month' ? ' active' : '' ?>" href="<?= esc($monthUrl) ?>"<?= $view === 'month' ? ' aria-current="page"' : '' ?>><?= esc(lang('Reports.tabMonth')) ?></a></li>
+    <li class="nav-item"><a class="nav-link text-center btn-touch<?= $view === 'year' ? ' active' : '' ?>" href="<?= esc($yearUrl) ?>"<?= $view === 'year' ? ' aria-current="page"' : '' ?>><?= esc(lang('Reports.tabYear')) ?></a></li>
 </ul>
 <?php if (count($entities) > 1) : ?>
     <form class="mb-3" method="get" action="<?= esc($action, 'attr') ?>" hx-get="<?= esc($action, 'attr') ?>" hx-trigger="change" hx-target="#report-body" hx-swap="outerHTML" hx-push-url="true">

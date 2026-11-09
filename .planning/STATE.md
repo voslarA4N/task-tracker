@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 12-13-PLAN.md
-last_updated: "2026-11-09T11:48:28.074Z"
+status: verifying
+stopped_at: Completed 12.1-10-PLAN.md
+last_updated: "2026-11-09T21:02:14.585Z"
 last_activity: 2026-11-09
 progress:
-  total_phases: 13
-  completed_phases: 12
-  total_plans: 145
-  completed_plans: 144
-  percent: 92
+  total_phases: 14
+  completed_phases: 14
+  total_plans: 155
+  completed_plans: 155
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-23)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 12 — lokaliz-cia-a-produkcia
+**Current focus:** Phase 12.1 — close-gaps-and-ui-polish
 
 ## Current Position
 
-Phase: 12 (lokaliz-cia-a-produkcia) — EXECUTING
-Plan: 15 of 15
-Status: Ready to execute
-Last activity: 2026-11-09
+Phase: 12.1
+Plan: Not started
+Status: Phase complete — ready for verification
+Last activity: 2026-11-10 - Completed quick task 261109-x2u: Odhlásenie v hlavičke
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -36,7 +36,7 @@ Progress: [░░░░░░░░░░] 0%
 
 **Velocity:**
 
-- Total plans completed: 109
+- Total plans completed: 134
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -54,6 +54,8 @@ Progress: [░░░░░░░░░░] 0%
 | 9 | 11 | - | - |
 | 10 | 8 | - | - |
 | 11.1 | 5 | - | - |
+| 12 | 15 | - | - |
+| 12.1 | 10 | - | - |
 
 **Recent Trend:**
 
@@ -163,6 +165,7 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 11.1 inserted after Phase 11: Pregenerovanie dokladov z kópie údajov — nová verzia výkazu (kedykoľvek) a PDF faktúry (do nastaviteľných 72 h) zo snapshotu, append-only (URGENT)
+- Phase 12.1 inserted after Phase 12: Uzavretie medzier z auditu v1.0 (RPT-02/RPT-03 meno klienta zo snapshotu, WR-01/WR-02/W4) a kontrola a oprava dizajnu (nalepené texty, chýbajúce okraje a odsadenia) (URGENT)
 
 ### Pending Todos
 
@@ -188,6 +191,10 @@ Recent decisions affecting current work:
 | 261028-hu8 | Staging seed: deterministická vymyslená história od 2026-01-01 (3 subjekty, 8 klientov, ~157 úloh, ~41 faktúr cez reálny InvoiceIssuer), reset DB pri každom staging deployi s poistkami proti produkcii, moduly na rozširovanie | 2026-10-28 | 4777762 | [261028-hu8-staging-seed-s-vymyslenou-historiou-od-2](./quick/261028-hu8-staging-seed-s-vymyslenou-historiou-od-2/) |
 | 261028-mf3 | Voliteľná 2FA: ponuka pri prvom prihlásení s voľbou „nechcem“, zapnutie/vypnutie v Nastaveniach (heslo + TOTP alebo záložný kód), reset hesla e-mailom a zapamätanie zariadenia aj bez 2FA, staging admin bez 2FA | 2026-10-28 | d8c2e5f | [261028-mf3-volitelna-2fa-s-moznostou-vypnutia-v-gui](./quick/261028-mf3-volitelna-2fa-s-moznostou-vypnutia-v-gui/) |
 | 261028-w8p | Vlastný mailový server: Stalwart 1.0.1 + Roundcube (webmail.vostack.dev), unbound pre DNSBL, schránky info@/noreply@ + aliasy, DKIM/SPF/DMARC p=none/MTA-STS testing, nočné zálohy; nasadené na 2.31.74.48 (/opt/mail) 2026-10-29 | 2026-10-29 | 3367b4e | Needs Review | [261028-w8p-vlastny-mailovy-server-stalwart-a-webmai](./quick/261028-w8p-vlastny-mailovy-server-stalwart-a-webmai/) |
+| 261109-vi6 | Menu Viac na desktope: názov a popis položky pod sebou (`.more-item` flex stĺpec, medzera 4 px) + guard test | 2026-11-09 | fbec00a | [261109-vi6-fix-viac-menu-desktop-layout-stack-title](./quick/261109-vi6-fix-viac-menu-desktop-layout-stack-title/) |
+| 261109-vy0 | Menu Viac ako dlaždice s ikonkami (12 SVG ikon v `more/_icon.php`, mriežka 2/3/4 stĺpce, odhlásenie samostatné tlačidlo) + testy | 2026-11-09 | 2bb8105 | [261109-vy0-menu-viac-ako-dlazdice-s-ikonkami](./quick/261109-vy0-menu-viac-ako-dlazdice-s-ikonkami/) |
+| 261109-w30 | Ikonky v hornej navigácii (vľavo od textu) a v spodnom tab bare (nad textom), spoločný `layouts/_icon.php` pre navigáciu aj menu Viac + testy | 2026-11-09 | 6c36da0 | [261109-w30-ikonky-v-hornej-navigacii-a-tab-bare](./quick/261109-w30-ikonky-v-hornej-navigacii-a-tab-bare/) |
+| 261109-x2u | Odhlásenie presunuté z menu Viac do hlavičky (všetky šírky), ikona + text tlmenou červenou `--app-logout: #b23b30` + testy | 2026-11-10 | 9ba8522 | [261109-x2u-odhlasenie-v-hlavicke-s-ikonkou](./quick/261109-x2u-odhlasenie-v-hlavicke-s-ikonkou/) |
 
 ## Deferred Items
 
@@ -199,6 +206,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-04T23:27:24.351Z
-Stopped at: Completed 12-13-PLAN.md
+Last session: 2026-11-09T20:45:18.930Z
+Stopped at: Completed 12.1-10-PLAN.md
 Resume file: None

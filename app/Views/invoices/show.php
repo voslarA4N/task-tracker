@@ -93,12 +93,12 @@ $history = (array) ($invoice['history'] ?? []);
         <h1 class="h4 mb-1" id="inv-title"><?= esc($heading) ?></h1>
         <p class="mb-1">
             <span class="st-badges">
-                <span class="st-badge badge <?= esc($statusClass, 'attr') ?>"><?= esc(lang($statusKey)) ?></span>
+                <span class="st-badge badge text-wrap <?= esc($statusClass, 'attr') ?>"><?= esc(lang($statusKey)) ?></span>
                 <?php if ($isCreditNote) : ?>
-                    <span class="st-badge badge text-bg-secondary"><?= esc(lang($isSent ? 'Invoices.statusCnSent' : 'Invoices.statusCnIssued')) ?></span>
+                    <span class="st-badge badge text-wrap text-bg-secondary"><?= esc(lang($isSent ? 'Invoices.statusCnSent' : 'Invoices.statusCnIssued')) ?></span>
                 <?php endif ?>
                 <?php if ($overdue) : ?>
-                    <span class="st-badge badge text-bg-danger"><?= esc(lang('Invoices.statusOverdue', [$payState['days_overdue']])) ?></span>
+                    <span class="st-badge badge text-wrap text-bg-danger"><?= esc(lang('Invoices.statusOverdue', [$payState['days_overdue']])) ?></span>
                 <?php endif ?>
             </span>
         </p>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries\Receivables;
 
+use App\Libraries\Invoicing\ClientNameSql;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
 
@@ -76,9 +77,9 @@ final class InvoiceStatusQueries
         }
 
         $rows = $this->db->query(
-            "SELECT i.id, i.number, c.name AS client_name, i.due_date, CAST(:today: AS date) - i.due_date AS days_overdue,
+            'SELECT i.id, i.number, ' . ClientNameSql::snapshotName('f') . " AS client_name, i.due_date, CAST(:today: AS date) - i.due_date AS days_overdue,
                     i.balance, i.currency, i.status, i.last_reminder_at
-             FROM invoice_status_v i JOIN clients c ON c.id = i.client_id
+             FROM invoice_status_v i JOIN clients c ON c.id = i.client_id JOIN invoices f ON f.id = i.id
              WHERE i.origin = 'issued' AND i.type = 'invoice' AND i.status <> 'cancelled' AND i.balance > 0 AND i.due_date < CAST(:today: AS date)" . $where . '
              ORDER BY i.due_date ASC, i.id ASC
              LIMIT :n:',

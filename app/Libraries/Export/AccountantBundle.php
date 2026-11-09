@@ -7,13 +7,16 @@ namespace App\Libraries\Export;
 use App\Libraries\Invoicing\DocumentStore;
 use App\Libraries\Reporting\BundleSelector;
 use App\Libraries\Reporting\ReportPeriod;
+use Closure;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
 use RuntimeException;
+use Throwable;
 use ZipArchive;
 
 /**
  * ZIP pre uctovnicku (D-09 az D-12): ulozene PDF faktur a dobropisov (nikdy znovu generovane) a zoznam-dokladov.csv.
+ * D-07: cistenie docasneho suboru je bezpecne voci vynimkam na kazdej ceste (aj pri zlyhanom close()).
  */
 final class AccountantBundle
 {
@@ -24,12 +27,16 @@ final class AccountantBundle
      */
     private readonly BaseConnection $db;
 
+    private readonly Closure $zipFactory;
+
     /**
      * @param BaseConnection<mixed, mixed>|null $db
+     * @param (Closure(): ZipArchive)|null      $zipFactory test seam, production uses a plain ZipArchive
      */
-    public function __construct(?BaseConnection $db = null)
+    public function __construct(?BaseConnection $db = null, ?Closure $zipFactory = null)
     {
-        $this->db = $db ?? Database::connect();
+        $this->db         = $db ?? Database::connect();
+        $this->zipFactory = $zipFactory ?? static fn (): ZipArchive => new ZipArchive();
     }
 
     /**
@@ -74,12 +81,16 @@ final class AccountantBundle
             throw new RuntimeException('Cannot create temporary bundle file.');
         }
 
-        try {
-            $zip = new ZipArchive();
+        $zip    = ($this->zipFactory)();
+        $opened = false;
+        $closed = false;
 
+        try {
             if ($zip->open($tmp, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
                 throw new RuntimeException('Cannot open zip archive.');
             }
+
+            $opened = true;
 
             $store = new DocumentStore($this->db);
             $used  = [];
@@ -103,6 +114,9 @@ final class AccountantBundle
 
             $zip->addFromString('zoznam-dokladov.csv', CsvWriter::render(DocumentListExport::table($docs, true)));
 
+            // close() always invalidates the handle, success or failure, so mark it closed before calling.
+            $closed = true;
+
             if (! $zip->close()) {
                 throw new RuntimeException('Cannot finalize zip archive.');
             }
@@ -115,8 +129,18 @@ final class AccountantBundle
 
             return $bytes;
         } finally {
+            if ($opened && ! $closed) {
+                // Discard pending entries and close first, otherwise libzip re-creates $tmp on destruct after unlink.
+                try {
+                    $zip->unchangeAll();
+                    $zip->close();
+                } catch (Throwable) {
+                    // Handle already gone, fall through to unlink.
+                }
+            }
+
             if (is_file($tmp)) {
-                unlink($tmp);
+                @unlink($tmp);
             }
         }
     }

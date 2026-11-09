@@ -152,6 +152,11 @@ restic forget <snapshot-id> --prune
 Obnova archívu: `restic restore <snapshot-id> --target /cesta/archiv`, potom v ZIP skontrolovať `sha256` podľa CSV.
 Ručné spustenie: `archive-yearly.sh [rok]` (bez argumentu predchádzajúci rok).
 
+**Poznámka pre účtovníčku: dátum archívu vs. prehľad a balík.** Ročný archív obsahuje doklady podľa dátumu vystavenia.
+Mesačné a ročné prehľady a balík pre účtovníčku sa riadia dátumom dodania (obrat, mínus dobropisy v mesiaci ich dodania).
+Príklad: faktúra s dodaním v decembri 2026 a dobropis vystavený v januári 2027 je v decembrovom prehľade a balíku,
+ale v archíve roka 2027 (pôvodná faktúra je v archíve roka 2026).
+
 ## 11. Skript backup.sh (lokálny dump)
 
 ```sh

@@ -19,7 +19,7 @@ Granularita: fine (12 fáz). Režim projektu: mvp (každá fáza dodáva použit
 - [x] **Phase 9: Dobropisy** - Celé storno s dôvodom, odkazom na originál a uvoľnením častí (completed 2026-11-01)
 - [x] **Phase 10: Limity obratu** - Tabuľka limitov, výpočet obratu, upozornenia a predkontrola pri vystavení (completed 2026-11-02)
 - [x] **Phase 11: Prehľady, exporty a audit** - Mesačné a ročné prehľady, CSV/XLSX, ZIP pre účtovníčku, prehliadač denníka, PC zoznamy (completed 2026-11-04)
-- [ ] **Phase 12: Lokalizácia a produkcia** - Preklady PL/CZ/EN, zálohy s overenou obnovou, archív dokladov, hardening a meranie výkonu
+- [x] **Phase 12: Lokalizácia a produkcia** - Preklady PL/CZ/EN, zálohy s overenou obnovou, archív dokladov, hardening a meranie výkonu (completed 2026-11-09)
 
 ## Phase Details
 
@@ -654,7 +654,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 12-15-PLAN.md — Meranie p95, PDF a pamäte na stagingu a produkcii, prípadné ladenie (vlna 5, checkpoint)
+- [x] 12-15-PLAN.md — Meranie p95, PDF a pamäte na stagingu a produkcii, prípadné ladenie (vlna 5, checkpoint)
 
 **UI hint**: yes
 **Poznámky**: Štandardné vzory, overiť len podmienky Hetzner Storage Box (port, append-only). Prune zálohy spúšťať mimo produkčného servera alebo s oddeleným kľúčom; kópia hesla repozitára a `encryption.key` mimo servera. **Závislosť od účtovníčky:** doba uchovávania (SK 10 rokov, PL podľa účtovníčky). Súčasťou je CLI reset 2FA a meranie `docker stats` a p95.
@@ -676,4 +676,42 @@ Plans:
 | 9. Dobropisy | 11/11 | Complete    | 2026-11-02 |
 | 10. Limity obratu | 8/8 | Complete    | 2026-11-02 |
 | 11. Prehľady, exporty a audit | 11/11 | Complete   | 2026-11-04 |
-| 12. Lokalizácia a produkcia | 14/15 | In Progress|  |
+| 12. Lokalizácia a produkcia | 15/15 | Complete    | 2026-11-09 |
+
+### Phase 12.1: Close gaps and UI polish: snapshot client name in all read paths (RPT-02/RPT-03), WR-01/WR-02/W4 fixes, design review and fix of overlapping texts, missing margins and paddings (INSERTED)
+
+**Goal:** Uzavrieť medzery z auditu v1.0 (`.planning/v1.0-MILESTONE-AUDIT.md`): vystavené doklady všade zobrazujú názov klienta z kópie údajov, prehľady a balík pre účtovníčku sú robustné. Zároveň skontrolovať a opraviť vizuálny dizajn aplikácie (texty nalepené na sebe, chýbajúce okraje a odsadenia) na PC aj iPhone.
+**Requirements**: RPT-02, RPT-03 (gap closure), RPT-01, UI-01, UI-03
+**Depends on:** Phase 12
+
+**Success Criteria** (what must be TRUE):
+
+1. Po premenovaní klienta sa zoznam faktúr, detail, export CSV/XLSX, CSV v balíku pre účtovníčku, mesačný/ročný prehľad, dashboard (po splatnosti) a hlavička úhrady zhodujú s menom na vystavenom PDF (snapshot; živé meno len pre externé faktúry). Pokryté testom.
+2. `/reports/month`, `/reports/year`, ich CSV/XLSX a `/reports/accountant` s obdobím mimo 2000-01..2100-12 nevrátia HTTP 500 (WR-02).
+3. Chyba pri skladaní ZIP balíka nenechá v `writable/exports` žiadny zvyšok (WR-01), pokryté testom.
+4. Je rozhodnutý a zdokumentovaný dátumový základ dobropisov v ročnom archíve vs prehľad/balík (W4) a kód mu zodpovedá.
+5. Dizajnová kontrola všetkých hlavných obrazoviek (dashboard, úlohy, faktúry, fakturácia mesiaca, úhrady, prehľady, účtovníčka, audit, nastavenia, prihlásenie/2FA) na šírke 375 px a desktop: žiadne texty nalepené na sebe ani prekrývajúce sa, konzistentné okraje a odsadenia (Bootstrap spacing), bez horizontálneho posúvania, dotykové ciele ≥ 44 px, v SK aj dlhších PL/CS textoch. Nálezy a opravy zapísané, vlastník potvrdí na stagingu.
+
+**Plans:** 10/10 plans complete
+Plans:
+**Wave 1**
+
+- [x] 12.1-01-PLAN.md — ClientNameSql helper, snapshot client name in invoice list/sort/detail/export and bundle CSV (vlna 1)
+- [x] 12.1-04-PLAN.md — Hranice obdobia 2000-01..2100-12 v ReportPeriod, redirect/404/422 namiesto 500, Bundle.errorRange v 4 jazykoch (vlna 1)
+- [x] 12.1-05-PLAN.md — ZIP balík: unchangeAll + close pred unlink, regresný test bez zvyškov (vlna 1)
+- [x] 12.1-07-PLAN.md — Dizajnová kontrola: DESIGN-REVIEW, strážne testy CSS/CSP, globálne opravy app.css (vlna 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 12.1-02-PLAN.md — Prehľady: label klienta zo snapshotu posledného dokladu v období (D-03), súčty nezmenené (vlna 2)
+- [x] 12.1-03-PLAN.md — Dashboard po splatnosti, hlavička úhrady a odoslania zo snapshotu + feature test (vlna 2)
+- [x] 12.1-08-PLAN.md — Opravy v šablónach (tabuľky, 44 px, štítky, pills), strážny test šablón, HUMAN-UAT na stagingu (vlna 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 12.1-06-PLAN.md — D-05 test premenovania klienta na všetkých cestách, D-08 test dátumového základu a dokumentácia (vlna 3)
+
+**Gap closure (wave 1)**
+
+- [x] 12.1-09-PLAN.md — CR-01: ZIP balík bez zvyškov aj pri zlyhaní close(), pôvodná chyba sa nestratí, errorBuild namiesto 500 (vlna 1)
+- [x] 12.1-10-PLAN.md — WR-01: štítok klienta len s úhradami z najnovšieho snapshotu, WR-02: radenie podľa ClientNameSql za behu + pin test (vlna 1)

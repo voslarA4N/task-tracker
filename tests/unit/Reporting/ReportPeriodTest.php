@@ -72,6 +72,65 @@ final class ReportPeriodTest extends TestCase
         $this->assertCount(12, ReportPeriod::range('2025-02', '2026-01')->months());
     }
 
+    public function testMonthOutOfRange(): void
+    {
+        foreach (['9999-12', '1999-12', '2101-01'] as $ym) {
+            try {
+                ReportPeriod::month($ym);
+                $this->fail('expected out_of_range for ' . $ym);
+            } catch (InvalidArgumentException $e) {
+                $this->assertSame('out_of_range', $e->getMessage());
+            }
+        }
+    }
+
+    public function testMonthBoundsAccepted(): void
+    {
+        $this->assertSame('2000-01', ReportPeriod::month('2000-01')->key);
+        $this->assertSame('2100-12', ReportPeriod::month('2100-12')->key);
+    }
+
+    public function testParseFailureKeepsMessage(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('month');
+        ReportPeriod::month('2026-13');
+    }
+
+    public function testRangeOutOfRange(): void
+    {
+        foreach ([['2100-12', '2101-01'], ['1999-12', '2000-01'], ['9999-12', '9999-12']] as [$a, $b]) {
+            try {
+                ReportPeriod::range($a, $b);
+                $this->fail('expected out_of_range for ' . $a . ' ' . $b);
+            } catch (InvalidArgumentException $e) {
+                $this->assertSame('out_of_range', $e->getMessage());
+            }
+        }
+    }
+
+    public function testEdgeNavigationThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('out_of_range');
+        ReportPeriod::month('2000-01')->previous();
+    }
+
+    public function testEdgeNavigationNextThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('out_of_range');
+        ReportPeriod::month('2100-12')->next();
+    }
+
+    public function testIsInBounds(): void
+    {
+        $this->assertTrue(ReportPeriod::isInBounds('2000-01'));
+        $this->assertTrue(ReportPeriod::isInBounds('2100-12'));
+        $this->assertFalse(ReportPeriod::isInBounds('1999-12'));
+        $this->assertFalse(ReportPeriod::isInBounds('2101-01'));
+    }
+
     public function testInvalidMonth(): void
     {
         $this->expectException(InvalidArgumentException::class);

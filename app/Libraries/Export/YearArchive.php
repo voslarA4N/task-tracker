@@ -17,6 +17,10 @@ use ZipArchive;
  * Rocny archiv dokladov (NFR-09, D-10): ZIP so vsetkymi ulozenymi PDF vystavenych dokladov roka (vsetky verzie)
  * a CSV index so sha256. PDF sa citaju iba z invoice_documents cez DocumentStore::readVersion (overenie sha256),
  * nikdy sa negeneruju znova. Zapis na disk, jedno PDF naraz.
+ *
+ * Datumovy zaklad (D-08): archiv vyberá podla issue_date (datum vystavenia), lebo zakonna retencia (NFR-09) bezi od roka
+ * vystavenia. Mesacne/rocne prehlady a uctovnicky balik vyberaju podla turnover_date (datum dodania). Dobropis vystaveny
+ * v januari k decembrovej faktúre je preto v decembrovom prehlade a baliku a v archive nasledujuceho roka, zamerne.
  */
 final class YearArchive
 {

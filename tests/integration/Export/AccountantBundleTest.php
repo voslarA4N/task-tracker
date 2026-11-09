@@ -8,13 +8,17 @@ use App\Libraries\Export\AccountantBundle;
 use App\Libraries\Export\BundleRejected;
 use App\Libraries\Export\DocumentListExport;
 use App\Libraries\Invoicing\DocumentFilename;
+use App\Libraries\Invoicing\DocumentIntegrityError;
 use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Platform\Money;
 use App\Libraries\Reporting\BundleSelector;
 use App\Libraries\Reporting\ReportCalculator;
 use App\Libraries\Reporting\ReportPeriod;
+use Closure;
 use Config\Services;
+use ErrorException;
 use PHPUnit\Framework\Attributes\Group;
+use RuntimeException;
 use Tests\Support\CreditNoteFixtures;
 use Tests\Support\InvoiceFixtures;
 use Tests\Support\IssueFixtures;
@@ -201,6 +205,93 @@ final class AccountantBundleTest extends PgTestCase
         }
 
         $this->assertSame($before, glob(WRITEPATH . 'exports/zip*') ?: []);
+    }
+
+    public function testIntegrityFailureLeavesNoFile(): void
+    {
+        // Corrupt the LAST document (a pending entry already sits in the archive when it fails).
+        // The DB CHECK normally makes a sha256 mismatch impossible, so lift it for the duration of the test.
+        $id    = $this->reportInvoice($this->entity, $this->client, '2026-10-28', '50.00', ['number' => 'BADSHA1']);
+        $owner = $this->owner();
+        $guard = 'ALTER TABLE invoice_documents %s TRIGGER invoice_documents_immutable';
+        $owner->query(sprintf($guard, 'DISABLE'));
+        $owner->query('ALTER TABLE invoice_documents DROP CONSTRAINT invoice_documents_check1');
+        $good = (string) $owner->query("SELECT sha256 FROM invoice_documents WHERE invoice_id = :i: AND kind = 'invoice'", ['i' => $id])->getRow()->sha256;
+        $owner->query("UPDATE invoice_documents SET sha256 = :s: WHERE invoice_id = :i: AND kind = 'invoice'", ['s' => str_repeat('a', 64), 'i' => $id]);
+        $owner->query(sprintf($guard, 'ENABLE'));
+
+        $before = glob(WRITEPATH . 'exports/zip*') ?: [];
+
+        try {
+            (new AccountantBundle($this->rw()))->build($this->entity, $this->period());
+            $this->fail('Expected DocumentIntegrityError');
+        } catch (DocumentIntegrityError) {
+            $this->addToAssertionCount(1);
+        } finally {
+            $owner->query(sprintf($guard, 'DISABLE'));
+            $owner->query("UPDATE invoice_documents SET sha256 = :s: WHERE invoice_id = :i: AND kind = 'invoice'", ['s' => $good, 'i' => $id]);
+            $owner->query("ALTER TABLE invoice_documents ADD CONSTRAINT invoice_documents_check1 CHECK (sha256 = encode(sha256(content), 'hex'))");
+            $owner->query(sprintf($guard, 'ENABLE'));
+        }
+
+        $this->assertSame($before, glob(WRITEPATH . 'exports/zip*') ?: []);
+    }
+
+    /**
+     * ZipArchive whose close() really closes (handle invalidated, file written) and then fails.
+     */
+    private function failingZip(string $mode): Closure
+    {
+        return static fn (): ZipArchive => new class ($mode) extends ZipArchive {
+            public function __construct(private readonly string $mode)
+            {
+            }
+
+            public function close(): bool
+            {
+                parent::close();
+
+                if ($this->mode === 'throw') {
+                    throw new ErrorException('zip close failed');
+                }
+
+                return false;
+            }
+        };
+    }
+
+    public function testCloseFailureLeavesNoFileAndKeepsOriginalError(): void
+    {
+        $before = glob(WRITEPATH . 'exports/*') ?: [];
+        $caught = null;
+
+        try {
+            (new AccountantBundle($this->rw(), $this->failingZip('false')))->build($this->entity, $this->period());
+        } catch (Throwable $e) {
+            $caught = $e;
+        }
+
+        $this->assertNotNull($caught, 'Expected an exception');
+        $this->assertSame(RuntimeException::class, $caught::class, $caught::class . ': ' . $caught->getMessage());
+        $this->assertSame('Cannot finalize zip archive.', $caught->getMessage());
+        $this->assertSame($before, glob(WRITEPATH . 'exports/*') ?: []);
+    }
+
+    public function testCloseThrowingLeavesNoFile(): void
+    {
+        $before = glob(WRITEPATH . 'exports/*') ?: [];
+        $caught = null;
+
+        try {
+            (new AccountantBundle($this->rw(), $this->failingZip('throw')))->build($this->entity, $this->period());
+        } catch (Throwable $e) {
+            $caught = $e;
+        }
+
+        $this->assertNotNull($caught, 'Expected an exception');
+        $this->assertSame(ErrorException::class, $caught::class, $caught::class . ': ' . $caught->getMessage());
+        $this->assertSame('zip close failed', $caught->getMessage());
+        $this->assertSame($before, glob(WRITEPATH . 'exports/*') ?: []);
     }
 
     public function testEmptyPeriodRejected(): void

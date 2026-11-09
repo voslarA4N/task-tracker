@@ -72,8 +72,8 @@ final class InvoiceDetailTest extends AuthTestCase
         $this->assertStringContainsString('href="/tasks/' . $s['tasks'][0] . '"', $html);
         $this->assertStringNotContainsString('Upraviť', $html);
         $this->assertStringNotContainsString('Zmazať', $html);
-        // jediné formuláre sú pregenerovanie výkazu a faktúry (Phase 11.1), žiadne úpravy
-        $this->assertSame(2, substr_count($html, 'method="post"'));
+        // jediné formuláre sú pregenerovanie výkazu a faktúry (Phase 11.1) + odhlásenie v hlavičke, žiadne úpravy
+        $this->assertSame(3, substr_count($html, 'method="post"'));
         $this->assertSame(2, substr_count($html, '/regenerate/'));
     }
 

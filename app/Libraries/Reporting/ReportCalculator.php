@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Libraries\Reporting;
 
+use App\Libraries\Invoicing\ClientNameSql;
 use App\Libraries\Platform\Money;
 use CodeIgniter\Database\BaseConnection;
 use Config\Database;
@@ -12,6 +13,11 @@ use Config\Database;
  * Jediny zdroj sum prehladov (NFR-04, D-05). Cita iba denormalizovane stlpce faktur zapisane pri
  * vystaveni (total_entity_ccy, turnover_date, counts_toward_limit, origin). Doklady sa zaradia podla
  * datumu dodania (D-01), externe faktury sa nezapocitavaju. Sucty vznikaju iba cez Money, nikdy druhym SQL.
+ *
+ * Vyber podla turnover_date (datum dodania, dobropisy v mesiaci svojho datumu dodania); rocny archiv
+ * (YearArchive) vybera podla issue_date (D-08). Popis riadku klienta (D-03): jeden riadok na client_id,
+ * nazov z snapshotu najnovsieho vystaveneho dokladu v obdobi (issue_date, potom najvyssie id); klient iba
+ * s uhradami berie nazov z najnovsej uhradenej faktury (issue_date, potom najvyssie id).
  */
 final class ReportCalculator
 {
@@ -34,18 +40,19 @@ final class ReportCalculator
         $currency    = trim((string) ($currencyRow['currency'] ?? ''));
 
         $rows = $this->db->query(
-            "SELECT i.client_id, c.name AS client_name, to_char(i.turnover_date, 'YYYY-MM') AS month,
+            "SELECT i.client_id, to_char(i.turnover_date, 'YYYY-MM') AS month,
                     COALESCE(SUM(i.total_entity_ccy), 0) AS invoiced,
                     COALESCE(SUM(i.total_entity_ccy) FILTER (WHERE i.counts_toward_limit), 0) AS counted,
                     COUNT(*) FILTER (WHERE i.type = 'invoice') AS invoice_count,
                     COUNT(*) FILTER (WHERE i.type = 'credit_note') AS credit_note_count
              FROM invoices i
-             JOIN clients c ON c.id = i.client_id
              WHERE i.entity_id = :e: AND i.origin = 'issued'
                AND i.turnover_date >= :from: AND i.turnover_date < :until:
-             GROUP BY i.client_id, c.name, 3",
+             GROUP BY i.client_id, 2",
             ['e' => $entityId, 'from' => $period->from, 'until' => $period->until],
         )->getResultArray();
+
+        $labels = $this->labels($entityId, $period);
 
         /** @var array<int, array{name: string, invoiced: Money, counted: Money, paid: Money}> $clients */
         $clients = [];
@@ -65,7 +72,7 @@ final class ReportCalculator
             $counted  = Money::of((string) $row['counted']);
             $month    = (string) $row['month'];
 
-            $clients[$clientId] ??= ['name' => (string) $row['client_name'], 'invoiced' => Money::zero(), 'counted' => Money::zero(), 'paid' => Money::zero()];
+            $clients[$clientId] ??= ['name' => $labels[$clientId] ?? '', 'invoiced' => Money::zero(), 'counted' => Money::zero(), 'paid' => Money::zero()];
             $clients[$clientId]['invoiced'] = $clients[$clientId]['invoiced']->plus($invoiced);
             $clients[$clientId]['counted']  = $clients[$clientId]['counted']->plus($counted);
 
@@ -78,7 +85,7 @@ final class ReportCalculator
             $creditNoteCount += (int) $row['credit_note_count'];
         }
 
-        $paidTotal = $this->addPayments($entityId, $period, $clients, $months);
+        $paidTotal = $this->addPayments($entityId, $period, $labels, $clients, $months);
 
         uasort($clients, static function (array $a, array $b): int {
             $cmp = $b['invoiced']->compare($a['invoiced']);
@@ -111,17 +118,44 @@ final class ReportCalculator
     }
 
     /**
+     * Popis klienta = nazov zo snapshotu najnovsieho vystaveneho dokladu v obdobi (rovnaka mnozina riadkov ako sucty).
+     *
+     * @return array<int, string>
+     */
+    private function labels(int $entityId, ReportPeriod $period): array
+    {
+        $rows = $this->db->query(
+            'SELECT DISTINCT ON (i.client_id) i.client_id, ' . ClientNameSql::snapshotName('i') . " AS client_name
+             FROM invoices i
+             JOIN clients c ON c.id = i.client_id
+             WHERE i.entity_id = :e: AND i.origin = 'issued'
+               AND i.turnover_date >= :from: AND i.turnover_date < :until:
+             ORDER BY i.client_id, i.issue_date DESC, i.id DESC",
+            ['e' => $entityId, 'from' => $period->from, 'until' => $period->until],
+        )->getResultArray();
+
+        $labels = [];
+
+        foreach ($rows as $row) {
+            $labels[(int) $row['client_id']] = (string) $row['client_name'];
+        }
+
+        return $labels;
+    }
+
+    /**
      * Uhrady podla paid_on (D-02), bez zrusenych. Suma v mene subjektu = rozdiel kumulativnych podielov
      * ReportMath::paidShare z ulozenych total a total_entity_ccy faktury (nikdy aktualny kurz, CUR-04).
      * Nacitaju sa vsetky platby faktur, ktore maju aspon jednu platbu v obdobi, aby kumulacia bola presna.
      *
+     * @param array<int, string>                                                            $labels
      * @param array<int, array{name: string, invoiced: Money, counted: Money, paid: Money}> $clients
      * @param array<string, array{invoiced: Money, counted: Money, paid: Money}>            $months
      */
-    private function addPayments(int $entityId, ReportPeriod $period, array &$clients, array &$months): Money
+    private function addPayments(int $entityId, ReportPeriod $period, array $labels, array &$clients, array &$months): Money
     {
         $rows = $this->db->query(
-            "SELECT p.invoice_id, p.paid_on, p.amount, i.client_id, c.name AS client_name, i.total, i.total_entity_ccy,
+            'SELECT p.invoice_id, p.paid_on, p.amount, i.client_id, i.issue_date, ' . ClientNameSql::snapshotName('i') . " AS client_name, i.total, i.total_entity_ccy,
                     SUM(p.amount) OVER (PARTITION BY p.invoice_id ORDER BY p.paid_on, p.id) AS cum_amount
              FROM payments p
              JOIN invoices i ON i.id = p.invoice_id
@@ -136,6 +170,8 @@ final class ReportCalculator
         $total     = Money::zero();
         $prevShare = Money::zero();
         $prevInv   = null;
+        /** @var array<int, array{0: string, 1: int}> $best */
+        $best = [];
 
         foreach ($rows as $row) {
             $invoiceId = (int) $row['invoice_id'];
@@ -156,6 +192,16 @@ final class ReportCalculator
 
             $clientId = (int) $row['client_id'];
             $clients[$clientId] ??= ['name' => (string) $row['client_name'], 'invoiced' => Money::zero(), 'counted' => Money::zero(), 'paid' => Money::zero()];
+
+            if (! isset($labels[$clientId])) {
+                $issue = (string) $row['issue_date'];
+
+                if (! isset($best[$clientId]) || $issue > $best[$clientId][0] || ($issue === $best[$clientId][0] && $invoiceId > $best[$clientId][1])) {
+                    $best[$clientId]            = [$issue, $invoiceId];
+                    $clients[$clientId]['name'] = (string) $row['client_name'];
+                }
+            }
+
             $clients[$clientId]['paid'] = $clients[$clientId]['paid']->plus($part);
 
             $month = substr($paidOn, 0, 7);

@@ -141,6 +141,33 @@ final class ReportsPageTest extends AuthTestCase
         $this->assertStringContainsString('/reports/month?period=2026-11', $result->response()->getHeaderLine('Location'));
     }
 
+    public function testOutOfRangePeriodRedirectsToCurrentMonth(): void
+    {
+        $this->seed();
+        $this->login();
+        $result = $this->get('/reports/month?period=9999-12');
+        $result->assertStatus(302);
+        $this->assertStringContainsString('/reports/month?period=2026-11', $result->response()->getHeaderLine('Location'));
+    }
+
+    public function testLowerBoundHasNoPreviousLink(): void
+    {
+        $this->seed();
+        $this->login();
+        $result = $this->get('/reports/month?period=2000-01');
+        $result->assertStatus(200);
+        $this->assertStringNotContainsString('period=1999-12', $this->body($result));
+    }
+
+    public function testUpperBoundRendersWithoutNextLink(): void
+    {
+        $this->seed();
+        $this->login();
+        $result = $this->get('/reports/month?period=2100-12');
+        $result->assertStatus(200);
+        $this->assertStringNotContainsString('period=2101-01', $this->body($result));
+    }
+
     public function testNextDisabledForCurrentMonth(): void
     {
         $this->seed();

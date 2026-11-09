@@ -22,7 +22,7 @@
             <?php endforeach ?>
         </div>
 
-        <div class="d-none d-md-block">
+        <div class="d-none d-md-block table-responsive">
             <table class="table table-sm align-middle mb-0">
                 <thead>
                     <tr>

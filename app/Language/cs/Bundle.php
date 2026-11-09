@@ -21,6 +21,7 @@ return [
     'externalNote'     => 'Externí faktury (vystavené mimo aplikaci) balíček neobsahuje.',
     'errorOrder'       => 'Měsíc „Od“ nesmí být později než měsíc „Do“.',
     'errorTooLong'     => 'Období může mít nejvýše 12 měsíců.',
+    'errorRange'       => 'Období musí být v rozmezí leden 2000 až prosinec 2100. Upravte měsíce a zkuste to znovu.',
     'errorMissingPdf'  => 'Pro {0} dokladů chybí uložené PDF: {1}. Balíček nebyl vytvořen.',
     'errorTooLarge'    => 'Balíček je příliš velký. Zvolte kratší období.',
     'errorBuild'       => 'Balíček se nepodařilo vytvořit. Zkuste kratší období nebo to zopakujte.',

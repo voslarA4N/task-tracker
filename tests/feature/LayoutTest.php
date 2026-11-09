@@ -8,6 +8,7 @@ use CodeIgniter\Exceptions\PageNotFoundException;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\AuthTestCase;
 
@@ -39,6 +40,101 @@ final class LayoutTest extends AuthTestCase
         libxml_clear_errors();
 
         return new DOMXPath($dom);
+    }
+
+    public function testHeaderHasSingleLogoutForm(): void
+    {
+        $xp    = $this->xpath($this->homeHtml());
+        $forms = $xp->query('//form[@action="/logout"]');
+        $this->assertSame(1, $forms->length);
+        $form = $forms->item(0);
+        $this->assertInstanceOf(DOMElement::class, $form);
+        $this->assertSame(1, $xp->query('ancestor::header[contains(@class,"app-header")]', $form)->length);
+        $this->assertSame(0, $xp->query('ancestor::nav', $form)->length);
+        $this->assertSame('post', strtolower($form->getAttribute('method')));
+        $this->assertSame(1, $xp->query('.//input[@name="' . config('Security')->tokenName . '"]', $form)->length);
+
+        $buttons = $xp->query('.//button[@type="submit"][contains(@class,"app-logout")]', $form);
+        $this->assertSame(1, $buttons->length);
+        $btn = $buttons->item(0);
+        $this->assertInstanceOf(DOMElement::class, $btn);
+        $this->assertStringNotContainsString('btn-danger', $btn->getAttribute('class'));
+        $this->assertStringNotContainsString('text-danger', $btn->getAttribute('class'));
+
+        $svgs = $xp->query('./svg', $btn);
+        $this->assertSame(1, $svgs->length);
+        $svg = $svgs->item(0);
+        $this->assertInstanceOf(DOMElement::class, $svg);
+        $this->assertSame('true', $svg->getAttribute('aria-hidden'));
+        $this->assertSame('false', $svg->getAttribute('focusable'));
+        $this->assertSame('20', $svg->getAttribute('width'));
+        $this->assertSame(1, $xp->query('.//path[@d="M16 17l5-5-5-5"]', $svg)->length);
+        $this->assertSame(lang('Login.logout'), trim($btn->textContent));
+    }
+
+    public function testTabbarHasNoLogout(): void
+    {
+        $xp = $this->xpath($this->homeHtml());
+        $this->assertSame(0, $xp->query('//nav[contains(@class,"app-tabbar")]//form')->length);
+        $this->assertSame(0, $xp->query('//nav[contains(@class,"app-topnav")]//form')->length);
+    }
+
+    public function testNavLinksHaveIcons(): void
+    {
+        $xp     = $this->xpath($this->homeHtml());
+        $hrefs  = ['/', '/tasks', '/invoices', '/more'];
+        $labels = [lang('App.navOverview'), lang('App.navTasks'), lang('App.navInvoices'), lang('App.navMore')];
+
+        foreach (['app-topnav', 'app-tabbar'] as $cls) {
+            $links = $xp->query('//nav[contains(@class,"' . $cls . '")]/a');
+            $this->assertSame(4, $links->length, $cls);
+            $bodies = [];
+
+            foreach ($links as $i => $a) {
+                $this->assertInstanceOf(DOMElement::class, $a);
+                $this->assertSame($hrefs[$i], $a->getAttribute('href'));
+                $svgs = $xp->query('./svg', $a);
+                $this->assertSame(1, $svgs->length, $cls . ' ' . $hrefs[$i]);
+                $svg = $svgs->item(0);
+                $this->assertInstanceOf(DOMElement::class, $svg);
+                $this->assertSame('nav-icon', $svg->getAttribute('class'));
+                $this->assertSame('true', $svg->getAttribute('aria-hidden'));
+                $this->assertSame('false', $svg->getAttribute('focusable'));
+                $this->assertSame($labels[$i], trim($a->textContent));
+                $bodies[] = $svg->ownerDocument->saveHTML($svg);
+            }
+            $this->assertCount(4, array_unique($bodies));
+        }
+    }
+
+    #[DataProvider('provideNavAriaCurrentOnlyOnActive')]
+    public function testNavAriaCurrentOnlyOnActive(string $url, string $href): void
+    {
+        $result = $this->get($url);
+        $result->assertStatus(200);
+        $xp = $this->xpath((string) $result->getBody());
+
+        foreach (['app-topnav', 'app-tabbar'] as $cls) {
+            $cur = $xp->query('//nav[contains(@class,"' . $cls . '")]/a[@aria-current="page"]');
+            $this->assertSame(1, $cur->length, $cls);
+            $a = $cur->item(0);
+            $this->assertInstanceOf(DOMElement::class, $a);
+            $this->assertSame($href, $a->getAttribute('href'));
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideNavAriaCurrentOnlyOnActive(): iterable
+    {
+        yield 'home' => ['/', '/'];
+
+        yield 'tasks' => ['/tasks', '/tasks'];
+
+        yield 'invoices' => ['/invoices', '/invoices'];
+
+        yield 'more' => ['/more', '/more'];
     }
 
     public function testHomeRendersLayoutAssets(): void
@@ -120,6 +216,39 @@ final class LayoutTest extends AuthTestCase
 
             $this->assertStringContainsString('<html lang="en">', $html, $page);
             $this->assertMatchesRegularExpression('#href="/assets/css/app\.css\?v=\d+"#', html_entity_decode($html, ENT_QUOTES | ENT_HTML5), $page);
+        }
+    }
+
+    /**
+     * D-12 / R9: hlavne stranky v sk, pl a cs nemaju inline style ani inline script.
+     */
+    #[DataProvider('provideMainPagesHaveNoInlineStyleOrScript')]
+    public function testMainPagesHaveNoInlineStyleOrScript(string $locale, string $url): void
+    {
+        // Pouzivatel z setUp() je uz prihlaseny; zmenime mu len jazyk.
+        $this->owner()->query('UPDATE user_security SET locale = ?', [$locale]);
+
+        $result = $this->get($url);
+        $result->assertStatus(200);
+        $html = (string) $result->response()->getBody();
+
+        $this->assertStringContainsString('<html lang="' . $locale . '"', $html);
+        $this->assertSame(0, preg_match('/\sstyle\s*=/i', $html), "inline style na {$url} ({$locale})");
+        $this->assertSame(0, preg_match('/<script\b(?![^>]*\bsrc=)[^>]*>/i', $html), "inline script na {$url} ({$locale})");
+        $this->assertMatchesRegularExpression('#/assets/css/app\.css\?v=\d+#', html_entity_decode($html, ENT_QUOTES | ENT_HTML5));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideMainPagesHaveNoInlineStyleOrScript(): iterable
+    {
+        $urls = ['/', '/tasks', '/invoices', '/invoices/new', '/reports/month', '/reports/accountant', '/settings/security', '/more'];
+
+        foreach (['sk', 'pl', 'cs'] as $locale) {
+            foreach ($urls as $url) {
+                yield $locale . ' ' . $url => [$locale, $url];
+            }
         }
     }
 }

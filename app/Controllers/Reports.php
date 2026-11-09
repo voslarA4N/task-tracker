@@ -33,7 +33,7 @@ final class Reports extends BaseController
         } else {
             $period = BillingMonth::parse((string) $raw);
 
-            if ($period === null) {
+            if ($period === null || ! ReportPeriod::isInBounds($period)) {
                 return redirect()->to('/reports/month?' . http_build_query(['period' => $current]));
             }
         }
@@ -64,15 +64,17 @@ final class Reports extends BaseController
         $report = ReportPeriod::month($period);
         $result = (new ReportCalculator())->forPeriod($entity['id'], $report);
 
-        $url  = static fn (ReportPeriod $p): string => '/reports/month?' . http_build_query(['entity' => $entity['id'], 'period' => $p->key]);
-        $next = $report->next();
+        $url    = static fn (ReportPeriod $p): string => '/reports/month?' . http_build_query(['entity' => $entity['id'], 'period' => $p->key]);
+        $prevYm = BillingMonth::previous($period);
+        $nextYm = BillingMonth::next($period);
+        $next   = ReportPeriod::isInBounds($nextYm) ? ReportPeriod::month($nextYm) : null;
 
         return $this->render([
             'entityId' => $entity['id'],
             'entity'   => $entity,
             'result'   => $result,
-            'prevUrl'  => $url($report->previous()),
-            'nextUrl'  => $next->isAfterMonth($current) ? null : $url($next),
+            'prevUrl'  => ReportPeriod::isInBounds($prevYm) ? $url(ReportPeriod::month($prevYm)) : null,
+            'nextUrl'  => $next === null || $next->isAfterMonth($current) ? null : $url($next),
         ] + $base, 'reports/_month_body', 'reports/month');
     }
 
@@ -193,7 +195,7 @@ final class Reports extends BaseController
         if ($view === 'month') {
             $period = BillingMonth::parse((string) $this->request->getGet('period'));
 
-            if ($period === null) {
+            if ($period === null || ! ReportPeriod::isInBounds($period)) {
                 throw PageNotFoundException::forPageNotFound();
             }
 

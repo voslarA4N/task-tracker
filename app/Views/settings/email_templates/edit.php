@@ -65,7 +65,7 @@ $bodyErr    = $error !== null && $errorField === 'body';
             <div class="form-label" id="et-vars-label"><?= esc(lang('EmailTemplates.varsTitle')) ?></div>
             <div class="et-vars-list" role="group" aria-labelledby="et-vars-label">
                 <?php foreach (TemplateRenderer::PLACEHOLDERS as $var) : ?>
-                    <button type="button" class="btn btn-outline-secondary btn-sm et-var" data-var="{{<?= esc($var, 'attr') ?>}}" x-on:click="insert">
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-touch et-var" data-var="{{<?= esc($var, 'attr') ?>}}" x-on:click="insert">
                         <code>{{<?= esc($var) ?>}}</code> <span class="small text-body-secondary"><?= esc(lang($varKeys[$var])) ?></span>
                     </button>
                 <?php endforeach ?>
