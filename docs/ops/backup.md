@@ -177,7 +177,10 @@ Potom porovnať počty riadkov a posledné číslo faktúry a dočasnú DB zmaza
 
 | Dátum | Prostredie | Snapshot | Výsledok | Poznámka |
 |-------|------------|----------|----------|----------|
-|       |            |          |          |          |
+| 2026-11-08 | staging (server, samostatný repozitár) | - | OK: snapshot db staging, OK: obnova (rows.invoices=50, last_invoice_number=DB-202611001), OK: archive 2026 | skúšobný repozitár a env súbor potom zmazané |
+| 2026-11-08 | prod server, restore-test.sh | 862387f0 | OK: obnova (rows.invoices=2, last_invoice_number=202611001) | dočasná DB restore_check_20261108_211105, zmazaná |
+| 2026-11-08 | prod, jednorazový archív 2026 | - | neschválené | archív overený na stagingu, prvý prod beh je cron 2027-01-02 |
+| 2026-11-09 | WSL čisté prostredie (pull na PC) | 3b4b244d | OK: obnova, invoices=2, last_invoice_number=202611001, invoice_documents=4, bad_sha256=0, restic check bez chýb | samostatný compose projekt wt-restore-test s prod encryption.key, prihlásenie s 2FA OK, po teste down -v a zmazaná lokálna kópia kľúča |
 
 ## 13. Mimo rozsahu
 

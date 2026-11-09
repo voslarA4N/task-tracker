@@ -605,6 +605,14 @@ Po zmene skriptov v gite zopakovať postup s tarom a `install-backup.sh` (idempo
 - healthchecks.io: všetky tri checky „up“ po prvom behu,
 - `tail /var/log/work-tracker-backup.log`.
 
+### Stav
+
+- 2026-11-08: zálohy nasadené na produkcii (restic 0.19.1, x86_64), skripty v `/usr/local/lib/work-tracker-backup/scripts/`, root cron s tromi riadkami (záloha 03:10, test obnovy 1. v mesiaci 04:30, archív 2. 1. 04:00). `BACKUP_DB_USER=app_owner` stačí (pg_dump v kontajneri `db` bez hesla).
+- Upozornenia overené: vynútená chyba doručila e-mail „Záloha zlyhala“, checky `work-tracker-backup` a `work-tracker-restore-test` na healthchecks.io sú „up“, `work-tracker-archive` čaká na prvý beh 2027-01-02.
+- Heslo repozitára bolo 2026-11-09 vymenené (`restic key passwd`), v repozitári je jediný kľúč. Heslo aj `encryption.key` sú v správcovi hesiel vlastníka.
+- Pull na PC (`backuppull`, rrsync -ro) funguje, obnova reálnych dát na čistom prostredí vo WSL prešla 2026-11-09 (`docs/ops/backup.md` §12).
+- D-05: zálohy sú na serveri a kópia mimo servera vzniká iba ručným pullom na PC vlastníka. Je to akceptovaný odklon (bez platenej služby mimo servera), nie chyba.
+
 ### Výkon
 
 Meranie a ladenie: `docs/ops/performance.md`.
