@@ -184,7 +184,7 @@ img, table { max-width: 100%; }
 .event-row:last-child { border-bottom: 0; }
 .btn-touch { min-width: 44px; min-height: 44px; }
 .event-ip { font-family: ui-monospace, monospace; font-size: 12px; }
-.more-item { min-height: 48px; display: flex; align-items: center; width: 100%; }
+.more-item { min-height: 48px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; width: 100%; }
 
 /* Master data: subjekty a klienti (Phase 3) */
 .master-row {
