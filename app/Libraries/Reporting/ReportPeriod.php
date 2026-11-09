@@ -29,10 +29,22 @@ final readonly class ReportPeriod
     ) {
     }
 
+    /**
+     * Vstup musi byt uz parsovany cez BillingMonth::parse (pevna sirka RRRR-MM). Hranica zodpoveda year(): 2000..2100.
+     */
+    public static function isInBounds(string $ym): bool
+    {
+        return $ym >= '2000-01' && $ym <= '2100-12';
+    }
+
     public static function month(string $ym): self
     {
         if (BillingMonth::parse($ym) === null) {
             throw new InvalidArgumentException('month');
+        }
+
+        if (! self::isInBounds($ym)) {
+            throw new InvalidArgumentException('out_of_range');
         }
 
         return new self('month', $ym . '-01', BillingMonth::next($ym) . '-01', $ym, $ym, $ym);
@@ -53,6 +65,10 @@ final readonly class ReportPeriod
     {
         if (BillingMonth::parse($fromYm) === null || BillingMonth::parse($toYm) === null) {
             throw new InvalidArgumentException('month');
+        }
+
+        if (! self::isInBounds($fromYm) || ! self::isInBounds($toYm)) {
+            throw new InvalidArgumentException('out_of_range');
         }
 
         if ($fromYm > $toYm) {
