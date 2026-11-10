@@ -1,3 +1,7 @@
+---
+status: complete
+---
+
 # Quick 261109-vy0: More menu as icon tiles - Summary
 
 Responsive 2/3/4 column grid of 12 icon tiles on /more (own inline SVG icons from a single keyed partial), with a separate full-width logout button (POST + CSRF) under the grid.

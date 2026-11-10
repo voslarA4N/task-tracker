@@ -1,3 +1,7 @@
+---
+status: complete
+---
+
 # Quick 261110-g7j Summary
 
 Closes REVIEW 12.1 WR-01 (ErrorException from bundle build now shows Bundle.errorBuild) and IN-01 (non-recursive sortColumn fallback, strict sort-key tests).
