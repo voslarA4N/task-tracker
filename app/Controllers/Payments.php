@@ -110,7 +110,6 @@ final class Payments extends BaseController
         } catch (PaymentRejected $e) {
             return match ($e->reason) {
                 'not_found'      => throw PageNotFoundException::forPageNotFound(lang('Invoices.notFound')),
-                'cancelled'      => $this->voidPanel(409, $payment, $reason, null, lang('Payments.errorCancelled')),
                 'already_voided' => $this->voidPanel(409, $payment, $reason, null, lang('Payments.errorVoided')),
                 'note_too_long'  => $this->voidPanel(422, $payment, $reason, lang('Payments.errorReasonLong')),
                 default          => $this->voidPanel(422, $payment, $reason, lang('Payments.errorReason')),

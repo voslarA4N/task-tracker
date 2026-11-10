@@ -113,6 +113,7 @@ final class PaymentService
 
     /**
      * Storno omylom zadanej uhrady s povinnym dovodom. Vrati id faktury.
+     * Povolene aj na stornovanej fakture (WR-02, D-17).
      *
      * @throws PaymentRejected
      */
@@ -138,12 +139,6 @@ final class PaymentService
 
                 $invoiceId = (int) $payment['invoice_id'];
                 $this->lock($invoiceId);
-
-                $state = $this->db->query('SELECT status FROM invoice_status_v WHERE id = :id:', ['id' => $invoiceId])->getRowArray();
-
-                if (($state['status'] ?? null) === 'cancelled') {
-                    throw new PaymentRejected('cancelled');
-                }
 
                 if ($this->db->query('SELECT 1 FROM payment_voids WHERE payment_id = :id:', ['id' => $paymentId])->getRowArray() !== null) {
                     throw new PaymentRejected('already_voided');

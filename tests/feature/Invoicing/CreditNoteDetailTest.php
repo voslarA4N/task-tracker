@@ -101,8 +101,8 @@ final class CreditNoteDetailTest extends AuthTestCase
     {
         $orig = $this->invoice();
         $this->markSent($orig);
-        $this->owner()->query('INSERT INTO payments (invoice_id, paid_on, amount, created_at) VALUES (:i:, :d:, :a:, now())', ['i' => $orig, 'd' => '2026-10-30', 'a' => '10.00']);
-        $cn = $this->issueCreditNote($orig);
+        $paymentId = (int) $this->owner()->query('INSERT INTO payments (invoice_id, paid_on, amount, created_at) VALUES (:i:, :d:, :a:, now()) RETURNING id', ['i' => $orig, 'd' => '2026-10-30', 'a' => '10.00'])->getRow()->id;
+        $cn        = $this->issueCreditNote($orig);
         $this->advanceClock('2026-12-31T10:00:00+01:00');
         $html = $this->body($this->get('/invoices/' . $orig));
 
@@ -115,8 +115,8 @@ final class CreditNoteDetailTest extends AuthTestCase
         $this->assertStringNotContainsString('/credit-note', $html);
         $this->assertStringNotContainsString('/remind', $html);
         $this->assertStringNotContainsString('href="/invoices/' . $orig . '/payments"', $html);
-        $this->assertStringNotContainsString('/void"', $html);
-        $this->assertStringContainsString('Úhrady sa už nedajú meniť.', $html);
+        $this->assertStringContainsString('/payments/' . $paymentId . '/void"', $html);
+        $this->assertStringContainsString('Nové úhrady sa už nedajú pridať.', $html);
         $this->assertStringContainsString('/invoices/' . $orig . '/pdf', $html);
         $this->assertStringContainsString('/invoices/' . $orig . '/report', $html);
         $this->assertStringNotContainsString('/invoices/' . $orig . '/resend', $html);

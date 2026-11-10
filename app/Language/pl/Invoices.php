@@ -80,7 +80,7 @@ return [
     'bannerCorrects'           => 'Koryguje fakturę nr {0} z dnia {1}.',
     'linkOriginal'             => 'Pokaż fakturę pierwotną',
     'afterCreditNote'          => 'Po uwzględnieniu faktury korygującej: {0}',
-    'paymentsLocked'           => 'Faktura jest anulowana. Płatności nie można już zmieniać.',
+    'paymentsLocked'           => 'Faktura jest anulowana. Nie można już dodawać nowych płatności.',
     'issueCreditNote'          => 'Wystaw fakturę korygującą',
     'creditNotePdf'            => 'Faktura korygująca PDF',
     'labelCorrectionType'      => 'Rodzaj korekty',
