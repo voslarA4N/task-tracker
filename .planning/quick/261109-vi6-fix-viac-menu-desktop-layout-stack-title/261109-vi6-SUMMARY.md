@@ -1,3 +1,7 @@
+---
+status: complete
+---
+
 # Quick 261109-vi6: Stack Viac menu title and hint Summary
 
 `.more-item` is now a column flex container (48px min-height, left-aligned, 4px gap, vertically centered), so each Viac menu title sits above its hint on desktop and iPhone.

@@ -124,7 +124,19 @@ class InvoiceMailer
         $this->db->query("SELECT pg_advisory_lock(hashtext('invoice_sends_rk'), hashtext(:k:))", ['k' => $cmd->requestKey]);
 
         try {
-            return $this->sendLocked($cmd);
+            // stav faktury (upomienka, storno) sa kontroluje a e-mail odchadza pod zamkom uhrad, takze dobropis
+            // nemoze vzniknut medzi kontrolou a SMTP (WR-04, D-15); platba na tej istej fakture pocka na koniec odoslania
+            $this->db->query("SELECT pg_advisory_lock(hashtext('payments'), :id:)", ['id' => $cmd->invoiceId]);
+
+            try {
+                return $this->sendLocked($cmd);
+            } finally {
+                try {
+                    $this->db->query("SELECT pg_advisory_unlock(hashtext('payments'), :id:)", ['id' => $cmd->invoiceId]);
+                } catch (Throwable $e) {
+                    log_message('error', 'mail.unlock_failed: ' . $e->getMessage());
+                }
+            }
         } finally {
             try {
                 $this->db->query("SELECT pg_advisory_unlock(hashtext('invoice_sends_rk'), hashtext(:k:))", ['k' => $cmd->requestKey]);

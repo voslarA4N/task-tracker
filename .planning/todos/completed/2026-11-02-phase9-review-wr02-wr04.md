@@ -4,6 +4,8 @@ created: 2026-11-02
 area: receivables
 source: .planning/phases/09-dobropisy/09-REVIEW.md
 priority: medium
+completed: 2026-11-10
+resolved_by: quick-261110-kfy
 ---
 
 Rozhodnutie vlastníka 2026-11-02: riešiť **na konci všetkých fáz** (po Phase 12, pred produkčným nasadením V1).

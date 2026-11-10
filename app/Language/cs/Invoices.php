@@ -80,7 +80,7 @@ return [
     'bannerCorrects'           => 'Opravuje fakturu č. {0} ze dne {1}.',
     'linkOriginal'             => 'Zobrazit původní fakturu',
     'afterCreditNote'          => 'Po zohlednění dobropisu: {0}',
-    'paymentsLocked'           => 'Faktura je stornována. Úhrady již nelze měnit.',
+    'paymentsLocked'           => 'Faktura je stornována. Nové úhrady již nelze přidat.',
     'issueCreditNote'          => 'Vystavit dobropis',
     'creditNotePdf'            => 'Dobropis PDF',
     'labelCorrectionType'      => 'Typ opravy',

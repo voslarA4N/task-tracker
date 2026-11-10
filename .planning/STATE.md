@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 12.1-10-PLAN.md
-last_updated: "2026-11-09T21:02:14.585Z"
-last_activity: 2026-11-09
+status: Awaiting next milestone
+stopped_at: Milestone v1.0 MVP shipped and archived, ready for /gsd-new-milestone
+last_updated: "2026-11-10T15:09:33.237Z"
+last_activity: 2026-11-10 — Milestone v1.0 completed and archived
 progress:
   total_phases: 14
   completed_phases: 14
@@ -18,25 +18,23 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-23)
+See: .planning/PROJECT.md (updated 2026-11-10)
 
 **Core value:** Vystavená faktúra a výkaz sú správne a nemenné: súčty sa vždy zhodujú na obrazovke, vo výkaze, na faktúre aj v exportoch a žiadna neskoršia zmena už vystavený doklad nezmení.
-**Current focus:** Phase 12.1 — close-gaps-and-ui-polish
+**Current focus:** Planning next milestone (v1.0 MVP shipped 2026-11-10, archív v `.planning/milestones/`)
 
 ## Current Position
 
-Phase: 12.1
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-11-10 - Completed quick task 261110-g7j: nálezy review 12.1 (WR-01, IN-01)
-
-Progress: [░░░░░░░░░░] 0%
+Phase: Milestone v1.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-11-10 — Milestone v1.0 completed and archived
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 134
+- Total plans completed: 144
 - Average duration: - min
 - Total execution time: 0.0 hours
 
@@ -120,52 +118,7 @@ Progress: [░░░░░░░░░░] 0%
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- [Init]: PDF faktúry je autoritatívny doklad (uložené so sha256, nikdy sa neregeneruje)
-- [Init]: Krajina a mena subjektu sú nemenné, iná krajina alebo mena = nový subjekt
-- [Init]: QR platba (INV-11) je vo V1, spätný dátum vystavenia povolený s varovaním
-- [Roadmap]: Fakturačné jadro (Phase 5) je izolované bez kurzov, kurzy až Phase 8, limity až po dobropisoch (Phase 10)
-- [Roadmap]: Skorý HTTPS staging a test na reálnom iPhone už vo Phase 2
-- [Phase 01]: mPDF: DejaVu pinned, substitutions off, 256M memory ample (peak 28MB, 0 deprecations, ~0.3s)
-- [Phase 01]: 01-08: feature tests read bodies via response()->getBody(); TestResponse::getBody is DOM-normalised
-- [Phase 01]: demo_calculations is insert-only with CHECK amount=round(hours*rate,2); demo controller shares validation between calculate/store
-- [Phase 01]: CI .env uses CI_ENVIRONMENT=development; phpstan schema cache in build/phpstan
-- [Phase 02-01]: balíky shield/settings/otphp/bacon/psr-clock schválené 2026-10-24 (overil Claude cez Packagist API na pokyn vlastníka; tranzitívne aj dasprid/enum, paragonie/constant_time_encoding, symfony/deprecation-contracts)
-- [Phase 02-01]: O-1 = revoke (odhlásenie odvolá aj dôveru aktuálneho zariadenia)
-- [Phase 02-01]: O-2 = 10 (záložný kód XXXXX-XXXXX, HMAC-SHA256 s pepperom mimo DB, pokusy obmedzené)
-- [Phase 02-01]: O-3 = metadata (staging mail log iba druh, príjemca, predmet, čas; nikdy telo ani reset odkaz)
-- [Phase 02-01]: O-4 = letsencrypt (DNS-01 cez Cloudflare token Zone:DNS:Edit, spĺňa NFR-03)
-- [Phase 02-01]: O-5 = yes (zapamätanie zariadenia aj pri prvom nastavení 2FA, TOTP bol práve zadaný)
-- [Phase 02-01]: O-6 = followup (7- a 30-dňová kontrola iPhone ako sledované úlohy)
-- [Phase 02]: 02-03: Shield spike passed; TOTP as Shield login action (totp_gateway), array-only Settings handler
-- [Phase 03]: country/currency excluded from app_rw column grants (DB-enforced immutability); Clock::parseDate for strict dates
-- [Phase 03]: 03-05: ClientInput validates raw post then normalizes; rate display formatted without float
-- [Phase 03]: 03-07: portal URL template accepts only http/https with host and {id} once; preview is text only
-- [Phase 04]: 04-04: client currency lock applies to any billing allocation (locked or unlocked), stricter than Discretion text; RESEARCH Pitfall 9
-- [Phase 04]: WR-07 (vlastník 2026-10-26, voľba C): importované riadky „Fakturované = ÁNO“ ostávajú zatiaľ nezamknuté časti; vo Phase 5 sa zamknú na historickú (externú) faktúru, aby sa nedali znova fakturovať. Historická faktúra nesmie spotrebovať číslo z radu `RRRRMM###`.
-- [Phase 06]: previewToken omits whole payment section; legal.texts.invoice_note stays in token
-- [Phase 06]: D-19 refined: ZBP number >32 chars gives no QR; missing PL NIP still qr_failed
-- [Phase 07]: Payment guard: pg_advisory_xact_lock(hashtext('payments'), invoice_id); void as insert-only payment_voids; total=0 never auto-paid
-- [Phase 07]: Reminder threads via latest non-voided invoice/resend message_id; no_balance guard server-side
-- [Phase ?]: 08-05: fx block built via public static SnapshotBuilder::fxBlock; PDF fx rows in totals table with td.fxnote
-- [Phase 09]: 09-01: cancelled invoice and credit note have balance 0.00 in invoice_status_v; credit_note added to EmailTemplateService::KEYS
-- [Phase 09]: 09-02: CreditNoteSnapshotBuilder has its own LABEL_KEYS; SnapshotBuilder::LABEL_KEYS unchanged
-- [Phase 09]: Credit note preview/confirm are POST (reason out of URLs); issue checks request_key replay before draft
-- [Phase ?]: [10-01] Pro-rata days capped at 365; thresholds decided by exact bccomp, percent half-up 1dp; rolling_12m openingYears = all window years
-- [Phase 10]: 10-02: thresholds via array_to_string/string_to_array; fallback year nearest lower else higher; is_seed + invoices_turnover_idx in schema; LimitMath::compareRatio keeps bcmath allow-list unchanged
-- [Phase 11]: XLSX text always StringCell, float cast allowed only in XlsxNumber.php
-- [Phase 11]: 11-10: bundle selects issued docs by turnover_date like ReportCalculator, externals excluded; PDFs only via DocumentStore::read; reject before ZIP on missing PDF/64MB
-- [Phase 11]: work statement rep-2 (title + direct portal link in one column); rep-1 kept for already issued documents
-- [Phase 11.1]: Document version gapless guard is a BEFORE INSERT trigger (no SEQUENCE); migration down() refuses rollback when versions > 1 exist
-- [Phase 11.1]: Regenerate: render outside transaction, advisory lock + expected_version under lock; template only from DocumentTemplates
-- [Phase 11.1]: Regenerate POST reads only expected_version; kind from explicit routes; button flags from RegeneratePolicy shared with server
-
-### Roadmap Evolution
-
-- Phase 11.1 inserted after Phase 11: Pregenerovanie dokladov z kópie údajov — nová verzia výkazu (kedykoľvek) a PDF faktúry (do nastaviteľných 72 h) zo snapshotu, append-only (URGENT)
-- Phase 12.1 inserted after Phase 12: Uzavretie medzier z auditu v1.0 (RPT-02/RPT-03 meno klienta zo snapshotu, WR-01/WR-02/W4) a kontrola a oprava dizajnu (nalepené texty, chýbajúce okraje a odsadenia) (URGENT)
+Decisions are logged in PROJECT.md Key Decisions table (v1.0 kompletne). Detail fáz v1.0 je v `.planning/milestones/v1.0-ROADMAP.md`.
 
 ### Pending Todos
 
@@ -175,11 +128,7 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-- [Phase 2]: Shield + TOTP je najväčšie technické neznáme (spike s fallbackom)
-- [Phase 1]: mPDF pod PHP 8.5 s diakritikou treba overiť spikom
-- [Phase 3 -> 6, 8, 10]: Otázky pre účtovníčku (limity SK/PL, zákonné texty, kurz, dobropis, retencia) blokujú finálne znenie textov a limity
-- [Phase 7]: Vlastník musí zvoliť SMTP poskytovateľa a nastaviť DNS (SPF/DKIM/DMARC)
-- [Phase 2]: vlastník musí pripraviť Cloudflare, firewall a server podľa plánu 02-02
+- Otázky pre účtovníčku (limity SK/PL, zákonné texty, kurz, dobropis, retencia, cezhraničná fakturácia PL → SK): finálne znenie textov a limitov (všetko je editovateľné v aplikácii)
 
 ### Quick Tasks Completed
 
@@ -196,6 +145,7 @@ Recent decisions affecting current work:
 | 261109-w30 | Ikonky v hornej navigácii (vľavo od textu) a v spodnom tab bare (nad textom), spoločný `layouts/_icon.php` pre navigáciu aj menu Viac + testy | 2026-11-09 | 6c36da0 | [261109-w30-ikonky-v-hornej-navigacii-a-tab-bare](./quick/261109-w30-ikonky-v-hornej-navigacii-a-tab-bare/) |
 | 261109-x2u | Odhlásenie presunuté z menu Viac do hlavičky (všetky šírky), ikona + text tlmenou červenou `--app-logout: #b23b30` + testy | 2026-11-10 | 9ba8522 | [261109-x2u-odhlasenie-v-hlavicke-s-ikonkou](./quick/261109-x2u-odhlasenie-v-hlavicke-s-ikonkou/) |
 | 261110-g7j | Nálezy review 12.1: WR-01 balík pre účtovníčku zobrazí Bundle.errorBuild aj pri ErrorException (služba `accountantBundle` + 2 feature testy), IN-01 nerekurzívny fallback radenia faktúr + prísny test kľúčov | 2026-11-10 | 3f2560e | [261110-g7j-oprava-nalezov-review-12-1-wr-01-a-in-01](./quick/261110-g7j-oprava-nalezov-review-12-1-wr-01-a-in-01/) |
+| 261110-kfy | Nálezy review Phase 9: WR-02 storno úhrady aj na stornovanej faktúre, WR-04 trigger `payments_not_cancelled` + zámok `payments` v CreditNoteIssuer a InvoiceMailer (todo uzavreté) | 2026-11-10 | 9b3f1a6 | [261110-kfy-oprava-review-phase-9-wr-02-a-wr-04-stor](./quick/261110-kfy-oprava-review-phase-9-wr-02-a-wr-04-stor/) |
 
 ## Deferred Items
 
@@ -207,6 +157,10 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-09T20:45:18.930Z
-Stopped at: Completed 12.1-10-PLAN.md
+Last session: 2026-11-10
+Stopped at: Milestone v1.0 MVP shipped and archived (tag v1.0)
 Resume file: None
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

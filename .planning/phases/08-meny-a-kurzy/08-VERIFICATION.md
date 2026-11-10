@@ -1,7 +1,8 @@
 ---
 phase: 08-meny-a-kurzy
 verified: 2026-10-30T14:00:00Z
-status: human_needed
+status: passed
+human_verified: see 08-HUMAN-UAT.md (status complete, 0 issues)
 score: 4/4 must-haves verified
 overrides_applied: 0
 human_verification:

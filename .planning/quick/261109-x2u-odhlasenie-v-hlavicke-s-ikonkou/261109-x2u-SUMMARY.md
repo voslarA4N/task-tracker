@@ -1,3 +1,7 @@
+---
+status: complete
+---
+
 # Quick 261109-x2u: Logout in header with icon - Summary
 
 Logout moved from /more into `<header class="app-header">` as a POST form (CSRF) with an outline "logout" icon and text in muted brick red (`--app-logout #b23b30`, 5.9:1), 44 px target, focus ring, on all breakpoints.

@@ -96,7 +96,7 @@ final class CreditNoteReceivablesTest extends PgTestCase
         $this->assertSame('cancelled', $impact['status_after']);
     }
 
-    public function testExistingPaymentStaysButCannotBeVoided(): void
+    public function testExistingPaymentCanBeVoidedAfterStorno(): void
     {
         $id  = $this->issuedInvoice();
         $svc = new PaymentService($this->rw());
@@ -106,9 +106,17 @@ final class CreditNoteReceivablesTest extends PgTestCase
         $q        = new InvoiceStatusQueries($this->rw());
         $payments = $q->payments($id);
         $this->assertCount(1, $payments);
-        $this->assertSame('100.00', $q->forInvoice($id, '2026-10-31')['paid_amount']);
+        $before = $q->forInvoice($id, '2026-10-31');
+        $this->assertSame('100.00', $before['paid_amount']);
 
-        $this->assertSame('cancelled', $this->rejection(static fn () => $svc->void($payments[0]['id'], 'Omyl', null)));
-        $this->assertFalse($q->payments($id)[0]['voided']);
+        $this->assertSame($id, $svc->void($payments[0]['id'], 'Omyl', null));
+        $this->assertTrue($q->payments($id)[0]['voided']);
+
+        $state = $q->forInvoice($id, '2026-10-31');
+        $this->assertSame('0.00', $state['paid_amount']);
+        $this->assertSame('cancelled', $state['status']);
+        $this->assertSame('0.00', $state['balance']);
+
+        $this->assertSame('already_voided', $this->rejection(static fn () => $svc->void($payments[0]['id'], 'Znova', null)));
     }
 }

@@ -1,3 +1,7 @@
+---
+status: complete
+---
+
 # Quick 261027-elv: import:excel --month filter Summary
 
 `spark import:excel` gets `--month RRRR-MM`, implemented as `ImportSheet::forMonth` applied before planning; planner, runner and formatter untouched, import_key identical with and without the filter.

@@ -80,7 +80,7 @@ return [
     'bannerCorrects'           => 'Corrects invoice no. {0} dated {1}.',
     'linkOriginal'             => 'View original invoice',
     'afterCreditNote'          => 'After credit note: {0}',
-    'paymentsLocked'           => 'This invoice is cancelled. Payments can no longer be changed.',
+    'paymentsLocked'           => 'This invoice is cancelled. New payments can no longer be added.',
     'issueCreditNote'          => 'Issue credit note',
     'creditNotePdf'            => 'Credit note PDF',
     'labelCorrectionType'      => 'Correction type',

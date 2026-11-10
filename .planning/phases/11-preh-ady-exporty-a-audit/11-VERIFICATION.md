@@ -1,7 +1,8 @@
 ---
 phase: 11-preh-ady-exporty-a-audit
 verified: 2026-11-04T00:00:00Z
-status: gaps_found
+status: passed
+gaps_closed_by: "Phase 12.1 (RPT-02/RPT-03 snapshot client name, WR-01, WR-02, W4), 12.1-VERIFICATION.md passed 2026-11-10"
 score: 4/5 roadmap truths verified (SC3 partial due to WR-03)
 overrides_applied: 0
 gaps:

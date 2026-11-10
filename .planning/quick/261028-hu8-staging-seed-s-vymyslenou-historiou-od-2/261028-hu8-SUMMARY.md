@@ -1,4 +1,5 @@
 ---
+status: complete
 phase: quick-261028-hu8
 plan: 01
 subsystem: staging-ops, seed

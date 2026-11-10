@@ -1,3 +1,7 @@
+---
+status: complete
+---
+
 # Quick 261028-fcr: Staging environment, edge SNI proxy and develop/main branch model - Summary
 
 **One-liner:** Shared edge nginx (stream + ssl_preread, PROXY protocol, Cloudflare-peer guard) fronting prod and a new staging stack, with a two-stack-safe deploy.sh, a shared compose.server.yaml and CI mapping develop -> staging, main -> production.
