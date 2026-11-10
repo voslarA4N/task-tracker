@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-23)
 Phase: 12.1
 Plan: Not started
 Status: Phase 12.1 verified (UAT 7/7) — milestone v1.0 ready to complete
-Last activity: 2026-11-10
+Last activity: 2026-11-10 - Completed quick task 261110-kfy: oprava review Phase 9 WR-02/WR-04
 
 Progress: [██████████] 155/155 plans (100%)
 
@@ -196,6 +196,7 @@ Recent decisions affecting current work:
 | 261109-w30 | Ikonky v hornej navigácii (vľavo od textu) a v spodnom tab bare (nad textom), spoločný `layouts/_icon.php` pre navigáciu aj menu Viac + testy | 2026-11-09 | 6c36da0 | [261109-w30-ikonky-v-hornej-navigacii-a-tab-bare](./quick/261109-w30-ikonky-v-hornej-navigacii-a-tab-bare/) |
 | 261109-x2u | Odhlásenie presunuté z menu Viac do hlavičky (všetky šírky), ikona + text tlmenou červenou `--app-logout: #b23b30` + testy | 2026-11-10 | 9ba8522 | [261109-x2u-odhlasenie-v-hlavicke-s-ikonkou](./quick/261109-x2u-odhlasenie-v-hlavicke-s-ikonkou/) |
 | 261110-g7j | Nálezy review 12.1: WR-01 balík pre účtovníčku zobrazí Bundle.errorBuild aj pri ErrorException (služba `accountantBundle` + 2 feature testy), IN-01 nerekurzívny fallback radenia faktúr + prísny test kľúčov | 2026-11-10 | 3f2560e | [261110-g7j-oprava-nalezov-review-12-1-wr-01-a-in-01](./quick/261110-g7j-oprava-nalezov-review-12-1-wr-01-a-in-01/) |
+| 261110-kfy | Nálezy review Phase 9: WR-02 storno úhrady aj na stornovanej faktúre, WR-04 trigger `payments_not_cancelled` + zámok `payments` v CreditNoteIssuer a InvoiceMailer (todo uzavreté) | 2026-11-10 | 9b3f1a6 | [261110-kfy-oprava-review-phase-9-wr-02-a-wr-04-stor](./quick/261110-kfy-oprava-review-phase-9-wr-02-a-wr-04-stor/) |
 
 ## Deferred Items
 
