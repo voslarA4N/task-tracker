@@ -2,6 +2,7 @@
 
 namespace Config;
 
+use App\Libraries\Export\AccountantBundle;
 use App\Libraries\Fx\CurlRateHttpClient;
 use App\Libraries\Fx\RateHttpClient;
 use App\Libraries\Invoicing\CreditNoteIssuer;
@@ -34,6 +35,15 @@ class Services extends BaseService
         }
 
         return new Clock();
+    }
+
+    public static function accountantBundle(bool $getShared = true): AccountantBundle
+    {
+        if ($getShared) {
+            return static::getSharedInstance('accountantBundle');
+        }
+
+        return new AccountantBundle();
     }
 
     public static function rateHttpClient(bool $getShared = true): RateHttpClient

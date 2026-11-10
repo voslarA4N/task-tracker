@@ -38,6 +38,7 @@ final class InvoiceQueries
 
     /**
      * Stlpec radenia; 'client' sa sklada za behu z ClientNameSql (rovnaky vyraz ako zobrazeny nazov, D-01).
+     * Neznamy kluc sa priamo (bez rekurzie) vrati na stlpec DEFAULT_SORT.
      */
     private static function sortColumn(string $sort): string
     {
@@ -45,7 +46,7 @@ final class InvoiceQueries
             return ClientNameSql::snapshotName('f');
         }
 
-        return self::SORT_SQL[$sort] ?? self::sortColumn(InvoiceFilter::DEFAULT_SORT);
+        return self::SORT_SQL[$sort] ?? self::SORT_SQL[InvoiceFilter::DEFAULT_SORT];
     }
 
     /**
