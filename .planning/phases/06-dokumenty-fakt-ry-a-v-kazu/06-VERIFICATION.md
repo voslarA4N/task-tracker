@@ -1,7 +1,8 @@
 ---
 phase: 06-dokumenty-fakt-ry-a-v-kazu
 verified: 2026-10-28T12:00:00Z
-status: human_needed
+status: passed
+human_verified: see 06-HUMAN-UAT.md (status complete, 0 issues)
 score: 4/4 roadmap success criteria verified in code (QR acceptance by real bank apps and print quality need human check)
 overrides_applied: 0
 gaps: []
