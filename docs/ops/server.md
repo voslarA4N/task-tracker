@@ -20,7 +20,7 @@ Jeden server Hetzner Cloud #172176757 (IP `2.31.74.48`, amd64), dva nezávislé 
 - Docker sieť `edge` (podsieť `10.250.250.0/24`, mimo predvolených poolov Dockeru) spája edge s nginx oboch stackov. Realip v stack nginx dôveruje presne tejto podsieti.
 - Pôvodné rozhodnutie fázy 2 (D-03 "staging je zároveň budúca produkcia") je prekonané: `/opt/work-tracker` je produkcia od go-live.
 - Architektúra amd64, obrazy z GHCR (D-04 fázy 2).
-- Vlastný mailový server (Stalwart + Roundcube) pre `vostack.dev` beží ako samostatný compose projekt `mail` v `/opt/mail`; inštalácia, DNS, zálohy a rollback sú v [docs/ops/mail.md](mail.md).
+- Vlastný mailový server (Stalwart + Roundcube) pre `vostack.dev` beží ako samostatný compose projekt `mail` v `/opt/mail`; spravuje sa samostatne (nie z tohto repa), pozri [docs/ops/mail.md](mail.md).
 
 ## Vetvový model
 
@@ -500,7 +500,7 @@ Odosielanie faktúr a upomienok ide z produkcie cez vlastný Stalwart (D-01). Na
 
    Heslo prečítaj priamo na serveri zo `/opt/mail/secrets/noreply_password`. Nikdy ho nekopíruj do gitu ani do chatu. Certifikát sa overuje (alias `mail.vostack.dev` v sieti `mail`), overenie sa nevypína.
 3. **Staging:** `email.transport = log` ostáva, `MAIL_NETWORK` sa nenastavuje a sieť `mail` sa nepripája (D-02). Over v `/opt/work-tracker-staging/app.env` (aj `migrate.env`), že `email.fromEmail = noreply@vostack.dev` a `email.allowedFromDomains = vostack.dev`. Staršia šablóna sekcie 3 dávala `email.fromEmail = noreply@$DOMAIN` (`noreply@work-tracker-stage.vostack.dev`). Doména sa porovnáva presne, bez subdomén, takže s touto hodnotou by každé odoslanie aj uloženie vlastnej adresy odosielateľa skončilo chybou „Adresa odosielateľa nie je povolená“ a v logu `mail.sender_not_allowed`. Subdomény sa zámerne nepovoľujú: povolená doména má byť len tá, pre ktorú platí SPF, DKIM a DMARC.
-4. **Overenie po deployi:** `docker compose -f compose.server.yaml -f compose.server.mail.yaml exec php php -r "var_dump((bool) @fsockopen('ssl://mail.vostack.dev', 465, \$e, \$s, 5));"` vráti `bool(true)`. Potom odošli faktúru na vlastný Gmail a v „Show original“ skontroluj SPF, DKIM a DMARC PASS (DMARC je zatiaľ `p=none`, sprísnenie 2026-11-19 podľa `docs/ops/mail.md`).
+4. **Overenie po deployi:** `docker compose -f compose.server.yaml -f compose.server.mail.yaml exec php php -r "var_dump((bool) @fsockopen('ssl://mail.vostack.dev', 465, \$e, \$s, 5));"` vráti `bool(true)`. Potom odošli faktúru na vlastný Gmail a v „Show original“ skontroluj SPF, DKIM a DMARC PASS (DMARC je zatiaľ `p=none`, sprísnenie 2026-11-19 podľa `/opt/mail/README.md`).
 5. **Migrácie fázy 7** (`email_templates`, `invoice_sends`, `payments`, rozšírenie `invoice_status_v`, odosielateľ pri subjekte) bežia automaticky pri deployi. Existujúce faktúry ostávajú v stave Vystavená.
 6. **Rollback:** odstráň `MAIL_NETWORK` z `.env`, nastav `email.transport = log` v `app.env` a nasaď znova.
 
