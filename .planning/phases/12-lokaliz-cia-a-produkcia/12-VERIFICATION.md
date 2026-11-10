@@ -1,7 +1,8 @@
 ---
 phase: 12-lokaliz-cia-a-produkcia
 verified: 2026-11-09T00:00:00Z
-status: human_needed
+status: passed
+human_verified: 2026-11-10 (12-HUMAN-UAT.md, 4/4 pass)
 score: 4/4 roadmap success criteria verified (code and recorded live evidence); 4 owner items outstanding
 overrides_applied: 0
 human_verification:
