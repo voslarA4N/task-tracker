@@ -2,7 +2,7 @@
 #   prod:    /opt/work-tracker          (COMPOSE_PROJECT_NAME=task-tracker, EDGE_ALIAS=wt-prod-nginx)
 #   staging: /opt/work-tracker-staging  (COMPOSE_PROJECT_NAME=task-tracker-staging, EDGE_ALIAS=wt-stage-nginx)
 # Spusta sa cez deploy.sh, rucne: docker compose -f compose.server.yaml up -d
-# Ziadne publikovane porty: 80/443 vlastni edge stack (compose.edge.yaml, D-02); nginx sa
+# Ziadne publikovane porty: 80/443 vlastni samostatne spravovany edge stack (/opt/edge, docs/ops/edge.md, D-02); nginx sa
 # k nemu pripaja cez externu siet `edge` pod aliasom EDGE_ALIAS.
 # Obrazy php a nginx idu z GHCR podla IMAGE_PREFIX a IMAGE_TAG. writable/ je na volume.
 # Bez Mailpitu, bez build, bez bind mountov kodu. DB nema publikovane porty.

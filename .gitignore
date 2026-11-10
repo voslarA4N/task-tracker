@@ -19,7 +19,7 @@
 /spike-output.pdf
 /backups/
 
-# Serverove adresare mail stacku (docs/ops/mail.md), nikdy do gitu
+# Serverove adresare (certifikaty, tajomstva), nikdy do gitu
 /tls/
 /letsencrypt/
 /secrets/

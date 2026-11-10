@@ -86,7 +86,7 @@ CONF
 sshd -t
 systemctl reload ssh 2>/dev/null || systemctl reload sshd
 
-# 7. Adresare pre oba stacky (prod a staging) a edge
+# 7. Adresare pre oba stacky (prod a staging) a /opt/edge pre samostatne spravovany edge
 for d in /opt/work-tracker /opt/work-tracker-staging; do
   install -d -m 0750 -o deploy -g deploy "$d"
   install -d -m 0700 -o deploy -g deploy "$d/secrets"

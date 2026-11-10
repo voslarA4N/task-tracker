@@ -1,4 +1,4 @@
-# Overlay: pripojí php do externej siete mail (Stalwart, mail.vostack.dev:465).
+# Overlay: pripojí php do externej siete mail (mail stack beží samostatne v /opt/mail).
 # Iba produkcia (D-01): scripts/deploy.sh ho pridá, len ak je v .env MAIL_NETWORK=mail.
 # Staging ho nepoužíva a ostáva na email.transport = log (D-02).
 services:

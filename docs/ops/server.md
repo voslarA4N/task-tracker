@@ -2,7 +2,7 @@
 
 ## 1. Prehľad
 
-Jeden server Hetzner Cloud #172176757 (IP `2.31.74.48`, amd64), dva nezávislé stacky a spoločný edge proxy. Obrazy z GHCR (`ghcr.io/voslara4n/task-tracker-php`, `-nginx`), rovnaký tag `sha-<commit>` pre oba stacky.
+Jeden server Hetzner Cloud #172176757 (IP `2.31.74.48`, amd64), dva nezávislé stacky a spoločný edge proxy (spravovaný samostatne, docs/ops/edge.md). Obrazy z GHCR (`ghcr.io/voslara4n/task-tracker-php`, `-nginx`), rovnaký tag `sha-<commit>` pre oba stacky.
 
 | | Produkcia | Staging | Edge |
 |---|---|---|---|
@@ -10,7 +10,7 @@ Jeden server Hetzner Cloud #172176757 (IP `2.31.74.48`, amd64), dva nezávislé 
 | Adresár | `/opt/work-tracker` | `/opt/work-tracker-staging` | `/opt/edge` |
 | Compose projekt (`COMPOSE_PROJECT_NAME`) | `task-tracker` (nemeniť, drží volumes `task-tracker_pgdata`, `task-tracker_writable`) | `task-tracker-staging` | `edge` |
 | Alias nginx v sieti `edge` (`EDGE_ALIAS`) | `wt-prod-nginx` | `wt-stage-nginx` | |
-| Compose súbor | `compose.server.yaml` | `compose.server.yaml` | `compose.edge.yaml` |
+| Compose súbor | `compose.server.yaml` | `compose.server.yaml` | samostatné repo (docs/ops/edge.md) |
 | GitHub environment | `production` (povinné schválenie vlastníka) | `staging` | |
 | Vetva | `main` | `develop` | |
 | Zálohy pred migráciou | `/var/backups/work-tracker` | `/var/backups/work-tracker-staging` | |
@@ -20,7 +20,7 @@ Jeden server Hetzner Cloud #172176757 (IP `2.31.74.48`, amd64), dva nezávislé 
 - Docker sieť `edge` (podsieť `10.250.250.0/24`, mimo predvolených poolov Dockeru) spája edge s nginx oboch stackov. Realip v stack nginx dôveruje presne tejto podsieti.
 - Pôvodné rozhodnutie fázy 2 (D-03 "staging je zároveň budúca produkcia") je prekonané: `/opt/work-tracker` je produkcia od go-live.
 - Architektúra amd64, obrazy z GHCR (D-04 fázy 2).
-- Vlastný mailový server (Stalwart + Roundcube) pre `vostack.dev` beží ako samostatný compose projekt `mail` v `/opt/mail`; inštalácia, DNS, zálohy a rollback sú v [docs/ops/mail.md](mail.md).
+- Vlastný mailový server (Stalwart + Roundcube) pre `vostack.dev` beží ako samostatný compose projekt `mail` v `/opt/mail`; spravuje sa samostatne (nie z tohto repa), pozri [docs/ops/mail.md](mail.md).
 
 ## Vetvový model
 
@@ -346,65 +346,13 @@ Postup pre vlastníka po nasadení fázy 6 na produkciu (najprv ho overiť na st
 
 ## 17. Edge proxy
 
-Jediný kontajner, ktorý publikuje porty 80 a 443 (D-02). Súbory: `docker/edge/nginx.conf`, `compose.edge.yaml`; na serveri v `/opt/edge/` ako `nginx.conf` a `compose.edge.yaml` (CI ich nenasadzuje, kopírujú sa ručne).
-
-- Port 443: `stream` s `ssl_preread`, smerovanie podľa SNI na `wt-prod-nginx:443` alebo `wt-stage-nginx:443` bez rozbalenia TLS, takže každý stack má vlastný certifikát (Let's Encrypt DNS-01), hlavičky aj CSP a HTTP/2 sa dohaduje priamo so stackom. Neznámy alebo chýbajúci SNI sa zatvorí. Mená sa rozlišujú za behu, zastavený stack nezhodí edge.
-- Port 80: `301` na `https://$host$request_uri`.
-
-Jednorazová inštalácia (ako `deploy`, po kontrole kolízií podsiete cez `docker network ls` a `ip route`):
-
-```
-docker network create --driver bridge --subnet 10.250.250.0/24 edge
-# súbory skopírovať do /opt/edge: nginx.conf (docker/edge/nginx.conf) a compose.edge.yaml
-cd /opt/edge && docker compose -f compose.edge.yaml up -d
-```
-
-Mail stack (webmail, autoconfig, autodiscover, mta-sts) má v `map` štyri riadky na `mail-web:443` (nginx `web` stacku `mail`, v sieti `edge` s aliasom `mail-web`), pozri [mail.md](mail.md).
-
-Nový hostname: pridať riadok do `map` v `nginx.conf`, potom `docker compose -f compose.edge.yaml exec edge nginx -s reload`.
+Jediný kontajner, ktorý publikuje porty 80 a 443 (D-02), je edge. Spravuje sa samostatne v `/opt/edge` (nie z tohto repa, CI ho nenasadzuje), pozri [edge.md](edge.md). Sieť `edge` vytvára `scripts/server-bootstrap.sh`.
 
 Skutočná IP klienta: Cloudflare -> edge (`proxy_protocol on`) -> stack nginx (`listen 443 ssl proxy_protocol`). `docker/nginx/realip/edge.conf` prijíma `CF-Connecting-IP` iba z `10.250.250.0/24` (edge) a `docker/nginx/http.d/cf-peer.conf` (`geo $proxy_protocol_addr $cf_peer`) vráti `444`, ak PROXY zdroj nie je rozsah Cloudflare (ochrana pred podvrhnutím hlavičky). Vďaka tomu zostáva `$binary_remote_addr` (limit prihlasovania AUTH-04) adresou klienta. Rozsahy Cloudflare udržiava `sh scripts/cf-ips-check.sh [--write]` (zapisuje `docker/nginx/http.d/cf-peer.conf`).
 
-Lokálny test celého reťazca (HTTP/2 cez edge, realip, zatvorenie neznámeho SNI, presmerovanie 80, noindex, zahodenie PROXY zdroja mimo Cloudflare): `sh scripts/edge-selftest.sh`.
-
 ## 18. Prechod produkcie na edge (cut-over)
 
-Jednorazový postup, výpadok produkcie menej ako 1 minúta (Cloudflare medzitým ukazuje 52x). `X` = celý SHA commitu s edge zmenami, ktorý už nasadil staging (obrazy `sha-X` sú na serveri stiahnuté).
-
-Predpoklady: sieť `edge` vytvorená, súbory v `/opt/edge` skopírované, edge **nespustený**, staging nasadený a overený, DNS `work-tracker-stage` existuje.
-
-Ako `deploy` v `/opt/work-tracker`:
-
-```
-cd /opt/work-tracker
-cp compose.staging.yaml compose.staging.yaml.pre-edge
-cp deploy.sh deploy.sh.pre-edge
-cp cert-renew.sh cert-renew.sh.pre-edge
-cp .env .env.pre-edge
-cp .last-good-tag .last-good-tag.pre-edge
-# z repozitára na tagu X: compose.server.yaml, scripts/deploy.sh, scripts/cert-renew.sh do /opt/work-tracker (scp)
-printf 'COMPOSE_PROJECT_NAME = task-tracker\nEDGE_ALIAS = wt-prod-nginx\n' >> .env
-IMAGE_TAG=sha-X docker compose -f compose.server.yaml config | grep -E '^name: task-tracker$'
-docker volume ls | grep task-tracker_pgdata
-IMAGE_TAG=sha-X SKIP_PULL=1 sh ./deploy.sh && (cd /opt/edge && docker compose -f compose.edge.yaml up -d)
-```
-
-`deploy.sh` s `SKIP_PULL=1` urobí overenú zálohu, no-op migráciu a prevytvorí nginx bez host portov (tu začína výpadok); edge ho ukončí. Príkaz sa píše na jeden riadok, aby výpadok trval čo najkratšie.
-
-Overenie: `SSH_TARGET=deploy@2.31.74.48 SMOKE_PROJECT=task-tracker ORIGIN_IP=2.31.74.48 sh scripts/smoke-server.sh work-tracker.vostack.dev` a to isté pre `work-tracker-stage.vostack.dev` so `SMOKE_PROJECT=task-tracker-staging SMOKE_EXPECT_NOINDEX=1`; prihlásenie na produkcii; `crontab -l` má jeden riadok `cert-renew.sh` na stack.
-
-### Rollback
-
-```
-cd /opt/edge && docker compose -f compose.edge.yaml down
-cd /opt/work-tracker
-cp deploy.sh.pre-edge deploy.sh
-cp cert-renew.sh.pre-edge cert-renew.sh
-cp .last-good-tag.pre-edge .last-good-tag
-IMAGE_TAG=$(cat .last-good-tag) docker compose -f compose.staging.yaml up -d --wait --remove-orphans
-```
-
-Starý `compose.staging.yaml` má projekt `task-tracker`, znova publikuje 80/443 a používa tie isté volumes. Ak sa zmenil riadok cron, obnov ho. Nepushovať `main`, kým sa problém nevyrieší. `compose.staging.yaml` a súbory `*.pre-edge` na serveri ostávajú týždeň stabilnej prevádzky, potom sa zmažú.
+Cut-over produkcie na edge je vykonaný. Postup je v git histórii (`git show edge-final:docs/ops/server.md`).
 
 ## 19. Staging seed (reset pri každom deployi)
 
@@ -500,7 +448,7 @@ Odosielanie faktúr a upomienok ide z produkcie cez vlastný Stalwart (D-01). Na
 
    Heslo prečítaj priamo na serveri zo `/opt/mail/secrets/noreply_password`. Nikdy ho nekopíruj do gitu ani do chatu. Certifikát sa overuje (alias `mail.vostack.dev` v sieti `mail`), overenie sa nevypína.
 3. **Staging:** `email.transport = log` ostáva, `MAIL_NETWORK` sa nenastavuje a sieť `mail` sa nepripája (D-02). Over v `/opt/work-tracker-staging/app.env` (aj `migrate.env`), že `email.fromEmail = noreply@vostack.dev` a `email.allowedFromDomains = vostack.dev`. Staršia šablóna sekcie 3 dávala `email.fromEmail = noreply@$DOMAIN` (`noreply@work-tracker-stage.vostack.dev`). Doména sa porovnáva presne, bez subdomén, takže s touto hodnotou by každé odoslanie aj uloženie vlastnej adresy odosielateľa skončilo chybou „Adresa odosielateľa nie je povolená“ a v logu `mail.sender_not_allowed`. Subdomény sa zámerne nepovoľujú: povolená doména má byť len tá, pre ktorú platí SPF, DKIM a DMARC.
-4. **Overenie po deployi:** `docker compose -f compose.server.yaml -f compose.server.mail.yaml exec php php -r "var_dump((bool) @fsockopen('ssl://mail.vostack.dev', 465, \$e, \$s, 5));"` vráti `bool(true)`. Potom odošli faktúru na vlastný Gmail a v „Show original“ skontroluj SPF, DKIM a DMARC PASS (DMARC je zatiaľ `p=none`, sprísnenie 2026-11-19 podľa `docs/ops/mail.md`).
+4. **Overenie po deployi:** `docker compose -f compose.server.yaml -f compose.server.mail.yaml exec php php -r "var_dump((bool) @fsockopen('ssl://mail.vostack.dev', 465, \$e, \$s, 5));"` vráti `bool(true)`. Potom odošli faktúru na vlastný Gmail a v „Show original“ skontroluj SPF, DKIM a DMARC PASS (DMARC je zatiaľ `p=none`, sprísnenie 2026-11-19 podľa `/opt/mail/README.md`).
 5. **Migrácie fázy 7** (`email_templates`, `invoice_sends`, `payments`, rozšírenie `invoice_status_v`, odosielateľ pri subjekte) bežia automaticky pri deployi. Existujúce faktúry ostávajú v stave Vystavená.
 6. **Rollback:** odstráň `MAIL_NETWORK` z `.env`, nastav `email.transport = log` v `app.env` a nasaď znova.
 
