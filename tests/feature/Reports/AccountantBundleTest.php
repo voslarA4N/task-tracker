@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Reports;
 
+use App\Libraries\Export\AccountantBundle;
 use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Platform\MoneyFormat;
+use Closure;
 use CodeIgniter\Test\TestResponse;
 use Config\Services;
+use ErrorException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\AuthTestCase;
 use Tests\Support\CreditNoteFixtures;
@@ -70,6 +74,50 @@ final class AccountantBundleTest extends AuthTestCase
         $this->reportInvoice($this->entity, $client, '2026-10-10', '1000.00');
         $b = $this->reportInvoice($this->entity, $client, '2026-10-12', '200.00');
         $this->turnoverCreditNote($b, '2026-10-20');
+    }
+
+    private function failingZip(string $mode): Closure
+    {
+        return static fn (): ZipArchive => new class ($mode) extends ZipArchive {
+            public function __construct(private readonly string $mode)
+            {
+            }
+
+            public function close(): bool
+            {
+                parent::close();
+
+                if ($this->mode === 'throw') {
+                    throw new ErrorException('zip close failed');
+                }
+
+                return false;
+            }
+        };
+    }
+
+    #[DataProvider('provideDownloadBuildFailureShowsErrorBuild')]
+    public function testDownloadBuildFailureShowsErrorBuild(string $mode): void
+    {
+        $this->seed();
+        $this->login();
+        Services::injectMock('accountantBundle', new AccountantBundle(null, $this->failingZip($mode)));
+        $before = glob(WRITEPATH . 'exports/*') ?: [];
+
+        $result = $this->get('/reports/accountant/download?entity=' . $this->entity . '&from=2026-10&to=2026-10');
+
+        $this->assertSame(500, $result->response()->getStatusCode());
+        $this->assertStringContainsString(esc(lang('Bundle.errorBuild')), $this->body($result));
+        $this->assertStringNotContainsString('application/zip', $result->response()->getHeaderLine('Content-Type'));
+        $this->assertSame($before, glob(WRITEPATH . 'exports/*') ?: []);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function provideDownloadBuildFailureShowsErrorBuild(): iterable
+    {
+        return ['ErrorException' => ['throw'], 'RuntimeException' => ['false']];
     }
 
     public function testFormDefaultsToPreviousMonth(): void

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Libraries\Export\AccountantBundle;
 use App\Libraries\Export\BundleRejected;
 use App\Libraries\Export\ExportFilename;
 use App\Libraries\Export\ExportResponse;
@@ -17,6 +16,7 @@ use App\Libraries\Reporting\ReportPeriod;
 use App\Libraries\Work\BillingMonth;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\ResponseInterface;
+use ErrorException;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -52,7 +52,7 @@ final class Accountant extends BaseController
         }
 
         try {
-            $bytes = (new AccountantBundle())->build($in['entity']['id'], $in['period']);
+            $bytes = service('accountantBundle')->build($in['entity']['id'], $in['period']);
         } catch (BundleRejected $e) {
             $text = match ($e->reason) {
                 'missing_pdf' => lang('Bundle.errorMissingPdf', [count($e->numbers), implode(', ', $e->numbers)]),
@@ -65,7 +65,7 @@ final class Accountant extends BaseController
             log_message('critical', 'Accountant bundle failed integrity check: {message}', ['message' => $e->getMessage()]);
 
             return $this->page($in, ['alertText' => lang('Bundle.errorBuild')] + $this->previewData($in), 'reports/accountant/index', 500);
-        } catch (RuntimeException $e) {
+        } catch (ErrorException|RuntimeException $e) {
             log_message('error', 'Accountant bundle build failed: {message}', ['message' => $e->getMessage()]);
 
             return $this->page($in, ['alertText' => lang('Bundle.errorBuild')] + $this->previewData($in), 'reports/accountant/index', 500);
