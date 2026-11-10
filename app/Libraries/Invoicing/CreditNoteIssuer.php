@@ -96,6 +96,10 @@ final class CreditNoteIssuer
         // 1. idempotencia
         $this->assertNotIssued($cmd->requestKey);
 
+        // 2a. pevne poradie payments -> credit_note, rovnaky kluc ako PaymentService::lock(); PaymentService
+        //     nikdy neberie credit_note, takze bez cyklu (WR-04, D-15)
+        $this->db->query("SELECT pg_advisory_xact_lock(hashtext('payments'), :id:)", ['id' => $cmd->originalId]);
+
         // 2. zamok povodnej faktury (app_rw nema UPDATE na invoices, preto advisory zamok)
         $this->db->query("SELECT pg_advisory_xact_lock(hashtext('credit_note'), :id:)", ['id' => $cmd->originalId]);
 

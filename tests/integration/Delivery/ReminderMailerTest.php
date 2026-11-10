@@ -8,6 +8,7 @@ use App\Libraries\Delivery\SendRejected;
 use App\Libraries\Platform\FrozenClock;
 use App\Libraries\Platform\Money;
 use App\Libraries\Platform\MoneyFormat;
+use CodeIgniter\Database\Exceptions\DatabaseException;
 use Config\Services;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\DeliveryFixtures;
@@ -147,5 +148,32 @@ final class ReminderMailerTest extends PgTestCase
         $this->mailer()->send($this->sendCommand($inv['id'], ['fakturacia@all4net.example'], [], ['kind' => 'reminder']));
 
         $this->assertStringNotContainsString('In-Reply-To', $this->lastEmail->capturedHeaders);
+    }
+
+    public function testReminderWaitsForPaymentsLockAndReleasesLocks(): void
+    {
+        $inv   = $this->sentOverdue();
+        $sends = $this->sendCount();
+        $calls = $this->emailFactoryCalls;
+
+        $this->owner()->query("SELECT pg_advisory_lock(hashtext('payments'), :id:)", ['id' => $inv['id']]);
+        $this->rw()->query("SET lock_timeout = '200ms'");
+
+        try {
+            $this->mailer()->send($this->sendCommand($inv['id'], ['fakturacia@all4net.example'], [], ['kind' => 'reminder']));
+            $this->fail('Expected lock timeout');
+        } catch (DatabaseException $e) {
+            $this->assertStringContainsString('lock timeout', $e->getMessage());
+        } finally {
+            $this->rw()->query('RESET lock_timeout');
+            $this->owner()->query("SELECT pg_advisory_unlock(hashtext('payments'), :id:)", ['id' => $inv['id']]);
+        }
+
+        $this->assertSame($calls, $this->emailFactoryCalls);
+        $this->assertSame($sends, $this->sendCount());
+        $this->assertSame(0, (int) $this->rw()->query("SELECT count(*) AS c FROM pg_locks WHERE locktype = 'advisory' AND pid = pg_backend_pid()")->getRow()->c);
+
+        $this->mailer()->send($this->sendCommand($inv['id'], ['fakturacia@all4net.example'], [], ['kind' => 'reminder']));
+        $this->assertSame(0, (int) $this->rw()->query("SELECT count(*) AS c FROM pg_locks WHERE locktype = 'advisory' AND pid = pg_backend_pid()")->getRow()->c);
     }
 }

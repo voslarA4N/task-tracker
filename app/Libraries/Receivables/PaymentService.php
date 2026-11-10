@@ -20,6 +20,7 @@ use Config\Database;
 final class PaymentService
 {
     public const REQUEST_KEY_CONSTRAINT = 'payments_request_key_key';
+    public const CANCELLED_GUARD        = 'is cancelled by credit note';
     private const VOID_CONSTRAINT       = 'payment_voids_payment_id_key';
     private const MAX_TEXT              = 200;
 
@@ -99,6 +100,10 @@ final class PaymentService
         try {
             return Transaction::run($this->db, fn (): RecordedPayment => $this->recordInTransaction($invoiceId, $explicit, $paidOn, $note, $requestKey, $userId));
         } catch (DatabaseException $e) {
+            if (self::isCancelledGuard($e)) {
+                throw new PaymentRejected('cancelled');
+            }
+
             if (InvoiceIssuer::isUniqueViolation($e, self::REQUEST_KEY_CONSTRAINT)) {
                 $replay = $this->replayOf($requestKey);
 
@@ -263,6 +268,17 @@ final class PaymentService
         $after = $this->db->query('SELECT status, balance FROM invoice_status_v WHERE id = :id:', ['id' => $invoiceId])->getRowArray() ?? [];
 
         return new RecordedPayment($id, $amount, (string) ($after['balance'] ?? '0.00'), (string) ($after['status'] ?? 'issued'), false);
+    }
+
+    private static function isCancelledGuard(DatabaseException $e): bool
+    {
+        for ($c = $e; $c !== null; $c = $c->getPrevious()) {
+            if (str_contains($c->getMessage(), self::CANCELLED_GUARD)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function lock(int $invoiceId): void
